@@ -1,0 +1,98 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.menu-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.logo span {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.logo-highlight {
+    color: red;
+}
+
+.search-bar {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.search-bar input {
+    width: 70%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.language-selector {
+    margin-right: 20px;
+    font-size: 14px;
+    color: gray;
+}
+
+.language {
+    font-weight: bold;
+    color: black;
+}
+
+.app-btn,
+.trial-btn,
+.coins-btn {
+    margin-right: 10px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.app-btn {
+    background: none;
+    color: #555;
+}
+
+.trial-btn {
+    background: #ff5733;
+    color: white;
+}
+
+.coins-btn {
+    background: #ffe600;
+    color: black;
+}
+
+.login-link {
+    text-decoration: none;
+    color: black;
+    font-size: 14px;
+}
