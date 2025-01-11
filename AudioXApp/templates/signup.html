@@ -1,0 +1,74 @@
+{% load static %}
+DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup Page</title>
+
+    <!-- Link to external CSS using Jinja -->
+    <link rel="stylesheet" href="{% static 'css/signupstyle.css' %}">
+
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <div class="logo">AudioX</div>
+    <div class="divider"></div>
+
+    <div class="container">
+        <h2>Sign up for free!</h2>
+        <form id="signupForm">
+            <div class="input-group">
+                <label for="full-name">Full Name</label>
+                <input type="text" id="full-name" name="full-name" placeholder="Enter your full name" required>
+            </div>
+
+            <!-- Username with validation -->
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                <div class="validation-message" id="usernameError"></div>
+            </div>
+
+            <!-- Email -->
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email address" required>
+            </div>
+
+            <!-- Password with validation -->
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Must have at least 8 characters" required>
+                <i class="fas fa-eye show-password-icon" id="togglePassword"></i>
+                <div class="validation-message" id="passwordError"></div>
+            </div>
+
+            <button type="submit" class="btn">Sign Up</button>
+        </form>
+
+        <!-- Social Login Buttons -->
+        <div class="login-btns">
+            <button class="login-btn facebook-btn">
+                <i class="fab fa-facebook-f"></i>Login with Facebook
+            </button>
+            <button class="login-btn google-btn">
+                <i class="fab fa-google"></i>Login with Google
+            </button>
+        </div>
+    </div>
+
+    <div class="footer">
+        Already a member? <a href="#">Sign in</a>
+    </div>
+
+    <!-- Link to external JS using Jinja -->
+    <script src="{% static 'js/signup.js' %}"></script>
+
+</body>
+
+</html>
