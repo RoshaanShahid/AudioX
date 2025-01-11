@@ -33,29 +33,29 @@ header {
 }
 
 .logo-highlight {
-    animation: highlight 2s infinite alternate;
+    animation: highlight 1s infinite alternate;
 }
 
 @keyframes highlight {
     0% {
-        color: #091E65;
+        color: #ffffff;
     }
     100% {
-        color: #FFD700;
+        color: #091e65;
     }
 }
 
 .menu-btn {
     font-size: 24px;
-    color: #091E65;
+    color: #000000;
     background: none;
     border: none;
-    margin-right: 10px;
+    margin-right: -30px;
     cursor: pointer;
 }
 
 .menu-btn:hover {
-    color: #FFD700;
+    color: #091e65;
 }
 
 /* Search Bar */
@@ -188,13 +188,15 @@ header {
 }
 
 .btn-coins:hover {
-    background-color: #FFD700;
-    color: #091E65;
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #091E65;
 }
 
 .btn-login {
-    background-color: #FFD700;
-    color: #091E65;
+    background-color: white;
+    color: #000000;
+    border: 2px solid #091E65;
 }
 
 .btn-login:hover {
