@@ -3,10 +3,13 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from AudioXApp import views  # Corrected import
+from django.shortcuts import redirect
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # Admin URL included once
     path('Home/', views.home, name='home'),  # Your custom index view
+    # Redirect from the root URL (/) to /home
+    path('', lambda request: redirect('/Home/'), name='home_redirect'),
 ] 
 
 # Static files for media and audio

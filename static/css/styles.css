@@ -4,6 +4,14 @@ body, html {
     padding: 0;
     font-family: 'Arial', sans-serif;
     background-color: #f8f9fa; /* Light background for contrast */
+    min-height: 100%; /* Ensure body takes full height */
+}
+
+/* Flexbox to ensure footer stays at the bottom */
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 /* Header Styling */
@@ -43,19 +51,6 @@ header {
     100% {
         color: #091e65;
     }
-}
-
-.menu-btn {
-    font-size: 24px;
-    color: #000000;
-    background: none;
-    border: none;
-    margin-right: -30px;
-    cursor: pointer;
-}
-
-.menu-btn:hover {
-    color: #091e65;
 }
 
 /* Search Bar */
@@ -119,7 +114,7 @@ header {
     align-items: center;
     justify-content: center;
     transition: background-color 0.3s ease;
-    position: relative;  /* Add this line */
+    position: relative;
 }
 
 .voice-icon-btn img {
@@ -148,6 +143,7 @@ header {
     z-index: 10;  /* Ensure it appears above other elements */
     margin-bottom: 5px;  /* Space between the button and tooltip */
 }
+
 /* Language Selector */
 .language-selector {
     position: relative;
@@ -215,12 +211,12 @@ header {
     color: white;
 }
 
-/* Side Menu */
+/* Slider Menu */
 #slider-menu {
     position: fixed;
-    left: -320px;
+    left: -300px;
     top: 0;
-    width: 320px;
+    width: 300px;
     height: 100%;
     background-color: #091E65;
     color: white;
@@ -229,13 +225,17 @@ header {
     z-index: 1050;
 }
 
-#slider-menu.open {
-    left: 0;
+/* Site title inside the slider menu */
+#slider-menu .site-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 20px;
 }
 
+/* Menu links */
 #slider-menu ul {
-    padding: 0;
     list-style: none;
+    padding: 0;
 }
 
 #slider-menu ul li {
@@ -252,23 +252,74 @@ header {
     text-decoration: underline;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    header {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
+/* Footer Styling */
+footer {
+    background-color: #091e65; /* Setting the background color */
+    color: white; /* Setting the text color */
+    padding: 50px 0;
+    margin-top: auto; /* Ensures footer stays at the bottom */
+}
 
-    .search-container {
-        max-width: 100%;
-    }
+footer h5 {
+    color: white;
+    font-weight: bold;
+}
 
-    .btn {
-        padding: 8px 15px;
-        font-size: 12px;
-    }
+footer .fw-bold {
+    font-size: 18px;
+    color: white; /* Ensuring the headings are white */
+    margin-bottom: 20px;
+}
 
-    #slider-menu {
-        width: 250px;
-    }
+/* Removing the default padding for unordered lists */
+footer ul {
+    padding-left: 0;
+}
+
+footer ul li {
+    margin-bottom: 10px;
+}
+
+/* Styling the links */
+footer a {
+    color: white; /* Ensuring the links are white */
+    text-decoration: none;
+}
+
+/* Hover effect for links */
+footer a:hover {
+    color: #FFD700; /* Gold color on hover */
+}
+
+/* Social Media Icons */
+footer .social-icons a {
+    color: white; /* Ensuring social icons are white */
+    margin: 0 10px;
+    font-size: 20px;
+}
+
+/* Hover effect for social media icons */
+footer .social-icons a:hover {
+    color: #FFD700; /* Gold color on hover */
+}
+
+/* Separator Line */
+footer hr {
+    border: 0;
+    border-top: 1px solid #ddd; /* Light gray separator */
+    margin: 20px 0;
+}
+
+/* Footer Content Alignment */
+footer .col-md-6 {
+    margin-bottom: 30px;
+}
+
+footer .col-3 {
+    margin-bottom: 15px;
+}
+
+/* Copyright Section */
+footer .py-3 {
+    background-color: #1c1c1c; /* Darker background for the bottom section */
 }
