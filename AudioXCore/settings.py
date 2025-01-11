@@ -56,8 +56,8 @@ ROOT_URLCONF = 'AudioXCore.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR , 'templates')],
-        'APP_DIRS': True,
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # This will search the global templates folder
+        'APP_DIRS': True,  # This allows Django to search within each app's templates folder
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
