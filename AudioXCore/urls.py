@@ -6,7 +6,7 @@ from AudioXApp import views  # Corrected import
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # Admin URL included once
-    path('Index/', views.Index, name='index'),  # Your custom index view
+    path('Home/', views.home, name='home'),  # Your custom index view
 ] 
 
 # Static files for media and audio

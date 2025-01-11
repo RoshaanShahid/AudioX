@@ -1,98 +1,272 @@
-body {
-    font-family: Arial, sans-serif;
+/* Reset */
+body, html {
     margin: 0;
     padding: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa; /* Light background for contrast */
 }
 
-.header {
+/* Header Styling */
+header {
+    background-color: white;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     padding: 10px 20px;
-    background-color: #fff;
-    border-bottom: 1px solid #ccc;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
+/* Logo Section */
 .logo {
     display: flex;
     align-items: center;
-}
-
-.menu-btn {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    margin-right: 10px;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #091E65;
 }
 
 .logo span {
-    font-size: 20px;
-    font-weight: bold;
+    position: relative;
 }
 
 .logo-highlight {
-    color: red;
+    animation: highlight 2s infinite alternate;
+}
+
+@keyframes highlight {
+    0% {
+        color: #091E65;
+    }
+    100% {
+        color: #FFD700;
+    }
+}
+
+.menu-btn {
+    font-size: 24px;
+    color: #091E65;
+    background: none;
+    border: none;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.menu-btn:hover {
+    color: #FFD700;
+}
+
+/* Search Bar */
+.search-container {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: center;
+    position: relative;
+    max-width: 600px;
 }
 
 .search-bar {
-    flex: 1;
     display: flex;
-    justify-content: center;
     align-items: center;
+    position: relative;
+    width: 100%;
+    background-color: #F2F2F2;
+    border-radius: 30px;
+    padding: 5px 15px;
+    border: 2px solid #091E65;
 }
 
 .search-bar input {
-    width: 70%;
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    background: transparent;
     padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 20px;
+    color: #091E65;
 }
 
-.header-actions {
+.search-bar input::placeholder {
+    color: #808080;
+    font-size: 14px;
+}
+
+.search-icon-btn {
+    background-color: transparent;
+    border: none;
+    color: #091E65;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.search-icon-btn:hover {
+    color: #FFD700;
+}
+
+/* Microphone Icon */
+.voice-icon-btn {
+    margin-left: 10px;
+    background-color: #091E65;
+    border: none;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+    position: relative;  /* Add this line */
 }
 
+.voice-icon-btn img {
+    width: 18px;
+    height: 18px;
+    filter: invert(100%);
+}
+
+.voice-icon-btn:hover {
+    background-color: #FFD700;
+}
+
+/* Tooltip styling for voice icon */
+.voice-icon-btn[title]:hover::after {
+    content: attr(title);  /* Use the title attribute for tooltip text */
+    position: absolute;
+    bottom: -35px;  /* Position it just below the button */
+    left: 50%;
+    transform: translateX(-50%);  /* Center the tooltip horizontally */
+    background-color: rgba(0, 0, 0, 0.75);  /* Dark background */
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;  /* Prevent text from wrapping */
+    z-index: 10;  /* Ensure it appears above other elements */
+    margin-bottom: 5px;  /* Space between the button and tooltip */
+}
+/* Language Selector */
 .language-selector {
-    margin-right: 20px;
+    position: relative;
+    margin-left: 15px;
+}
+
+.language-selector select {
+    padding: 7px 12px;
     font-size: 14px;
-    color: gray;
-}
-
-.language {
-    font-weight: bold;
-    color: black;
-}
-
-.app-btn,
-.trial-btn,
-.coins-btn {
-    margin-right: 10px;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 20px;
+    border: 2px solid #091E65;
+    border-radius: 5px;
+    background-color: white;
+    color: #091E65;
+    outline: none;
     cursor: pointer;
-    font-size: 14px;
 }
 
-.app-btn {
-    background: none;
-    color: #555;
-}
-
-.trial-btn {
-    background: #ff5733;
+.language-selector select:hover {
+    background-color: #091E65;
     color: white;
 }
 
-.coins-btn {
-    background: #ffe600;
-    color: black;
+/* Buttons */
+.btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.login-link {
+.btn-coins {
+    background-color: #091E65;
+    color: white;
+}
+
+.btn-coins:hover {
+    background-color: #FFD700;
+    color: #091E65;
+}
+
+.btn-login {
+    background-color: #FFD700;
+    color: #091E65;
+}
+
+.btn-login:hover {
+    background-color: #091E65;
+    color: white;
+}
+
+.btn-signup {
+    background-color: white;
+    color: #091E65;
+    border: 2px solid #091E65;
+}
+
+.btn-signup:hover {
+    background-color: #091E65;
+    color: white;
+}
+
+/* Side Menu */
+#slider-menu {
+    position: fixed;
+    left: -320px;
+    top: 0;
+    width: 320px;
+    height: 100%;
+    background-color: #091E65;
+    color: white;
+    padding: 20px;
+    transition: left 0.3s ease;
+    z-index: 1050;
+}
+
+#slider-menu.open {
+    left: 0;
+}
+
+#slider-menu ul {
+    padding: 0;
+    list-style: none;
+}
+
+#slider-menu ul li {
+    margin: 20px 0;
+}
+
+#slider-menu ul li a {
+    color: white;
     text-decoration: none;
-    color: black;
-    font-size: 14px;
+    font-size: 18px;
+}
+
+#slider-menu ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    header {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .search-container {
+        max-width: 100%;
+    }
+
+    .btn {
+        padding: 8px 15px;
+        font-size: 12px;
+    }
+
+    #slider-menu {
+        width: 250px;
+    }
 }

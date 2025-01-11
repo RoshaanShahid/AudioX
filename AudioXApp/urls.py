@@ -11,7 +11,7 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('Index/', views.Index, name='index'),
+    path('Home/', views.Index, name='Home'),
 ] 
 
 # Static files for media and audio
