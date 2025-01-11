@@ -7,6 +7,7 @@ const searchButton = document.getElementById('search-btn');
 // Initialize voice recognition
 function initializeSpeechRecognition() {
     if (!('webkitSpeechRecognition' in window)) {
+        console.error('Voice search is not supported on your browser.');
         alert('Voice search is not supported on your browser. Please use Chrome or Edge.');
         return null;
     }
@@ -29,6 +30,7 @@ function initializeSpeechRecognition() {
 
     recognitionInstance.onresult = function (event) {
         const transcript = event.results[0][0].transcript;
+        console.log('Voice recognition result: ', transcript);
 
         // Remove the full stop at the end of the transcript if it exists
         const cleanedTranscript = transcript.endsWith('.') ? transcript.slice(0, -1) : transcript;
@@ -39,9 +41,11 @@ function initializeSpeechRecognition() {
     };
 
     recognitionInstance.onend = function () {
+        console.log("Voice recognition ended.");
         stopRecording(); // Clean up after recognition ends
     };
 
+    console.log("Speech recognition initialized.");
     return recognitionInstance;
 }
 
@@ -55,12 +59,14 @@ function startRecording() {
     isRecording = true;
     voiceButton.style.backgroundColor = "#4CAF50";  // Indicate recording state
     recognition.start();
+    console.log("Recording started...");
 }
 
 // Stop recording
 function stopRecording() {
     if (recognition) {
         recognition.stop();
+        console.log("Recording stopped.");
     }
     isRecording = false;
     voiceButton.style.backgroundColor = "#091e65";  // Reset button color
@@ -69,6 +75,7 @@ function stopRecording() {
 
 // Handle microphone button click
 voiceButton.addEventListener('click', function () {
+    console.log('Microphone button clicked');
     if (isRecording) {
         stopRecording();
     } else {
