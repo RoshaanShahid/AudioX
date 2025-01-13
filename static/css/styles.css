@@ -211,46 +211,203 @@ header {
     color: white;
 }
 
-/* Slider Menu */
+/* General Slider Menu Styling */
 #slider-menu {
-    position: fixed;
-    left: -300px;
+    width: 320px;
+    left: -320px; /* Hidden by default */
     top: 0;
-    width: 300px;
-    height: 100%;
-    background-color: #091E65;
-    color: white;
-    padding: 20px;
-    transition: left 0.3s ease;
+    height: 100vh;
+    position: fixed;
     z-index: 1050;
+    background-color: #ffffff;
+    transition: left 0.4s ease-in-out, opacity 0.3s ease-in-out;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
 }
 
-/* Site title inside the slider menu */
-#slider-menu .site-title {
+/* Show the menu */
+#slider-menu.show {
+    left: 0;
+    opacity: 1;
+}
+
+/* Header Section */
+.slider-header {
+    background-color: #0078ff; /* Sleek blue background */
+    color: #ffffff;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0056b3; /* Subtle darker accent */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo Styling */
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.logo-img {
+    width: 40px; /* Scaled logo for modern look */
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover; /* Ensures clean image cropping */
+    background-color: #ffffff; /* White background for logo */
+    padding: 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+.slider-header h2 {
     font-size: 1.5rem;
-    font-weight: bold;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+}
+
+/* Close Button */
+.slider-header button {
+    font-size: 1.6rem;
+    color: #ffffff;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.slider-header button:hover {
+    color: #ff6f6f;
+}
+
+/* Header Hover Effect */
+.slider-header:hover {
+    background: linear-gradient(90deg, #0078ff, #0056b3); /* Subtle gradient hover */
+}
+
+/* Slider Content */
+.slider-content {
+    padding: 20px;
+}
+
+/* Menu Links */
+.slider-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.slider-content ul li {
     margin-bottom: 20px;
 }
 
-/* Menu links */
-#slider-menu ul {
-    list-style: none;
-    padding: 0;
-}
-
-#slider-menu ul li {
-    margin: 20px 0;
-}
-
-#slider-menu ul li a {
-    color: white;
+.slider-content ul li a {
+    font-size: 1.3rem; /* Better readability */
+    font-weight: 500;
+    color: #333;
+    background-color: #f9f9f9;
+    padding: 12px 20px;
+    border-radius: 8px;
     text-decoration: none;
-    font-size: 18px;
+    display: block;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-#slider-menu ul li a:hover {
-    text-decoration: underline;
+.slider-content ul li a:hover {
+    background-color: #0078ff;
+    color: #ffffff;
+    transform: scale(1.05);
 }
+
+/* Submenus */
+details {
+    margin-bottom: 20px;
+}
+
+details summary {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    padding: 12px 20px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+details summary:hover {
+    background-color: #0078ff;
+    color: #ffffff;
+}
+
+details summary:after {
+    content: "▼";
+    font-size: 0.9rem;
+    color: #666;
+    margin-left: 10px;
+    transition: transform 0.3s ease;
+}
+
+details[open] summary:after {
+    transform: rotate(180deg);
+}
+
+details ul {
+    padding-left: 20px;
+    margin-top: 10px;
+}
+
+details ul li {
+    margin-bottom: 10px;
+}
+
+details ul li a {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: #555;
+    padding: 8px 16px;
+    border-radius: 6px;
+    background-color: transparent;
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+details ul li a:hover {
+    background-color: #f0f0f0;
+    color: #0078ff;
+}
+
+/* Footer */
+.slider-content footer {
+    margin-top: 40px;
+    font-size: 0.9rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+/* Scrollbar Customization */
+#slider-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+#slider-menu::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 3px;
+}
+
+/* Hover Effects */
+#slider-menu ul li:hover {
+    transform: translateX(5px); /* Subtle motion for hover */
+    transition: transform 0.2s ease;
+}
+
+
+
+
 /* Footer Container */
 footer {
     background-color: #091e65; /* White background for the main footer */
