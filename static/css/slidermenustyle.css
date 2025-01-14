@@ -1,0 +1,285 @@
+/* Slider Menu Container */
+#slider-menu {
+    position: fixed;
+    top: 0;
+    left: -400px;
+    /* Initially hidden on the left */
+    width: 350px;
+    /* Adjusted width */
+    height: 100vh;
+    /* Full viewport height */
+    background-color: #ffffff;
+    /* White background */
+    box-shadow: 5px 0px 15px rgba(0, 0, 0, 0.15);
+    /* Soft shadow */
+    display: flex;
+    flex-direction: column;
+    padding: 30px 25px;
+    /* Spacing inside the menu */
+    transition: left 0.4s ease, opacity 0.3s ease-in-out;
+    /* Smooth transition */
+    z-index: 1000;
+    /* Ensure it sits above other content */
+    overflow-y: auto;
+    /* Enable scrolling */
+    font-family: 'Nunito', sans-serif;
+    /* Set font */
+}
+
+/* Show the menu */
+#slider-menu.show {
+    left: 0;
+    /* Slide to the right when shown */
+    opacity: 1;
+    /* Full opacity when visible */
+}
+
+/* Logo Section */
+.slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 25px;
+}
+
+.slider-header .logo {
+    font-size: 2rem;
+    /* Logo size */
+    font-weight: 700;
+    color: #091e65;
+    /* Logo color - Updated */
+    letter-spacing: 1px;
+}
+
+.slider-header .logo span {
+    position: relative;
+}
+
+/* Close Button */
+.slider-header button {
+    font-size: 2rem;
+    /* Larger close button */
+    color: #969696;
+    /* Close button color */
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.slider-header button:hover {
+    color: #091e65;
+    /* Hover color - Updated */
+}
+
+/* Content Section */
+.slider-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 0px;
+}
+
+/* Menu Items */
+.slider-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.slider-content li {
+    margin-bottom: 0px;
+    /* Reduced spacing */
+    border-bottom: 1px solid #e7e7e7;
+    /* Separator line */
+    padding: 15px 0;
+    /* Padding for each item */
+}
+
+.slider-content li:last-child {
+    border-bottom: none;
+    /* Remove separator for last item */
+}
+
+.slider-content a {
+    text-decoration: none;
+    color: #091e65;
+    /* Text color */
+    font-weight: 700;
+    /* Font weight */
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+    display: block;
+    /* For full-width click */
+    padding: 5px 0;
+    /* Padding for links */
+}
+
+.slider-content li:first-child a {
+    font-weight: 700;
+    /* First item bold */
+}
+
+.slider-content a:hover {
+    color: #091e65;
+    /* Hover color */
+}
+
+/* Login/Signup Section */
+.slider-content .login-signup-section {
+    background-color: #e7e7e7;
+    /* Updated background color */
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 25px;
+}
+
+.slider-content .login-signup-section a {
+    color: #091e65;
+    font-size: 1rem;
+}
+
+/* Separator Line below Login/Signup */
+.slider-content .login-signup-section+hr {
+    display: none;
+    /* Remove the extra separator */
+}
+
+/* Buy Premium */
+.slider-content .buy-premium {
+    font-weight: 700;
+    /* Bold */
+    color: #091e65;
+    margin-bottom: 0px;
+}
+
+.slider-content .buy-premium i {
+    color: #091e65;
+}
+
+/* Dropdown Menus */
+.slider-content details {
+    position: relative;
+    /* For positioning dropdown icon */
+}
+
+.slider-content details summary {
+    display: flex;
+    /* For aligning text and icon */
+    justify-content: space-between;
+    /* Align text left, icon right */
+    align-items: center;
+    /* Center vertically */
+    cursor: pointer;
+    list-style: none;
+    /* Remove default list marker */
+}
+
+.slider-content details summary::-webkit-details-marker {
+    display: none;
+    /* Remove default dropdown arrow in some browsers */
+}
+
+.slider-content details summary:after {
+    content: "+";
+    /* Dropdown icon */
+    font-size: 1.2rem;
+    color: #091e65;
+    font-weight: 400;
+    /* Adjust as needed */
+    margin-left: auto;
+    /* Push icon to the right */
+    transition: transform 0.2s ease;
+    /* Smooth transition */
+}
+
+.slider-content details[open] summary:after {
+    transform: rotate(45deg);
+    /* Rotate icon when open */
+}
+
+.slider-content details ul {
+    padding-left: 15px;
+    /* Indent subpages */
+    margin-top: 10px;
+    /* Space between summary and subpages */
+}
+
+.slider-content details ul li {
+    border: none;
+    /* Remove separator for sub-items */
+    padding: 5px 0;
+    /* Padding for sub-items */
+}
+
+.slider-content details ul li a {
+    font-size: 0.9rem;
+    /* Smaller font size for subpages */
+    font-weight: 600;
+    /* Adjust font weight as needed */
+}
+
+/* Footer */
+.slider-content footer {
+    margin-top: auto;
+    /* Push to bottom */
+    text-align: center;
+    font-size: 0.9rem;
+    color: #000000;
+    /* Black */
+    padding-bottom: 20px;
+}
+
+.slider-content footer .text-danger {
+    color: #ff5c39;
+    /* Heart color - retain original if needed */
+}
+
+/* Update "Made with" text */
+.slider-content footer p {
+    margin: 0;
+    /* Remove default margin if any */
+}
+
+.slider-content footer p:last-child:after {
+    content: "Made with ❤️ in Pakistan";
+    /* Update text */
+    color: #000000;
+    /* Set text color to black */
+    font-size: 0.9rem;
+    /* Match other footer text */
+}
+
+/* Custom Scrollbar Styling */
+#slider-menu::-webkit-scrollbar {
+    width: 8px;
+    border-radius: 15px;
+}
+
+#slider-menu::-webkit-scrollbar-thumb {
+    background-color: #091e65;
+    border-radius: 15px;
+}
+
+#slider-menu::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}
+
+/* For Creators, About, Legal, Help & Support - Maintain font weight */
+.slider-content li:nth-child(4) a,
+/* For Creators */
+.slider-content li:nth-child(5) details summary,
+/* About */
+.slider-content li:nth-child(6) details summary,
+/* Legal */
+.slider-content li:nth-child(7) a,
+/* Help & Support */
+.slider-content li:nth-child(8) a,
+/* Blog */
+.slider-content li:nth-child(9) a {
+    /* Download Kuku Fm app */
+    font-weight: 600;
+    /* Maintain font weight */
+}

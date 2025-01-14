@@ -1,0 +1,202 @@
+/* Header Styling */
+header {
+    background-color: white;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  
+  /* Logo Section */
+  .logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+  }
+  
+  .logo span:first-child { /* Targets the "AUDIO" span */
+    color: #091E65; 
+  }
+  
+  .logo span:nth-child(2) { /* Targets the "X" span */
+    color: red;
+    animation: highlight 1s infinite alternate;
+  }
+  
+  .logo span:nth-child(3) { /* Targets the "/home" span */
+    color: #091E65; 
+    font-size: 1rem; 
+    margin-left: 5px;  
+  }
+  
+  @keyframes highlight {
+    0% {
+      color: #ffffff; 
+    }
+    100% {
+      color: red; 
+    }
+  }
+  
+  /* Search Bar */
+  .search-container {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: center;
+    position: relative;
+    max-width: 600px;
+  }
+  
+  .search-bar {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    background-color: #F2F2F2;
+    border-radius: 30px;
+    padding: 5px 15px;
+    border: 2px solid #091E65;
+  }
+  
+  .search-bar input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    background: transparent;
+    padding: 8px;
+    color: #091E65;
+  }
+  
+  .search-bar input::placeholder {
+    color: #808080;
+    font-size: 14px;
+  }
+  
+  .search-icon-btn {
+    background-color: transparent;
+    border: none;
+    color: #091E65;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+  
+  .search-icon-btn:hover {
+    color: #FFD700;
+  }
+  
+  /* Microphone Icon */
+  .voice-icon-btn {
+    margin-left: 10px;
+    background-color: #091E65;
+    border: none;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+    position: relative;
+  }
+  
+  .voice-icon-btn img {
+    width: 18px;
+    height: 18px;
+    filter: invert(100%);
+  }
+  
+  .voice-icon-btn:hover {
+    background-color: #FFD700;
+  }
+  
+  /* Tooltip styling for voice icon */
+  .voice-icon-btn[title]:hover::after {
+    content: attr(title); 
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+    margin-bottom: 5px;
+  }
+  
+  /* Language Selector */
+  .language-selector {
+    position: relative;
+    margin-left: 15px;
+  }
+  
+  .language-selector select {
+    padding: 7px 12px;
+    font-size: 14px;
+    border: 2px solid #091E65;
+    border-radius: 5px;
+    background-color: white;
+    color: #091E65;
+    outline: none;
+    cursor: pointer;
+  }
+  
+  .language-selector select:hover {
+    background-color: #091E65;
+    color: white;
+  }
+  
+  /* Buttons */
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .btn-coins {
+    background-color: #091E65;
+    color: white;
+  }
+  
+  .btn-coins:hover {
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #091E65;
+  }
+  
+  .btn-login {
+    background-color: white;
+    color: #000000;
+    border: 2px solid #091E65;
+  }
+  
+  .btn-login:hover {
+    background-color: #091E65;
+    color: white;
+  }
+  
+  .btn-signup {
+    background-color: white;
+    color: #091E65;
+    border: 2px solid #091E65;
+  }
+  
+  .btn-signup:hover {
+    background-color: #091E65;
+    color: white;
+  }
