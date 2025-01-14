@@ -8,6 +8,8 @@ from django.shortcuts import redirect
 urlpatterns = [
     path('admin/', admin.site.urls),  # Admin URL included once
     path('Home/', views.home, name='home'),  # Your custom index view
+    path('team/', views.team, name='team'),
+
     # Redirect from the root URL (/) to /Home
     path('', lambda request: redirect('/Home/'), name='home_redirect'),
     
@@ -15,8 +17,9 @@ urlpatterns = [
     path('/signup', lambda request: redirect('/signup/'), name='signup_redirect'),  # Redirect to signup page
     path('signup/', views.signup, name='signup'),  # Signup page
 
-    path('/login', lambda request: redirect('/login/'), name='login_redirect'),  # Redirect to signup page
-    path('login/', views.login, name='login'),  # Signup page
+    path('/login', lambda request: redirect('/login/'), name='login_redirect'),  # Redirect to signin page
+    path('login/', views.login, name='login'),  # Signin page
+
 ] 
 
 # Static files for media and audio

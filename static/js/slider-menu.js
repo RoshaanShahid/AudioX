@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const menuToggle = document.getElementById('menu-toggle');
     const sliderMenu = document.getElementById('slider-menu');
     const closeButton = document.getElementById('close-slider');
+    const hasSubmenuItems = document.querySelectorAll('.has-submenu');
 
     // Toggle menu visibility when the button is clicked
     function toggleSliderMenu() {
@@ -27,11 +28,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Add smooth transitions to dropdown items
-    const dropdowns = document.querySelectorAll('details');
-    dropdowns.forEach(function (dropdown) {
-        dropdown.addEventListener('toggle', function () {
-            dropdown.querySelector('summary').classList.toggle('open', dropdown.open);
+    // Add event listeners to toggle submenus
+    hasSubmenuItems.forEach(item => {
+        item.addEventListener('click', function(event) {
+            // Prevent the click from propagating to the document click listener
+            event.stopPropagation();
+
+            // Toggle the 'open' class on the clicked item
+            this.classList.toggle('open');
+
+            // Find the associated submenu and toggle its 'open' class
+            const submenu = this.nextElementSibling;
+            if (submenu && submenu.classList.contains('sub-menu')) {
+                submenu.classList.toggle('open');
+            }
         });
     });
 });

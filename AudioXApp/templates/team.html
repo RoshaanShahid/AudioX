@@ -1,0 +1,91 @@
+{% extends 'Homepage.html' %}
+{% load static %}
+
+{% block content %}
+<section class="team-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1 class="text-center team-heading">Meet Our Team</h1>
+                <p class="text-center team-subheading">Discover the extraordinary individuals who form the backbone of
+                    our organization</p>
+            </div>
+        </div>
+        <div class="row department-row mt-4">
+            <div class="col-md-12 d-flex justify-content-center flex-wrap">
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" id="cofounders-tab" data-bs-toggle="tab" data-bs-target="#cofounders"
+                            role="tab" aria-controls="cofounders" aria-selected="true"
+                            data-department="cofounders">Founders</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" id="tech-tab" data-bs-toggle="tab" data-bs-target="#tech" role="tab"
+                            aria-controls="tech" aria-selected="false" data-department="tech">IT & Tech</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" id="growth-marketing-tab" data-bs-toggle="tab"
+                            data-bs-target="#growth-marketing" role="tab" aria-controls="growth-marketing"
+                            aria-selected="false" data-department="growth-marketing">Growth &
+                            Marketing</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="cofounders" role="tabpanel" aria-labelledby="cofounders-tab">
+                <div class="row team-members mt-4">
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 team-member">
+                        <img src="https://i.ibb.co/D4vPcWS/Burhan.jpg" alt="Burhan Aqeel"
+                            class="team-member-image">
+                        <h4 class="team-member-name">Burhan Aqeel</h4>
+                        <p class="team-member-role">Founder</p>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 team-member">
+                        <img src="https://i.ibb.co/RSpzGkc/Roshaan.jpg" alt="Roshaan Shahid"
+                            class="team-member-image">
+                        <h4 class="team-member-name">Roshaan Shahid</h4>
+                        <p class="team-member-role">Founder</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="tech" role="tabpanel" aria-labelledby="tech-tab">
+                <div class="row team-members mt-4">
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 team-member">
+                        <img src="https://i.ibb.co/D4vPcWS/Burhan.jpg" alt="Burhan Aqeel"
+                            class="team-member-image">
+                        <h4 class="team-member-name">Burhan Aqeel</h4>
+                        <p class="team-member-role">Tech</p>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 team-member">
+                        <img src="https://i.ibb.co/RSpzGkc/Roshaan.jpg" alt="Roshaan Shahid"
+                            class="team-member-image">
+                        <h4 class="team-member-name">Roshaan Shahid</h4>
+                        <p class="team-member-role">Tech</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="growth-marketing" role="tabpanel" aria-labelledby="growth-marketing-tab">
+                <div class="row team-members mt-4">
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 team-member">
+                        <img src="https://i.ibb.co/D4vPcWS/Burhan.jpg" alt="Burhan Aqeel"
+                            class="team-member-image">
+                        <h4 class="team-member-name">Burhan Aqeel</h4>
+                        <p class="team-member-role">Marketing Manager</p>
+                    </div>
+                    <div class="col-lg-3 col-md-4 col-sm-6 col-12 team-member">
+                        <img src="https://i.ibb.co/RSpzGkc/Roshaan.jpg" alt="Roshaan Shahid"
+                            class="team-member-image">
+                        <h4 class="team-member-name">Roshaan Shahid</h4>
+                        <p class="team-member-role">Marketing Manager</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/team.js' %}"></script>
+{% endblock %}

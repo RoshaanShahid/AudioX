@@ -12,7 +12,7 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('Home/', views.Index, name='Home'),
-] 
+    path('team/', views.team, name='team'),] 
 
 # Static files for media and audio
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

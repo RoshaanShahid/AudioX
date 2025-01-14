@@ -11,4 +11,5 @@ def signup(request):
 def login(request):
     return render(request, 'login.html')
 
-
+def team(request):
+    return render(request, 'team.html')

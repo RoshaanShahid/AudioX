@@ -15,28 +15,43 @@
     <div class="logo">AudioX</div>
     <div class="divider"></div>
 
-    <div class="container">
-        <h2>Login to your account</h2>
-        <form id="loginForm">
-            <!-- Email or Username -->
-            <div class="input-group">
-                <label for="loginIdentifier">Email or Username</label>
-                <input type="text" id="loginIdentifier" name="loginIdentifier" placeholder="Enter your email or username" required>
-            </div>
+    <div class="login-wrapper">
+        <div class="container">
+            <h2>Login to your account</h2>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="loginIdentifier">Email or Username</label>
+                    <input type="text" id="loginIdentifier" name="loginIdentifier"
+                        placeholder="Enter your email or username" required>
+                </div>
 
-            <!-- Password -->
-            <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                <i class="fas fa-eye show-password-icon" id="togglePassword"></i>
-            </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <i class="fas fa-eye show-password-icon" id="togglePassword"></i>
+                </div>
 
-            <button type="submit" class="btn">Login</button>
-        </form>
+                <button type="submit" class="btn">Login</button>
+            </form>
+        </div>
+
+        <div class="or-divider">
+            <hr class="divider-line">
+            <span class="or-text">OR</span>
+            <hr class="divider-line">
+        </div>
+
+        <div class="google-button-container">
+            <button class="google-login-btn">
+                <img src="https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-webinar-optimizing-for-success-google-business-webinar-13.png"
+                    alt="Google Logo" class="google-logo">
+                Continue via Google
+            </button>
+        </div>
     </div>
 
     <div class="footer">
-        Not a member yet? <a href="">Sign up</a>
+        Not a member yet? <a href="/signup">Sign up</a>
     </div>
 
     <script src="{% static 'js/signup.js' %}"></script>

@@ -7,70 +7,98 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Signup Page</title>
 
-    <!-- Link to external CSS using Jinja -->
     <link rel="stylesheet" href="{% static 'css/signupstyle.css' %}">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
     <div class="wrapper">
-        <!-- Form Container (Left side) -->
         <div class="form-container">
             <div class="logo">AudioX</div>
             <div class="divider"></div>
             <div class="container">
                 <h2>Sign up for free!</h2>
                 <form id="signupForm">
-                    <!-- Full Name -->
                     <div class="input-group step" id="step1">
                         <label for="full-name">Full Name</label>
                         <input type="text" id="full-name" name="full-name" placeholder="Enter your full name" required>
+                        <div class="validation-message" id="fullNameError"></div>
                     </div>
 
-                    <!-- Username -->
                     <div class="input-group step" id="step2" style="display: none;">
                         <label for="username">Username</label>
                         <input type="text" id="username" name="username" placeholder="Choose a username" required>
                         <div class="validation-message" id="usernameError"></div>
                     </div>
 
-                    <!-- Phone Number -->
                     <div class="input-group step" id="step3" style="display: none;">
                         <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required pattern="^\d{10}$">
+                        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required>
+                        <div class="validation-message" id="phoneError"></div>
                     </div>
 
-                    <!-- Email -->
                     <div class="input-group step" id="step4" style="display: none;">
                         <label for="email">Email</label>
                         <input type="email" id="email" name="email" placeholder="Enter your email address" required>
+                        <div class="validation-message" id="emailError"></div>
                     </div>
 
-                    <!-- Password -->
                     <div class="input-group step" id="step5" style="display: none;">
                         <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Must have at least 8 characters" required>
+                        <input type="password" id="password" name="password" placeholder="Must have at least 8 characters"
+                            required>
                         <i class="fas fa-eye show-password-icon" id="togglePassword"></i>
                         <div class="validation-message" id="passwordError"></div>
-                        <div id="passwordStrengthIndicator" class="password-strength"></div>
+                        <div class="password-strength-indicator" id="passwordStrengthIndicator">
+                            <div class="bar-container">
+                                <div class="bar weak" data-strength="weak">
+                                    <div class="fill"></div>
+                                </div>
+                                <div class="bar good" data-strength="good">
+                                    <div class="fill"></div>
+                                </div>
+                                <div class="bar strong" data-strength="strong">
+                                    <div class="fill"></div>
+                                </div>
+                            </div>
+                            <div class="labels">
+                                <span class="label weak">Weak</span>
+                                <span class="label good">Good</span>
+                                <span class="label strong">Strong</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Confirm Password -->
                     <div class="input-group step" id="step6" style="display: none;">
                         <label for="confirm-password">Confirm Password</label>
-                        <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm your password" required>
+                        <input type="password" id="confirm-password" name="confirm-password"
+                            placeholder="Confirm your password" required>
                         <div class="validation-message" id="confirmPasswordError"></div>
                     </div>
 
-                    <!-- Previous and Next Buttons -->
                     <button type="button" class="btn" id="previousButton" style="display: none;">Previous</button>
                     <button type="button" class="btn" id="nextButton">Next</button>
 
-                    <!-- Submit Button (hidden initially) -->
                     <button type="submit" class="btn" id="submitButton" style="display: none;">Sign Up</button>
                 </form>
+
+                <div class="or-divider">
+                    <hr class="divider-line">
+                    <span class="or-text">OR</span>
+                    <hr class="divider-line">
+                </div>
+
+                <div class="google-button-container">
+                    <button class="google-signup-btn">
+                        <img src="https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-webinar-optimizing-for-success-google-business-webinar-13.png"
+                            alt="Google Logo" class="google-logo">
+                        Sign Up Using Google
+                    </button>
+                </div>
 
                 <div class="footer">
                     Already a member? <a href="/login">Sign in</a>
@@ -80,62 +108,8 @@
 
     </div>
 
-    <!-- Link to external JS using Jinja -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
     <script src="{% static 'js/signup.js' %}"></script>
-
-    <script>
-        let currentStep = 1;
-        const totalSteps = 6;
-        const nextButton = document.getElementById("nextButton");
-        const previousButton = document.getElementById("previousButton");
-        const submitButton = document.getElementById("submitButton");
-
-        // Function to navigate between steps
-        function showStep(stepNumber) {
-            // Hide all steps
-            for (let i = 1; i <= totalSteps; i++) {
-                document.getElementById('step' + i).style.display = 'none';
-            }
-            // Show the current step
-            document.getElementById('step' + stepNumber).style.display = 'block';
-
-            // If we're on the last step, change the button to "Sign Up"
-            if (stepNumber === totalSteps) {
-                nextButton.style.display = 'none';
-                submitButton.style.display = 'inline-block';
-            } else {
-                nextButton.style.display = 'inline-block';
-                submitButton.style.display = 'none';
-            }
-
-            // If we're on the first step, hide the "Previous" button
-            if (stepNumber === 1) {
-                previousButton.style.display = 'none';
-            } else {
-                previousButton.style.display = 'inline-block';
-            }
-        }
-
-        // Event listener for Next Button
-        nextButton.addEventListener('click', function() {
-            if (currentStep < totalSteps) {
-                currentStep++;
-                showStep(currentStep);
-            }
-        });
-
-        // Event listener for Previous Button
-        previousButton.addEventListener('click', function() {
-            if (currentStep > 1) {
-                currentStep--;
-                showStep(currentStep);
-            }
-        });
-
-        // Initially show the first step
-        showStep(currentStep);
-    </script>
-
 </body>
 
 </html>

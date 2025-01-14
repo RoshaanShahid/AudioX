@@ -160,65 +160,47 @@
 }
 
 /* Dropdown Menus */
-.slider-content details {
-    position: relative;
-    /* For positioning dropdown icon */
-}
-
-.slider-content details summary {
-    display: flex;
-    /* For aligning text and icon */
-    justify-content: space-between;
-    /* Align text left, icon right */
-    align-items: center;
-    /* Center vertically */
-    cursor: pointer;
-    list-style: none;
-    /* Remove default list marker */
-}
-
-.slider-content details summary::-webkit-details-marker {
-    display: none;
-    /* Remove default dropdown arrow in some browsers */
-}
-
-.slider-content details summary:after {
-    content: "+";
-    /* Dropdown icon */
+.slider-content .has-submenu::after {
+    content: '+';
+    float: right;
+    margin-left: 5px;
     font-size: 1.2rem;
     color: #091e65;
     font-weight: 400;
-    /* Adjust as needed */
-    margin-left: auto;
-    /* Push icon to the right */
     transition: transform 0.2s ease;
-    /* Smooth transition */
 }
 
-.slider-content details[open] summary:after {
+.slider-content .has-submenu.open::after {
     transform: rotate(45deg);
-    /* Rotate icon when open */
 }
 
-.slider-content details ul {
-    padding-left: 15px;
-    /* Indent subpages */
-    margin-top: 10px;
-    /* Space between summary and subpages */
+.slider-content .sub-menu {
+    display: none;
+    /* Initially hide submenus */
+    padding-left: 20px;
+    /* Indent submenu items */
 }
 
-.slider-content details ul li {
-    border: none;
-    /* Remove separator for sub-items */
+.slider-content .sub-menu.open {
+    display: block;
+    /* Show submenu when parent is active */
+}
+
+/* Style for submenu items */
+.slider-content .sub-menu li {
+    border-bottom: none;
+    /* Remove border from submenu items */
     padding: 5px 0;
-    /* Padding for sub-items */
+    /* Adjust padding as needed */
 }
 
-.slider-content details ul li a {
+.slider-content .sub-menu li a {
     font-size: 0.9rem;
-    /* Smaller font size for subpages */
+    /* Smaller font size for submenu items */
     font-weight: 600;
     /* Adjust font weight as needed */
+    color: #333;
+    /* Example color, adjust as needed */
 }
 
 /* Footer */
@@ -241,15 +223,9 @@
 .slider-content footer p {
     margin: 0;
     /* Remove default margin if any */
-}
-
-.slider-content footer p:last-child:after {
-    content: "Made with ❤️ in Pakistan";
-    /* Update text */
-    color: #000000;
-    /* Set text color to black */
-    font-size: 0.9rem;
-    /* Match other footer text */
+    font-size: 1rem;
+    font-weight: bold;
+    color: #ffffff;
 }
 
 /* Custom Scrollbar Styling */

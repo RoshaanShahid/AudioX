@@ -12,7 +12,10 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <link rel="stylesheet" href="{% static 'css/slidermenustyle.css' %}">
     <link rel="stylesheet" href="{% static 'css/headerstyle.css' %}">
-    <link rel="stylesheet" href="{% static 'css/footerstyle.css' %}">  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/footerstyle.css' %}">   
+    <link rel="stylesheet" href="{% static 'css/ourteamstyle.css' %}">   
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
@@ -21,13 +24,13 @@
     <header class="navbar navbar-expand-lg shadow-sm bg-white">
         <div class="container-fluid py-3">
             <button class="btn menu-btn" id="menu-toggle">
-                ☰
+                <span data-translate="menu">☰</span>
             </button>
-            <a href="/Home" class="logo"> <span>AUDIO</span><span>X</span></a> 
+            <a href="/Home" class="logo"> <span data-translate="audio">AUDIO</span><span data-translate="x">X</span></a> 
 
             <div class="search-container mx-3">
                 <div class="search-bar position-relative">
-                    <input type="text" id="search-input" placeholder="Search audiobooks & stories" aria-label="Search">
+                    <input type="text" id="search-input" data-translate="search_placeholder" placeholder="Search audiobooks & stories" aria-label="Search">
                     <button class="search-icon-btn" id="search-btn" title="Search">
                         <i class="fas fa-search"></i>
                     </button>
@@ -44,9 +47,9 @@
                         <option value="ur">اردو</option>
                     </select>
                 </div>
-                <button class="btn btn-coins me-2">🪙 Buy Coins</button>
-                <a href="/login" class="btn btn-login me-2">Login</a>
-                <a href="/signup" class="btn btn-signup">Signup</a>
+                <button class="btn btn-coins me-2" data-translate="buy_coins">🪙 Buy Coins</button>
+                <a href="/login" class="btn btn-login me-2" data-translate="login">Login</a>
+                <a href="/signup" class="btn btn-signup" data-translate="signup">Signup</a>
             </div>
         </div>
     </header>
@@ -54,48 +57,48 @@
     <div id="slider-menu" class="position-fixed vh-100 bg-white shadow-sm">
         <div class="slider-header d-flex justify-content-between align-items-center px-3 py-2">
             <h2 class="logo fs-5 fw-bold">
-                Audio<span class="text-danger">X</span>
+                <span data-translate="audio">Audio</span><span data-translate="x" class="text-danger">X</span>
             </h2>
             <button id="close-slider" class="btn btn-sm text-danger fw-bold" aria-label="Close menu">×</button>
         </div>
         <div class="slider-content px-3 py-2">
             <ul class="list-unstyled">
                 <li class="mb-3 login-signup-section">
-                    <a href="/login" class="d-block">Login / Signup</a>
-                    <small class="text-muted">For a better & personalized experience</small>
+                    <a href="/login" class="d-block" data-translate="login_signup">Login / Signup</a>
+                    <small class="text-muted" data-translate="login_signup_subtitle">For a better & personalized experience</small>
                 </li>
                 <hr class="bg-light">
                 <li class="mb-3">
                     <a href="#" class="buy-premium">
-                        <i class="fas fa-gem me-2 text-warning"></i> Buy Premium
+                        <i class="fas fa-gem me-2 text-warning"></i> <span data-translate="buy_premium">Buy Premium</span>
                     </a>
                 </li>
                 <li class="mb-3">
-                    <a href="#" class="">For Creators</a>
+                    <a href="#" class="" data-translate="for_creators">For Creators</a>
                 </li>
                 <li class="mb-3">
-                    <a href="#" class="has-submenu" id="about-menu">About</a>
+                    <a href="#" class="has-submenu" id="about-menu" data-translate="about">About</a>
                     <ul class="ps-3 list-unstyled sub-menu" id="about-submenu">
-                        <li><a href="#" class="">Our Team</a></li>
-                        <li><a href="#" class="">About Us</a></li>
+                        <li><a href="/team" class="" data-translate="our_team">Our Team</a></li>
+                        <li><a href="#" class="" data-translate="about_us">About Us</a></li>
                     </ul>
                 </li>
                 <li class="mb-3">
-                    <a href="#" class="has-submenu" id="legal-menu">Legal</a>
+                    <a href="#" class="has-submenu" id="legal-menu" data-translate="legal">Legal</a>
                     <ul class="ps-3 list-unstyled sub-menu" id="legal-submenu">
-                        <li><a href="#" class="">Contact Us</a></li>
-                        <li><a href="#" class="">Privacy Policy</a></li>
-                        <li><a href="#" class="">Payment Policy</a></li>
-                        <li><a href="#" class="">Piracy Policy</a></li>
-                        <li><a href="#" class="">Terms and Conditions</a></li>
+                        <li><a href="#" class="" data-translate="contact_us">Contact Us</a></li>
+                        <li><a href="#" class="" data-translate="privacy_policy">Privacy Policy</a></li>
+                        <li><a href="#" class="" data-translate="payment_policy">Payment Policy</a></li>
+                        <li><a href="#" class="" data-translate="piracy_policy">Piracy Policy</a></li>
+                        <li><a href="#" class="" data-translate="terms_and_conditions">Terms and Conditions</a></li>
                     </ul>
                 </li>
                 <li class="mb-3">
-                    <a href="#" class="">Help & Support</a>
+                    <a href="#" class="" data-translate="help_support">Help & Support</a>
                 </li>
             </ul>
             <footer class="mt-4 text-center">
-                <p>Made with <span class="text-danger">❤️</span> in Pakistan</p>
+                <p data-translate="made_with_love">Made with <span class="text-danger">❤️</span> in Pakistan</p>
             </footer>
         </div>
     </div>
@@ -109,10 +112,10 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6 mb-4">
-                    <a href="/Home" class="logo"> <span>AUDIO</span><span>X</span></a>
-                    <p>AudioX is a unique audiobook platform that provides audiobooks in multiple languages. Our mission is to make reading easier and more accessible for people across Pakistan and beyond, by offering content in various regional languages.</p>
+                    <a href="/Home" class="logo"> <span data-translate="audio">AUDIO</span><span data-translate="x">X</span></a>
+                    <p data-translate="footer_about">AudioX is a unique audiobook platform that provides audiobooks in multiple languages. Our mission is to make reading easier and more accessible for people across Pakistan and beyond, by offering content in various regional languages.</p>
                     <hr class="bg-white">
-                    <h5 class="fw-bold">FOLLOW US ON</h5>
+                    <h5 class="fw-bold" data-translate="follow_us">FOLLOW US ON</h5>
                     <div class="social-icons">
                         <a href="#" class="text-white mx-2" title="Facebook"><i class="fab fa-facebook-f"></i></a>
                         <a href="#" class="text-white mx-2" title="Instagram"><i class="fab fa-instagram"></i></a>
@@ -122,48 +125,49 @@
                 <div class="col-md-6 mb-4">
                     <div class="row">
                         <div class="col-3">
-                            <h5 class="fw-bold">COMPANY</h5>
+                            <h5 class="fw-bold" data-translate="company">COMPANY</h5>
                             <ul class="list-unstyled">
-                                <li><a href="#" class="text-white text-decoration-none">About Us</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Careers</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Contact</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="about_us">About Us</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="careers">Careers</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="contact">Contact</a></li>
                             </ul>
                         </div>
                         <div class="col-3">
-                            <h5 class="fw-bold">GENERAL</h5>
+                            <h5 class="fw-bold" data-translate="general">GENERAL</h5>
                             <ul class="list-unstyled">
-                                <li><a href="#" class="text-white text-decoration-none">Privacy Policy</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Terms & Conditions</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">FAQ</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="privacy_policy">Privacy Policy</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="terms_and_conditions">Terms & Conditions</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="faq">FAQ</a></li>
                             </ul>
                         </div>
                         <div class="col-3">
-                            <h5 class="fw-bold">LEGAL</h5>
+                            <h5 class="fw-bold" data-translate="legal">LEGAL</h5>
                             <ul class="list-unstyled">
-                                <li><a href="#" class="text-white text-decoration-none">Licensing</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Copyright</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Terms of Service</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="licensing">Licensing</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="copyright">Copyright</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="terms_of_service">Terms of Service</a></li>
                             </ul>
                         </div>
                         <div class="col-3">
-                            <h5 class="fw-bold">GENRES</h5>
+                            <h5 class="fw-bold" data-translate="genres">GENRES</h5>
                             <ul class="list-unstyled">
-                                <li><a href="#" class="text-white text-decoration-none">Fiction</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Non-Fiction</a></li>
-                                <li><a href="#" class="text-white text-decoration-none">Science</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="fiction">Fiction</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="non_fiction">Non-Fiction</a></li>
+                                <li><a href="#" class="text-white text-decoration-none" data-translate="science">Science</a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="text-center py-3 copyright">
-                <p>&copy; 2025 AudioX. All Rights Reserved.</p>
+                <p data-translate="copyright_text">&copy; 2025 AudioX. All Rights Reserved.</p>
             </div>
         </div>
     </footer>
 
     <script src="{% static 'js/slider-menu.js' %}"></script>
     <script src="{% static 'js/voice-search.js' %}"></script>
+    <script src="{% static 'js/language-translate.js' %}"></script>
 </body>
 
 </html>
