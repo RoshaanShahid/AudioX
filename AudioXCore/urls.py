@@ -8,7 +8,17 @@ from django.shortcuts import redirect
 urlpatterns = [
     path('admin/', admin.site.urls),  # Admin URL included once
     path('Home/', views.home, name='home'),  # Your custom index view
-    path('team/', views.team, name='team'),
+    path('ourteam/', views.ourteam, name='ourteam'),
+    path('paymentpolicy/', views.paymentpolicy, name='paymentpolicy'),
+    path('privacypolicy/', views.privacypolicy, name='privacypolicy'),
+    path('piracypolicy/', views.piracypolicy, name='piracypolicy'),
+    path('termsandconditions/', views.termsandconditions, name='termsandconditions'),
+    path('aboutus/', views.aboutus, name='aboutus'),
+    path('contactus/', views.contactus, name='contactus'),
+
+
+
+
 
     # Redirect from the root URL (/) to /Home
     path('', lambda request: redirect('/Home/'), name='home_redirect'),

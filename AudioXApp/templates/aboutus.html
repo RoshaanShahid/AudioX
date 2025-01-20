@@ -1,0 +1,145 @@
+{% extends "homepage.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" type="text/css" href="{% static 'aboutus.css' %}">
+<main>
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Listen what you love, <br> AUDIOX Premium is here..</h1>
+                    <p>Pakistan's biggest audio streaming platform.</p>
+                    <button>SUBSCRIBE NOW</button>
+                </div>
+                <div class="hero-image">
+                    <img src="{% static 'images/hero_image.png' %}" alt="AUDIOX Premium">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="why-audiox">
+        <div class="container">
+            <h2>Why trust AUDIOX?</h2>
+            <div class="reasons">
+                <div class="reason">
+                    <h3>20 Cr+</h3>
+                    <p>Minutes of Streaming</p>
+                </div>
+                <div class="reason">
+                    <h3>50+</h3>
+                    <p>Categories</p>
+                </div>
+                <div class="reason">
+                    <h3>10+</h3>
+                    <p>Languages</p>
+                </div>
+                <div class="reason">
+                    <h3>50 Lac+</h3>
+                    <p>Listeners</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="audiox-premium">
+        <div class="container">
+            <h2>AUDIOX Premium</h2>
+            <div class="premium-items">
+                <div class="premium-item">
+                    <img src="{% static 'images/book1.png' %}" alt="Book 1">
+                    <p>Book</p>
+                </div>
+                <div class="premium-item">
+                    <img src="{% static 'images/book2.png' %}" alt="Book 2">
+                    <p>Book</p>
+                </div>
+                <div class="premium-item">
+                    <img src="{% static 'images/book3.png' %}" alt="Book 3">
+                    <p>Book</p>
+                </div>
+                <div class="premium-item">
+                    <img src="{% static 'images/book4.png' %}" alt="Book 4">
+                    <p>Book</p>
+                </div>
+                <div class="premium-item">
+                    <img src="{% static 'images/book5.png' %}" alt="Book 5">
+                    <p>Book</p>
+                </div>
+                <div class="premium-item">
+                    <img src="{% static 'images/book6.png' %}" alt="Book 6">
+                    <p>Book</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="testimonials">
+        <div class="container">
+            <h2>What listeners have to say?</h2>
+            <div class="testimonial-list">
+                <div class="testimonial">
+                    <div class="user-info">
+                        <img src="{% static 'images/user1.jpg' %}" alt="User 1">
+                        <h4>User Name 1</h4>
+                    </div>
+                    <p>"This is a very good app. I really like it, this is amazing. Guys, you all should try this. It has many good stories. I always use this app."</p>
+                </div>
+                <div class="testimonial">
+                    <div class="user-info">
+                        <img src="{% static 'images/user2.jpg' %}" alt="User 2">
+                        <h4>User Name 2</h4>
+                    </div>
+                    <p>"Really, I can't explain how I feel after using this app. It has many stories that I can relate with my life. It's very easy to use. Thank you."</p>
+                </div>
+                <div class="testimonial">
+                    <div class="user-info">
+                        <img src="{% static 'images/user3.jpg' %}" alt="User 3">
+                        <h4>User Name 3</h4>
+                    </div>
+                    <p>"It has many stories in it and it's very good for us. I think this is a very nice app for all. It has good audio quality, best app I have ever seen."</p>
+                </div>
+                <div class="testimonial">
+                    <div class="user-info">
+                        <img src="{% static 'images/user4.jpg' %}" alt="User 4">
+                        <h4>User Name 4</h4>
+                    </div>
+                    <p>"AUDIOX helped me a lot to stay focused on my studies. I would recommend it to all the students. The stories are very motivational."</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="creators">
+        <div class="container">
+            <h2>Our Creators</h2>
+            <div class="creator-list">
+                <div class="creator">
+                    <img src="{% static 'images/creator1.png' %}" alt="Creator 1">
+                    <p>Creator Name 1</p>
+                </div>
+                <div class="creator">
+                    <img src="{% static 'images/creator2.png' %}" alt="Creator 2">
+                    <p>Creator Name 2</p>
+                </div>
+                <div class="creator">
+                    <img src="{% static 'images/creator3.png' %}" alt="Creator 3">
+                    <p>Creator Name 3</p>
+                </div>
+                <div class="creator">
+                    <img src="{% static 'images/creator4.png' %}" alt="Creator 4">
+                    <p>Creator Name 4</p>
+                </div>
+                <div class="creator">
+                    <img src="{% static 'images/creator5.png' %}" alt="Creator 5">
+                    <p>Creator Name 5</p>
+                </div>
+                <div class="creator">
+                    <img src="{% static 'images/creator6.png' %}" alt="Creator 6">
+                    <p>Creator Name 6</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}

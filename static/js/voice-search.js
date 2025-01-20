@@ -1,5 +1,5 @@
-let isRecording = false;  // Flag to track recording state
-let recognition;  // Global variable for speech recognition instance
+let isRecording = false;  
+let recognition;  
 const searchInput = document.getElementById('search-input');
 const voiceButton = document.getElementById('voice-search-btn');
 const searchButton = document.getElementById('search-btn');

@@ -12,7 +12,18 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('Home/', views.Index, name='Home'),
-    path('team/', views.team, name='team'),] 
+    path('ourteam/', views.ourteam, name='ourteam'),
+    path('paymentpolicy/', views.paymentpolicy, name='paymentpolicy'),
+    path('privacypolicy/', views.privacypolicy, name='privacypolicy'),
+    path('piracypolicy/', views.piracypolicy, name='piracypolicy'),
+    path('termsandconditions/', views.termsandconditions, name='termsandconditions'),
+    path('aboutus/', views.aboutus, name='aboutus'),
+    path('contactus/', views.contactus, name='contactus'),
+
+
+
+
+    ] 
 
 # Static files for media and audio
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

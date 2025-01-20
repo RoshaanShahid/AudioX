@@ -42,6 +42,26 @@
     padding-bottom: 20px;
     border-bottom: 2px solid #f0f0f0;
     margin-bottom: 25px;
+    position: relative;
+    /* For positioning the circle */
+}
+
+/* Circle behind the logo */
+.slider-header::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 25px;
+    transform: translateY(-50%);
+    width: 45px;
+    /* Adjust size as needed */
+    height: 45px;
+    /* Adjust size as needed */
+    border-radius: 50%;
+    background-color: #f5d547;
+    /* Circle color - adjust as needed */
+    z-index: -1;
+    /* Behind the logo */
 }
 
 .slider-header .logo {
@@ -67,6 +87,8 @@
     border: none;
     cursor: pointer;
     transition: color 0.3s ease;
+    z-index: 1001;
+    /* Ensure close button is above the circle */
 }
 
 .slider-header button:hover {
@@ -96,6 +118,14 @@
     /* Separator line */
     padding: 15px 0;
     /* Padding for each item */
+    transition: transform 0.3s ease;
+    /* Add transition for animation */
+}
+
+/* Hover animation for menu items */
+.slider-content li:hover {
+    transform: translateX(5px);
+    /* Move item slightly to the right on hover */
 }
 
 .slider-content li:last-child {
@@ -111,10 +141,24 @@
     /* Font weight */
     font-size: 1.1rem;
     transition: color 0.3s ease;
-    display: block;
-    /* For full-width click */
+    display: flex;
+    /* Use flexbox for alignment */
+    align-items: center;
+    /* Center items vertically */
     padding: 5px 0;
     /* Padding for links */
+}
+
+/* Added styles for icons in menu items */
+.slider-content a i {
+    margin-right: 15px;
+    /* Space between icon and text */
+    width: 24px;
+    /* Fixed width for icons */
+    text-align: center;
+    /* Center the icons */
+    transition: transform 0.3s ease;
+    /* Smooth transition for hover effect */
 }
 
 .slider-content li:first-child a {
@@ -125,6 +169,12 @@
 .slider-content a:hover {
     color: #091e65;
     /* Hover color */
+}
+
+/* Hover effect for icons */
+.slider-content a:hover i {
+    transform: scale(1.1);
+    /* Slightly increase size on hover */
 }
 
 /* Login/Signup Section */
@@ -147,16 +197,60 @@
     /* Remove the extra separator */
 }
 
-/* Buy Premium */
-.slider-content .buy-premium {
-    font-weight: 700;
-    /* Bold */
-    color: #091e65;
-    margin-bottom: 0px;
+/* Feature Items Styling (PDF to Audio and Creator Portal) */
+.feature-item {
+    background-image: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+    /* Subtle gradient background */
+    border-radius: 8px;
+    /* Rounded corners */
+    padding: 15px 20px;
+    /* Increased padding */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    /* Smooth transition */
+    margin-bottom: 20px;
+    /* Space between items */
 }
 
-.slider-content .buy-premium i {
+.feature-item:hover {
+    transform: translateY(-3px);
+    /* Slight lift on hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    /* Increased shadow on hover */
+}
+
+.feature-link {
+    display: flex;
+    /* Use flexbox for alignment */
+    align-items: center;
+    /* Center items vertically */
     color: #091e65;
+    /* Darker text color */
+    font-weight: 700;
+    /* Bold font weight */
+    text-decoration: none;
+    /* Remove underline */
+}
+
+.feature-link i {
+    font-size: 24px;
+    /* Larger icon size */
+    margin-right: 15px;
+    /* Space between icon and text */
+    transition: transform 0.3s ease;
+    /* Add transition for animation */
+}
+
+/* Rotating animation for feature item icons */
+.feature-item:hover .feature-link i {
+    transform: rotate(360deg);
+    /* Rotate icon on hover */
+}
+
+.feature-link span {
+    font-size: 1.2rem;
+    /* Larger text size */
 }
 
 /* Dropdown Menus */
@@ -190,17 +284,35 @@
 .slider-content .sub-menu li {
     border-bottom: none;
     /* Remove border from submenu items */
-    padding: 5px 0;
-    /* Adjust padding as needed */
+    padding: 10px 0;
+    /* Increased padding top and bottom */
+    display: flex;
+    /* Use flexbox for centering */
+    align-items: center;
+    /* Vertically center text */
+    justify-content: flex-start;
+    /* Align items to the start (left) */
 }
 
 .slider-content .sub-menu li a {
-    font-size: 0.9rem;
-    /* Smaller font size for submenu items */
+    font-size: 1rem;
+    /* Slightly larger font size */
     font-weight: 600;
-    /* Adjust font weight as needed */
+    /* Make font a bit bolder */
     color: #333;
-    /* Example color, adjust as needed */
+    /* Darker text for better contrast */
+    text-align: left;
+    /* Ensure text is left-aligned */
+    width: 100%;
+    /* Make the anchor tag fill the width */
+}
+
+/* Hover effect for submenu items */
+.slider-content .sub-menu li a:hover {
+    color: #091e65;
+    /* Change color on hover - you can adjust this */
+    text-decoration: underline;
+    /* Optional: Add underline on hover */
 }
 
 /* Footer */
@@ -212,22 +324,96 @@
     color: #000000;
     /* Black */
     padding-bottom: 20px;
+    /* Adjust as needed */
+    padding-top: 30px;
+    /* Adjust as needed */
+    position: relative;
+    /* To position the pseudo-element */
 }
 
-.slider-content footer .text-danger {
-    color: #ff5c39;
-    /* Heart color - retain original if needed */
-}
-
-/* Update "Made with" text */
+/* "Made with" text container */
 .slider-content footer p {
     margin: 0;
-    /* Remove default margin if any */
-    font-size: 1rem;
-    font-weight: bold;
-    color: #ffffff;
+    font-size: 1.1rem;
+    /* Slightly larger text */
+    font-weight: 600;
+    /* Bolder text */
+    color: #f5f5f5;
+    background-image: linear-gradient(to right, #091e65, #4caf50);
+    /* Gradient background */
+    padding: 15px 25px;
+    /* More padding */
+    border-radius: 50px;
+    /* Pill shape */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    /* More prominent shadow */
+    display: inline-block;
+    /* To wrap the background around the text */
+    position: relative;
+    /* For positioning the flags */
 }
 
+/* Pakistani Flag Before */
+.slider-content footer p::before {
+    content: '';
+    position: absolute;
+    left: -35px;
+    /* Adjust position as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 25px;
+    /* Adjust flag size */
+    height: 18px;
+    /* Adjust flag size */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Flag_of_Pakistan.svg/1200px-Flag_of_Pakistan.svg.png' viewBox='0 0 600 400'%3E%3Cpath fill='%2301411C' d='M0 0h600v400H0z'/%3E%3Cpath fill='%23fff' d='M180 0h60v400h-60zM99.5 147.7c-49.6 0-90 40.4-90 90s40.4 90 90 90 90-40.4 90-90-40.4-90-90-90z'/%3E%3Cpath d='M185.2 277c-4 1.3-8.2 2-12.5 2-39.8 0-72-32.3-72-72.3s32.2-72.2 72-72.2c4.3 0 8.5.7 12.5 2-5.4-18.4-22.5-32-42.8-32-24.9 0-45 20.2-45 45s20.2 45 45 45c20.3 0 37.4-13.6 42.8-32z' fill='%23fff'/%3E%3C/svg%3E");
+    /* Replace with your actual flag image path if needed */
+    background-size: cover;
+    border: 1px solid #ddd;
+    /* Add a subtle border */
+}
+
+/* Pakistani Flag After */
+.slider-content footer p::after {
+    content: '';
+    position: absolute;
+    right: -35px;
+    /* Adjust position as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 25px;
+    /* Adjust flag size */
+    height: 18px;
+    /* Adjust flag size */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Flag_of_Pakistan.svg/1200px-Flag_of_Pakistan.svg.png' viewBox='0 0 600 400'%3E%3Cpath fill='%2301411C' d='M0 0h600v400H0z'/%3E%3Cpath fill='%23fff' d='M180 0h60v400h-60zM99.5 147.7c-49.6 0-90 40.4-90 90s40.4 90 90 90 90-40.4 90-90-40.4-90-90-90z'/%3E%3Cpath d='M185.2 277c-4 1.3-8.2 2-12.5 2-39.8 0-72-32.3-72-72.3s32.2-72.2 72-72.2c4.3 0 8.5.7 12.5 2-5.4-18.4-22.5-32-42.8-32-24.9 0-45 20.2-45 45s20.2 45 45 45c20.3 0 37.4-13.6 42.8-32z' fill='%23fff'/%3E%3C/svg%3E");
+    /* Replace with your actual flag image path if needed */
+    background-size: cover;
+    border: 1px solid #ddd;
+    /* Add a subtle border */
+}
+
+/* Heart and Text Animation */
+.slider-content footer .text-danger {
+    color: #ff5c39;
+    /* Heart color */
+    animation: pulse 1.5s infinite;
+    /* Add a pulsing animation */
+    display: inline-block;
+    /* To allow scaling */
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.3);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
 /* Custom Scrollbar Styling */
 #slider-menu::-webkit-scrollbar {
     width: 8px;
