@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import User
-from django.contrib.auth import authenticate, login
-from django.http import HttpResponseRedirect
-from django.contrib.auth import logout
+from django.urls import reverse
+from django.db.models import Q
+from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as auth_logout
 
 def home(request):
     return render(request, 'homepage.html')
@@ -57,25 +58,34 @@ def login(request):
         login_identifier = request.POST.get('loginIdentifier')
         password = request.POST.get('password')
 
-        # Check if the user exists in the database
-        if User.objects.filter(email=login_identifier).exists():
-            user = User.objects.get(email=login_identifier)
-        elif User.objects.filter(username=login_identifier).exists():
-            user = User.objects.get(username=login_identifier)
-        else:
-            messages.error(request, "Incorrect email or username")
-            return render(request, 'login.html')
+        user = None
 
-        # Authenticate the user only once
-        user = authenticate(request, username=user.username, password=password)
+        # Try to find the user by email first
+        if '@' in login_identifier:
+            try:
+                user = User.objects.get(email=login_identifier)
+            except User.DoesNotExist:
+                pass  # User not found by email, try username next
 
-        if user is not None:
-            login(request, user)
-            messages.success(request, "Logged in successfully!")
-            return redirect('home')  # Redirect to the homepage after login
+        # If user not found by email, try username
+        if not user:
+            try:
+                user = User.objects.get(username=login_identifier)
+            except User.DoesNotExist:
+                pass  # User not found by username either
+
+        # If a user is found, check the password
+        if user:
+            if user.check_password(password):  # Use check_password
+                auth_login(request, user)
+                messages.success(request, "Logged in successfully!")
+                return redirect('home')
+            else:
+                messages.error(request, "Incorrect password")  # Password doesn't match
         else:
-            messages.error(request, "Incorrect password")
-            return render(request, 'login.html')
+            messages.error(request, "Incorrect email or username")  # User not found
+
+        return render(request, 'login.html')
 
     return render(request, 'login.html')
 
@@ -101,6 +111,5 @@ def contactus(request):
     return render(request, 'contactus.html')
 
 def logout_view(request):
-    logout(request)
-    messages.success(request, "You have been logged out.")
-    return redirect('home')  # Redirect to the homepage after logout
+    auth_logout(request)  # Use the imported auth_logout
+    return redirect('home')  # Or any other URL name
