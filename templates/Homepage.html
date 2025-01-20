@@ -1,5 +1,4 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -22,13 +21,6 @@
     <link rel="stylesheet" href="{% static 'css/termsandconditions.css' %}">
     <link rel="stylesheet" href="{% static 'css/aboutus.css' %}">
     <link rel="stylesheet" href="{% static 'css/ourteamstyle.css' %}">
-
-
-
-
-
-
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
@@ -64,8 +56,22 @@
                     </select>
                 </div>
                 <button class="btn btn-coins me-2">🪙 GET PREMIUM</button>
-                <a href="/login" class="btn btn-login me-2">Login</a>
-                <a href="/signup" class="btn btn-signup">Signup</a>
+                {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <a href="#" class="btn btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">My Profile</a></li>
+                            <li><a class="dropdown-item" href="#">Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="/login" class="btn btn-login me-2">Login</a>
+                    <a href="/signup" class="btn btn-signup">Signup</a>
+                {% endif %}
             </div>
         </div>
     </header>
@@ -82,9 +88,13 @@
         <div class="slider-content px-3 py-2">
             <ul class="list-unstyled">
                 <li class="mb-3 login-signup-section">
-                    <a href="/login" class="d-block"><i
-                            class="fas fa-sign-in-alt me-2"></i>Login / Signup</a>
-                    <small class="text-muted">For a better & personalized experience</small>
+                    {% if user.is_authenticated %}
+                        <a href="#" class="d-block"><i class="fas fa-user-circle me-2"></i>{{ user.username }}</a>
+                        <small class="text-muted">Logged in</small>
+                    {% else %}
+                        <a href="/login" class="d-block"><i class="fas fa-sign-in-alt me-2"></i>Login / Signup</a>
+                        <small class="text-muted">For a better & personalized experience</small>
+                    {% endif %}
                 </li>
                 <hr class="bg-light">
                 <li class="mb-3 feature-item">

@@ -12,25 +12,35 @@
 </head>
 
 <body>
-    <div class="logo" >AudioX</div>
+    <div class="logo">AudioX</div>
     <div class="divider"></div>
 
     <div class="login-wrapper">
         <div class="container">
             <h2>Login to your account</h2>
-            <form id="loginForm">
+
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
                 <div class="input-group">
                     <label for="loginIdentifier">Email or Username</label>
                     <input type="text" id="loginIdentifier" name="loginIdentifier"
                         placeholder="Enter your email or username" required>
                 </div>
-
+           
                 <div class="input-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" placeholder="Enter your password" required>
                     <i class="fas fa-eye show-password-icon" id="togglePassword"></i>
                 </div>
-
+           
                 <button type="submit" class="btn">Login</button>
             </form>
         </div>
@@ -51,7 +61,7 @@
     </div>
 
     <div class="footer">
-        Not a member yet? <a href="/signup">Sign up</a>
+        Not a member yet? <a href="{% url 'signup' %}">Sign up</a>
     </div>
 
     <script src="{% static 'js/signup.js' %}"></script>

@@ -5,9 +5,13 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
-SECRET_KEY = 'django-insecure-jr6x#c+#^!3ls+&5!jw(vxsvg$q)cpy96qyf28hxx*%7lk_g@w'
-DEBUG = True
-ALLOWED_HOSTS = []
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-jr6x#c+#^!3ls+&5!jw(vxsvg$q)cpy96qyf28hxx*%7lk_g@w')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True  # Set to False in production
+
+ALLOWED_HOSTS = ['*']  # Add your domain or IP address in production
 
 # Application definition
 INSTALLED_APPS = [
@@ -35,7 +39,7 @@ ROOT_URLCONF = 'AudioXCore.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Global templates folder
+        'DIRS': [BASE_DIR / 'templates'],  # Global templates folder
         'APP_DIRS': True,  # Allows searching in each app's templates folder
         'OPTIONS': {
             'context_processors': [
@@ -50,11 +54,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'AudioXCore.wsgi.application'
 
-# Database settings
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'audix_db',
+        'USER': 'audiox_user',
+        'PASSWORD': 'hello123',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+        'OPTIONS': {
+            'options': '-c search_path=audiox_schema,public', 
+        },
     }
 }
 
@@ -84,8 +94,11 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Audio files (separate from other media)
-AUDIO_URL = '/audio/'
-AUDIO_ROOT = BASE_DIR / 'audio'
+AUDIO_URL = '/audio/'  # You can keep this if you have a specific use case
+AUDIO_ROOT = BASE_DIR / 'audio' # You can keep this if you have a specific use case
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom user model
+AUTH_USER_MODEL = 'AudioXApp.User'  # Replace 'AudioXApp' with your app name
