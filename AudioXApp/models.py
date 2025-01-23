@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.conf import settings
 
 class CustomUserManager(BaseUserManager):
     """
@@ -43,9 +44,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     class SubscriptionType(models.TextChoices):
         FREE = 'FR', _('Free')
         PREMIUM = 'PR', _('Premium')
-        ENTERPRISE = 'EN', _('Enterprise')
 
-    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_pic = models.ImageField(
+        upload_to='profile_pics/',
+        blank=True,
+        null=True,
+        default=settings.STATIC_URL + 'img/default_profile.png'  # Default from static
+    )
     userid = models.AutoField(primary_key=True)
     email = models.EmailField(_("email address"), unique=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)

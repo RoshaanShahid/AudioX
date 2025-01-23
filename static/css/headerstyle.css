@@ -17,8 +17,10 @@ header {
   align-items: center;
   font-size: 1.8rem;
   font-weight: bold;
-  position: relative; /* For positioning the circle */
-  margin-right: 30px; /* Pushes the logo to the left */
+  position: relative;
+  /* For positioning the circle */
+  margin-right: 30px;
+  /* Pushes the logo to the left */
 }
 
 /* Yellow Circle behind Logo */
@@ -28,11 +30,15 @@ header {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 50px; /* Adjust size as needed */
-  height: 50px; /* Adjust size as needed */
+  width: 50px;
+  /* Adjust size as needed */
+  height: 50px;
+  /* Adjust size as needed */
   border-radius: 50%;
-  background-color: #f5d547; /* Yellow circle color */
-  z-index: -1; /* Behind the logo text */
+  background-color: #f5d547;
+  /* Yellow circle color */
+  z-index: -1;
+  /* Behind the logo text */
 }
 
 .logo span:first-child {
@@ -219,4 +225,87 @@ header {
 .btn-signup:hover {
   background-color: #091E65;
   color: white;
+}
+
+.btn-coins i {
+  font-size: 1.2rem; /* Adjust the size as needed */
+  margin-right: 5px; /* Add some space between the icon and the text */
+  vertical-align: middle; /* Align the icon with the text */
+}
+
+/* Style for the Get Premium button in the header */
+.btn-coins {
+  background-color: #091E65; /* Gold color for premium button */
+  color: #fff; /* Dark text for contrast */
+  padding: 8px 15px;
+  border-radius: 20px; /* Rounded corners for modern look */
+  font-weight: 600;
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition for hover effects */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+}
+
+.btn-coins:hover {
+  background-color: #ffffff; /* Lighter gold color on hover */
+  transform: translateY(-2px); /* Slightly raise the button on hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25); /* Increase shadow on hover */
+  color: #000000;
+  border: 2px solid #091E65;
+}
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 25px;
+  padding: 5px 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-bar input[type="text"] {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 1rem;
+  color: #333;
+  margin-right: 10px;
+}
+
+.search-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 10px;
+}
+
+.search-icon-btn i {
+  font-size: 1.2rem;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.search-icon-btn:hover i {
+  color: #007bff;
+}
+
+.voice-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 10px;
+}
+
+.mic-icon {
+  width: 35px;
+  transition: transform 0.3s ease;
+}
+
+.voice-icon-btn:hover .mic-icon {
+  transform: scale(1.1);
 }

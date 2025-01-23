@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="{% static 'css/signupstyle.css' %}">
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
-
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
@@ -31,8 +30,10 @@
                 </ul>
                 {% endif %}
 
-                <form method="post" action="{% url 'signup' %}">
+                <form method="post" action="{% url 'signup' %}" id="signupForm" data-send-otp-url="{% url 'send_otp' %}">
                     {% csrf_token %}
+                    <input type="hidden" id="generatedOtp" name="generatedOtp">
+
                     <div class="input-group step" id="step1">
                         <label for="full-name">Full Name</label>
                         <input type="text" id="full-name" name="full-name" placeholder="Enter your full name" required>
@@ -58,6 +59,14 @@
                     </div>
 
                     <div class="input-group step" id="step5" style="display: none;">
+                        <label for="otp">Enter OTP</label>
+                        <input type="text" id="otp" name="otp" placeholder="Enter 4-digit OTP" required>
+                        <div class="validation-message" id="otpError"></div>
+                        <div id="otpMessage"></div>
+                        <button type="button" class="btn" id="resendOtpButton">Resend OTP</button>
+                    </div>
+
+                    <div class="input-group step" id="step6" style="display: none;">
                         <label for="password">Password</label>
                         <input type="password" id="password" name="password" placeholder="Must have at least 8 characters"
                             required>
@@ -83,7 +92,7 @@
                         </div>
                     </div>
 
-                    <div class="input-group step" id="step6" style="display: none;">
+                    <div class="input-group step" id="step7" style="display: none;">
                         <label for="confirm-password">Confirm Password</label>
                         <input type="password" id="confirm-password" name="confirm-password"
                             placeholder="Confirm your password" required>
@@ -92,7 +101,7 @@
 
                     <button type="button" class="btn" id="previousButton" style="display: none;">Previous</button>
                     <button type="button" class="btn" id="nextButton">Next</button>
-
+                    <button type="button" class="btn" id="verifyOtpButton" style="display: none;">Verify OTP</button>
                     <button type="submit" class="btn" id="submitButton" style="display: none;">Sign Up</button>
                 </form>
 
@@ -115,10 +124,10 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{% static 'js/signup.js' %}"></script>
 </body>
 

@@ -70,10 +70,12 @@ DATABASES = {
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,  # Set the minimum length to 5
+        }
+    },
 ]
 
 # Internationalization
@@ -101,4 +103,15 @@ AUDIO_ROOT = BASE_DIR / 'audio' # You can keep this if you have a specific use c
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom user model
-AUTH_USER_MODEL = 'AudioXApp.User'  # Replace 'AudioXApp' with your app name
+AUTH_USER_MODEL = 'AudioXApp.User' 
+
+# settings.py
+LOGIN_URL = '/login/'
+
+# Email Settings for SMTP (Using Gmail as an example)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Use your email provider's SMTP server
+EMAIL_PORT = 587  # Common ports: 587 (TLS) or 465 (SSL)
+EMAIL_USE_TLS = True  # Use TLS for secure connection
+EMAIL_HOST_USER = '6mattacker@gmail.com'  # Your actual email
+EMAIL_HOST_PASSWORD = 'xqkwuogffhbhpbqw'  # Your App Password

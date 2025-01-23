@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AudioX - Made in Pakistan{% endblock %}</title>
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
@@ -23,10 +23,15 @@
     <link rel="stylesheet" href="{% static 'css/ourteamstyle.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
+    {% if user.is_authenticated %}
+    <link rel="stylesheet" href="{% static 'css/loggedinuserheader.css' %}">
+    <link rel="stylesheet" href="{% static 'css/loggedinuserslidermenu.css' %}">
+    {% endif %}
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 
-<body>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
     {% block header %}
     <header class="navbar navbar-expand-lg shadow-sm bg-white">
         <div class="container-fluid py-3">
@@ -35,20 +40,19 @@
             </button>
             <a href="/Home" class="logo"> <span>AUDIO</span><span>X</span></a>
 
-            <div class="search-container mx-3">
-                <div class="search-bar position-relative">
-                    <input type="text" id="search-input" placeholder="Search audiobooks & stories"
-                        aria-label="Search">
-                    <button class="search-icon-btn" id="search-btn" title="Search">
-                        <i class="fas fa-search"></i>
+            <div class="d-flex align-items-center ms-auto">
+                <div class="search-container mx-3">
+                    <div class="search-bar position-relative">
+                        <input type="text" id="search-input" placeholder="Search audiobooks & stories" aria-label="Search">
+                        <button class="search-icon-btn" id="search-btn" title="Search">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <button class="voice-icon-btn" id="voice-search-btn" title="Search by Voice">
+                        <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="mic-icon">
                     </button>
                 </div>
-                <button class="voice-icon-btn" id="voice-search-btn" title="Search by Voice">
-                    <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="mic-icon">
-                </button>
-            </div>
 
-            <div class="d-flex align-items-center">
                 <div class="language-selector me-3">
                     <select id="language-selector">
                         <option value="en">English</option>
@@ -57,20 +61,29 @@
                 </div>
                 <button class="btn btn-coins me-2">🪙 GET PREMIUM</button>
                 {% if user.is_authenticated %}
-                    <div class="dropdown">
-                        <a href="#" class="btn btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="dropdown">
+                    <a href="#" class="btn btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if user.profile_pic %}
+                            <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="profile-picture-icon">
+                        {% else %}
                             <i class="fas fa-user-circle"></i>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#">My Profile</a></li>
-                            <li><a class="dropdown-item" href="#">Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
-                        </ul>
-                    </div>
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/myprofile">My Profile</a></li>
+                        <li><a class="dropdown-item" href="">Manage Subscription</a></li>
+                        <li><a class="dropdown-item" href="">Billing History</a></li>
+                        <li><a class="dropdown-item" href="">Buy Coins</a></li>
+                        <li><a class="dropdown-item" href="">My Wallet</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                    </ul>
+                </div>
                 {% else %}
-                    <a href="/login" class="btn btn-login me-2">Login</a>
-                    <a href="/signup" class="btn btn-signup">Signup</a>
+                <a href="/login" class="btn btn-login me-2">Login</a>
+                <a href="/signup" class="btn btn-signup">Signup</a>
                 {% endif %}
             </div>
         </div>
@@ -89,54 +102,77 @@
             <ul class="list-unstyled">
                 <li class="mb-3 login-signup-section">
                     {% if user.is_authenticated %}
-                        <a href="#" class="d-block"><i class="fas fa-user-circle me-2"></i>{{ user.username }}</a>
-                        <small class="text-muted">Logged in</small>
+                    <div class="user-info d-flex flex-column align-items-center">
+                        <div class="profile-picture-wrapper">
+                            {% if user.profile_pic %}
+                                <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="profile-picture">
+                            {% else %}
+                                <div class="default-profile-picture">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="user-names mt-3 text-center">
+                            <a href="#" class="full-name">
+                                {% if user.full_name %}
+                                    {{ user.full_name }}
+                                {% elif user.username %}
+                                    {{ user.username }}
+                                {% else %}
+                                    {{ user.email }}
+                                {% endif %}
+                            </a>
+                            <a href="#" class="username">{{ user.username }}</a>
+                            <a href="#" class="email">Email: {{ user.email }}</a>
+                            <a href="/logout" class="logout-btn mt-3">Logout</a>
+                        </div>
+                    </div>
                     {% else %}
-                        <a href="/login" class="d-block"><i class="fas fa-sign-in-alt me-2"></i>Login / Signup</a>
-                        <small class="text-muted">For a better & personalized experience</small>
+                    <a href="/login" class="d-block"><i class="fas fa-sign-in-alt me-2"></i>Login / Signup</a>
+                    <small class="text-muted">For a better & personalized experience</small>
                     {% endif %}
                 </li>
                 <hr class="bg-light">
                 <li class="mb-3 feature-item">
-                    <a href="#" class="feature-link">
+                    <a href="/Home" class="feature-link">
                         <i class="fas fa-file-pdf me-2" style="color: #ff5722;"></i>
                         <span>Generate Audio from PDF</span>
                     </a>
                 </li>
                 <li class="mb-3 feature-item">
-                    <a href="#" class="feature-link">
+                    <a href="/Home" class="feature-link">
                         <i class="fas fa-users me-2" style="color: #4caf50;"></i>
                         <span>Creator Portal</span>
                     </a>
                 </li>
                 <li class="mb-3">
-                    <a href="#" class="has-submenu" id="about-menu"><i
-                            class="fas fa-info-circle me-2"></i>About</a>
+                    <a href="#" class="has-submenu" id="about-menu"><i class="fas fa-info-circle me-2"></i>About</a>
                     <ul class="ps-3 list-unstyled sub-menu" id="about-submenu">
-                        <li><a href="/ourteam" class=""><i class="fas fa-users me-2"></i>Our Team</a>
+                        <li><a href="/ourteam" class=""><i class="fas fa-users me-2"></i>Our
+                                Team</a>
                         </li>
-                        <li><a href="/aboutus" class=""><i class="fas fa-building me-2"></i>About Us</a>
+                        <li><a href="/aboutus" class=""><i class="fas fa-building me-2"></i>About
+                                Us</a>
                         </li>
                     </ul>
                 </li>
                 <li class="mb-3">
-                    <a href="#" class="has-submenu" id="legal-menu"><i
-                            class="fas fa-gavel me-2"></i>Legal</a>
+                    <a href="#" class="has-submenu" id="legal-menu"><i class="fas fa-gavel me-2"></i>Legal</a>
                     <ul class="ps-3 list-unstyled sub-menu" id="legal-submenu">
-                        <li><a href="/privacypolicy" class=""><i
-                                    class="fas fa-user-secret me-2"></i>Privacy Policy</a></li>
-                        <li><a href="/paymentpolicy" class=""><i
-                                    class="fas fa-money-check-alt me-2"></i>Payment Policy</a></li>
-                        <li><a href="/piracypolicy" class=""><i
-                                    class="fas fa-ban me-2"></i>Piracy Policy</a></li>
-                        <li><a href="/termsandconditions" class=""><i
-                                    class="fas fa-file-contract me-2"></i>Terms and Conditions</a>
+                        <li><a href="/privacypolicy" class=""><i class="fas fa-user-secret me-2"></i>Privacy
+                                Policy</a></li>
+                        <li><a href="/paymentpolicy" class=""><i class="fas fa-money-check-alt me-2"></i>Payment
+                                Policy</a></li>
+                        <li><a href="/piracypolicy" class=""><i class="fas fa-ban me-2"></i>Piracy
+                                Policy</a></li>
+                        <li><a href="/termsandconditions" class=""><i class="fas fa-file-contract me-2"></i>Terms and
+                                Conditions</a>
                         </li>
                     </ul>
                 </li>
                 <li class="mb-3">
-                    <a href="/contactus" class=""><i
-                            class="fas fa-envelope me-2"></i></i>Contact AudioX Support</a>
+                    <a href="/contactus" class=""><i class="fas fa-envelope me-2"></i></i>Contact AudioX
+                        Support</a>
                 </li>
             </ul>
             <footer class="mt-4 text-center">
@@ -146,10 +182,10 @@
     </div>
     {% endblock %}
 
-    <div class="container my-5">
+    <main style="flex-grow: 1;">
         {% block content %}
         {% endblock %}
-    </div>
+    </main>
 
     {% block footer %}
     <footer>
@@ -161,10 +197,8 @@
                     <hr class="bg-white">
                     <h5 class="fw-bold">FOLLOW US ON</h5>
                     <div class="social-icons">
-                        <a href="#" class="text-white mx-2" title="Facebook"><i
-                                class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="text-white mx-2" title="Instagram"><i
-                                class="fab fa-instagram"></i></a>
+                        <a href="https://facebook.com" class="text-white mx-2" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://instagram.com" class="text-white mx-2" title="Instagram"><i class="fab fa-instagram"></i></a>
                     </div>
                 </div>
 
@@ -214,6 +248,7 @@
 
     <script src="{% static 'js/slider-menu.js' %}"></script>
     <script src="{% static 'js/voice-search.js' %}"></script>
+    {% block javascript %}{% endblock %}
 </body>
 
 </html>

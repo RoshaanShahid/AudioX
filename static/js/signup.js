@@ -11,48 +11,75 @@ document.addEventListener('DOMContentLoaded', function () {
     const confirmPasswordError = document.getElementById('confirmPasswordError');
     const passwordStrengthIndicator = document.getElementById('passwordStrengthIndicator');
     const signupForm = document.getElementById('signupForm');
+    const otpField = document.getElementById('otp');
+    const verifyOtpButton = document.getElementById("verifyOtpButton");
+    const resendOtpButton = document.getElementById('resendOtpButton');
+    const otpMessage = document.getElementById('otpMessage');
+    const otpError = document.getElementById('otpError');
 
     let currentStep = 1;
-    const totalSteps = 6; // Update total steps to 6
+    const totalSteps = 7;
     const nextButton = document.getElementById("nextButton");
     const previousButton = document.getElementById("previousButton");
     const submitButton = document.getElementById("submitButton");
 
-    // Initialize intl-tel-input
     const phoneInput = window.intlTelInput(phoneField, {
-        preferredCountries: ['pk'], // Set preferred country to Pakistan
+        preferredCountries: ['pk'],
         separateDialCode: true,
         utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
     });
 
-    // Function to show a specific step
     function showStep(stepNumber) {
         for (let i = 1; i <= totalSteps; i++) {
             document.getElementById('step' + i).style.display = 'none';
         }
         document.getElementById('step' + stepNumber).style.display = 'block';
 
-        if (stepNumber === totalSteps) {
+        // Adjust button visibility for each step
+        if (stepNumber === 4) {
+            // On step 4 (Email), show only Verify OTP button
             nextButton.style.display = 'none';
+            previousButton.style.display = 'inline-block';
+            verifyOtpButton.style.display = 'inline-block';
+            resendOtpButton.style.display = 'none';
+            submitButton.style.display = 'none';
+        } else if (stepNumber === 5) {
+            // On step 5 (OTP), show Resend OTP and Next button
+            nextButton.style.display = 'inline-block'; // Now showing Next button
+            previousButton.style.display = 'inline-block';
+            verifyOtpButton.style.display = 'none';
+            resendOtpButton.style.display = 'inline-block';
+            submitButton.style.display = 'none';
+        } else if (stepNumber === totalSteps) {
+            // On the last step, show only Submit button
+            nextButton.style.display = 'none';
+            previousButton.style.display = 'inline-block';
+            verifyOtpButton.style.display = 'none';
+            resendOtpButton.style.display = 'none';
             submitButton.style.display = 'inline-block';
-        } else {
+        } else if (stepNumber === 6) {
+            // On step 6 (Password), show Next button
             nextButton.style.display = 'inline-block';
+            previousButton.style.display = 'inline-block';
+            verifyOtpButton.style.display = 'none';
+            resendOtpButton.style.display = 'none';
             submitButton.style.display = 'none';
         }
-
-        if (stepNumber === 1) {
-            previousButton.style.display = 'none';
-        } else {
-            previousButton.style.display = 'inline-block';
+        else {
+            // On other steps, show Next and Previous buttons
+            nextButton.style.display = 'inline-block';
+            previousButton.style.display = (stepNumber > 1) ? 'inline-block' : 'none';
+            verifyOtpButton.style.display = 'none';
+            resendOtpButton.style.display = 'none';
+            submitButton.style.display = 'none';
         }
     }
 
-    // Function to validate the fields of the current step
     function validateCurrentStep() {
         let isValid = true;
 
         switch (currentStep) {
-            case 1: // Full Name
+            case 1:
                 if (fullNameField.value.trim() === "") {
                     document.getElementById('fullNameError').textContent = 'Full Name cannot be empty';
                     isValid = false;
@@ -60,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.getElementById('fullNameError').textContent = '';
                 }
                 break;
-            case 2: // Username
+            case 2:
                 const usernamePattern = /^[a-zA-Z][a-zA-Z0-9_]{2,11}$/;
                 if (!usernamePattern.test(usernameField.value)) {
                     usernameError.textContent = 'Username must start with a letter, be 3-12 characters long, and can only include letters, numbers, and underscores.';
@@ -69,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     usernameError.textContent = '';
                 }
                 break;
-            case 3: // Phone number
+            case 3:
                 if (!phoneInput.isValidNumber()) {
                     document.getElementById("phoneError").textContent = "Invalid phone number";
                     isValid = false;
@@ -77,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.getElementById("phoneError").textContent = "";
                 }
                 break;
-            case 4: // Email 
+            case 4:
                 const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
                 if (!emailPattern.test(emailField.value)) {
                     document.getElementById('emailError').textContent = 'Please enter a valid email address.';
@@ -86,7 +113,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.getElementById('emailError').textContent = '';
                 }
                 break;
-            case 5: // Password
+            case 5:
+                if (otpField.value.trim() === "") {
+                    otpError.textContent = 'OTP cannot be empty';
+                    isValid = false;
+                } else {
+                    otpError.textContent = '';
+                }
+                break;
+            case 6:
                 if (passwordField.value.length < 8) {
                     passwordError.textContent = 'Password must be at least 8 characters long.';
                     isValid = false;
@@ -94,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     passwordError.textContent = '';
                 }
                 break;
-            case 6: // Confirm Password
+            case 7:
                 if (passwordField.value !== confirmPasswordField.value) {
                     confirmPasswordError.textContent = 'Passwords do not match.';
                     isValid = false;
@@ -107,7 +142,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return isValid;
     }
 
-    // Function to calculate password strength
     function calculatePasswordStrength(password) {
         if (password.length < 8) {
             return { label: "Weak", color: "red" };
@@ -128,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Function to update password strength indicator
     function updatePasswordStrengthIndicator() {
         const password = passwordField.value;
         const strength = calculatePasswordStrength(password);
@@ -152,23 +185,79 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Event listener for Next Button
+    function generateOTP() {
+        return Math.floor(1000 + Math.random() * 9000);
+    }
+
+    function sendOTP(email, otp) {
+        const sendOtpUrl = document.getElementById('signupForm').getAttribute('data-send-otp-url');
+        $.ajax({
+            url: sendOtpUrl,
+            type: "POST",
+            data: {
+                email: email,
+                otp: otp,
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+            },
+            success: function (data) {
+                if (data.status === 'success') {
+                    otpMessage.textContent = 'OTP sent to your email!';
+                    otpMessage.style.color = 'green';
+                    currentStep = 5;
+                    showStep(currentStep);
+                } else {
+                    otpMessage.textContent = 'Error sending OTP: ' + data.message;
+                    otpMessage.style.color = 'red';
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error in sendOTP:", error);
+                otpMessage.textContent = 'Error sending OTP. Please check console for details.';
+                otpMessage.style.color = 'red';
+            }
+        });
+    }
+
     nextButton.addEventListener('click', function () {
         if (validateCurrentStep()) {
-            currentStep++;
-            showStep(currentStep);
+            if (currentStep === 5) {
+                // Validate OTP on 'Next' click in step 5
+                const userEnteredOtp = otpField.value;
+                const generatedOtp = document.getElementById('generatedOtp').value;
+
+                if (userEnteredOtp !== generatedOtp) {
+                    otpError.textContent = 'Invalid OTP. Please try again.';
+                    removeLoadingAnimation(nextButton); // Remove animation if OTP is invalid
+                    return;
+                } else {
+                    otpError.textContent = '';
+                    currentStep++;
+                    showStep(currentStep);
+                }
+            } else if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+            }
         }
     });
 
-    // Event listener for Previous Button
     previousButton.addEventListener('click', function () {
-        if (currentStep > 1) {
-            currentStep--;
-            showStep(currentStep);
+    });
+
+    verifyOtpButton.addEventListener('click', function () {
+        if (validateCurrentStep()) {
+            const generatedOtp = generateOTP();
+            document.getElementById('generatedOtp').value = generatedOtp;
+            sendOTP(emailField.value, generatedOtp);
         }
     });
 
-    // Event listener for Password toggle
+    resendOtpButton.addEventListener('click', function () {
+        const generatedOtp = generateOTP();
+        document.getElementById('generatedOtp').value = generatedOtp;
+        sendOTP(emailField.value, generatedOtp);
+    });
+
     togglePassword.addEventListener('click', () => {
         const type = passwordField.type === 'password' ? 'text' : 'password';
         passwordField.type = type;
@@ -176,12 +265,20 @@ document.addEventListener('DOMContentLoaded', function () {
         togglePassword.classList.toggle('fa-eye-slash');
     });
 
-    // Event listener to update password strength indicator
     passwordField.addEventListener('input', updatePasswordStrengthIndicator);
 
-    // Event listener for Form Submission
     signupForm.addEventListener('submit', function (e) {
         e.preventDefault();
+
+        const userEnteredOtp = otpField.value;
+        const generatedOtp = document.getElementById('generatedOtp').value;
+
+        if (userEnteredOtp !== generatedOtp) {
+            otpError.textContent = 'Invalid OTP. Please try again.';
+            return;
+        } else {
+            otpError.textContent = '';
+        }
 
         let allStepsValid = true;
         for (let i = 1; i <= totalSteps; i++) {
@@ -189,17 +286,16 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!validateCurrentStep()) {
                 allStepsValid = false;
                 showStep(currentStep);
-                break;
+                return;
             }
         }
 
         if (allStepsValid) {
             const countryData = phoneInput.getSelectedCountryData();
             phoneField.value = '+' + countryData.dialCode + phoneField.value.replace(/\D/g, '');
-            alert("Form submitted successfully!");
+            signupForm.submit();
         }
     });
 
-    // Initialize the form
     showStep(currentStep);
 });

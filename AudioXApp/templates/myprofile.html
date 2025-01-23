@@ -1,0 +1,105 @@
+{% extends 'homepage.html' %}
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/myprofilestyle.css' %}">
+
+<div class="profile-container">
+    <div class="sidebar">
+        <ul>
+            <li><a href="#" id="security-link" class="sidebar-item"><i class="fas fa-shield-alt sidebar-icon"></i>Security</a></li>
+            <li><a href="#plan" class="sidebar-item"><i class="fas fa-clipboard-list sidebar-icon"></i>Manage Subscriptions</a></li>
+            <li><a href="#team" class="sidebar-item"><i class="fas fa-file-invoice-dollar sidebar-icon"></i>Billing History</a></li>
+            <li><a href="#notifications" class="sidebar-item"><i class="fas fa-coins sidebar-icon"></i>Buy Coins</a></li>
+            <li><a href="#integrations" class="sidebar-item"><i class="fas fa-wallet sidebar-icon"></i>My Wallet</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="profile-header">
+            <div class="profile-picture-container">
+                <img src="{% if user.profile_pic %}{{ user.profile_pic.url }}{% else %}{% static 'img/default_profile.png' %}{% endif %}" alt="Profile Picture" class="profile-picture">
+                <input type="file" id="photo" name="profile_pic" accept="image/*" hidden>
+                <label for="photo" class="edit-profile-pic" title="Change Profile Picture">
+                    <i class="fas fa-camera"></i>
+                </label>
+                <button type="button" id="save-profile-pic" class="save-profile-pic" style="display: none;">
+                    <i class="fas fa-save"></i>
+                </button>
+            </div>
+            <div class="profile-info">
+                <h2 class="profile-name">{{ user.username }}</h2>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="profile-form" action="{% url 'update_profile' %}">
+            <input type="hidden" id="update-profile-url" data-url="{% url 'update_profile' %}">
+            <div id="profile-update-message"></div> <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-group">
+                    <input type="text" id="username" name="username" value="{{ user.username }}" readonly>
+                    <span class="edit-icon" data-target="username"><i class="fas fa-edit"></i></span>
+                    <span class="save-icon" data-target="username"><i class="fas fa-save"></i></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <div class="input-group">
+                    <input type="text" id="name" name="full_name" value="{{ user.full_name }}" readonly>
+                    <span class="edit-icon" data-target="name"><i class="fas fa-edit"></i></span>
+                    <span class="save-icon" data-target="name"><i class="fas fa-save"></i></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <div class="input-group">
+                    <input type="email" id="email" name="email" value="{{ user.email }}" readonly>
+                    <span class="edit-icon" data-target="email"><i class="fas fa-edit"></i></span>
+                    <span class="save-icon" data-target="email"><i class="fas fa-save"></i></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="bio">Your Bio</label>
+                <div class="input-group">
+                    <textarea id="bio" name="bio" readonly>{{ user.bio }}</textarea>
+                    <span class="edit-icon" data-target="bio"><i class="fas fa-edit"></i></span>
+                    <span class="save-icon" data-target="bio"><i class="fas fa-save"></i></span>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="security-modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Change Password</h2>
+        <form method="post" id="change-password-form" action="{% url 'change_password' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="old_password">Old Password</label>
+                <input type="password" id="old_password" name="old_password" required>
+            </div>
+            <div class="form-group">
+                <label for="new_password1">New Password</label>
+                <input type="password" id="new_password1" name="new_password1" required>
+            </div>
+            <div class="form-group">
+                <label for="new_password2">Confirm New Password</label>
+                <input type="password" id="new_password2" name="new_password2" required>
+            </div>
+            <button type="submit">Change Password</button>
+            <div id="password-change-message" class="mt-3"></div>
+        </form>
+        <div id="custom-alert" class="hidden">
+            <div id="custom-alert-message"></div>
+            <button id="custom-alert-close">OK</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://kit.fontawesome.com/a076d05399.js"></script>
+<script src="{% static 'js/myprofile.js' %}"></script>
+
+{% endblock %}

@@ -2,36 +2,26 @@
 #slider-menu {
     position: fixed;
     top: 0;
-    left: -400px;
-    /* Initially hidden on the left */
-    width: 350px;
-    /* Adjusted width */
+    left: -450px;
+    /* Start off-screen */
+    width: 450px;
     height: 100vh;
-    /* Full viewport height */
     background-color: #ffffff;
-    /* White background */
     box-shadow: 5px 0px 15px rgba(0, 0, 0, 0.15);
-    /* Soft shadow */
     display: flex;
     flex-direction: column;
     padding: 30px 25px;
-    /* Spacing inside the menu */
-    transition: left 0.4s ease, opacity 0.3s ease-in-out;
-    /* Smooth transition */
     z-index: 1000;
-    /* Ensure it sits above other content */
     overflow-y: auto;
-    /* Enable scrolling */
     font-family: 'Nunito', sans-serif;
-    /* Set font */
+    transition: left 0.4s ease;
+    /* Smooth transition for left property */
 }
 
 /* Show the menu */
 #slider-menu.show {
     left: 0;
-    /* Slide to the right when shown */
-    opacity: 1;
-    /* Full opacity when visible */
+    /* Bring the menu into view */
 }
 
 /* Logo Section */
@@ -43,7 +33,6 @@
     border-bottom: 2px solid #f0f0f0;
     margin-bottom: 25px;
     position: relative;
-    /* For positioning the circle */
 }
 
 /* Circle behind the logo */
@@ -54,22 +43,16 @@
     left: 25px;
     transform: translateY(-50%);
     width: 45px;
-    /* Adjust size as needed */
     height: 45px;
-    /* Adjust size as needed */
     border-radius: 50%;
     background-color: #f5d547;
-    /* Circle color - adjust as needed */
     z-index: -1;
-    /* Behind the logo */
 }
 
 .slider-header .logo {
     font-size: 2rem;
-    /* Logo size */
     font-weight: 700;
     color: #091e65;
-    /* Logo color - Updated */
     letter-spacing: 1px;
 }
 
@@ -79,21 +62,20 @@
 
 /* Close Button */
 .slider-header button {
-    font-size: 2rem;
-    /* Larger close button */
+    font-size: 1.5rem;
+    /* Adjust close button size */
     color: #969696;
-    /* Close button color */
     background: none;
     border: none;
     cursor: pointer;
     transition: color 0.3s ease;
     z-index: 1001;
-    /* Ensure close button is above the circle */
+    padding: 0;
+    /* Remove padding */
 }
 
 .slider-header button:hover {
     color: #091e65;
-    /* Hover color - Updated */
 }
 
 /* Content Section */
@@ -414,6 +396,7 @@
         transform: scale(1);
     }
 }
+
 /* Custom Scrollbar Styling */
 #slider-menu::-webkit-scrollbar {
     width: 8px;

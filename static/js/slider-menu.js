@@ -6,12 +6,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Toggle menu visibility when the button is clicked
     function toggleSliderMenu() {
-        sliderMenu.classList.toggle('show'); // Toggle 'show' class for smooth visibility
+        sliderMenu.classList.toggle('show');
     }
 
     // Close menu when the close button is clicked
     function closeSliderMenu() {
-        sliderMenu.classList.remove('show'); // Remove 'show' class to hide the menu
+        sliderMenu.classList.remove('show');
     }
 
     // Toggle slider menu on button click
@@ -20,19 +20,26 @@ document.addEventListener('DOMContentLoaded', function () {
     // Close the menu on close button click
     closeButton.addEventListener('click', closeSliderMenu);
 
-    // Optional: Close menu if clicked outside
-    document.addEventListener('click', function (event) {
-        // Check if the clicked target is neither the menu nor the toggle button
-        if (!sliderMenu.contains(event.target) && !menuToggle.contains(event.target)) {
-            closeSliderMenu(); // Close menu if clicked outside
-        }
+    // Prevent clicks within the slider menu from closing it
+    sliderMenu.addEventListener('click', function (event) {
+        event.stopPropagation();
     });
 
     // Add event listeners to toggle submenus
     hasSubmenuItems.forEach(item => {
         item.addEventListener('click', function(event) {
-            // Prevent the click from propagating to the document click listener
             event.stopPropagation();
+
+            // Close other open submenus and their parent items
+            hasSubmenuItems.forEach(otherItem => {
+                if (otherItem !== this) {
+                    otherItem.classList.remove('open');
+                    const otherSubmenu = otherItem.nextElementSibling;
+                    if (otherSubmenu && otherSubmenu.classList.contains('sub-menu')) {
+                        otherSubmenu.classList.remove('open');
+                    }
+                }
+            });
 
             // Toggle the 'open' class on the clicked item
             this.classList.toggle('open');
@@ -43,5 +50,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 submenu.classList.toggle('open');
             }
         });
+    });
+
+    // Close menu if clicked outside
+    document.addEventListener('click', function (event) {
+        if (!sliderMenu.contains(event.target) && !menuToggle.contains(event.target)) {
+            closeSliderMenu();
+        }
     });
 });

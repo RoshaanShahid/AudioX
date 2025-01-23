@@ -20,6 +20,12 @@ urlpatterns = [
     path('aboutus/', views.aboutus, name='aboutus'),
     path('contactus/', views.contactus, name='contactus'),
     path('logout/', views.logout_view, name='logout'), 
+    path('myprofile/', views.myprofile, name='myprofile'),
+    path('update_profile/', views.update_profile, name='update_profile'),
+    path('change_password/', views.change_password, name='change_password'),
+    path('send-otp/', views.send_otp, name='send_otp'),  
+
+
     ] 
 
 # Static files for media and audio
