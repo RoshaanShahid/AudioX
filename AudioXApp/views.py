@@ -132,7 +132,6 @@ def update_profile(request):
     user = request.user
     print("User:", user)
 
-    # Check the content type to determine if it's a file upload or JSON
     if request.content_type.startswith('multipart'):
         print("Profile picture update request (Multipart)")
 
@@ -154,7 +153,24 @@ def update_profile(request):
             data = json.loads(request.body)
             print("Parsed Data:", data)
 
-            # ... (your existing field update logic: username, full_name, email, bio) ...
+            # Update fields if they are in the parsed data
+            if 'username' in data:
+                username = data['username']
+                if User.objects.exclude(pk=user.pk).filter(username=username).exists():
+                    return JsonResponse({'status': 'error', 'message': 'Username already exists'})
+                user.username = username
+
+            if 'name' in data:  # Changed 'full_name' to 'name' to match your myprofile.js
+                user.full_name = data['name']  # Changed 'full_name' to 'name'
+
+            if 'email' in data:
+                email = data['email']
+                if User.objects.exclude(pk=user.pk).filter(email=email).exists():
+                    return JsonResponse({'status': 'error', 'message': 'Email already exists'})
+                user.email = email
+
+            if 'bio' in data:
+                user.bio = data['bio']
 
             try:
                 user.save()

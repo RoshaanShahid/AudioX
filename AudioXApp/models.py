@@ -58,6 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(max_length=255, blank=True, null=True)
     date_joined = models.DateTimeField(default=timezone.now)
     username = models.CharField(max_length=150, blank=True, null=True)
+    bio = models.TextField(max_length=500, blank=True, null=True)  # Add the bio field
     subscription_type = models.CharField(
         max_length=2,
         choices=SubscriptionType.choices,

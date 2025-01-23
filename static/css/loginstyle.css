@@ -1,7 +1,9 @@
 /* General Styles */
 body {
-    font-family: 'Roboto', sans-serif; /* Modern font */
-    background-color: #e8f0fe; /* Soft background color */
+    font-family: 'Roboto', sans-serif;
+    /* Modern font */
+    background-color: #e8f0fe;
+    /* Soft background color */
     margin: 0;
     padding: 0;
     display: flex;
@@ -9,21 +11,25 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    color: #2c3e50; /* Darker text color */
+    color: #2c3e50;
+    /* Darker text color */
 }
 
 .logo {
-    font-size: 48px; /* Reduced size */
+    font-size: 48px;
+    /* Reduced size */
     font-weight: 900;
     color: #091e65;
     text-align: center;
-    margin-bottom: 5px; /* Reduced margin */
+    margin-bottom: 5px;
+    /* Reduced margin */
     letter-spacing: 2px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .divider {
-    width: 100px; /* Reduced width */
+    width: 100px;
+    /* Reduced width */
     height: 5px;
     background-color: #4767e6;
     margin-bottom: 30px;
@@ -37,16 +43,19 @@ body {
     justify-content: center;
     align-items: center;
     width: 100%;
-    max-width: 900px; /* Increased max-width */
+    max-width: 900px;
+    /* Increased max-width */
     margin: 0 auto;
 }
 
 .container {
     background: #ffffff;
-    width: 450px; /* Increased width */
+    width: 450px;
+    /* Increased width */
     max-width: 95%;
     padding: 40px;
-    border-radius: 20px; /* Increased border radius */
+    border-radius: 20px;
+    /* Increased border radius */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     text-align: center;
     border: 2px solid #091e65;
@@ -54,7 +63,8 @@ body {
 
 .container h2 {
     margin-bottom: 25px;
-    font-size: 32px; /* Increased font size */
+    font-size: 32px;
+    /* Increased font size */
     font-weight: 700;
     color: #091e65;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
@@ -78,7 +88,8 @@ body {
     width: calc(100% - 30px);
     padding: 15px;
     border: 2px solid #d1d9e6;
-    border-radius: 10px; /* Increased border radius */
+    border-radius: 10px;
+    /* Increased border radius */
     font-size: 16px;
     color: #2c3e50;
     background: #f9fafc;
@@ -137,8 +148,10 @@ body {
 .or-divider {
     display: flex;
     align-items: center;
-    justify-content: center; /* Center the divider */
-    width: 100px; /* Adjust width as needed */
+    justify-content: center;
+    /* Center the divider */
+    width: 100px;
+    /* Adjust width as needed */
     margin: 0 20px;
 }
 
@@ -146,7 +159,8 @@ body {
     flex-grow: 1;
     height: 2px;
     background-color: #d1d9e6;
-    margin: 0 10px; /* Adjust margin as needed */
+    margin: 0 10px;
+    /* Adjust margin as needed */
 }
 
 .or-text {
@@ -158,7 +172,8 @@ body {
 
 /* Google Button Container */
 .google-button-container {
-    width: 350px; /* Adjust width as needed */
+    width: 350px;
+    /* Adjust width as needed */
     padding: 20px;
     display: flex;
     justify-content: center;
@@ -172,7 +187,8 @@ body {
     background-color: #fff;
     color: #4285F4;
     border: 2px solid #4285F4;
-    border-radius: 30px; /* Increased border radius */
+    border-radius: 30px;
+    /* Increased border radius */
     padding: 15px 25px;
     font-size: 18px;
     font-weight: 600;
@@ -243,12 +259,14 @@ body {
     }
 
     .or-divider {
-        margin: 30px 0; /* Adjust margin for smaller screens */
+        margin: 30px 0;
+        /* Adjust margin for smaller screens */
     }
 
     .google-button-container {
         width: 90%;
-        padding: 10px; /* Adjust padding for smaller screens */
+        padding: 10px;
+        /* Adjust padding for smaller screens */
     }
 
     .google-login-btn {
@@ -260,5 +278,100 @@ body {
         width: 24px;
         height: 24px;
         margin-right: 10px;
+    }
+}
+
+/* Error Styling */
+.input-group.error input {
+    border-color: #dc3545;
+    /* Red border for error */
+    box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+    /* Red shadow for error */
+    animation: shake 0.2s ease-in-out 0s 2;
+    /* Shake animation for error */
+}
+
+.input-group .error-message {
+    color: #dc3545;
+    /* Red text for error message */
+    font-size: 14px;
+    margin-top: 5px;
+    display: block;
+    /* Ensure message is displayed as a block */
+    text-align: center;
+}
+
+/* Hide error message initially */
+.input-group .error-message {
+    display: none;
+}
+
+/* Show error message when error class is present */
+.input-group.error .error-message {
+    display: block;
+}
+
+/* Messages Styling */
+ul.messages {
+    list-style-type: none;
+    margin: 10px 0;
+    padding: 0;
+    width: 100%;
+    /* Make sure it spans the container width */
+    box-sizing: border-box;
+    /* Include padding and border in the element's total width */
+}
+
+ul.messages li {
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    color: #fff;
+    /* White text color */
+    font-weight: 600;
+    text-align: center;
+    /* Center-align the text */
+    width: calc(100% - 20px);
+    /* Adjust width for padding */
+    box-sizing: border-box;
+    /* Include padding and border in the element's total width */
+    margin-left: auto;
+    margin-right: auto;
+    /* Center the element */
+}
+
+ul.messages li.error {
+    background-color: #dc3545;
+    /* Red background */
+    border: 1px solid #dc3545;
+    /* Red border */
+}
+
+ul.messages li.success {
+    background-color: #28a745;
+    /* Green background */
+    border: 1px solid #28a745;
+    /* Green border */
+}
+
+/* Optional: Add animation to error messages */
+ul.messages li.error {
+    animation: shake 0.2s ease-in-out 0s 2;
+}
+
+/* Keyframes for shake animation */
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
     }
 }

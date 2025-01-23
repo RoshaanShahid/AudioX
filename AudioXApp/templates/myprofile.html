@@ -30,7 +30,7 @@
             </div>
             <div class="profile-info">
                 <h2 class="profile-name">{{ user.username }}</h2>
-            </div>
+                <p class="profile-bio">{{ user.bio }}</p>  </div>
         </div>
 
         <form method="post" enctype="multipart/form-data" class="profile-form" action="{% url 'update_profile' %}">
