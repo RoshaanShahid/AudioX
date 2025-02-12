@@ -1,11 +1,11 @@
 /* General Styles */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern, elegant font */
-    background-color: #f8f9fa; /* Light background */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    margin: 0; /* Remove default margin */
+    margin: 0;
 }
 
 .profile-container {
@@ -14,24 +14,24 @@ body {
     width: 95%;
     max-width: 1100px;
     background-color: #fff;
-    border-radius: 15px; /* Softer corners */
-    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    border-radius: 15px;
+    box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     transition: box-shadow 0.3s ease;
 }
 
 .profile-container:hover {
-    box-shadow: 0px 15px 35px -5px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
+    box-shadow: 0px 15px 35px -5px rgba(0, 0, 0, 0.15);
 }
 
 /* Sidebar Styles */
 .sidebar {
     width: 280px;
     padding: 40px;
-    background: linear-gradient(160deg, #091e65, #07174d); /* Your theme colors */
+    background: linear-gradient(160deg, #091e65, #07174d);
     color: #f8f9fa;
-    box-shadow: 5px 0px 15px rgba(0, 0, 0, 0.1); /* Shadow to separate from content */
-    z-index: 1; /* Ensure sidebar is above main content */
+    box-shadow: 5px 0px 15px rgba(0, 0, 0, 0.1);
+    z-index: 1;
 }
 
 .sidebar ul {
@@ -50,7 +50,7 @@ body {
     text-decoration: none;
     color: #f8f9fa;
     font-weight: 600;
-    border-radius: 10px; /* Rounded corners */
+    border-radius: 10px;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -69,7 +69,7 @@ body {
     flex-grow: 1;
     padding: 40px;
     background-color: #fff;
-    box-shadow: -5px 0px 15px rgba(0, 0, 0, 0.05); /* Subtle shadow on the left */
+    box-shadow: -5px 0px 15px rgba(0, 0, 0, 0.05);
 }
 
 /* Profile Header Styles */
@@ -86,26 +86,38 @@ body {
     height: 150px;
 }
 
+/* Styles for the default icon container */
 .profile-picture {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    object-fit: cover;
-    border: 5px solid #091e65; /* Your theme color */
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2); /* Subtle shadow */
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 5px solid #091e65;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.profile-picture:hover {
-    transform: scale(1.03);
-    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+/* Ensure the image takes up the full space when displayed */
+.profile-picture img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none; /* Hidden by default */
+}
+
+/* Styles for the default icon */
+.default-icon {
+    font-size: 50px; /* Adjust as needed */
+    color: #091e65;
 }
 
 .edit-profile-pic {
     position: absolute;
     bottom: 15px;
     right: 15px;
-    background-color: #091e65; /* Your theme color */
+    background-color: #091e65;
     color: #f8f9fa;
     border-radius: 50%;
     padding: 10px;
@@ -113,13 +125,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
 .edit-profile-pic:hover {
     background-color: #07174d;
-    transform: scale(1.05); /* Slightly enlarge on hover */
+    transform: scale(1.05);
 }
 
 .profile-info {
@@ -128,10 +140,10 @@ body {
 
 .profile-name {
     margin: 0;
-    color: #091e65; /* Your theme color */
+    color: #091e65;
     font-size: 2.5em;
     font-weight: 700;
-    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Text shadow */
+    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Form Styles */
@@ -147,7 +159,7 @@ body {
     display: block;
     margin-bottom: 12px;
     font-weight: 600;
-    color: #091e65; /* Your theme color */
+    color: #091e65;
     font-size: 1.1em;
 }
 
@@ -161,9 +173,9 @@ body {
 .form-group input[type="email"],
 .form-group textarea {
     width: 100%;
-    padding: 15px 45px 15px 20px; /* More padding */
-    border: 2px solid #e0e0e0; /* Lighter border */
-    border-radius: 30px; /* More rounded corners */
+    padding: 15px 45px 15px 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 30px;
     box-sizing: border-box;
     font-size: 1.1em;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -172,8 +184,8 @@ body {
 .form-group input[type="text"]:focus,
 .form-group input[type="email"]:focus,
 .form-group textarea:focus {
-    border-color: #091e65; /* Your theme color */
-    box-shadow: 0 0 8px rgba(9, 30, 101, 0.4); /* Glow effect */
+    border-color: #091e65;
+    box-shadow: 0 0 8px rgba(9, 30, 101, 0.4);
     outline: none;
 }
 
@@ -187,14 +199,14 @@ body {
     position: absolute;
     right: 20px;
     cursor: pointer;
-    color: #091e65; /* Your theme color */
+    color: #091e65;
     font-size: 1.4em;
     transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .save-icon {
     display: none;
-    color: #4CAF50; /* Green color for save */
+    color: #4CAF50;
 }
 
 .edit-icon:hover,
@@ -217,10 +229,10 @@ body {
 
 .modal-content {
     background-color: #fff;
-    margin: 5% auto; /* Adjust as needed */
+    margin: 5% auto;
     padding: 40px;
     border: none;
-    border-radius: 20px; /* Rounded corners */
+    border-radius: 20px;
     width: 90%;
     max-width: 700px;
     box-shadow: 0px 10px 40px -5px rgba(0, 0, 0, 0.2);
@@ -240,7 +252,7 @@ body {
 }
 
 .close-modal {
-    color: #091e65; /* Your theme color */
+    color: #091e65;
     position: absolute;
     right: 25px;
     top: 20px;
@@ -251,14 +263,14 @@ body {
 
 .close-modal:hover,
 .close-modal:focus {
-    color: #07174d; /* Darker shade of theme color */
+    color: #07174d;
     text-decoration: none;
     cursor: pointer;
     transform: scale(1.1);
 }
 
 .modal-content h2 {
-    color: #091e65; /* Your theme color */
+    color: #091e65;
     margin-top: 0;
     font-weight: 700;
     text-align: center;
@@ -272,7 +284,7 @@ body {
 
 .modal-content .form-group label {
     font-weight: 600;
-    color: #091e65; /* Your theme color */
+    color: #091e65;
     margin-bottom: 10px;
     font-size: 1.1em;
 }
@@ -280,8 +292,8 @@ body {
 .modal-content .form-group input[type="password"] {
     width: 100%;
     padding: 12px;
-    border: 2px solid #e0e0e0; /* Lighter border */
-    border-radius: 10px; /* Rounded corners */
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
     box-sizing: border-box;
     font-size: 1em;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -289,16 +301,16 @@ body {
 
 .modal-content .form-group input[type="password"]:focus {
     border-color: #091e65;
-    box-shadow: 0 0 8px rgba(9, 30, 101, 0.4); /* Glow effect */
+    box-shadow: 0 0 8px rgba(9, 30, 101, 0.4);
     outline: none;
 }
 
 .modal-content button[type="submit"] {
-    background-color: #091e65; /* Your theme color */
+    background-color: #091e65;
     color: white;
     border: none;
     padding: 12px 25px;
-    border-radius: 10px; /* Rounded corners */
+    border-radius: 10px;
     cursor: pointer;
     font-weight: 600;
     transition: all 0.2s ease;
@@ -309,7 +321,7 @@ body {
 }
 
 .modal-content button[type="submit"]:hover {
-    background-color: #07174d; /* Darker shade of theme color */
+    background-color: #07174d;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -322,7 +334,7 @@ body {
         max-width: 500px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
-  
+
     .profile-container:hover {
         box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
     }
@@ -330,7 +342,7 @@ body {
     .sidebar {
         width: 100%;
         padding: 20px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Bottom shadow for sidebar */
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
 
     .sidebar ul {
@@ -345,7 +357,7 @@ body {
 
     .main-content {
         padding: 30px;
-        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.05); /* Top shadow for main content */
+        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.05);
     }
 
     .profile-picture-container {
@@ -464,13 +476,13 @@ body {
 #custom-alert.success {
     background-color: #e8f5e9;
     color: #388e3c;
-    border-left: 5px solid #388e3c; /* Add a left border for success */
+    border-left: 5px solid #388e3c;
 }
 
 #custom-alert.error {
     background-color: #f8d7da;
     color: #721c24;
-    border-left: 5px solid #721c24; /* Add a left border for error */
+    border-left: 5px solid #721c24;
 }
 
 #custom-alert.hidden {

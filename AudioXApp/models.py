@@ -3,13 +3,11 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
+from django.contrib.auth.hashers import make_password  # Import make_password
+
 
 class CustomUserManager(BaseUserManager):
-    """
-    Custom user model manager where email is the unique identifiers
-    for authentication instead of usernames.
-    """
-
+    # (Your existing CustomUserManager - No changes needed here) ...
     def create_user(self, email, password, **extra_fields):
         """
         Create and save a User with the given email and password.
@@ -36,11 +34,9 @@ class CustomUserManager(BaseUserManager):
             raise ValueError(_("Superuser must have is_superuser=True."))
         return self.create_user(email, password, **extra_fields)
 
-class User(AbstractBaseUser, PermissionsMixin):
-    """
-    Custom User model for the audix_db database.
-    """
 
+class User(AbstractBaseUser, PermissionsMixin):
+    # (Your existing User model - No changes needed here) ...
     class SubscriptionType(models.TextChoices):
         FREE = 'FR', _('Free')
         PREMIUM = 'PR', _('Premium')
@@ -79,3 +75,30 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+class Admin(models.Model):
+    class RoleChoices(models.TextChoices):
+        FULL_ACCESS = 'full_access', _('Full Access')
+        MANAGE_CONTENT = 'manage_content', _('Manage Content')
+        MANAGE_CREATORS = 'manage_creators', _('Manage Creators')
+        MANAGE_DISCUSSIONS = 'manage_discussions', _('Manage Discussions')
+        MANAGE_TRANSACTIONS = 'manage_transactions', _('Manage Transactions')
+
+    adminid = models.AutoField(primary_key=True)  # Explicit primary key
+    email = models.EmailField(_("email address"), unique=True)
+    username = models.CharField(max_length=150, unique=True)  # Make username unique
+    password = models.CharField(max_length=255)
+    roles = models.CharField(
+        max_length=255,
+        choices=RoleChoices.choices,
+        blank=True,  # Allow no roles to be selected (for flexibility)
+    )
+    
+    def set_password(self, raw_password):
+        self.password = make_password(raw_password)
+    
+    def __str__(self):
+        return self.username  # Or return self.email if you prefer
+
+    class Meta:
+        db_table = 'ADMINS'  # Use a consistent naming convention

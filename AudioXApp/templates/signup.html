@@ -1,134 +1,245 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signup Page</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up Page</title>
 
-    <link rel="stylesheet" href="{% static 'css/signupstyle.css' %}">
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#091e65',
+                        'primary-light': '#12348f',
+                        'accent': '#60a5fa',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 
-<body>
-    <div class="wrapper">
-        <div class="form-container">
-            <div class="logo">AudioX</div>
-            <div class="divider"></div>
-            <div class="container">
-                <h2>Sign up for free!</h2>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans">
+    <div class="bg-white rounded-3xl shadow-xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row">
 
-                {% if messages %}
-                <ul class="messages">
-                    {% for message in messages %}
-                    <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
+        <div class="w-full md:w-1/2 p-8 md:p-12">
+            <div class="flex items-center justify-between mb-6">
+                <a href="/Home" class="flex items-center">
+                    <img alt="Logo" class="w-12 h-12 mr-3" src="{% static 'img/loginlogo.png' %}" />
+                </a>
+                <a href="/Home" class="md:hidden text-gray-500 hover:text-gray-700">
+                  <i class="fas fa-times text-xl"></i>
+                </a>
+            </div>
+            <h2 class="text-2xl md:text-3xl font-bold text-primary mb-4">Create an Account</h2>
+            <p class="text-gray-600 mb-8">Sign up to get started.</p>
 
-                <form method="post" action="{% url 'signup' %}" id="signupForm" data-send-otp-url="{% url 'send_otp' %}">
-                    {% csrf_token %}
-                    <input type="hidden" id="generatedOtp" name="generatedOtp">
+            <div class="flex space-x-4 mb-6 justify-center">
+                <button class="bg-white text-red-600 p-2 rounded-full hover:scale-110 transition-transform w-12 h-12 flex items-center justify-center shadow-md">
+                    <i class="fab fa-google text-2xl"></i>
+                </button>
+            </div>
 
-                    <div class="input-group step" id="step1">
-                        <label for="full-name">Full Name</label>
-                        <input type="text" id="full-name" name="full-name" placeholder="Enter your full name" required>
-                        <div class="validation-message" id="fullNameError"></div>
-                    </div>
+             <div class="flex items-center mb-6">
+                <hr class="flex-grow border-gray-300" />
+                <span class="px-3 text-gray-500 text-sm">OR</span>
+                <hr class="flex-grow border-gray-300" />
+            </div>
 
-                    <div class="input-group step" id="step2" style="display: none;">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" name="username" placeholder="Choose a username" required>
-                        <div class="validation-message" id="usernameError"></div>
-                    </div>
-
-                    <div class="input-group step" id="step3" style="display: none;">
-                        <label for="phone">Phone Number</label>
-                        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required>
-                        <div class="validation-message" id="phoneError"></div>
-                    </div>
-
-                    <div class="input-group step" id="step4" style="display: none;">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" placeholder="Enter your email address" required>
-                        <div class="validation-message" id="emailError"></div>
-                    </div>
-
-                    <div class="input-group step" id="step5" style="display: none;">
-                        <label for="otp">Enter OTP</label>
-                        <input type="text" id="otp" name="otp" placeholder="Enter 4-digit OTP" required>
-                        <div class="validation-message" id="otpError"></div>
-                        <div id="otpMessage"></div>
-                        <button type="button" class="btn" id="resendOtpButton">Resend OTP</button>
-                    </div>
-
-                    <div class="input-group step" id="step6" style="display: none;">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Must have at least 8 characters"
-                            required>
-                        <i class="fas fa-eye show-password-icon" id="togglePassword"></i>
-                        <div class="validation-message" id="passwordError"></div>
-                        <div class="password-strength-indicator" id="passwordStrengthIndicator">
-                            <div class="bar-container">
-                                <div class="bar weak" data-strength="weak">
-                                    <div class="fill"></div>
-                                </div>
-                                <div class="bar good" data-strength="good">
-                                    <div class="fill"></div>
-                                </div>
-                                <div class="bar strong" data-strength="strong">
-                                    <div class="fill"></div>
-                                </div>
-                            </div>
-                            <div class="labels">
-                                <span class="label weak">Weak</span>
-                                <span class="label good">Good</span>
-                                <span class="label strong">Strong</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="input-group step" id="step7" style="display: none;">
-                        <label for="confirm-password">Confirm Password</label>
-                        <input type="password" id="confirm-password" name="confirm-password"
-                            placeholder="Confirm your password" required>
-                        <div class="validation-message" id="confirmPasswordError"></div>
-                    </div>
-
-                    <button type="button" class="btn" id="previousButton" style="display: none;">Previous</button>
-                    <button type="button" class="btn" id="nextButton">Next</button>
-                    <button type="button" class="btn" id="verifyOtpButton" style="display: none;">Verify OTP</button>
-                    <button type="submit" class="btn" id="submitButton" style="display: none;">Sign Up</button>
-                </form>
-
-                <div class="or-divider">
-                    <hr class="divider-line">
-                    <span class="or-text">OR</span>
-                    <hr class="divider-line">
+            <form id="signupForm" method="post" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="full_name" class="sr-only">Full Name</label>
+                    <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200"
+                           placeholder="Full Name" type="text" name="full_name" id="full_name" required />
                 </div>
-
-                <div class="google-button-container">
-                    <button class="google-signup-btn">
-                        <img src="https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-webinar-optimizing-for-success-google-business-webinar-13.png"
-                            alt="Google Logo" class="google-logo">
-                        Sign Up Using Google
+                <div>
+                    <label for="username" class="sr-only">Username</label>
+                    <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200"
+                           placeholder="Username" type="text" name="username" id="username" required />
+                </div>
+                <div>
+                    <label for="email" class="sr-only">Email Address</label>
+                    <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200"
+                           placeholder="Email Address" type="email" name="email" id="email" required />
+                    <button type="button" id="sendOtpButton"
+                        class="mt-2 w-full bg-primary text-white py-2 rounded-xl hover:bg-primary-light transition-colors">
+                        Send OTP
                     </button>
                 </div>
-
-                <div class="footer">
-                    Already a member? <a href="{% url 'login' %}">Sign in</a>
+                <div>
+                    <label for="otp" class="sr-only">Enter OTP</label>
+                    <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200"
+                           placeholder="Enter OTP" type="text" name="otp" id="otp" required />
+                    <input type="hidden" name="emailVerified" id="emailVerified" value="false">
                 </div>
+                <div>
+                    <label for="phone" class="sr-only">Phone Number (Optional)</label>
+                    <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200"
+                           placeholder="Phone Number (Optional)" type="text" name="phone" id="phone">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <div class="relative">
+                        <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200 pr-12"
+                               placeholder="Password" type="password" name="password" id="password" required />
+                        <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"></i>
+                    </div>
+                </div>
+                <div>
+                    <label for="confirm-password" class="sr-only">Confirm Password</label>
+                    <div class="relative">
+                        <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200 pr-12"
+                               placeholder="Confirm Password" type="password" name="confirm-password" id="confirm-password" required/>
+                        <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"></i>
+                    </div>
+                </div>
+
+                <button class="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl transition duration-200"
+                        type="submit">
+                    Sign Up
+                </button>
+            </form>
+        </div>
+
+        <div class="hidden md:flex w-1/2 bg-gradient-to-r from-primary to-primary-light text-white p-12 justify-center items-center rounded-r-3xl">
+            <div class="text-center">
+               <i class="fas fa-sign-in-alt text-4xl mb-4"></i>
+                <h2 class="text-3xl font-bold mb-4">Already have an account?</h2>
+                <p class="mb-6 text-lg">Login and continue your journey with us!</p>
+                <a href="{% url 'login' %}" class="bg-white text-primary px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition duration-200">
+                    Sign In
+                </a>
             </div>
         </div>
     </div>
+    <script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{% static 'js/signup.js' %}"></script>
+        document.getElementById('sendOtpButton').addEventListener('click', function() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                Swal.fire('Error', 'Please enter your email address.', 'error');
+                return;
+            }
+
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+            fetch("{% url 'send_otp' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire('Success', 'OTP sent to your email!', 'success');
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to send OTP.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'An error occurred while sending the OTP.', 'error');
+            });
+        });
+
+
+
+        document.getElementById('signupForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const enteredOTP = document.getElementById('otp').value;
+            if (enteredOTP) {
+                document.getElementById('emailVerified').value = 'true';
+            } else {
+                Swal.fire('Error', 'Please verify your email with OTP.', 'error');
+                return;
+            }
+
+            const formData = new FormData(this);
+
+            fetch("{% url 'signup' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire({
+                        title: 'Success',
+                        text: data.message,
+                        icon: 'success',
+                        showCancelButton: false,
+                        confirmButtonText: 'LOGIN',
+                        allowOutsideClick: false,
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = "{% url 'login' %}";
+                        }
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'An error occurred during signup.', 'error');
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = JSON.parse(document.getElementById('django-messages').textContent);
+            messages.forEach(message => {
+                Swal.fire({
+                    title: message.tags ? message.tags.charAt(0).toUpperCase() + message.tags.slice(1) : '',
+                    text: message.message,
+                    icon: message.tags ? message.tags : 'info',
+                });
+            });
+        });
+
+        document.querySelectorAll('.fa-eye').forEach(icon => {
+        icon.addEventListener('click', function() {
+            const passwordInput = this.previousElementSibling;
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.classList.remove('fa-eye');
+                this.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                this.classList.remove('fa-eye-slash');
+                this.classList.add('fa-eye');
+            }
+        });
+    });
+</script>
+
+<script id="django-messages" type="application/json">
+    {% autoescape off %}
+    [
+        {% for message in messages %}
+            {
+                "message": "{{ message|escapejs }}",
+                "tags": "{{ message.tags|escapejs }}"
+            }
+            {% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    {% endautoescape %}
+</script>
 </body>
 
 </html>

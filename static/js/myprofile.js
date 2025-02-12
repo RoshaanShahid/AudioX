@@ -2,7 +2,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const securityLink = document.getElementById('security-link');
     const securityModal = document.getElementById('security-modal');
     const closeModal = document.querySelector('.close-modal');
-    const profilePicture = document.querySelector('.profile-picture');
+    const profilePictureContainer = document.getElementById('profile-picture'); // Updated selector
+    const profilePictureImg = profilePictureContainer.querySelector('img'); // Select the img element within the container
+    const defaultIcon = profilePictureContainer.querySelector('.default-icon'); // Select the default icon within the container
     const photoInput = document.getElementById('photo');
     const saveProfilePicButton = document.getElementById('save-profile-pic');
     const changePasswordForm = document.getElementById('change-password-form');
@@ -10,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const customAlert = document.getElementById('custom-alert');
     const customAlertMessage = document.getElementById('custom-alert-message');
     const customAlertClose = document.getElementById('custom-alert-close');
-    const updateMessageDiv = document.getElementById('profile-update-message'); // Get the message element
+    const updateMessageDiv = document.getElementById('profile-update-message');
 
     // Get the update profile URL from the data attribute
     const updateProfileURL = document.getElementById('update-profile-url').getAttribute('data-url');
@@ -98,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // Edit Profile Picture
-    profilePicture.addEventListener('click', function() {
+    profilePictureContainer.addEventListener('click', function() {
         photoInput.click();
     });
 
@@ -106,7 +108,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (this.files && this.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                profilePicture.src = e.target.result;
+                profilePictureImg.src = e.target.result;
+                profilePictureImg.style.display = 'block'; // Show the image
+                defaultIcon.style.display = 'none'; // Hide the default icon
                 saveProfilePicButton.style.display = 'flex'; // Show save button
             }
             reader.readAsDataURL(this.files[0]);
@@ -141,12 +145,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateMessageDiv.textContent = data.message;
                 updateMessageDiv.className = 'success-message';
 
-                // Update the profile picture on the page (no need for data.new_profile_pic_url)
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    profilePicture.src = e.target.result;
-                };
-                reader.readAsDataURL(photoInput.files[0]);
             } else {
                 console.error('Error updating profile picture:', data.message);
 

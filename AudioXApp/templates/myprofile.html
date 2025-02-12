@@ -2,104 +2,568 @@
 {% load static %}
 
 {% block content %}
+<div class="min-h-screen bg-white text-gray-900 flex flex-col font-sans">
 
-<link rel="stylesheet" href="{% static 'css/myprofilestyle.css' %}">
-
-<div class="profile-container">
-    <div class="sidebar">
-        <ul>
-            <li><a href="#" id="security-link" class="sidebar-item"><i class="fas fa-shield-alt sidebar-icon"></i>Security</a></li>
-            <li><a href="#plan" class="sidebar-item"><i class="fas fa-clipboard-list sidebar-icon"></i>Manage Subscriptions</a></li>
-            <li><a href="#team" class="sidebar-item"><i class="fas fa-file-invoice-dollar sidebar-icon"></i>Billing History</a></li>
-            <li><a href="#notifications" class="sidebar-item"><i class="fas fa-coins sidebar-icon"></i>Buy Coins</a></li>
-            <li><a href="#integrations" class="sidebar-item"><i class="fas fa-wallet sidebar-icon"></i>My Wallet</a></li>
-        </ul>
-    </div>
-
-    <div class="main-content">
-        <div class="profile-header">
-            <div class="profile-picture-container">
-                <img src="{% if user.profile_pic %}{{ user.profile_pic.url }}{% else %}{% static 'img/default_profile.png' %}{% endif %}" alt="Profile Picture" class="profile-picture">
-                <input type="file" id="photo" name="profile_pic" accept="image/*" hidden>
-                <label for="photo" class="edit-profile-pic" title="Change Profile Picture">
-                    <i class="fas fa-camera"></i>
-                </label>
-                <button type="button" id="save-profile-pic" class="save-profile-pic" style="display: none;">
-                    <i class="fas fa-save"></i>
-                </button>
+    <nav class="bg-white border-b border-gray-200 py-4">
+        <div class="container mx-auto flex justify-between items-center px-4 md:px-0">
+            <a href="/" class="text-2xl font-bold text-[#091e65] hover:text-blue-700 transition">Manage Your Profile</a>
+            <div class="space-x-6">
+                <a href="#" class="hover:text-[#091e65] transition">Home</a>
+                <a href="{% url 'logout' %}" class="bg-[#091e65] hover:bg-blue-800 text-white px-5 py-2 rounded-full transition font-semibold">Logout</a>
             </div>
-            <div class="profile-info">
-                <h2 class="profile-name">{{ user.username }}</h2>
-                <p class="profile-bio">{{ user.bio }}</p>  </div>
         </div>
+    </nav>
 
-        <form method="post" enctype="multipart/form-data" class="profile-form" action="{% url 'update_profile' %}">
-            <input type="hidden" id="update-profile-url" data-url="{% url 'update_profile' %}">
-            <div id="profile-update-message"></div> <div class="form-group">
-                <label for="username">Username</label>
-                <div class="input-group">
-                    <input type="text" id="username" name="username" value="{{ user.username }}" readonly>
-                    <span class="edit-icon" data-target="username"><i class="fas fa-edit"></i></span>
-                    <span class="save-icon" data-target="username"><i class="fas fa-save"></i></span>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="name">Full Name</label>
-                <div class="input-group">
-                    <input type="text" id="name" name="full_name" value="{{ user.full_name }}" readonly>
-                    <span class="edit-icon" data-target="name"><i class="fas fa-edit"></i></span>
-                    <span class="save-icon" data-target="name"><i class="fas fa-save"></i></span>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <div class="input-group">
-                    <input type="email" id="email" name="email" value="{{ user.email }}" readonly>
-                    <span class="edit-icon" data-target="email"><i class="fas fa-edit"></i></span>
-                    <span class="save-icon" data-target="email"><i class="fas fa-save"></i></span>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="bio">Your Bio</label>
-                <div class="input-group">
-                    <textarea id="bio" name="bio" readonly>{{ user.bio }}</textarea>
-                    <span class="edit-icon" data-target="bio"><i class="fas fa-edit"></i></span>
-                    <span class="save-icon" data-target="bio"><i class="fas fa-save"></i></span>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
+    <div class="container mx-auto flex-grow flex flex-col md:flex-row py-8 md:py-12 lg:py-16 px-4 md:px-0">
 
-<div class="modal" id="security-modal">
-    <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <h2>Change Password</h2>
-        <form method="post" id="change-password-form" action="{% url 'change_password' %}">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="old_password">Old Password</label>
-                <input type="password" id="old_password" name="old_password" required>
+        <aside class="w-full md:w-80 lg:w-96 shrink-0 mb-8 md:mb-0">
+            <div class="bg-white rounded-3xl shadow-lg p-6 md:p-8 sticky top-6 border border-gray-200">
+                <div class="flex flex-col items-center">
+                    <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-yellow-400 shadow-lg mb-4">
+                        {% if user.profile_pic %}
+                        <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="w-full h-full object-cover">
+                        {% else %}
+                        <i class="fas fa-user fa-5x text-gray-400"></i>
+                        {% endif %}
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-semibold text-[#091e65]">{{ user.username }}</h2>
+                    <p class="text-gray-600 text-sm">{{ user.email }}</p>
+
+                    <div class="mt-6 relative inline-block">
+                        <input type="file" id="photo" name="profile_pic" accept="image/*" hidden>
+                        <label for="photo" class="bg-yellow-400 hover:bg-yellow-500 text-[#091e65] font-bold py-2 px-6 rounded-full transition duration-300 cursor-pointer flex items-center">
+                            <i class="fas fa-camera mr-2"></i>
+                            <span>Change</span>
+                        </label>
+                        <button type="button" id="save-profile-pic" class="hidden absolute left-0 top-0 w-full h-full bg-red-500 hover:bg-red-600 text-white font-bold rounded-full transition duration-300 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100">
+                            <i class="fas fa-save"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <nav class="mt-8 md:mt-10">
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="#" id="profile-info-link" class="flex items-center py-2 px-4 rounded-full transition duration-300 border border-transparent w-full group hover:bg-gray-100 hover:text-[#091e65]">
+                                <i class="fas fa-user-circle w-5 mr-3 text-[#091e65] group-hover:text-yellow-500"></i>
+                                <span class="text-[#091e65] group-hover:text-yellow-500">Profile Information</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="security-link" class="flex items-center py-2 px-4 rounded-full transition duration-300 border border-transparent w-full group hover:bg-gray-100 hover:text-[#091e65]">
+                                <i class="fas fa-shield-alt w-5 mr-3 text-[#091e65] group-hover:text-yellow-500"></i>
+                                <span class="text-[#091e65] group-hover:text-yellow-500">Security</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="plan-link" class="flex items-center py-2 px-4 rounded-full transition duration-300 border border-transparent w-full group hover:bg-gray-100 hover:text-[#091e65]">
+                                <i class="fas fa-clipboard-list w-5 mr-3 text-[#091e65] group-hover:text-yellow-500"></i>
+                                <span class="text-[#091e65] group-hover:text-yellow-500">Manage Subscriptions</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="team-link" class="flex items-center py-2 px-4 rounded-full transition duration-300 border border-transparent w-full group hover:bg-gray-100 hover:text-[#091e65]">
+                                <i class="fas fa-file-invoice-dollar w-5 mr-3 text-[#091e65] group-hover:text-yellow-500"></i>
+                                <span class="text-[#091e65] group-hover:text-yellow-500">Billing History</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="notifications-link" class="flex items-center py-2 px-4 rounded-full transition duration-300 border border-transparent w-full group hover:bg-gray-100 hover:text-[#091e65]">
+                                <i class="fas fa-coins w-5 mr-3 text-[#091e65] group-hover:text-yellow-500"></i>
+                                <span class="text-[#091e65] group-hover:text-yellow-500">Buy Coins</span>
+                            </a>
+                        </li>
+                        <li>
+                              <a href="#" id="integrations-link" class="flex items-center py-2 px-4 rounded-full transition duration-300 border border-transparent w-full group hover:bg-gray-100 hover:text-[#091e65]">
+                                 <i class="fas fa-wallet w-5 mr-3 text-[#091e65] group-hover:text-yellow-500"></i>
+                                 <span class="text-[#091e65] group-hover:text-yellow-500">My Wallet</span>
+                             </a>
+                        </li>
+
+                    </ul>
+                </nav>
             </div>
-            <div class="form-group">
-                <label for="new_password1">New Password</label>
-                <input type="password" id="new_password1" name="new_password1" required>
+        </aside>
+
+        <main class="flex-grow w-full mt-8 md:mt-0 md:ml-8">
+            <div class="bg-white rounded-3xl shadow-lg p-8 md:p-12 lg:p-16 border border-gray-200">
+                <h1 class="text-4xl md:text-5xl font-bold text-[#091e65] mb-8">My Profile</h1>
+
+                <div id="profile-update-message" class="mb-6"></div>
+
+                <div id="profile-info-content" class="profile-section">
+                    <form method="post" enctype="multipart/form-data" class="space-y-7" action="{% url 'update_profile' %}">
+                        {% csrf_token %}
+                        <input type="hidden" id="update-profile-url" data-url="{% url 'update_profile' %}">
+
+                       <div class="mb-4">
+                            <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                            <div class="relative">
+                                <input type="text" id="username" name="username" value="{{ user.username }}" class="w-full px-5 py-3 border-2 border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] text-gray-700 placeholder-gray-400 transition duration-300" readonly placeholder="Your username">  <div class="absolute inset-y-0 right-0 flex items-center pr-3 space-x-3">
+                                        <span class="edit-icon cursor-pointer" data-target="username">
+                                        <i class="fas fa-edit text-gray-500 hover:text-[#091e65] transition duration-200"></i>
+                                        </span>
+                                       <span class="save-icon cursor-pointer hidden" data-target="username">
+                                       <i class="fas fa-save text-[#091e65] hover:text-green-500 transition duration-200"></i>
+                                       </span>
+                                    </div>
+                            </div>
+                        </div>
+
+
+                        <div class="mb-4">
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                <div class="relative">
+                                    <input type="text" id="name" name="full_name" value="{{ user.full_name }}" class="w-full px-5 py-3 border-2 border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] text-gray-700 placeholder-gray-400 transition duration-300" readonly placeholder="Your full name">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 space-x-3">
+                                        <span class="edit-icon cursor-pointer" data-target="name">
+                                        <i class="fas fa-edit text-gray-500 hover:text-[#091e65] transition duration-200"></i>
+                                        </span>
+                                       <span class="save-icon cursor-pointer hidden" data-target="name">
+                                           <i class="fas fa-save text-[#091e65] hover:text-green-500 transition duration-200"></i>
+                                       </span>
+                                    </div>
+                                </div>
+                        </div>
+
+                       <div class="mb-4">
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <div class="relative">
+                                <input type="email" id="email" name="email" value="{{ user.email }}" class="w-full px-5 py-3 border-2 border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] text-gray-700 placeholder-gray-400 transition duration-300" readonly placeholder="Your email address">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 space-x-3">
+                                    <span class="edit-icon cursor-pointer" data-target="email">
+                                    <i class="fas fa-edit text-gray-500 hover:text-[#091e65] transition duration-200"></i>
+                                    </span>
+                                   <span class="save-icon cursor-pointer hidden" data-target="email">
+                                       <i class="fas fa-save text-[#091e65] hover:text-green-500 transition duration-200"></i>
+                                   </span>
+                                </div>
+                            </div>
+                        </div>
+
+                         <div class="mb-4">
+                            <label for="bio" class="block text-sm font-medium text-gray-700 mb-2">Your Bio</label>
+                                <div class="relative">
+                                    <textarea id="bio" name="bio" class="w-full h-40 resize-none px-5 py-3 border-2 border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] text-gray-700 placeholder-gray-400 transition duration-300" readonly placeholder="Tell us about yourself...">{{ user.bio }}</textarea>
+                                    <div class="absolute top-3 right-0 flex items-center pr-3 space-x-3">
+                                        <span class="edit-icon cursor-pointer" data-target="bio">
+                                        <i class="fas fa-edit text-gray-500 hover:text-[#091e65] transition duration-200"></i>
+                                        </span>
+                                        <span class="save-icon cursor-pointer hidden" data-target="bio">
+                                        <i class="fas fa-save text-[#091e65] hover:text-green-500 transition duration-200"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="security-content" class="profile-section hidden">
+                    <div class="fixed inset-0 flex items-center justify-center z-50" id="security-modal">
+                            <div class="absolute inset-0 bg-black opacity-50"></div>
+                                <div class="bg-white rounded-2xl p-6 md:p-8 z-10 shadow-2xl w-full max-w-lg border border-gray-200">
+                                    <div class="flex justify-between items-center mb-6">
+                                            <h2 class="text-3xl font-bold text-[#091e65]">Change Password</h2>
+                                                <span class="close-modal cursor-pointer text-gray-500 hover:text-gray-700 transition duration-200">
+                                                     <i class="fas fa-times text-xl"></i>
+                                                </span>
+                                    </div>
+
+                                    <form method="post" id="change-password-form" action="{% url 'change_password' %}" class="space-y-6">
+                                            {% csrf_token %}
+
+                                        <div class="mb-4">
+                                            <label for="old_password" class="block text-sm font-medium text-gray-700 mb-2">Old Password</label>
+                                            <input type="password" id="old_password" name="old_password" required class="w-full px-5 py-3 border-2 border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] text-gray-700 placeholder-gray-400 transition duration-300" placeholder="Enter your old password">
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <label for="new_password1" class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                                            <input type="password" id="new_password1" name="new_password1" required class="w-full px-5 py-3 border-2 border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] text-gray-700 placeholder-gray-400 transition duration-300" placeholder="Enter your new password">
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <label for="new_password2" class="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                                           <input type="password" id="new_password2" name="new_password2" required class="w-full px-5 py-3 border-2 border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] text-gray-700 placeholder-gray-400 transition duration-300" placeholder="Confirm your new password">
+                                        </div>
+
+
+                                        <button type="submit" class="w-full bg-[#091e65] hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-full transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                                            Change Password
+                                            </button>
+                                            <div id="password-change-message" class="mt-4"></div>
+                                    </form>
+
+                                    <div id="custom-alert" class="hidden bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                                            <div id="custom-alert-message" class="text-center text-[#091e65]"></div>
+                                            <button id="custom-alert-close" class="mt-4 bg-[#091e65] hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-full focus:outline-none">OK</button>
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+
+                <div id="plan-content" class="profile-section hidden p-8 bg-white rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-[#091e65] mb-4">Manage Subscriptions</h2>
+                    <p class="text-gray-700">Manage your subscription details here.</p>
+                </div>
+                <div id="team-content" class="profile-section hidden p-8 bg-white rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-[#091e65] mb-4">Billing History</h2>
+                    <p class="text-gray-700">View your billing history and invoices.</p>
+                </div>
+                <div id="notifications-content" class="profile-section hidden p-8 bg-white rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-[#091e65] mb-4">Buy Coins</h2>
+                    <p class="text-gray-700">Purchase additional coins for premium content.</p>
+                </div>
+                <div id="integrations-content" class="profile-section hidden p-8 bg-white rounded-xl border border-gray-200">
+                    <h2 class="text-2xl font-bold text-[#091e65] mb-4">My Wallet</h2>
+                    <p class="text-gray-700">Check your current coin balance and transaction history.</p>
+                </div>
+
             </div>
-            <div class="form-group">
-                <label for="new_password2">Confirm New Password</label>
-                <input type="password" id="new_password2" name="new_password2" required>
-            </div>
-            <button type="submit">Change Password</button>
-            <div id="password-change-message" class="mt-3"></div>
-        </form>
-        <div id="custom-alert" class="hidden">
-            <div id="custom-alert-message"></div>
-            <button id="custom-alert-close">OK</button>
-        </div>
+        </main>
     </div>
 </div>
 
 <script src="https://kit.fontawesome.com/a076d05399.js"></script>
-<script src="{% static 'js/myprofile.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- DOM Element References ---
+        const securityLink = document.getElementById('security-link');
+        const profileInfoLink = document.getElementById('profile-info-link');
+        const planLink = document.getElementById('plan-link');
+        const teamLink = document.getElementById('team-link');
+        const notificationsLink = document.getElementById('notifications-link');
+        const integrationsLink = document.getElementById('integrations-link');
+        const securityModal = document.getElementById('security-modal');
+        const closeModal = document.querySelector('.close-modal');
+        const profilePictureImg = document.querySelector('.rounded-full img');
+        const defaultIcon = document.querySelector('.rounded-full .fa-user');
+        const photoInput = document.getElementById('photo');
+        const saveProfilePicButton = document.getElementById('save-profile-pic');
+        const changePasswordForm = document.getElementById('change-password-form');
+        const passwordChangeMessage = document.getElementById('password-change-message');
+        const customAlert = document.getElementById('custom-alert');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertClose = document.getElementById('custom-alert-close');
+        const updateMessageDiv = document.getElementById('profile-update-message');
+        const sidebarLinks = document.querySelectorAll('.nav-link'); // Corrected selector
+        const contentSections = document.querySelectorAll('.profile-section');
+        const updateProfileURL = document.getElementById('update-profile-url').getAttribute('data-url');
 
+        // --- Helper Functions ---
+
+        function showSection(sectionId) {
+            contentSections.forEach(section => section.classList.add('hidden'));
+            const section = document.getElementById(sectionId);
+            if (section) section.classList.remove('hidden');
+        }
+
+         function activateLink(link) {
+            sidebarLinks.forEach(l => l.classList.remove('bg-gray-100', 'text-blue-700', 'border-blue-700'));
+            // Remove the 'active' class from all links
+            sidebarLinks.forEach(l => l.classList.remove('active'));
+
+               if (link) {
+                 link.classList.add('active'); // Add 'active' to the clicked link
+               }
+
+         }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // --- Event Listeners ---
+
+        // Sidebar Navigation
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                const sectionId = this.id.replace('-link', '-content');
+                showSection(sectionId);
+                activateLink(this); // Pass 'this' (the link) to activateLink
+            });
+        });
+
+        // Initial Section Display
+        showSection('profile-info-content');
+        activateLink(profileInfoLink);
+
+        // Security Modal Controls
+        if (securityLink) {
+            securityLink.addEventListener('click', function (event) {
+                event.preventDefault();
+                securityModal.classList.remove('hidden');
+                 activateLink(this);
+                showSection('security-content');
+            });
+        }
+
+        if (closeModal) {
+            closeModal.addEventListener('click', function () {
+                securityModal.classList.add('hidden');
+            });
+        }
+
+        window.addEventListener('click', function (event) {
+            if (event.target == securityModal) {
+                securityModal.classList.add('hidden');
+            }
+        });
+
+       // Other Section Links (Simplified)
+         const sectionLinkMapping = {
+             'plan-link': 'plan-content',
+             'team-link': 'team-content',
+             'notifications-link': 'notifications-content',
+             'integrations-link': 'integrations-content',
+         };
+
+         for (const [linkId, sectionId] of Object.entries(sectionLinkMapping)) {
+             const link = document.getElementById(linkId);
+             if (link) {
+                 link.addEventListener('click', function(event) {
+                     event.preventDefault();
+                     showSection(sectionId);
+                     activateLink(this);  //Corrected activation
+                 });
+             }
+         }
+
+
+        // Password Change Form Submission (remains largely the same, but using Tailwind classes)
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                passwordChangeMessage.innerHTML = ''; // Clear previous messages
+                document.querySelectorAll('.input-error').forEach(el => el.remove()); //Remove Old errors.
+                const csrftoken = getCookie('csrftoken');
+
+                fetch(this.action, {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrftoken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Success message using Tailwind classes
+                        customAlertMessage.textContent = data.message;
+                        customAlert.classList.remove('hidden');
+                        // customAlert.classList.add('bg-green-500', 'text-white'); // Tailwind classes for success
+                        changePasswordForm.reset();
+
+                         customAlertClose.onclick = function() {
+                             customAlert.classList.add('hidden');
+                            //  customAlert.classList.remove('bg-green-500', 'text-white');
+                             securityModal.classList.add('hidden');
+                              window.location.href = "/login/";
+                         }
+                    } else {
+                        // Error handling with Tailwind classes
+                        customAlertMessage.textContent = data.message; // Show a general error message
+                        customAlert.classList.remove('hidden');
+                        // customAlert.classList.add('bg-red-500', 'text-white'); // Tailwind classes for error
+
+                        // Display specific field errors (if provided)
+                        if (data.errors) {
+                            for (const field in data.errors) {
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'input-error text-red-500 text-sm mt-1'; // Tailwind classes for error
+                                errorDiv.textContent = data.errors[field];
+                                const inputField = document.getElementById(field);
+
+                                if(inputField){
+                                    inputField.parentNode.insertBefore(errorDiv, inputField.nextSibling);
+
+                                }else{
+                                  passwordChangeMessage.appendChild(errorDiv);
+                                }
+
+                            }
+                        }
+                        customAlertClose.onclick = function() {
+                             customAlert.classList.add('hidden');
+                            //  customAlert.classList.remove('bg-red-500', 'text-white');
+                         }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    customAlertMessage.textContent = "An error occurred. Please try again.";
+                    customAlert.classList.remove('hidden');
+                    // customAlert.classList.add('bg-red-500', 'text-white');
+                    customAlertClose.onclick = function() {
+                             customAlert.classList.add('hidden');
+                            //  customAlert.classList.remove('bg-red-500', 'text-white');
+                    }
+
+                });
+            });
+        }
+
+
+
+        // Profile Picture Handling
+        if (photoInput) {
+            photoInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        profilePictureImg.src = e.target.result;
+                         profilePictureImg.classList.remove('hidden'); // Ensure image is visible
+                        if (defaultIcon) defaultIcon.classList.add('hidden');
+                         saveProfilePicButton.classList.remove('hidden');
+                        saveProfilePicButton.classList.add('opacity-100');
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+
+
+         if (saveProfilePicButton) {
+            saveProfilePicButton.addEventListener('click', function() {
+                let formData = new FormData();
+                formData.append('profile_pic', photoInput.files[0]);
+                formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+                fetch(updateProfileURL, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        saveProfilePicButton.classList.add('hidden');
+                        saveProfilePicButton.classList.remove('opacity-100');
+                        //Success message.
+                         updateMessageDiv.textContent = data.message;
+                        updateMessageDiv.className = 'bg-green-500 text-white px-4 py-2 rounded-full relative my-4';
+                    } else {
+                        //Error message.
+                        updateMessageDiv.textContent = data.message;
+                        updateMessageDiv.className = 'bg-red-500 text-white px-4 py-2 rounded-full relative my-4';
+                    }
+                })
+                .catch(error => {
+                    updateMessageDiv.textContent = 'An error occurred.';
+                    updateMessageDiv.className = 'bg-red-500 text-white px-4 py-2 rounded-full relative my-4';
+
+                });
+            });
+        }
+
+
+        // Edit/Save Field Logic
+        const editIcons = document.querySelectorAll('.edit-icon');
+        const saveIcons = document.querySelectorAll('.save-icon');
+
+        editIcons.forEach(icon => {
+            icon.addEventListener('click', function() {
+                const targetId = this.dataset.target;
+                const inputField = document.getElementById(targetId);
+                inputField.readOnly = false;
+                inputField.focus();
+                 // Correctly hide the edit icon and show the save icon
+                this.classList.add('hidden'); // Hide current edit icon
+                // Find the corresponding save icon and show it.
+                const saveIcon = this.parentElement.querySelector(`.save-icon[data-target="${targetId}"]`);
+                if(saveIcon) {
+                  saveIcon.classList.remove('hidden');
+                }
+                inputField.classList.remove('bg-white', 'border-gray-200'); // Remove readonly styles
+                inputField.classList.add('bg-gray-100', 'border-blue-500'); // Add editing styles
+                inputField.focus();
+            });
+        });
+
+        saveIcons.forEach(icon => {
+            icon.addEventListener('click', function() {
+                const targetId = this.dataset.target;
+                const inputField = document.getElementById(targetId);
+
+                 if (!inputField.value.trim()) {
+                    updateMessageDiv.textContent = 'Error: Field cannot be empty.';
+                    updateMessageDiv.className = 'bg-red-500 text-white px-4 py-2 rounded-full relative my-4';
+                    return; // Prevent saving empty fields
+                }
+
+
+                inputField.readOnly = true;
+                // Correctly hide the save icon and show the edit icon.
+               this.classList.add('hidden');
+                 // Find the corresponding edit icon and show it.
+               const editIcon = this.parentElement.querySelector(`.edit-icon[data-target="${targetId}"]`);
+                if(editIcon){
+                  editIcon.classList.remove('hidden');
+                }
+
+                const data = {
+                    [targetId]: inputField.value,
+                    'csrfmiddlewaretoken': getCookie('csrftoken')
+                };
+
+                fetch(updateProfileURL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                         inputField.classList.add('bg-white', 'border-gray-200'); // Restore readonly styles
+                        inputField.classList.remove('bg-gray-100', 'border-blue-500'); // Remove edit styles
+                        updateMessageDiv.textContent = data.message;
+                        updateMessageDiv.className = 'bg-green-500 text-white px-4 py-2 rounded-full relative my-4';
+                    } else {
+                        inputField.readOnly = false;
+                        this.classList.remove('hidden'); // Keep save icon visible.
+                        //Hide edit icon
+                        document.querySelector(`.edit-icon[data-target="${targetId}"]`).classList.add('hidden');
+                        updateMessageDiv.textContent = data.message; //Keep consistent.
+                        updateMessageDiv.className = 'bg-red-500 text-white px-4 py-2 rounded-full relative my-4';
+
+                    }
+                })
+                .catch(error => {
+                     inputField.readOnly = false;
+                    this.classList.remove('hidden'); // Keep save icon visible on error.
+                     // Hide edit icon
+                    document.querySelector(`.edit-icon[data-target="${targetId}"]`).classList.add('hidden');
+
+                    updateMessageDiv.textContent = 'An error occurred.';
+                    updateMessageDiv.className = 'bg-red-500 text-white px-4 py-2 rounded-full relative my-4';
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}

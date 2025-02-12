@@ -24,6 +24,10 @@ urlpatterns = [
     path('update_profile/', views.update_profile, name='update_profile'),
     path('change_password/', views.change_password, name='change_password'),
     path('send-otp/', views.send_otp, name='send_otp'),  
+    path('adminlogin', views.adminlogin, name='adminlogin'),  
+    path('adminsignup', views.adminsignup, name='adminsignup'),  
+    path('admindashboard', views.admindashboard, name='admindashboard'),  
+
 
 
     ] 

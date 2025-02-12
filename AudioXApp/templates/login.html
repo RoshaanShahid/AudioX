@@ -1,76 +1,173 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login Page</title>
-    <link rel="stylesheet" href="{% static 'css/loginstyle.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#091e65',
+                        'primary-light': '#12348f',
+                        'accent': '#60a5fa',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 
-<body>
-    <div class="logo">AudioX</div>
-    <div class="divider"></div>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans">
 
-    <div class="login-wrapper">
-        <div class="container">
-            <h2>Login to your account</h2>
-            
-            <form method="post" action="{% url 'login' %}">
+    <div class="bg-white rounded-3xl shadow-xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row">
+
+        <div class="w-full md:w-1/2 p-8 md:p-12">
+            <div class="flex items-center justify-between mb-6">
+                <a href="/Home" class="flex items-center">
+                    <img alt="Logo" class="w-12 h-12 mr-3" src="{% static 'img/loginlogo.png' %}" />
+                                </a>
+                <a href="/Home" class="md:hidden text-gray-500 hover:text-gray-700">
+                  <i class="fas fa-times text-xl"></i>
+                </a>
+            </div>
+
+            <h2 class="text-2xl md:text-3xl font-bold text-primary mb-4">Welcome Back!</h2>
+            <p class="text-gray-600 mb-8">Log in to your account.</p>
+
+
+            <div class="flex space-x-4 mb-6 justify-center">
+                <button class="bg-white text-red-600 p-2 rounded-full hover:scale-110 transition-transform w-12 h-12 flex items-center justify-center shadow-md">
+                    <i class="fab fa-google text-2xl"></i>
+                 </button>
+
+            </div>
+
+            <div class="flex items-center mb-6">
+                <hr class="flex-grow border-gray-300" />
+                <span class="px-3 text-gray-500 text-sm">OR</span>
+                <hr class="flex-grow border-gray-300" />
+            </div>
+
+            <form id="loginForm" method="post" class="space-y-6">
                 {% csrf_token %}
-
-                <div class="input-group">
-                    <label for="loginIdentifier">Email or Username</label>
-                    <input type="text" id="loginIdentifier" name="loginIdentifier"
-                        placeholder="Enter your email or username">
-                    <span class="error-message"></span> 
+                <div>
+                    <label for="loginIdentifier" class="sr-only">Email or Username</label>
+                    <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200"
+                           placeholder="Email or Username" type="text" name="loginIdentifier" id="loginIdentifier" required />
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <div class="relative">
+                        <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200 pr-12"  placeholder="Password" type="password" name="password" id="password" required />
+                        <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"></i>
+                   </div>
                 </div>
 
-                <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password">
-                    <i class="fas fa-eye show-password-icon" id="togglePassword"></i>
-                    <span class="error-message"></span> 
-                </div>
-
-                <button type="submit" class="btn">Login</button>
+                <button class="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl transition duration-200"
+                        type="submit">
+                    Sign In
+                </button>
             </form>
-
-            {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
-                {% endfor %}
-            </ul>
-            {% endif %}
-
         </div>
 
-        <div class="or-divider">
-            <hr class="divider-line">
-            <span class="or-text">OR</span>
-            <hr class="divider-line">
-        </div>
-
-        <div class="google-button-container">
-            <button class="google-login-btn">
-                <img src="https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-webinar-optimizing-for-success-google-business-webinar-13.png"
-                    alt="Google Logo" class="google-logo">
-                Continue via Google
-            </button>
+        <div class="hidden md:flex w-1/2 bg-gradient-to-r from-primary to-primary-light text-white p-12  justify-center items-center rounded-r-3xl">
+            <div class="text-center">
+              <i class="fas fa-user-plus text-4xl mb-4"></i>
+                <h2 class="text-3xl font-bold mb-4">New Here?</h2>
+                <p class="mb-6 text-lg">Sign up and unlock a world of possibilities!</p>
+                <a href="{% url 'signup' %}" class="bg-white text-primary px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition duration-200">
+                    Sign Up
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="footer">
-        Not a member yet? <a href="{% url 'signup' %}">Sign up</a>
-    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
 
-    <script src="{% static 'js/signup.js' %}"></script>
-    <script src="{% static 'js/login.js' %}"></script>
+            fetch("{% url 'login' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire({
+                        title: 'Success',
+                        text: 'Login successful!',
+                        icon: 'success',
+                        showCancelButton: false,
+                        confirmButtonText: 'OK',
+                        allowOutsideClick: false,
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = "{% url 'myprofile' %}";
+                        }
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'An error occurred during login.', 'error');
+            });
+        });
 
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = JSON.parse(document.getElementById('django-messages').textContent);
+            messages.forEach(message => {
+                Swal.fire({
+                    title: message.tags ? message.tags.charAt(0).toUpperCase() + message.tags.slice(1) : '',
+                    text: message.message,
+                    icon: message.tags ? message.tags : 'info',
+                });
+            });
+        });
+
+
+    document.querySelector('.fa-eye').addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            this.classList.remove('fa-eye');
+            this.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            this.classList.remove('fa-eye-slash');
+            this.classList.add('fa-eye');
+        }
+    });
+
+    </script>
+
+    <script id="django-messages" type="application/json">
+        {% autoescape off %}
+        [
+            {% for message in messages %}
+                {
+                    "message": "{{ message|escapejs }}",
+                    "tags": "{{ message.tags|escapejs }}"
+                }
+                {% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+        {% endautoescape %}
+    </script>
 </body>
-
 </html>
