@@ -1,0 +1,264 @@
+{% extends 'Homepage.html' %}
+{% load static %}
+
+{% block title %}AudioX - My Wallet{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100 min-h-screen py-12">
+    <div class="container mx-auto px-4">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-center text-[#091e65] mb-6 md:mb-10">
+            My AudioX Wallet
+        </h1>
+        <p class="text-center text-gray-600 text-lg md:text-xl mb-12 md:mb-16 max-w-3xl mx-auto">
+            Manage your coins and send gifts to your friends.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <div class="bg-white rounded-3xl shadow-xl p-6 md:p-10 relative overflow-hidden">
+                <div class="flex flex-col items-center justify-center text-center">
+                    <div class="inline-flex items-center justify-center p-4 bg-[#091e65] rounded-full mb-4">
+                        <i class="fas fa-coins text-4xl md:text-5xl text-white"></i>
+                    </div>
+                    <p class="text-[#091e65] text-xl md:text-2xl font-medium mb-2">Current Coins</p>
+                    <span class="text-3xl md:text-5xl font-extrabold text-[#091e65] mb-6" id="coin-balance">{{ user.coins }}</span>
+                    <a href="{% url 'buycoins' %}" class="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-[#091e65] to-[#06134d] hover:from-[#06134d] hover:to-[#091e65] text-white rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 font-semibold text-base md:text-lg">
+                        <i class="fas fa-plus mr-2"></i> Buy Coins
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-xl p-6 md:p-8 relative overflow-hidden">
+                <h2 class="text-2xl md:text-3xl font-bold text-[#091e65] mb-6 text-center">Send a Gift</h2>
+                <form id="gift-form" method="post" action="{% url 'gift_coins' %}">
+                    {% csrf_token %}
+                    <div class="space-y-6">
+                        <div>
+                            <label for="recipient" class="block text-sm font-medium text-gray-700">Recipient Username or Email</label>
+                            <input type="text" name="recipient" id="recipient" class="mt-1 w-full px-4 py-3 border border-gray-300 rounded-full focus:ring-[#091e65] focus:border-[#091e65] text-gray-900 placeholder-gray-400 focus:outline-none" required>
+                        </div>
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="number" name="amount" id="amount" class="mt-1 w-full px-4 py-3 border border-gray-300 rounded-full focus:ring-[#091e65] focus:border-[#091e65] text-gray-900 placeholder-gray-400 appearance-none focus:outline-none" placeholder="0" min="1" required>
+                        </div>
+                    </div>
+                    <button type="button" id="send-gift-btn" class="mt-6 w-full px-6 py-3 bg-[#091e65] hover:bg-opacity-90 text-white rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 font-semibold text-base md:text-lg focus:outline-none">
+                        <i class="fas fa-gift mr-2"></i> Send Gift
+                    </button>
+                </form>
+                <div id="gift-message" class="mt-6 text-center"></div>
+            </div>
+        </div>
+
+         <div class="mt-10 text-center">
+            <p class="text-gray-600">Want to earn more coins?  <a href="{% url 'buycoins' %}" class="text-red-500 hover:text-red-600 font-semibold transition-colors">Explore our coin packs!</a></p>
+        </div>
+
+
+        <div class="mt-12">
+            <h2 class="text-2xl md:text-3xl font-bold text-[#091e65] text-center mb-6">Transaction History</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full leading-normal bg-white rounded-xl shadow-md">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                     <i class="fas fa-exchange-alt mr-1"></i> Type
+                                </th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                     <i class="fas fa-user mr-1"></i> User
+                                </th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                     <i class="fas fa-coins mr-1"></i> Amount
+                                </th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                     <i class="fas fa-coins mr-1"></i> Price (PKR)
+                                </th>
+                                 <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                       Pack Name
+                                   </th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    <i class="fas fa-calendar-alt mr-1"></i> Date
+                                </th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in gift_history %}
+                            <tr class="hover:bg-gray-50 transition duration-200">
+                                <td class="px-5 py-4 border-b border-gray-200  text-sm">
+                                    {% if transaction.transaction_type == 'gift_sent' %}
+                                        <span class="text-red-500">Sent</span>
+                                    {% elif transaction.transaction_type == 'gift_received' %}
+                                        <span class="text-green-500">Received</span>
+                                    {% elif transaction.transaction_type == 'purchase' %}
+                                       <span class="text-blue-500">Purchase</span>
+                                    {% else %}
+                                        <span>{{ transaction.transaction_type|title }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-4 border-b border-gray-200 text-sm">
+                                    {% if transaction.transaction_type == 'gift_sent' %}
+                                        {{ transaction.recipient.email }}
+                                    {% elif transaction.transaction_type == 'gift_received' %}
+                                        {{ transaction.sender.email }}
+                                    {% elif transaction.transaction_type == 'purchase' %}
+                                        AudioX
+                                    {% endif %}
+                                </td>
+                                <td class="px-5 py-4 border-b border-gray-200  text-sm">
+                                     {{ transaction.amount }} Coins
+                                </td>
+                                 <td class="px-5 py-4 border-b border-gray-200 text-sm">
+                                    {% if transaction.transaction_type == 'purchase' %}
+                                        PKR {{ transaction.price|floatformat:2 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                 <td class="px-5 py-4 border-b border-gray-200 text-sm">
+                                        {% if transaction.transaction_type == 'purchase' %}
+                                            {{ transaction.pack_name }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                 </td>
+                                <td class="px-5 py-4 border-b border-gray-200  text-sm">
+                                    {{ transaction.transaction_date|date:"M d, Y h:i A" }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-5 py-10 text-sm text-center">
+                                    No transaction history found.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 w-full max-w-md">
+        <h2 class="text-2xl font-bold text-[#091e65] mb-4 text-center">Confirm Gift</h2>
+        <p class="text-gray-700 mb-2">From: <span id="confirm-from">{{ user.email }}</span></p>  <p class="text-gray-700 mb-2">To: <span id="confirm-to"></span></p>
+        <p class="text-gray-700 mb-6">Amount: <span id="confirm-amount"></span> Coins</p>
+        <div class="flex justify-center space-x-4">
+            <button id="confirm-send" class="px-6 py-2 bg-[#091e65] hover:bg-opacity-90 text-white rounded-full shadow-md transition duration-300 ease-in-out font-semibold">Confirm</button>
+            <button id="cancel-send" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-full shadow-md transition duration-300 ease-in-out font-semibold">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const giftForm = document.getElementById('gift-form');
+    const messageDiv = document.getElementById('gift-message');
+    const sendGiftBtn = document.getElementById('send-gift-btn');
+    const confirmationModal = document.getElementById('confirmation-modal');
+    const confirmFrom = document.getElementById('confirm-from');
+    const confirmTo = document.getElementById('confirm-to');
+    const confirmAmount = document.getElementById('confirm-amount');
+    const confirmSendBtn = document.getElementById('confirm-send');
+    const cancelSendBtn = document.getElementById('cancel-send');
+    let giftData = {}; // Store gift details for confirmation
+
+    sendGiftBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+
+        const recipient = document.getElementById('recipient').value.trim();
+        const amount = parseInt(document.getElementById('amount').value, 10);
+
+        if (isNaN(amount) || amount <= 0) {
+            messageDiv.innerHTML = `<p class="text-red-500 text-sm font-semibold">Please enter a valid, positive number for the amount.</p>`;
+            return;
+        }
+        if (!recipient) {
+              messageDiv.innerHTML = `<p class="text-red-500 text-sm font-semibold">Recipient is required.</p>`;
+              return
+        }
+
+        // Store data for later use in the confirmation modal
+        giftData = { recipient, amount };
+
+        // Populate confirmation modal
+        confirmTo.textContent = recipient;
+        confirmAmount.textContent = amount;
+
+        // Show confirmation modal
+        confirmationModal.classList.remove('hidden');
+    });
+
+    cancelSendBtn.addEventListener('click', function() {
+        confirmationModal.classList.add('hidden');
+        giftData = {}; // Clear stored data
+    });
+
+    confirmSendBtn.addEventListener('click', function() {
+        // Disable the button to prevent multiple submissions
+        confirmSendBtn.disabled = true;
+        cancelSendBtn.disabled = true; // Also disable cancel during the request
+
+        fetch("{% url 'gift_coins' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(giftData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errData => {
+                    // Improved error message handling:  Remove "HTTP error! Status: 400 -"
+                    throw new Error(errData.message || 'Unknown Error');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                messageDiv.innerHTML = `<p class="text-green-500 text-sm font-semibold">${data.message}</p>`;
+                document.getElementById('coin-balance').textContent = data.new_balance;
+                setTimeout(function() {
+                    location.reload();
+                }, 3000);
+            } else {
+                messageDiv.innerHTML = `<p class="text-red-500 text-sm font-semibold">${data.message}</p>`;
+            }
+            giftForm.reset();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            messageDiv.innerHTML = `<p class="text-red-500 text-sm font-semibold">${error.message}</p>`;
+        })
+        .finally(() => {
+          // Re-enable buttons and hide modal.
+          confirmSendBtn.disabled = false;
+          cancelSendBtn.disabled = false;
+          confirmationModal.classList.add('hidden');
+        });
+    });
+
+    function animateValue(element, start, end, duration) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            element.textContent = Math.floor(progress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+
+    const coinBalanceElement = document.getElementById('coin-balance');
+    if (coinBalanceElement) {
+        const endValue = parseInt(coinBalanceElement.textContent);
+        animateValue(coinBalanceElement, 0, endValue, 1500);
+    }
+});
+</script>
+{% endblock %}

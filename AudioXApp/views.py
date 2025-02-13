@@ -1,20 +1,20 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import User, Admin
+from .models import User, Admin, CoinTransaction  # Import CoinTransaction
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import login as auth_login, logout as auth_logout, update_session_auth_hash, authenticate
 from django.contrib.auth.decorators import login_required
 from django.templatetags.static import static
-from django.http import JsonResponse, HttpResponse
-from django.contrib.auth.forms import PasswordChangeForm
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.views.decorators.http import require_POST
 import json
 from django.urls import reverse
-from django.contrib.auth.hashers import check_password  # Import check_password
-from django.core.exceptions import ValidationError  # Import ValidationError
-from django.db.models import F
-from django.core.files.storage import default_storage #For deleting file.
+from django.contrib.auth.hashers import check_password
+from django.core.exceptions import ValidationError
+from django.db.models import F, Q  # Import Q for complex queries
+from django.core.files.storage import default_storage  # For deleting file.
+from django.db import transaction  # Import transaction
 
 
 def home(request):
@@ -44,10 +44,10 @@ def signup(request):
 
         if User.objects.filter(username=username).exists():
             return JsonResponse({'status': 'error', 'message': "Username already exists."})
-
-        if email_verified != 'true':
-            return JsonResponse({'status': 'error', 'message': "Email not verified."})
         
+        if email_verified != 'true':
+          return JsonResponse({'status': 'error', 'message': "Email not verified."})
+
         # --- OTP Verification ---
         if not entered_otp:
             return JsonResponse({'status': 'error', 'message': "OTP is required."})
@@ -59,7 +59,7 @@ def signup(request):
 
         except KeyError:
             return JsonResponse({'status': 'error', 'message': "OTP session expired or not set."})
-
+        
         # Clear the OTP from the session after successful verification
         del request.session['otp']
 
@@ -88,11 +88,12 @@ def send_otp(request):
         otp = request.POST.get('otp')  # Get the OTP from the request
 
         print(f"AudioX - send_otp view triggered")
-        print(f"  - Email: {email}")
-        print(f"  - OTP: {otp}")
+        print(f"   - Email: {email}")
+        print(f"   - OTP: {otp}")
 
         # Store the OTP in the session.  VERY IMPORTANT.
         request.session['otp'] = otp
+
 
         try:
             send_mail(
@@ -102,50 +103,42 @@ def send_otp(request):
                 [email],
                 fail_silently=False,
             )
-            print(f"  - Email sent successfully to {email}")
+            print(f"   - Email sent successfully to {email}")
             return JsonResponse({'status': 'success'})
         except Exception as e:
-            print(f"  - Error sending email to {email}:")
-            print(f"    - Error Type: {type(e).__name__}")
-            print(f"    - Error Message: {e}")
+            print(f"   - Error sending email to {email}:")
+            print(f"       - Error Type: {type(e).__name__}")
+            print(f"       - Error Message: {e}")
             return JsonResponse({'status': 'error', 'message': str(e)})
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
-    
+
+
 def login(request):
     if request.method == 'POST':
-        login_identifier = request.POST.get('loginIdentifier')  # Get the identifier
+        login_identifier = request.POST.get('loginIdentifier')
         password = request.POST.get('password')
-
         user = None
 
-        # Try to find the user by email first
         if '@' in login_identifier:
             try:
                 user = User.objects.get(email=login_identifier)
             except User.DoesNotExist:
-                pass  # User not found by email, try username next
-
-        # If user not found by email, try username
+                pass
         if not user:
             try:
                 user = User.objects.get(username=login_identifier)
             except User.DoesNotExist:
-                pass  # User not found by username either
-
-        # If a user is found, check the password
+                pass
         if user:
             if user.check_password(password):
                 auth_login(request, user)
-                # messages.success(request, "Login successful!") # No longer needed - AJAX handles it
-                return JsonResponse({'status': 'success'})  # Return success
+                return JsonResponse({'status': 'success'})
             else:
-                return JsonResponse({'status': 'error', 'message': "Incorrect password"})  # Return JSON
+                return JsonResponse({'status': 'error', 'message': "Incorrect password"}, status=401)
         else:
-            return JsonResponse({'status': 'error', 'message': "Incorrect email or username"})  # Return JSON
-
-
-    return render(request, 'login.html')  # GET request: show login form
+            return JsonResponse({'status': 'error', 'message': "Incorrect email or username"}, status=401)
+    return render(request, 'login.html')
 
 @login_required
 def myprofile(request):
@@ -161,7 +154,6 @@ def update_profile(request):
         print("Profile picture update request (Multipart)")
 
         if 'profile_pic' in request.FILES:
-            # Delete old profile picture if it exists
             if user.profile_pic:
                 default_storage.delete(user.profile_pic.path)
 
@@ -174,18 +166,17 @@ def update_profile(request):
                 return JsonResponse({'status': 'success', 'message': 'Profile picture updated successfully'})
             except Exception as e:
                 print("Error saving profile picture:", e)
-                return JsonResponse({'status': 'error', 'message': f'Error saving profile picture: {e}'})
+                return JsonResponse({'status': 'error', 'message': f'Error saving profile picture: {e}'}, status=500)
         
-        # Handle profile picture removal
         if 'remove_profile_pic' in request.POST:
             if user.profile_pic:
-                # Delete the file from storage
                 default_storage.delete(user.profile_pic.path)
-                user.profile_pic = None # Set the field to None (null in the database)
+                user.profile_pic = None
                 user.save()
                 return JsonResponse({'status': 'success', 'message': 'Profile picture removed successfully'})
             else:
-                return JsonResponse({'status': 'error', 'message': 'No profile picture to remove'})
+                return JsonResponse({'status': 'error', 'message': 'No profile picture to remove'}, status=400)
+
 
     elif request.content_type == 'application/json':
         print("Field update request (JSON)")
@@ -193,22 +184,21 @@ def update_profile(request):
             data = json.loads(request.body)
             print("Parsed Data:", data)
 
-            # Update fields if they are in the parsed data
             if 'username' in data:
                 username = data['username']
                 if User.objects.exclude(pk=user.pk).filter(username=username).exists():
-                    return JsonResponse({'status': 'error', 'message': 'Username already exists'})
+                    return JsonResponse({'status': 'error', 'message': 'Username already exists'}, status=400)
                 user.username = username
 
-            if 'name' in data:  # Changed 'full_name' to 'name' to match your myprofile.js
-                user.full_name = data['name']  # Changed 'full_name' to 'name'
+            if 'name' in data:
+                user.full_name = data['name']
 
             if 'email' in data:
                 email = data['email']
                 if User.objects.exclude(pk=user.pk).filter(email=email).exists():
-                    return JsonResponse({'status': 'error', 'message': 'Email already exists'})
+                    return JsonResponse({'status': 'error', 'message': 'Email already exists'}, status=400)
                 user.email = email
-
+                
             if 'bio' in data:
                 user.bio = data['bio']
 
@@ -218,15 +208,13 @@ def update_profile(request):
                 return JsonResponse({'status': 'success', 'message': 'Profile updated successfully'})
             except Exception as e:
                 print("Error saving profile:", e)
-                return JsonResponse({'status': 'error', 'message': f'Error saving profile: {e}'})
+                return JsonResponse({'status': 'error', 'message': f'Error saving profile: {e}'}, status=500)
 
         except json.JSONDecodeError as e:
             print("JSON Decode Error:", e)
-            return JsonResponse({'status': 'error', 'message': f'Invalid JSON data: {e}'})
-
-    # If neither condition is met
+            return JsonResponse({'status': 'error', 'message': f'Invalid JSON data: {e}'}, status=400)
     print("Invalid request")
-    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
 @login_required
 def change_password(request):
@@ -239,9 +227,9 @@ def change_password(request):
             return JsonResponse({'status': 'success', 'message': 'Password updated successfully! Please log in again.'})
         else:
             errors = {field: error[0] for field, error in form.errors.items()}
-            return JsonResponse({'status': 'error', 'message': 'Please correct the errors below.', 'errors': errors})
+            return JsonResponse({'status': 'error', 'message': 'Please correct the errors below.', 'errors': errors}, status=400)
     else:
-        return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+        return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
 def ourteam(request):
     return render(request, 'ourteam.html')
@@ -274,78 +262,204 @@ def adminsignup(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
-        roles_list = request.POST.getlist('roles')
+        roles_list = request.POST.getlist('roles')  # Use getlist for multiple select
 
-        # --- Validation ---
         if password != confirm_password:
-            return JsonResponse({'status': 'error', 'message': 'Passwords do not match.'})
+            return JsonResponse({'status': 'error', 'message': 'Passwords do not match.'}, status=400)
 
         if not roles_list:
-            return JsonResponse({'status': 'error', 'message': 'Please select at least one role.'})
+            return JsonResponse({'status': 'error', 'message': 'Please select at least one role.'}, status=400)
         if Admin.objects.filter(email=email).exists():
-            return JsonResponse({'status':'error', 'message': 'An admin with this email already exists.'})
+            return JsonResponse({'status':'error', 'message': 'An admin with this email already exists.'}, status=400)
         if Admin.objects.filter(username=username).exists():
-            return JsonResponse({'status':'error', 'message': 'An admin with this username already exists.'})
+            return JsonResponse({'status':'error', 'message': 'An admin with this username already exists.'}, status=400)
 
-        # --- Create the Admin object ---
         try:
-            roles_string = ','.join(roles_list)
+            roles_string = ','.join(roles_list)  # Join roles into a comma-separated string
             admin = Admin(email=email, username=username, roles=roles_string)
             admin.set_password(password)
             admin.save()
-            # Return success response *with* the redirect URL
             return JsonResponse({'status': 'success', 'message': 'Admin account created successfully!', 'redirect_url': reverse('adminlogin')})
 
-
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': f'An error occurred: {e}'})
+            return JsonResponse({'status': 'error', 'message': f'An error occurred: {e}'}, status=500)
 
-    else:  # GET request
+    else:
         return render(request, 'adminsignup.html')
-
-
-
-    if request.method == 'POST':
-        login_identifier = request.POST.get('username')
-        password = request.POST.get('password')
-
-        admin = None
-        if '@' in login_identifier:
-            admin = authenticate(request, email=login_identifier, password=password)
-        else:
-            admin = authenticate(request, username=login_identifier, password=password)
-
-        if admin:
-            login(request, admin)  # Use Django's login function!
-            return JsonResponse({'status': 'success', 'redirect_url': reverse('admindashboard')})
-        else:
-            return JsonResponse({'status': 'error', 'message': 'Incorrect email/username or password.'})
-
-    return render(request, 'adminlogin.html')
 
 def adminlogin(request):
     if request.method == 'POST':
-        email = request.POST.get('email')  # Get email from the form
+        login_identifier = request.POST.get('username')  # Use a generic identifier
         password = request.POST.get('password')
 
-        try:
-            # Find the admin by email
-            admin = Admin.objects.get(email=email)
+        admin = None
+        # Check if the identifier is an email
+        if '@' in login_identifier:
+            try:
+                admin = Admin.objects.get(email=login_identifier)
+            except Admin.DoesNotExist:
+                pass  # Try username next
 
-            # Check the password using check_password
-            if check_password(password, admin.password):
-                # Correct password.  Log the admin in.  We don't use Django's
-                # built-in authentication here because it's designed for
-                # the User model, not a custom Admin model.
+        # If not found by email, try username
+        if not admin:
+            try:
+                admin = Admin.objects.get(username=login_identifier)
+            except Admin.DoesNotExist:
+                pass
+
+        # Now check password if admin is found
+        if admin:
+            if admin.check_password(password):
                 request.session['admin_id'] = admin.adminid  # Store admin's ID
                 return JsonResponse({'status': 'success', 'redirect_url': reverse('admindashboard')})
             else:
-                return JsonResponse({'status': 'error', 'message': 'Incorrect email or password.'})
-
-        except Admin.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Incorrect email or password.'})
+                return JsonResponse({'status': 'error', 'message': 'Incorrect email/username or password.'}, status=401)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Incorrect email/username or password.'}, status=401)
 
     return render(request, 'adminlogin.html')
 
 def admindashboard(request):
     return render(request, 'admindashboard.html')
+
+@login_required
+def buycoins(request):
+    purchase_history = CoinTransaction.objects.filter(
+        user=request.user, transaction_type='purchase'
+    ).order_by('-transaction_date')
+
+    return render(request, 'buycoins.html', {'purchase_history': purchase_history})
+
+
+@login_required
+@require_POST
+def buy_coins(request):
+    try:
+        data = json.loads(request.body)
+        coins = int(data.get('coins'))
+        price = float(data.get('price'))
+
+        if not coins or not price:
+            return JsonResponse({'status': 'error', 'message': 'Coins and price are required.'}, status=400)
+
+        if coins <= 0 or price <= 0:
+            return JsonResponse({'status': 'error', 'message': 'Coins and price must be positive values.'}, status=400)
+        
+        user = request.user
+        payment_successful = True  # In a real application, integrate with a payment gateway here.
+        if coins == 100:
+            pack_name = "Bronze Pack"
+        elif coins == 250:
+            pack_name = "Emerald Pack"
+        elif coins == 500:
+            pack_name = "Gold Pack"
+        elif coins == 750:
+            pack_name = "Ruby Pack"
+        elif coins == 1000:
+            pack_name = "Sapphire Pack"
+        elif coins == 2000:
+            pack_name = "Diamond Pack"
+        else:
+          pack_name = f"{coins} Coins"
+
+        if payment_successful:
+            transaction = CoinTransaction.objects.create(
+                user=user,
+                transaction_type='purchase',
+                amount=coins,
+                status='completed',
+                pack_name=pack_name,
+                price=price
+            )
+
+            user.coins = F('coins') + coins
+            user.save()
+            user.refresh_from_db()
+
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Successfully purchased {coins} coins!',
+                'new_coin_balance': user.coins
+            })
+        else:
+            transaction = CoinTransaction.objects.create(
+                user=user,
+                transaction_type='purchase',
+                amount=coins,
+                status='failed',
+                pack_name=pack_name,
+                price=price
+            )
+            return JsonResponse({'status': 'error', 'message': 'Invalid request data.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'An unexpected error occurred: {str(e)}'}, status=500)
+
+
+
+@login_required
+@require_POST  # Important: Only allow POST requests
+def gift_coins(request):
+    data = json.loads(request.body) #Receives data from the request body
+    sender = request.user
+    recipient_identifier = data.get('recipient') #Gets recipient from the json data
+    amount_str = data.get('amount') #Gets amount from the json data
+
+    try:
+        amount = int(amount_str)
+        if amount <= 0:
+            return JsonResponse({'status': 'error', 'message': 'Gift amount must be positive.'}, status=400)
+        if sender.coins < amount:
+            return JsonResponse({'status': 'error', 'message': 'Insufficient coins.'}, status=400)
+
+    except (TypeError, ValueError):
+        return JsonResponse({'status': 'error', 'message': 'Invalid gift amount.'}, status=400)
+
+    try:
+        # Try to find the recipient by username or email
+        if '@' in recipient_identifier:
+            recipient = User.objects.get(email=recipient_identifier)
+        else:
+            recipient = User.objects.get(username=recipient_identifier)
+
+
+        if recipient == sender:
+            return JsonResponse({'status': 'error', 'message': 'You cannot gift coins to yourself.'}, status=400)
+
+        # Perform the transaction atomically
+        with transaction.atomic():
+            # Deduct coin
+            sender.coins = F('coins') - amount
+            sender.save()
+            sender.refresh_from_db() # Refresh to get updated value
+            # Add coins
+            recipient.coins = F('coins') + amount
+            recipient.save()
+
+            # Create a record in transaction table for gifting
+            CoinTransaction.objects.create(user=sender, transaction_type='gift_sent', amount=amount, recipient=recipient, status='completed')
+            CoinTransaction.objects.create(user=recipient, transaction_type='gift_received', amount=amount, sender=sender, status='completed')
+
+
+
+        return JsonResponse({'status': 'success', 'message': f'Successfully gifted {amount} coins to {recipient.username}!', 'new_balance': sender.coins})
+
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Recipient user not found.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'An error occurred: {str(e)}'}, status=500)
+
+@login_required
+def mywallet(request):
+    # Fetch gift history for the *current user*, regardless of sender/recipient
+    gift_history = CoinTransaction.objects.filter(
+        user=request.user
+    ).select_related('sender', 'recipient', 'user').order_by('-transaction_date')  # Optimized query
+
+    print("Current User:", request.user)
+    print("Gift History:", gift_history)
+
+    context = {
+        'user': request.user,
+        'gift_history': gift_history,
+    }
+    return render(request, 'mywallet.html', context)

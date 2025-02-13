@@ -1,4 +1,4 @@
-{% extends 'homepage.html' %}
+{% extends 'Homepage.html' %}
 {% load static %}
 
 {% block content %}
@@ -8,7 +8,7 @@
         <div class="container mx-auto flex justify-between items-center px-4 md:px-0">
             <a href="/myprofile" class="text-2xl font-bold text-[#091e65] hover:text-blue-700 transition">Manage Your Profile</a>
             <div class="space-x-6">
-                <a href="#" class="hover:bg-blue-800 text-[#091e65] transition">Home</a>
+                <a href="/Home" class="hover:bg-blue-800 text-[#091e65] transition">Home</a>
                 <a href="{% url 'logout' %}" class="bg-[#091e65] hover:bg-blue-800 text-white px-5 py-2 rounded-full transition font-semibold">Logout</a>
             </div>
         </div>

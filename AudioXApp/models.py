@@ -1,99 +1,143 @@
+# models.py
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
-from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
-from django.conf import settings
-from django.contrib.auth.hashers import make_password
 
 
-class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password, **extra_fields):
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError(_("The Email must be set"))
+            raise ValueError('The Email field must be set')
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.save()
+        user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_active", True)
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
 
-        if extra_fields.get("is_staff") is not True:
-            raise ValueError(_("Superuser must have is_staff=True."))
-        if extra_fields.get("is_superuser") is not True:
-            raise ValueError(_("Superuser must have is_superuser=True."))
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
         return self.create_user(email, password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    class SubscriptionType(models.TextChoices):
-        FREE = 'FR', _('Free')
-        PREMIUM = 'PR', _('Premium')
-
-    profile_pic = models.ImageField(
-        upload_to='profile_pics/',
-        blank=True,
-        null=True,
-        default=settings.STATIC_URL + 'img/default_profile.png'
-    )
-    userid = models.AutoField(primary_key=True)
-    email = models.EmailField(_("email address"), unique=True)
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
-    password = models.CharField(max_length=255)
-    full_name = models.CharField(max_length=255, blank=True, null=True)
-    date_joined = models.DateTimeField(default=timezone.now)
-    username = models.CharField(max_length=150, blank=True, null=True)
-    bio = models.TextField(max_length=500, blank=True, null=True)
-    subscription_type = models.CharField(
-        max_length=2,
-        choices=SubscriptionType.choices,
-        default=SubscriptionType.FREE,
-    )
-    coins = models.PositiveIntegerField(default=0)  # Coins directly in the User model
-
-    is_staff = models.BooleanField(default=False)
+    user_id = models.AutoField(primary_key=True)
+    full_name = models.CharField(max_length=255)
+    username = models.CharField(max_length=255, unique=True)
+    email = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    coins = models.IntegerField(default=0)
+    subscription_type = models.CharField(max_length=2, choices=[('FR', 'Free'), ('PR', 'Premium')], default='FR')
+    date_joined = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    # Add related_name here:
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='audiox_users',  # Unique related_name
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='audiox_users',  # Unique related_name
+        blank=True,
+        help_text='Specific permissions for this user.',
+    )
 
-    objects = CustomUserManager()
 
-    class Meta:
-        db_table = 'USERS'
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'full_name']
 
     def __str__(self):
         return self.email
 
+    class Meta:
+        db_table = 'USERS'  # Specify the desired table name
 
 
-
-class Admin(models.Model):
-    class RoleChoices(models.TextChoices):
-        FULL_ACCESS = 'full_access', _('Full Access')
-        MANAGE_CONTENT = 'manage_content', _('Manage Content')
-        MANAGE_CREATORS = 'manage_creators', _('Manage Creators')
-        MANAGE_DISCUSSIONS = 'manage_discussions', _('Manage Discussions')
-        MANAGE_TRANSACTIONS = 'manage_transactions', _('Manage Transactions')
-
+class Admin(AbstractBaseUser, PermissionsMixin):
     adminid = models.AutoField(primary_key=True)
-    email = models.EmailField(_("email address"), unique=True)
-    username = models.CharField(max_length=150, unique=True)
-    password = models.CharField(max_length=255)
-    roles = models.CharField(
-        max_length=255,
-        choices=RoleChoices.choices,
+    email = models.EmailField(unique=True)
+    username = models.CharField(max_length=255, unique=True)
+    roles = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=True)
+    is_superuser = models.BooleanField(default=False)
+
+     # Add related_name here:
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='audiox_admins',  # Unique related_name
         blank=True,
+        help_text='The groups this admin belongs to. An admin will get all permissions granted to each of their groups.',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='audiox_admins',  # Unique related_name
+        blank=True,
+        help_text='Specific permissions for this admin.',
     )
 
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
+    objects = BaseUserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'roles']
 
     def __str__(self):
-        return self.username
+        return self.email
+    
+    def has_perm(self, perm, obj=None):
+        "Does the admin have a specific permission?"
+        # Simplest possible answer: Yes, always
+        return True
+
+    def has_module_perms(self, app_label):
+        "Does the admin have permissions to view the app `app_label`?"
+        # Simplest possible answer: Yes, always
+        return True
 
     class Meta:
-        db_table = 'ADMINS'
+        db_table = 'ADMINS'  # Specify the desired table name
+
+class CoinTransaction(models.Model):
+    TRANSACTION_TYPES = (
+        ('purchase', 'Purchase'),
+        ('reward', 'Reward'),
+        ('spent', 'Spent'),
+        ('refund', 'Refund'),
+        ('gift_sent', 'Gift Sent'),       # Add gift_sent
+        ('gift_received', 'Gift Received'),  # Add gift_received
+    )
+    STATUS_CHOICES = (
+        ('completed', 'Completed'),
+        ('pending', 'Pending'),
+        ('failed', 'Failed'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='coin_transactions')
+    transaction_type = models.CharField(max_length=15, choices=TRANSACTION_TYPES)  # Increased max_length
+    amount = models.IntegerField()
+    transaction_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    pack_name = models.CharField(max_length=255, blank=True, null=True)  # for buycoins
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # for buycoins
+    sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gifts_sent')  # For gifts
+    recipient = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gifts_received') # Add recipient field
+
+    def __str__(self):
+        return f"{self.user.username} - {self.transaction_type} - {self.amount} coins"
+
+    class Meta:
+        db_table = 'COIN_TRANSACTIONS'  # Specify the desired table name
