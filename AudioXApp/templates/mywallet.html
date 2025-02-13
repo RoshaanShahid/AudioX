@@ -53,87 +53,85 @@
             <p class="text-gray-600">Want to earn more coins?  <a href="{% url 'buycoins' %}" class="text-red-500 hover:text-red-600 font-semibold transition-colors">Explore our coin packs!</a></p>
         </div>
 
-
         <div class="mt-12">
             <h2 class="text-2xl md:text-3xl font-bold text-[#091e65] text-center mb-6">Transaction History</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full leading-normal bg-white rounded-xl shadow-md">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                     <i class="fas fa-exchange-alt mr-1"></i> Type
-                                </th>
-                                <th class="px-5 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                     <i class="fas fa-user mr-1"></i> User
-                                </th>
-                                <th class="px-5 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                     <i class="fas fa-coins mr-1"></i> Amount
-                                </th>
-                                <th class="px-5 py-3 border-b-2 border-gray-200  text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                     <i class="fas fa-coins mr-1"></i> Price (PKR)
-                                </th>
-                                 <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                       Pack Name
-                                   </th>
-                                <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    <i class="fas fa-calendar-alt mr-1"></i> Date
-                                </th>
-
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for transaction in gift_history %}
-                            <tr class="hover:bg-gray-50 transition duration-200">
-                                <td class="px-5 py-4 border-b border-gray-200  text-sm">
-                                    {% if transaction.transaction_type == 'gift_sent' %}
-                                        <span class="text-red-500">Sent</span>
-                                    {% elif transaction.transaction_type == 'gift_received' %}
-                                        <span class="text-green-500">Received</span>
-                                    {% elif transaction.transaction_type == 'purchase' %}
-                                       <span class="text-blue-500">Purchase</span>
-                                    {% else %}
-                                        <span>{{ transaction.transaction_type|title }}</span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                                    {% if transaction.transaction_type == 'gift_sent' %}
-                                        {{ transaction.recipient.email }}
-                                    {% elif transaction.transaction_type == 'gift_received' %}
-                                        {{ transaction.sender.email }}
-                                    {% elif transaction.transaction_type == 'purchase' %}
-                                        AudioX
-                                    {% endif %}
-                                </td>
-                                <td class="px-5 py-4 border-b border-gray-200  text-sm">
-                                     {{ transaction.amount }} Coins
-                                </td>
-                                 <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                                    {% if transaction.transaction_type == 'purchase' %}
-                                        PKR {{ transaction.price|floatformat:2 }}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                                 <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                                        {% if transaction.transaction_type == 'purchase' %}
-                                            {{ transaction.pack_name }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                 </td>
-                                <td class="px-5 py-4 border-b border-gray-200  text-sm">
-                                    {{ transaction.transaction_date|date:"M d, Y h:i A" }}
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="6" class="px-5 py-10 text-sm text-center">
-                                    No transaction history found.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <div class="overflow-x-auto rounded-lg shadow-md">
+                <table class="min-w-full leading-normal bg-white">
+                    <thead class="bg-gradient-to-r from-[#091e65] to-[#06134d] text-white">
+                        <tr>
+                            <th class="px-5 py-3  text-left text-xs font-semibold uppercase tracking-wider">
+                                Type
+                            </th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold  uppercase tracking-wider">
+                                User
+                            </th>
+                            <th class="px-5 py-3  text-left text-xs font-semibold  uppercase tracking-wider">
+                                Amount
+                            </th>
+                            <th class="px-5 py-3  text-left text-xs font-semibold  uppercase tracking-wider">
+                                Price (PKR)
+                            </th>
+                            <th class="px-5 py-3  text-left text-xs font-semibold  uppercase tracking-wider">
+                                Pack Name
+                            </th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold  uppercase tracking-wider">
+                                Date
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in gift_history %}
+                        <tr class="hover:bg-gray-50 transition duration-200">
+                            <td class="px-5 py-4  text-sm">
+                                {% if transaction.transaction_type == 'gift_sent' %}
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-600">Sent</span>
+                                {% elif transaction.transaction_type == 'gift_received' %}
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-600">Received</span>
+                                {% elif transaction.transaction_type == 'purchase' %}
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-600">Purchased</span>
+                                {% else %}
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">{{ transaction.transaction_type|title }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-4  text-sm">
+                                {% if transaction.transaction_type == 'gift_sent' %}
+                                {{ transaction.recipient.email }}
+                                {% elif transaction.transaction_type == 'gift_received' %}
+                                {{ transaction.sender.email }}
+                                {% elif transaction.transaction_type == 'purchase' %}
+                                AudioX
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-4  text-sm font-semibold">
+                              {{ transaction.amount }} Coins
+                            </td>
+                             <td class="px-5 py-4 text-sm">
+                                {% if transaction.transaction_type == 'purchase' %}
+                                    PKR {{ transaction.price|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-4  text-sm">
+                                 {% if transaction.transaction_type == 'purchase' %}
+                                    {{ transaction.pack_name }}
+                                 {% else %}
+                                       -
+                                 {% endif %}
+                            </td>
+                            <td class="px-5 py-4 text-sm">
+                                {{ transaction.transaction_date|date:"M d, Y" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-5 py-10 text-sm text-center text-gray-500">
+                                No transaction history found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -175,8 +173,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         if (!recipient) {
-              messageDiv.innerHTML = `<p class="text-red-500 text-sm font-semibold">Recipient is required.</p>`;
-              return
+            messageDiv.innerHTML = `<p class="text-red-500 text-sm font-semibold">Recipient is required.</p>`;
+            return
         }
 
         // Store data for later use in the confirmation modal
