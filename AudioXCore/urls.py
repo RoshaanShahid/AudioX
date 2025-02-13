@@ -25,6 +25,8 @@ urlpatterns = [
     path('adminsignup', views.adminsignup, name='adminsignup'),
     path('admindashboard', views.admindashboard, name='admindashboard'),  
 
+
+
   
     # Redirect from the root URL (/) to /Home
     path('', lambda request: redirect('/Home/'), name='home_redirect'),

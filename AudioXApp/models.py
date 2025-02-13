@@ -3,15 +3,11 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.conf import settings
-from django.contrib.auth.hashers import make_password  # Import make_password
+from django.contrib.auth.hashers import make_password
 
 
 class CustomUserManager(BaseUserManager):
-    # (Your existing CustomUserManager - No changes needed here) ...
     def create_user(self, email, password, **extra_fields):
-        """
-        Create and save a User with the given email and password.
-        """
         if not email:
             raise ValueError(_("The Email must be set"))
         email = self.normalize_email(email)
@@ -21,9 +17,6 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password, **extra_fields):
-        """
-        Create and save a SuperUser with the given email and password.
-        """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
@@ -36,7 +29,6 @@ class CustomUserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    # (Your existing User model - No changes needed here) ...
     class SubscriptionType(models.TextChoices):
         FREE = 'FR', _('Free')
         PREMIUM = 'PR', _('Premium')
@@ -45,25 +37,25 @@ class User(AbstractBaseUser, PermissionsMixin):
         upload_to='profile_pics/',
         blank=True,
         null=True,
-        default=settings.STATIC_URL + 'img/default_profile.png'  # Default from static
+        default=settings.STATIC_URL + 'img/default_profile.png'
     )
     userid = models.AutoField(primary_key=True)
     email = models.EmailField(_("email address"), unique=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    password = models.CharField(max_length=255) # password will be handled by set_password
+    password = models.CharField(max_length=255)
     full_name = models.CharField(max_length=255, blank=True, null=True)
     date_joined = models.DateTimeField(default=timezone.now)
     username = models.CharField(max_length=150, blank=True, null=True)
-    bio = models.TextField(max_length=500, blank=True, null=True)  # Add the bio field
+    bio = models.TextField(max_length=500, blank=True, null=True)
     subscription_type = models.CharField(
         max_length=2,
         choices=SubscriptionType.choices,
         default=SubscriptionType.FREE,
     )
+    coins = models.PositiveIntegerField(default=0)  # Coins directly in the User model
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -76,6 +68,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
+
+
+
 class Admin(models.Model):
     class RoleChoices(models.TextChoices):
         FULL_ACCESS = 'full_access', _('Full Access')
@@ -84,21 +79,21 @@ class Admin(models.Model):
         MANAGE_DISCUSSIONS = 'manage_discussions', _('Manage Discussions')
         MANAGE_TRANSACTIONS = 'manage_transactions', _('Manage Transactions')
 
-    adminid = models.AutoField(primary_key=True)  # Explicit primary key
+    adminid = models.AutoField(primary_key=True)
     email = models.EmailField(_("email address"), unique=True)
-    username = models.CharField(max_length=150, unique=True)  # Make username unique
+    username = models.CharField(max_length=150, unique=True)
     password = models.CharField(max_length=255)
     roles = models.CharField(
         max_length=255,
         choices=RoleChoices.choices,
-        blank=True,  # Allow no roles to be selected (for flexibility)
+        blank=True,
     )
-    
+
     def set_password(self, raw_password):
         self.password = make_password(raw_password)
-    
+
     def __str__(self):
-        return self.username  # Or return self.email if you prefer
+        return self.username
 
     class Meta:
-        db_table = 'ADMINS'  # Use a consistent naming convention
+        db_table = 'ADMINS'

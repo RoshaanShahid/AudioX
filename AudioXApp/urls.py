@@ -27,6 +27,8 @@ urlpatterns = [
     path('adminlogin', views.adminlogin, name='adminlogin'),  
     path('adminsignup', views.adminsignup, name='adminsignup'),  
     path('admindashboard', views.admindashboard, name='admindashboard'),  
+    path('mywallet/', views.my_wallet, name='my_wallet'),
+    path('buy_coins/', views.buy_coins, name='buy_coins'),
 
 
 

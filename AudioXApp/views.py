@@ -13,6 +13,8 @@ import json
 from django.urls import reverse
 from django.contrib.auth.hashers import check_password  # Import check_password
 from django.core.exceptions import ValidationError  # Import ValidationError
+from django.db.models import F
+from django.core.files.storage import default_storage #For deleting file.
 
 
 def home(request):
@@ -56,7 +58,7 @@ def signup(request):
                 return JsonResponse({'status': 'error', 'message': "Incorrect OTP."})
 
         except KeyError:
-             return JsonResponse({'status': 'error', 'message': "OTP session expired or not set."})
+            return JsonResponse({'status': 'error', 'message': "OTP session expired or not set."})
 
         # Clear the OTP from the session after successful verification
         del request.session['otp']
@@ -70,6 +72,7 @@ def signup(request):
                 full_name=full_name,
                 username=username,
                 phone_number=phone_number,
+                coins = 0 # Initialize coins to 0 upon signup
             )
             # messages.success(request, 'Account created successfully!') # Don't use messages here
             return JsonResponse({'status': 'success', 'message': 'Account created successfully!'})  # Return JSON
@@ -158,6 +161,10 @@ def update_profile(request):
         print("Profile picture update request (Multipart)")
 
         if 'profile_pic' in request.FILES:
+            # Delete old profile picture if it exists
+            if user.profile_pic:
+                default_storage.delete(user.profile_pic.path)
+
             user.profile_pic = request.FILES['profile_pic']
             print("Profile picture file:", request.FILES['profile_pic'])
 
@@ -168,6 +175,17 @@ def update_profile(request):
             except Exception as e:
                 print("Error saving profile picture:", e)
                 return JsonResponse({'status': 'error', 'message': f'Error saving profile picture: {e}'})
+        
+        # Handle profile picture removal
+        if 'remove_profile_pic' in request.POST:
+            if user.profile_pic:
+                # Delete the file from storage
+                default_storage.delete(user.profile_pic.path)
+                user.profile_pic = None # Set the field to None (null in the database)
+                user.save()
+                return JsonResponse({'status': 'success', 'message': 'Profile picture removed successfully'})
+            else:
+                return JsonResponse({'status': 'error', 'message': 'No profile picture to remove'})
 
     elif request.content_type == 'application/json':
         print("Field update request (JSON)")
