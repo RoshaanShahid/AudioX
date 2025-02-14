@@ -1,4 +1,4 @@
-# models.py (Add the Subscription model)
+# models.py
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
@@ -116,7 +116,7 @@ class CoinTransaction(models.Model):
         ('reward', 'Reward'),
         ('spent', 'Spent'),
         ('refund', 'Refund'),
-        ('gift_sent', 'Gift Sent'),     # Add gift_sent
+        ('gift_sent', 'Gift Sent'),    # Add gift_sent
         ('gift_received', 'Gift Received'),  # Add gift_received
     )
     STATUS_CHOICES = (
@@ -131,7 +131,7 @@ class CoinTransaction(models.Model):
     transaction_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     pack_name = models.CharField(max_length=255, blank=True, null=True)  # for buycoins
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # for buycoins
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # for buycoins, ALLOW NULL
     sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gifts_sent')  # For gifts
     recipient = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gifts_received') # Add recipient field
 

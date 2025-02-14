@@ -17,6 +17,7 @@ from django.core.files.storage import default_storage
 from django.db import transaction
 from django.utils import timezone
 from decimal import Decimal
+from django.db import IntegrityError
 
 
 
@@ -428,10 +429,10 @@ def buy_coins(request):
 @login_required
 @require_POST  # Important: Only allow POST requests
 def gift_coins(request):
-    data = json.loads(request.body) #Receives data from the request body
+    data = json.loads(request.body)  # Receives data from the request body
     sender = request.user
-    recipient_identifier = data.get('recipient') #Gets recipient from the json data
-    amount_str = data.get('amount') #Gets amount from the json data
+    recipient_identifier = data.get('recipient')  # Gets recipient from the json data
+    amount_str = data.get('amount')  # Gets amount from the json data
 
     try:
         amount = int(amount_str)
@@ -450,30 +451,53 @@ def gift_coins(request):
         else:
             recipient = User.objects.get(username=recipient_identifier)
 
-
         if recipient == sender:
             return JsonResponse({'status': 'error', 'message': 'You cannot gift coins to yourself.'}, status=400)
 
         # Perform the transaction atomically
         with transaction.atomic():
-            # Deduct coin
+            # Deduct coins from sender
             sender.coins = F('coins') - amount
             sender.save()
-            sender.refresh_from_db() # Refresh to get updated value
-            # Add coins
+            sender.refresh_from_db()  # Refresh to get updated value
+
+            # Add coins to recipient
             recipient.coins = F('coins') + amount
             recipient.save()
+            recipient.refresh_from_db() # also good practice to refresh here
 
-            # Create a record in transaction table for gifting
-            CoinTransaction.objects.create(user=sender, transaction_type='gift_sent', amount=amount, recipient=recipient, status='completed')
-            CoinTransaction.objects.create(user=recipient, transaction_type='gift_received', amount=amount, sender=sender, status='completed')
+            # Create transaction records
+            sent_transaction = CoinTransaction.objects.create(
+                user=sender,
+                transaction_type='gift_sent',
+                amount=amount,
+                recipient=recipient,
+                status='completed',
+                pack_name = None, # gift doesn't have a pack name
+                price = None,  # gift sent doesnt have price
+            )
+            received_transaction = CoinTransaction.objects.create(
+                user=recipient,
+                transaction_type='gift_received',
+                amount=amount,
+                sender=sender,
+                status='completed',
+                pack_name = None,  # gift doesn't have a pack name
+                price = None, # gift received doesnt have price
+            )
 
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Successfully gifted {amount} coins to {recipient.username}!',  # Improved message
+            'new_balance': sender.coins,
+            # No need to return the full transaction here.
+        })
 
-
-        return JsonResponse({'status': 'success', 'message': f'Successfully gifted {amount} coins to {recipient.username}!', 'new_balance': sender.coins})
 
     except User.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Recipient user not found.'}, status=400)
+    except IntegrityError as e:  # Catch database constraint errors
+        return JsonResponse({'status': 'error', 'message': f'Database error: {str(e)}'}, status=500)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'An error occurred: {str(e)}'}, status=500)
 
