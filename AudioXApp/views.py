@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import User, Admin, CoinTransaction  # Import CoinTransaction
+from .models import User, Admin, CoinTransaction, Subscription
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import login as auth_login, logout as auth_logout, update_session_auth_hash, authenticate
@@ -12,27 +12,37 @@ import json
 from django.urls import reverse
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
-from django.db.models import F, Q  # Import Q for complex queries
-from django.core.files.storage import default_storage  # For deleting file.
-from django.db import transaction  # Import transaction
+from django.db.models import F, Q, Sum
+from django.core.files.storage import default_storage
+from django.db import transaction
+from django.utils import timezone
+from decimal import Decimal
+
 
 
 def home(request):
-    return render(request, 'Homepage.html')
+    context = {}
+    # Always provide a default.  Good practice!
+    context['subscription_type'] = 'FR'
+
+    if request.user.is_authenticated:
+        subscription_type = request.user.subscription_type or 'FR'
+        context['subscription_type'] = subscription_type
+
+    return render(request, 'Homepage.html', context)
+
 
 def signup(request):
     if request.method == 'POST':
-        # Get data from your existing form.  Use the CORRECT names.
         full_name = request.POST.get('full_name')
         username = request.POST.get('username')
         email = request.POST.get('email')
-        phone_number = request.POST.get('phone')  # Corrected name
+        phone_number = request.POST.get('phone')
         password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm-password')  # Corrected name
+        confirm_password = request.POST.get('confirm-password')
         email_verified = request.POST.get('emailVerified')
-        entered_otp = request.POST.get('otp')  # Get the entered OTP
+        entered_otp = request.POST.get('otp')
 
-        # Basic validation (add more as needed)
         if not full_name or not username or not email or not password or not confirm_password:
             return JsonResponse({'status': 'error', 'message': "Please fill in all required fields."})
 
@@ -44,27 +54,23 @@ def signup(request):
 
         if User.objects.filter(username=username).exists():
             return JsonResponse({'status': 'error', 'message': "Username already exists."})
-        
+
         if email_verified != 'true':
           return JsonResponse({'status': 'error', 'message': "Email not verified."})
 
-        # --- OTP Verification ---
         if not entered_otp:
             return JsonResponse({'status': 'error', 'message': "OTP is required."})
 
         try:
-            user_otp = request.session.get('otp')  # Get the stored OTP.  CRITICAL
+            user_otp = request.session.get('otp')
             if not user_otp or entered_otp != user_otp:
                 return JsonResponse({'status': 'error', 'message': "Incorrect OTP."})
 
         except KeyError:
             return JsonResponse({'status': 'error', 'message': "OTP session expired or not set."})
-        
-        # Clear the OTP from the session after successful verification
+
         del request.session['otp']
 
-
-        # Create the user
         try:
             user = User.objects.create_user(
                 email=email,
@@ -72,28 +78,25 @@ def signup(request):
                 full_name=full_name,
                 username=username,
                 phone_number=phone_number,
-                coins = 0 # Initialize coins to 0 upon signup
+                coins = 0
             )
-            # messages.success(request, 'Account created successfully!') # Don't use messages here
-            return JsonResponse({'status': 'success', 'message': 'Account created successfully!'})  # Return JSON
+            return JsonResponse({'status': 'success', 'message': 'Account created successfully!'})
 
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f"An error occurred: {e}"})
 
-    return render(request, 'signup.html')  # GET request: show the form
+    return render(request, 'signup.html')
 
 def send_otp(request):
     if request.method == 'POST':
         email = request.POST.get('email')
-        otp = request.POST.get('otp')  # Get the OTP from the request
+        otp = request.POST.get('otp')
 
         print(f"AudioX - send_otp view triggered")
         print(f"   - Email: {email}")
         print(f"   - OTP: {otp}")
 
-        # Store the OTP in the session.  VERY IMPORTANT.
         request.session['otp'] = otp
-
 
         try:
             send_mail(
@@ -142,7 +145,10 @@ def login(request):
 
 @login_required
 def myprofile(request):
-    return render(request, 'myprofile.html')
+    context = {
+        'subscription_type': request.user.subscription_type or 'FR',
+    }
+    return render(request, 'myprofile.html', context)
 
 @login_required
 @require_POST
@@ -219,7 +225,7 @@ def update_profile(request):
 @login_required
 def change_password(request):
     if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method == 'POST':
-        form = PasswordChangeForm(request.user, request.POST)
+        form = PasswordChangeForm(request.user, request.POST)  # Assuming you have a PasswordChangeForm
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)
@@ -231,26 +237,48 @@ def change_password(request):
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
+
 def ourteam(request):
-    return render(request, 'ourteam.html')
+    context = {
+        'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
+    }
+    return render(request, 'ourteam.html', context)
 
 def paymentpolicy(request):
-    return render(request, 'paymentpolicy.html')
+    context = {
+        'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
+    }
+    return render(request, 'paymentpolicy.html', context)
 
 def privacypolicy(request):
-    return render(request, 'privacypolicy.html')
+    context = {
+        'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
+    }
+    return render(request, 'privacypolicy.html', context)
 
 def piracypolicy(request):
-    return render(request, 'piracypolicy.html')
+    context = {
+        'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
+    }
+    return render(request, 'piracypolicy.html', context)
 
 def termsandconditions(request):
-    return render(request, 'termsandconditions.html')
+    context = {
+        'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
+    }
+    return render(request, 'termsandconditions.html', context)
 
 def aboutus(request):
-    return render(request, 'aboutus.html')
+    context = {
+        'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
+    }
+    return render(request, 'aboutus.html', context)
 
 def contactus(request):
-    return render(request, 'contactus.html')
+    context = {
+        'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
+    }
+    return render(request, 'contactus.html', context)
 
 def logout_view(request):
     auth_logout(request)
@@ -262,7 +290,7 @@ def adminsignup(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
-        roles_list = request.POST.getlist('roles')  # Use getlist for multiple select
+        roles_list = request.POST.getlist('roles')
 
         if password != confirm_password:
             return JsonResponse({'status': 'error', 'message': 'Passwords do not match.'}, status=400)
@@ -275,7 +303,7 @@ def adminsignup(request):
             return JsonResponse({'status':'error', 'message': 'An admin with this username already exists.'}, status=400)
 
         try:
-            roles_string = ','.join(roles_list)  # Join roles into a comma-separated string
+            roles_string = ','.join(roles_list)
             admin = Admin(email=email, username=username, roles=roles_string)
             admin.set_password(password)
             admin.save()
@@ -289,28 +317,25 @@ def adminsignup(request):
 
 def adminlogin(request):
     if request.method == 'POST':
-        login_identifier = request.POST.get('username')  # Use a generic identifier
+        login_identifier = request.POST.get('username')
         password = request.POST.get('password')
 
         admin = None
-        # Check if the identifier is an email
         if '@' in login_identifier:
             try:
                 admin = Admin.objects.get(email=login_identifier)
             except Admin.DoesNotExist:
-                pass  # Try username next
+                pass
 
-        # If not found by email, try username
         if not admin:
             try:
                 admin = Admin.objects.get(username=login_identifier)
             except Admin.DoesNotExist:
                 pass
 
-        # Now check password if admin is found
         if admin:
             if admin.check_password(password):
-                request.session['admin_id'] = admin.adminid  # Store admin's ID
+                request.session['admin_id'] = admin.adminid
                 return JsonResponse({'status': 'success', 'redirect_url': reverse('admindashboard')})
             else:
                 return JsonResponse({'status': 'error', 'message': 'Incorrect email/username or password.'}, status=401)
@@ -323,12 +348,16 @@ def admindashboard(request):
     return render(request, 'admindashboard.html')
 
 @login_required
-def buycoins(request):
+def buycoins(request):  # Corrected function name here
     purchase_history = CoinTransaction.objects.filter(
         user=request.user, transaction_type='purchase'
     ).order_by('-transaction_date')
+    context = {
+        'purchase_history': purchase_history,
+        'subscription_type': request.user.subscription_type or 'FR', # Add this. Very important
+    }
 
-    return render(request, 'buycoins.html', {'purchase_history': purchase_history})
+    return render(request, 'buycoins.html', context)
 
 
 @login_required
@@ -346,7 +375,7 @@ def buy_coins(request):
             return JsonResponse({'status': 'error', 'message': 'Coins and price must be positive values.'}, status=400)
         
         user = request.user
-        payment_successful = True  # In a real application, integrate with a payment gateway here.
+        payment_successful = True
         if coins == 100:
             pack_name = "Bronze Pack"
         elif coins == 250:
@@ -450,10 +479,14 @@ def gift_coins(request):
 
 @login_required
 def mywallet(request):
-    # Fetch gift history for the *current user*, regardless of sender/recipient
+    # Fetch gift history for the *current user*,  but only coin-related transactions
     gift_history = CoinTransaction.objects.filter(
         user=request.user
-    ).select_related('sender', 'recipient', 'user').order_by('-transaction_date')  # Optimized query
+    ).exclude(
+        # Exclude subscription purchases
+        transaction_type='purchase',
+        pack_name__in=['Monthly Premium Subscription', 'Annual Premium Subscription']
+     ).select_related('sender', 'recipient', 'user').order_by('-transaction_date')  # Optimized query
 
     print("Current User:", request.user)
     print("Gift History:", gift_history)
@@ -461,5 +494,137 @@ def mywallet(request):
     context = {
         'user': request.user,
         'gift_history': gift_history,
+        'subscription_type': request.user.subscription_type or 'FR', #Important
     }
     return render(request, 'mywallet.html', context)
+
+
+
+@login_required
+def subscribe(request):
+    context = {
+        'subscription_type': request.user.subscription_type or 'FR'  # Always include
+    }
+    return render(request, 'subscription.html', context)
+
+
+@login_required
+@require_POST
+def subscribe_now(request):
+    user = request.user
+    plan = request.POST.get('plan')
+
+    if plan not in ('monthly', 'annual'):
+        messages.error(request, 'Invalid plan selected.')
+        return redirect('subscribe')
+
+    if hasattr(user, 'subscription') and user.subscription.is_active():
+        messages.error(request, "You already have an active subscription.")
+        return redirect('managesubscription')
+
+    payment_successful = True  # Simulate payment
+
+    if payment_successful:
+        now = timezone.now()
+        if plan == 'monthly':
+            end_date = now + timezone.timedelta(days=30)
+            price = Decimal('3000')  # Use Decimal for monetary values
+        elif plan == 'annual':
+            end_date = now + timezone.timedelta(days=365)
+            price = Decimal('30000') # Use Decimal for monetary values
+        else:  # Should never happen, but good practice
+            messages.error(request, 'Invalid plan selected.')
+            return redirect('subscribe')
+
+
+        try:
+            # Try to update existing subscription, if it exists
+            subscription = request.user.subscription
+            subscription.plan = plan
+            subscription.start_date = now
+            subscription.end_date = end_date
+            subscription.status = 'active'
+            subscription.stripe_subscription_id = "sub_FAKE_STRIPE_ID"  # Replace with real ID later
+            subscription.stripe_customer_id = "cus_FAKE_STRIPE_ID"  # Replace with real ID later
+            subscription.save()
+
+        except Subscription.DoesNotExist:
+            # Create a new subscription
+            subscription = Subscription.objects.create(
+                user=user,
+                plan=plan,
+                start_date=now,
+                end_date=end_date,
+                status='active',
+                stripe_subscription_id="sub_FAKE",
+                stripe_customer_id="cus_FAKE"
+            )
+        # Create a CoinTransaction for the subscription purchase.
+        CoinTransaction.objects.create(
+            user=user,
+            transaction_type='purchase',
+            amount=0,  # Or however you want to represent subscription in coins.
+            status='completed',
+            pack_name=f"{subscription.get_plan_display()} Subscription",  # Use get_plan_display
+            price=price  # Use Decimal for monetary values
+        )
+
+        user.subscription_type = 'PR'  # Set user to premium
+        user.save()
+
+        messages.success(request, f"You have successfully subscribed to the {plan} plan!")
+        return redirect(reverse('subscribe') + '?success=true')  # Redirect with success param
+    else:
+        messages.error(request, 'Payment failed. Please try again.')
+        return redirect('subscribe')
+
+@login_required
+def managesubscription(request):
+    """Displays subscription details and allows cancellation."""
+    try:
+        subscription = request.user.subscription
+    except Subscription.DoesNotExist:
+        subscription = None
+
+    if subscription:
+        subscription.update_status()
+
+    # Fetch payment history related to subscriptions
+    payment_history = CoinTransaction.objects.filter(
+        user=request.user,
+        transaction_type='purchase',
+        # Correct pack names, matching what's created in subscribe_now
+        pack_name__in=['Monthly Premium Subscription', 'Annual Premium Subscription']
+    ).order_by('-transaction_date')
+
+
+    context = {
+        'subscription': subscription,
+        'subscription_type': request.user.subscription_type or 'FR',
+        'payment_history': payment_history,  # Pass the payment history
+    }
+    return render(request, 'managesubscription.html', context)
+
+
+@login_required
+@require_POST
+def cancel_subscription(request):
+    """Handles subscription cancellation."""
+    try:
+        subscription = request.user.subscription
+        subscription.status = 'canceled'
+        subscription.end_date = timezone.now()
+        subscription.save()
+
+        request.user.subscription_type = 'FR'
+        request.user.save()
+
+        messages.success(request, "Your subscription has been canceled.")
+        return redirect('managesubscription')  # Redirect to the *new* URL
+
+    except Subscription.DoesNotExist:
+        messages.error(request, "You do not have an active subscription to cancel.")
+        return redirect('managesubscription')
+    except Exception as e:
+        messages.error(request, f"An error occurred: {e}")
+        return redirect('managesubscription')

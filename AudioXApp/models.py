@@ -1,8 +1,8 @@
-# models.py
+# models.py (Add the Subscription model)
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
-
+from django.utils.timezone import make_aware  # Import make_aware
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -117,7 +117,7 @@ class CoinTransaction(models.Model):
         ('reward', 'Reward'),
         ('spent', 'Spent'),
         ('refund', 'Refund'),
-        ('gift_sent', 'Gift Sent'),       # Add gift_sent
+        ('gift_sent', 'Gift Sent'),     # Add gift_sent
         ('gift_received', 'Gift Received'),  # Add gift_received
     )
     STATUS_CHOICES = (
@@ -141,3 +141,56 @@ class CoinTransaction(models.Model):
 
     class Meta:
         db_table = 'COIN_TRANSACTIONS'  # Specify the desired table name
+
+
+# Add this new Subscription model.
+class Subscription(models.Model):
+    PLAN_CHOICES = (
+        ('monthly', 'Monthly Premium'),
+        ('annual', 'Annual Premium'),
+        ('free', 'Free Tier')  # Good practice to include a free tier
+    )
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('canceled', 'Canceled'),
+        ('expired', 'Expired'),  # Important for handling renewals
+        ('pending', 'Pending Payment'), # For initial payment processing
+    )
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription') # One subscription per user
+    plan = models.CharField(max_length=20, choices=PLAN_CHOICES)
+    start_date = models.DateTimeField()  # When the subscription started
+    end_date = models.DateTimeField()    # When it expires/renews
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)  # For Stripe integration
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True) # For Stripe integration
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_plan_display()} ({self.status})"
+
+    class Meta:
+        db_table = 'SUBSCRIPTIONS'
+
+    def is_active(self):
+        return self.status == 'active' and self.end_date >= timezone.now()
+    
+    def cancel(self):
+        # Add logic here to handle cancellation with your payment gateway (e.g., Stripe).
+        # This is a *placeholder*. You MUST implement actual cancellation logic.
+        self.status = 'canceled'
+        self.save()
+
+    def update_status(self):
+        """Updates the subscription status based on the end date."""
+        now = timezone.now()
+        if self.status == 'active' and self.end_date < now:
+            self.status = 'expired'
+            self.save()
+    
+    @property
+    def remaining_days(self):
+        """Calculates the number of days remaining in the subscription."""
+        if self.status == 'active':
+            remaining = self.end_date - timezone.now()
+            return max(0, remaining.days)  # Ensure it's not negative
+        return 0

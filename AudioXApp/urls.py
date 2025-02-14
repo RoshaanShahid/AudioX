@@ -29,6 +29,10 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('mywallet/', views.mywallet, name='mywallet'),
     path('gift_coins/', views.gift_coins, name='gift_coins'),
+    path('subscribe/', views.subscribe, name='subscribe'),
+    path('subscribe/now/', views.subscribe_now, name='subscribe_now'),
+    path('managesubscription/', views.managesubscription, name='managesubscription'),
+    path('cancelsubscription/', views.cancel_subscription, name='cancel_subscription'),
 ]
 
 # Static files (same as before)

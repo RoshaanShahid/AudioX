@@ -1,0 +1,289 @@
+{% extends 'Homepage.html' %}
+
+{% block title %}Manage Subscription - AudioX{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-white font-sans flex items-center justify-center">
+    <div class="max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-12">
+
+        <div class="text-center mb-10">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#091e65] tracking-tight">
+                Manage Your AudioX Premium
+            </h1>
+            <p class="mt-4 text-lg sm:text-xl text-gray-600">Control your subscription and billing details.</p>
+        </div>
+
+        {% if messages %}
+            <div class="mb-8">
+                {% for message in messages %}
+                    <div class="rounded-lg p-4 {% if message.tags == 'success' %}bg-green-100 border border-green-200 text-green-800{% else %}bg-red-100 border border-red-200 text-red-800{% endif %}">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                {% if message.tags == 'success' %}
+                                   <svg class="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                {% else %}
+                                    <svg class="h-6 w-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                {% endif %}
+                            </div>
+                            <div class="ml-3 text-sm font-medium">
+                                {{ message }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <div class="w-full lg:w-1/2">
+                <div class="bg-white rounded-3xl shadow-xl p-6 sm:p-8 lg:p-10 relative">
+                     <div class="absolute top-4 right-4">
+                        <span id="subscription-tab-indicator" class="px-3 py-1 text-xs font-semibold rounded-full bg-[#091e65] text-white">Active</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-semibold text-[#091e65] mb-6">Subscription Details</h2>
+
+                    {% if subscription %}
+                        {% if subscription.is_active %}
+                            <div class="space-y-5">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Plan:</span>
+                                    <span class="text-[#091e65] font-bold text-lg">{{ subscription.get_plan_display }}</span>
+                                </div>
+                                 <div class="flex items-center justify-between">
+                                     <span class="text-gray-600">Status:</span>
+                                    <span class="text-green-600 font-semibold">Active</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Price:</span>
+                                     <span class="text-[#091e65] font-bold text-lg">
+                                         {% if subscription.plan == 'monthly' %}
+                                            PKR 3000 / month
+                                        {% elif subscription.plan == 'annual' %}
+                                            PKR 30,000 / year
+                                        {% else %}
+                                        {% endif %}
+                                     </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Start Date:</span>
+                                    <span class="text-gray-700">{{ subscription.start_date|date:"F j, Y" }}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Renewal Date:</span>
+                                    <span class="text-gray-700">{{ subscription.end_date|date:"F j, Y" }}</span>
+                                </div>
+                                 <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Days Remaining:</span>
+                                    <span class="text-gray-700">{{ subscription.remaining_days }}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Payment Method:</span>
+                                    <span class="text-gray-700">XXXX-XXXX-XXXX-1234 (Example)</span>
+                                </div>
+
+                            </div>
+                             <button type="button" id="open-cancel-modal" class="w-full mt-8 py-3 px-6 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full transition duration-200">
+                                Cancel Subscription
+                            </button>
+
+                         {% elif subscription.status == 'canceled' %}
+                            <div class="p-6 rounded-lg bg-yellow-50 border border-yellow-300 shadow-md">
+                                <div class="flex items-center space-x-4">
+                                    <svg class="h-10 w-10 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <div>
+                                     <h2 class="text-xl font-bold text-yellow-800">Subscription Canceled</h2>
+                                        <p class="text-yellow-700 text-base">
+                                            Your {{ subscription.get_plan_display }} subscription has been canceled.
+                                        </p>
+                                        <p class="mt-3">
+                                            <a href="{% url 'subscribe' %}" class="text-yellow-600 hover:underline font-medium">Resubscribe</a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elif subscription.status == 'expired' %}
+                           <div class="p-6 rounded-lg bg-red-100 border border-red-200">
+                                <h2 class="text-2xl font-semibold text-red-800 mb-2">Subscription Expired</h2>
+                                 <p class="text-red-700">Your {{ subscription.get_plan_display }} subscription has expired.</p>
+                                  <a href="{% url 'subscribe' %}" class="mt-4 inline-block px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full transition duration-200">
+                                    Subscribe Again
+                                </a>
+                            </div>
+
+                        {% elif subscription.status == 'pending' %}
+                            <div class="p-6 rounded-lg bg-blue-100 border border-blue-200">
+                                <h2 class="text-2xl font-semibold text-blue-800 mb-2">Subscription Pending</h2>
+                                <p class=" text-blue-700"> Your subscription is <span class="font-semibold">{{subscription.get_plan_display}}</span> is <span class="font-semibold">pending</span>.</p>
+                            </div>
+
+                        {% else %}
+                            <div class="p-6 rounded-lg bg-gray-100 border border-gray-200">
+                                <h2 class="text-xl font-semibold text-gray-700">Subscription Status: {{ subscription.status }}</h2>
+                                 <p class="mt-4">
+                                    <a href="{% url 'subscribe' %}" class="text-[#091e65] hover:underline font-medium">Subscribe Now</a>
+                                </p>
+                            </div>
+                        {% endif %}
+
+                    {% else %}
+                         <div class="text-center">
+                            <h2 class="text-2xl font-semibold text-[#091e65] mb-4">You Don't Have an Active Subscription</h2>
+                            <p class="text-gray-600 mb-6">Unlock all premium features by subscribing today!</p>
+                            <a href="{% url 'subscribe' %}" class="inline-block px-8 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-full transition duration-200">
+                                Subscribe to Premium
+                            </a>
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <div class="w-full lg:w-1/2">
+                <div class="bg-white rounded-3xl shadow-xl p-6 sm:p-8 lg:p-10 relative">
+                    <div class="absolute top-4 right-4">
+                        <span id="billing-tab-indicator" class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">Inactive</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-semibold text-[#091e65] mb-6">Billing History</h2>
+
+                    {% if subscription %}
+                        <div class="space-y-4 overflow-y-auto max-h-[450px] scrollbar-thin scrollbar-thumb-[#091e65] scrollbar-track-gray-100 pr-4">
+                             {% for transaction in payment_history %}
+                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-600">{{ transaction.transaction_date|date:"F j, Y" }}</span>
+                                        <span class="text-[#091e65] font-bold text-lg">PKR {{ transaction.price }}</span>
+                                    </div>
+                                     <p class="text-gray-700 mt-1">
+                                         AudioX Premium - {{ transaction.get_transaction_type_display }}
+                                            {% if transaction.pack_name %}
+                                                ({{ transaction.pack_name }})
+                                            {% endif %}
+                                     </p>
+                                    <div class="mt-2">
+                                         <span class="px-2 py-0.5 text-xs font-semibold rounded-full {% if transaction.status == 'completed' %}text-green-800 bg-green-200{% elif transaction.status == 'pending' %}text-yellow-800 bg-yellow-200{% else %}text-red-800 bg-red-200{% endif %}">
+                                            {{ transaction.get_status_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p class="text-gray-600">No billing history found.</p>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-600">No billing history available because you do not have an active subscription.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="cancel-modal" class="fixed z-50 inset-0 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-[#091e65]" id="modal-title">
+                            Confirm Cancellation
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-600">
+                                Are you sure you want to cancel your AudioX Premium subscription?  This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <form action="{% url 'cancel_subscription' %}" method="post"> {% csrf_token %}
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Confirm Cancellation
+                    </button>
+                </form>
+                <button type="button" id="close-cancel-modal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const subscriptionTab = document.getElementById('subscription-tab-indicator');
+    const billingTab = document.getElementById('billing-tab-indicator');
+    const subscriptionDetails = document.querySelector('.w-full.lg\\:w-1\\/2:first-child .space-y-5, .w-full.lg\\:w-1\\/2:first-child #open-cancel-modal, .w-full.lg\\:w-1\\/2:first-child .p-6.rounded-lg'); // Include modal button and canceled div
+    const billingHistory = document.querySelector('.w-full.lg\\:w-1\\/2:last-child .space-y-4');
+    const openModalBtn = document.getElementById('open-cancel-modal');
+    const closeModalBtn = document.getElementById('close-cancel-modal');
+    const modal = document.getElementById('cancel-modal');
+
+     function showSubscriptionDetails() {
+        if (subscriptionDetails) subscriptionDetails.classList.remove('hidden');
+        if (billingHistory) billingHistory.classList.add('hidden');
+        subscriptionTab.classList.add('bg-[#091e65]', 'text-white');
+        subscriptionTab.classList.remove('bg-gray-200', 'text-gray-700');
+        billingTab.classList.remove('bg-[#091e65]', 'text-white');
+        billingTab.classList.add('bg-gray-200', 'text-gray-700');
+        subscriptionTab.textContent = "Active";
+        billingTab.textContent = "Inactive";
+    }
+
+    function showBillingHistory() {
+        if (billingHistory) billingHistory.classList.remove('hidden');
+        if (subscriptionDetails) subscriptionDetails.classList.add('hidden');
+        billingTab.classList.add('bg-[#091e65]', 'text-white');
+        billingTab.classList.remove('bg-gray-200', 'text-gray-700');
+        subscriptionTab.classList.remove('bg-[#091e65]', 'text-white');
+        subscriptionTab.classList.add('bg-gray-200', 'text-gray-700');
+         billingTab.textContent = "Active";
+        subscriptionTab.textContent = "Inactive";
+
+    }
+
+    // Initial display
+    showSubscriptionDetails();
+
+    // Click event listeners using parent elements
+    subscriptionTab.parentElement.addEventListener('click', showSubscriptionDetails);
+    billingTab.parentElement.addEventListener('click', showBillingHistory);
+
+    // Modal functionality
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+        });
+    }
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
+
+    // Close modal if clicking outside the modal content
+    if (modal){
+      window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+          modal.classList.add('hidden');
+        }
+      });
+    }
+
+});
+</script>
+{% endblock %}
