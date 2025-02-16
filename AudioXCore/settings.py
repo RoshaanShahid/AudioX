@@ -113,12 +113,10 @@ AUTH_USER_MODEL = 'AudioXApp.User'
 # Login URL
 LOGIN_URL = '/login/'
 
-# Email Settings (Gmail SMTP)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST_USER = 'iam.burhanaqeel@gmail.com'  # Your Gmail address
+EMAIL_HOST_PASSWORD = 'zzlmvxvawqobzbql'  # The 16-character App Password
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'iam.burhanaqeel@gmail.com')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')  # Use environment variable
 
 
