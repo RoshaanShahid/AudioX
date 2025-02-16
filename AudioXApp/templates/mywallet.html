@@ -1,0 +1,496 @@
+{% extends 'Homepage.html' %}
+{% load static %}
+
+{% block title %}AudioX - My Wallet{% endblock %}
+
+{% block content %}
+<div class="bg-white min-h-screen py-16 md:py-24">
+    <div class="container mx-auto px-4">
+        <h1 class="text-4xl md:text-6xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-[#091e65] via-sky-600 to-indigo-700 mb-4 md:mb-8">
+            AudioX Wallet
+        </h1>
+        <p class="text-center text-gray-600 text-lg md:text-xl mb-12 md:mb-20 max-w-3xl mx-auto leading-relaxed">
+            Manage your AudioX Coins and send gifts seamlessly.
+        </p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+
+            <div class="lg:col-span-1 relative">
+                <div class="absolute inset-0 bg-gradient-to-b from-sky-100 to-indigo-100 rounded-full blur-3xl opacity-50 -z-10"></div>
+                <div class="bg-white rounded-3xl shadow-xl p-6 md:p-10 relative overflow-hidden transition-all duration-500 hover:scale-[1.03] border border-gray-200">
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-32 h-32 md:w-40 md:h-40 mb-6">
+                                <img src="https://img.freepik.com/premium-photo/3d-render-gold-coins-cash-money-currency-golden-background_79161-1760.jpg?semt=ais_hybrid" alt="AudioX Coin" class="w-full h-full object-contain animate-spin-slow">
+                            <span id="coin-balance" class="absolute -bottom-4 -right-4 text-xl md:text-3xl font-bold text-white bg-[#091e65] rounded-full px-4 py-1.5 shadow-lg">
+                                {{ user.coins }}
+                            </span>
+                        </div>
+                        <p class="text-xl md:text-2xl font-semibold text-[#091e65] mb-4">Coin Balance</p>
+                        <a href="{% url 'buycoins' %}" class="px-6 py-2.5 bg-[#091e65] hover:bg-opacity-80 text-white rounded-full transition duration-300 font-medium text-sm md:text-base">
+                            <i class="fas fa-plus-circle mr-2"></i> Add Coins
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-3xl shadow-xl p-8 md:p-12 relative overflow-hidden border border-gray-200">
+                  <div class="absolute inset-0 bg-gradient-to-tr from-pink-50 via-red-50 to-rose-100 opacity-50 rounded-3xl -z-10"></div>
+                    <h2 class="text-2xl md:text-3xl font-bold text-[#091e65] mb-8 text-center">Send AudioX Gift</h2>
+                    <form id="gift-form" method="post" action="{% url 'gift_coins' %}">
+                        {% csrf_token %}
+                        <div class="space-y-6">
+                            <div class="relative">
+                                <label for="recipient" class="sr-only">Recipient</label>
+                                <input type="text" id="recipient" name="recipient" class="block w-full py-3.5 pl-14 pr-4 border border-gray-300 rounded-full bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] text-gray-900" placeholder="Recipient Username/Email" required>
+                                <span class="absolute inset-y-0 left-0 pl-5 flex items-center text-gray-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="relative">
+                                <label for="amount" class="sr-only">Amount</label>
+                                <input type="number" id="amount" name="amount" class="block w-full py-3.5 pl-14 pr-4 border border-gray-300 rounded-full bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] text-gray-900 appearance-none" placeholder="Amount" min="1" required>
+
+                                <span class="absolute inset-y-0 left-0 pl-5 flex items-center text-gray-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                        <button type="button" id="send-gift-btn" class="mt-8 w-full px-8 py-3 bg-[#091e65] hover:bg-opacity-80 text-white rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 font-semibold text-lg focus:outline-none">
+                            <i class="fas fa-paper-plane mr-3"></i> Send Gift
+                        </button>
+                    </form>
+                    <div id="gift-message" class="mt-6 text-center"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-20">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-[#091e65] via-sky-600 to-indigo-700 mb-10">
+                Transaction History
+            </h2>
+
+            <div class="mb-8 border-b border-gray-200 dark:border-gray-700">
+                <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="myTab" data-tabs-toggle="#myTabContent" role="tablist">
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 rounded-t-lg" id="purchased-tab" data-tabs-target="#purchased" type="button" role="tab" aria-controls="purchased" aria-selected="true">Purchases</button>
+                    </li>
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="received-tab" data-tabs-target="#received" type="button" role="tab" aria-controls="received" aria-selected="false">Received</button>
+                    </li>
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="sent-tab" data-tabs-target="#sent" type="button" role="tab" aria-controls="sent" aria-selected="false">Sent</button>
+                    </li>
+                </ul>
+            </div>
+
+
+            <div id="myTabContent">
+                <div class="rounded-lg bg-gray-50 p-4" id="purchased" role="tabpanel" aria-labelledby="purchased-tab">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {% for transaction in gift_history %}
+                                {% if transaction.transaction_type == 'purchase' %}
+                                    <div class="bg-white rounded-xl shadow-md overflow-hidden border border-[#091e65]">
+                                        <div class="p-4">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <span class="text-sm font-medium text-[#091e65]">{{ transaction.transaction_date|date:"M d, Y" }}</span>
+                                                    <div class="w-8 h-8 rounded-full bg-[#091e65] text-white flex items-center justify-center">
+                                                        <i class="fas fa-shopping-cart text-xs"></i>
+                                                    </div>
+                                                </div>
+                                                <p class="text-lg font-semibold text-[#091e65]">{{ transaction.pack_name }}</p>
+                                                <p class="text-gray-600">{{ transaction.amount }} Coins</p>
+                                                <p class="text-right text-base font-bold text-[#091e65] mt-2">PKR {{ transaction.price|floatformat:2 }}</p>
+
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% empty %}
+                                <div class="col-span-full text-center py-8 no-activity">
+                                   <p class="text-xl font-semibold text-[#091e65] opacity-70">NO ACTIVITY YET</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                </div>
+                <div class="hidden rounded-lg bg-gray-50 p-4" id="received" role="tabpanel" aria-labelledby="received-tab">
+                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for transaction in gift_history %}
+                            {% if transaction.transaction_type == 'gift_received' %}
+                                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-[#091e65]">
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-sm font-medium text-[#091e65]">{{ transaction.transaction_date|date:"M d, Y" }}</span>
+                                                <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center">
+                                                    <i class="fas fa-gift text-xs"></i>
+                                                </div>
+                                            </div>
+                                            <p class="text-lg font-semibold text-[#091e65]">From: {{ transaction.sender.email }}</p>
+                                            <p class="text-right text-base font-bold text-[#091e65] mt-2">{{ transaction.amount }} Coins</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% empty %}
+                                <div class="col-span-full text-center py-8 no-activity">
+                                    <p class="text-xl font-semibold text-[#091e65] opacity-70">NO ACTIVITY YET</p>
+                                </div>
+                            {% endfor %}
+                    </div>
+                </div>
+                <div class="hidden rounded-lg bg-gray-50 p-4" id="sent" role="tabpanel" aria-labelledby="sent-tab">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for transaction in gift_history %}
+                            {% if transaction.transaction_type == 'gift_sent' %}
+                                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-[#091e65]">
+                                    <div class="p-4">
+                                       <div class="flex items-center justify-between mb-2">
+                                            <span class="text-sm font-medium text-[#091e65]">{{ transaction.transaction_date|date:"M d, Y" }}</span>
+                                            <div class="w-8 h-8 rounded-full bg-pink-500 text-white flex items-center justify-center">
+                                                <i class="fas fa-paper-plane text-xs"></i>
+                                            </div>
+                                        </div>
+                                        <p class="text-lg font-semibold text-[#091e65]">To: {{ transaction.recipient.email }}</p>
+                                        <p class="text-right text-base font-bold text-[#091e65] mt-2">{{ transaction.amount }} Coins</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% empty %}
+                            <div class="col-span-full text-center py-8 no-activity">
+                               <p class="text-xl font-semibold text-[#091e65] opacity-70">NO ACTIVITY YET</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 sm:mx-auto border border-gray-200">
+        <button type="button" id="close-modal-btn" class="absolute top-3 right-4 text-gray-500 hover:text-gray-700 focus:outline-none">
+            <i class="fas fa-times text-xl"></i>
+        </button>
+
+        <div class="p-6 sm:p-8">
+          <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#091e65] via-sky-600 to-indigo-700 rounded-t-lg"></div>
+            <div class="flex items-center justify-center mb-6">
+              <i class="fas fa-paper-plane text-4xl text-[#091e65]"></i>
+            </div>
+            <h2 id="modal-title" class="text-2xl font-bold text-[#091e65] text-center mb-2">Confirm Gift</h2>
+            <p class="text-gray-500 text-sm text-center mb-6">Review before sending:</p>
+
+            <div class="mb-6 space-y-2">
+                <div>
+                    <span class="text-gray-600">From:</span>
+                    <span id="confirm-from" class="font-medium text-gray-900">{{ user.email }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-600">To:</span>
+                    <span id="confirm-to" class="font-medium text-gray-900"></span>
+                </div>
+                <div>
+                    <span class="text-gray-600">Amount:</span>
+                    <span id="confirm-amount" class="font-bold text-lg text-[#091e65]"></span>
+                </div>
+            </div>
+
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-send" class="px-8 py-2.5 bg-[#091e65] hover:bg-opacity-80 text-white rounded-full shadow-md transition duration-300 font-semibold focus:outline-none">
+                    Confirm
+                </button>
+                <button id="cancel-send" class="px-8 py-2.5 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-full transition duration-300 font-semibold focus:outline-none">
+                    Cancel
+                </button>
+            </div>
+            <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-700 via-sky-600 to-[#091e65] rounded-b-lg"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/flowbite@1.5.1/dist/flowbite.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    .animate-spin-slow {
+        animation: spin 8s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const giftForm = document.getElementById('gift-form');
+        const messageDiv = document.getElementById('gift-message');
+        const sendGiftBtn = document.getElementById('send-gift-btn');
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmFrom = document.getElementById('confirm-from');
+        const confirmTo = document.getElementById('confirm-to');
+        const confirmAmount = document.getElementById('confirm-amount');
+        const confirmSendBtn = document.getElementById('confirm-send');
+        const cancelSendBtn = document.getElementById('cancel-send');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        let giftData = {};
+
+        function showModal() {
+            confirmationModal.classList.remove('hidden');
+        }
+
+        function hideModal() {
+            confirmationModal.classList.add('hidden');
+            giftData = {};
+        }
+
+        function showMessage(message, type) {
+            messageDiv.innerHTML = '';
+            const messageElement = document.createElement('div');
+            messageElement.classList.add(
+                'py-2', 'px-4', 'rounded-full', 'text-sm', 'font-semibold', 'mb-4', 'inline-block'
+            );
+
+            if (type === 'success') {
+                messageElement.classList.add('bg-green-100', 'text-green-600');
+                messageElement.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+            } else if (type === 'error') {
+                messageElement.classList.add('bg-red-100', 'text-red-600');
+                messageElement.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
+            }
+            messageDiv.appendChild(messageElement);
+        }
+
+        sendGiftBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            messageDiv.innerHTML = '';
+
+            const recipient = document.getElementById('recipient').value.trim();
+            const amount = parseInt(document.getElementById('amount').value, 10);
+
+            if (isNaN(amount) || amount <= 0) {
+                showMessage("Please enter a valid amount.", 'error');
+                return;
+            }
+            if (!recipient) {
+                showMessage("Recipient is required.", 'error');
+                return;
+            }
+
+            giftData = { recipient, amount };
+            confirmTo.textContent = recipient;
+            confirmAmount.textContent = amount;
+            confirmFrom.textContent = document.getElementById('confirm-from').textContent;
+            showModal();
+        });
+
+        cancelSendBtn.addEventListener('click', hideModal);
+        closeModalBtn.addEventListener('click', hideModal);
+
+        confirmSendBtn.addEventListener('click', function() {
+            confirmSendBtn.disabled = true;
+            cancelSendBtn.disabled = true;
+
+            fetch("{% url 'gift_coins' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(giftData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errData => { throw new Error(errData.message || 'Unknown Error'); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    document.getElementById('coin-balance').textContent = data.new_balance;
+
+                    // --- CONSTRUCT THE TRANSACTION OBJECT HERE ---
+                    const transaction = {
+                        transaction_date: new Date().toISOString(), // Use current date/time
+                        amount: giftData.amount,
+                        recipient_email: giftData.recipient,  // Use the recipient entered in the form
+                        sender_email: "{{ user.email }}",      // Use the current user's email
+                        transaction_type: 'gift_sent',          // This is a sent gift
+                        pack_name: null,
+                        price: null,
+                    };
+                    updateTransactionHistory(transaction, 'sent'); // Pass 'sent' for sent gifts
+                    // ---------------------------------------------
+
+                } else {
+                    showMessage(data.message, 'error');
+                }
+                giftForm.reset();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage(error.message, 'error');
+            })
+            .finally(() => {
+                confirmSendBtn.disabled = false;
+                cancelSendBtn.disabled = false;
+                hideModal();
+            });
+        });
+
+        // --- Transaction History Logic ---
+
+        function updateTransactionHistory(transaction, type) {
+            let tabContentId;
+
+            if (type === 'sent') {
+              tabContentId = '#sent';
+            } else if (type === 'received') {
+              tabContentId = '#received';
+            } else if (type === 'purchase') {
+              tabContentId = '#purchased';
+            } else {
+              console.error("Invalid transaction type:", type);
+              return;
+            }
+
+            const tabContent = document.querySelector(tabContentId);
+
+            if (!tabContent) {
+                console.error("Tab content not found for:", tabContentId);
+                return;
+            }
+
+            const transactionDiv = document.createElement('div');
+            transactionDiv.classList.add('bg-white', 'rounded-xl', 'shadow-md', 'overflow-hidden', 'border', `border-[#091e65]`);
+
+            let iconClass, iconBgClass, recipientOrSender, amountText;
+
+            if (type === 'sent') {
+                iconClass = 'fas fa-paper-plane text-white';
+                iconBgClass = 'bg-pink-500';
+                recipientOrSender = `To: ${transaction.recipient_email}`; // Use recipient_email
+                amountText = `${transaction.amount} Coins`;
+            } else if (type === 'received') {
+                iconClass = 'fas fa-gift text-white';
+                iconBgClass = 'bg-green-500';
+                recipientOrSender = `From: ${transaction.sender_email}`;  // Use sender_email
+                amountText = `${transaction.amount} Coins`;
+            } else if (type === 'purchase') {
+                iconClass = 'fas fa-shopping-cart text-white';
+                iconBgClass = 'bg-[#091e65]';
+                recipientOrSender = transaction.pack_name;
+                amountText = `${transaction.amount} Coins`;
+            }
+
+            //Correct date format
+            const date = new Date(transaction.transaction_date);
+            const dateText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+
+            transactionDiv.innerHTML = `
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-[#091e65]">${dateText}</span>
+                            <div class="w-8 h-8 rounded-full ${iconBgClass} flex items-center justify-center">
+                                <i class="${iconClass} text-xs"></i>
+                            </div>
+                        </div>
+                        <p class="text-lg font-semibold text-[#091e65]">${recipientOrSender}</p>
+                        ${type === 'purchase' ? `<p class="text-gray-600">${amountText}</p>` : ''}
+                    <p class="text-right text-base font-bold text-[#091e65] mt-2">${type === 'purchase' ? 'PKR ' + transaction.price.toFixed(2) : amountText}</p>
+                </div>
+            `;
+
+            // ---  CRITICAL CHANGE: Remove "No Activity" *BEFORE* adding ---
+            const gridContainer = tabContent.querySelector('.grid');
+            if (gridContainer) { // Check if grid container exists
+                const noActivityMessage = gridContainer.querySelector('.no-activity');
+                if (noActivityMessage) {
+                    noActivityMessage.remove();
+                }
+                gridContainer.prepend(transactionDiv); // Prepend to the grid
+            }
+        }
+
+        // --- Tab Handling (Corrected) ---
+        const tabs = document.querySelectorAll('[data-tabs-target]');
+          tabs.forEach(tab => {
+              tab.addEventListener('click', () => {
+                  const target = document.querySelector(tab.dataset.tabsTarget);
+
+                      //Remove active classes from all tab contents and tabs
+                      document.querySelectorAll('#myTabContent > div').forEach(content => {
+                          content.classList.add('hidden');
+                      });
+                      document.querySelectorAll('[data-tabs-target]').forEach(t => {
+                        t.classList.remove('border-[#091e65]', 'text-[#091e65]'); // Use your active tab styles
+                        t.classList.add('text-gray-500', 'hover:text-gray-600', 'hover:border-gray-300');
+                      });
+
+                      //Add active classes to the clicked tab and its target content
+                      target.classList.remove('hidden');
+                      tab.classList.add('border-[#091e65]', 'text-[#091e65]'); // Use your active tab styles
+                      tab.classList.remove('text-gray-500', 'hover:text-gray-600', 'hover:border-gray-300');
+              });
+          });
+
+          // Activate "Purchases" tab by default
+          document.getElementById('purchased-tab').click();
+
+
+        // --- Initial "No Activity" Setup (NEW) ---
+        function setupNoActivityMessages() {
+            const tabContents = document.querySelectorAll('#myTabContent > div');
+            tabContents.forEach(tabContent => {
+                const grid = tabContent.querySelector('.grid');
+                // Check if the grid is empty
+                if (grid && grid.children.length === 0) {
+                    const noActivityDiv = document.createElement('div');
+                    noActivityDiv.classList.add('col-span-full', 'text-center', 'py-8', 'no-activity');
+                    noActivityDiv.innerHTML = `<p class="text-xl font-semibold text-[#091e65] opacity-70">NO ACTIVITY YET</p>`;
+                    grid.appendChild(noActivityDiv);
+                }
+            });
+        }
+
+        setupNoActivityMessages(); // Call this on page load
+
+        // --- Animation for Coin Balance ---
+        function animateValue(element, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                element.textContent = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        const coinBalanceElement = document.getElementById('coin-balance');
+        if (coinBalanceElement) {
+            const endValue = parseInt(coinBalanceElement.textContent);
+            animateValue(coinBalanceElement, 0, endValue, 1500);
+        }
+          // Smooth appearance (optional)
+        const animatedElements = document.querySelectorAll('.container > *, .grid > *');  // Adjust if needed
+          animatedElements.forEach((el, index) => {
+              el.classList.add('opacity-0', 'transform', 'translate-y-4'); // Start hidden
+              setTimeout(() => {
+                  el.classList.remove('opacity-0', 'transform', 'translate-y-4');
+                  el.classList.add('opacity-100', 'transition-all', 'duration-500', 'ease-in-out'); // Fade in
+              }, index * 100); // Stagger the animation
+          });
+    });
+    </script>
+{% endblock %}

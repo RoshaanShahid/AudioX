@@ -1,20 +1,16 @@
-# URL configuration for AudioXCore project.
-
-# The `urlpatterns` list routes URLs to views. For more information please see:
-#     https://docs.djangoproject.com/en/4.2/topics/http/urls/
-
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include  # include is not really needed here
 from AudioXApp import views
 from .views import scrape_audiobooks
 from .views import fetch_audiobooks
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    #path('Home/', views.Index, name='Home'),
+    #  path('admin/', admin.site.urls),  <- Removed: Admin is handled in project urls.py
+    #path('Home/', views.home, name='home'),
     path('Home/', views.home, name='home'), 
+    path('', views.home, name='home_redirect'), # Redirect empty path to Home
     path('ourteam/', views.ourteam, name='ourteam'),
     path('paymentpolicy/', views.paymentpolicy, name='paymentpolicy'),
     path('privacypolicy/', views.privacypolicy, name='privacypolicy'),
@@ -22,7 +18,7 @@ urlpatterns = [
     path('termsandconditions/', views.termsandconditions, name='termsandconditions'),
     path('aboutus/', views.aboutus, name='aboutus'),
     path('contactus/', views.contactus, name='contactus'),
-    path('logout/', views.logout_view, name='logout'), 
+    path('logout/', views.logout_view, name='logout'),
     path('myprofile/', views.myprofile, name='myprofile'),
     path('update_profile/', views.update_profile, name='update_profile'),
     path('change_password/', views.change_password, name='change_password'),
@@ -32,9 +28,6 @@ urlpatterns = [
     path('admindashboard', views.admindashboard, name='admindashboard'),  
     path('mywallet/', views.my_wallet, name='my_wallet'),
     path('buy_coins/', views.buy_coins, name='buy_coins'),
-    path('scrape/', scrape_audiobooks, name='scrape_audiobooks'),
-    #path("api/audiobooks/", fetch_audiobooks, name="fetch_audiobooks"),
-    path("api/audiobooks/", fetch_audiobooks, name="fetch_audiobooks"),
 
 
 
@@ -44,7 +37,6 @@ urlpatterns = [
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.AUDIO_URL, document_root=settings.AUDIO_ROOT)
 
-# This part is only necessary if you want to serve media files in DEBUG mode
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.AUDIO_URL, document_root=settings.AUDIO_ROOT)

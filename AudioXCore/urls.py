@@ -1,13 +1,15 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
-from AudioXApp import views  # Corrected import
+from django.urls import path, include  # Import 'include'
 from django.shortcuts import redirect
 from django.urls import path
-from AudioXApp.views import fetch_audiobooks
-from AudioXApp.views import fetch_audiobooks
+from . import views
+from AudioX import AudioXApp
 
+
+from AudioXApp.views import fetch_audiobooks
+from AudioXApp.views import fetch_audiobooks
 
 
 urlpatterns = [
@@ -45,7 +47,7 @@ urlpatterns = [
     path('signup/', views.signup, name='signup'),  # Signup page
 
     path('/login', lambda request: redirect('/login/'), name='login_redirect'),  # Redirect to signin page
-    path('login/', views.login, name='login'),  # Signin page
+    path('login/', AudioXApp.views.login, name='login'),  # Signin page
 
 ] 
 
@@ -53,8 +55,6 @@ urlpatterns = [
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 urlpatterns += static(settings.AUDIO_URL, document_root=settings.AUDIO_ROOT)
 
-# This part is only necessary if you want to serve media files in DEBUG mode
 if settings.DEBUG:
-    # No need to add admin URL here again
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.AUDIO_URL, document_root=settings.AUDIO_ROOT)
