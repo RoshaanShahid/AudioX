@@ -1,0 +1,27 @@
+<script>
+    fetch("/api/audiobooks/")  // Fetch from your updated Django API
+        .then(response => response.json())
+        .then(data => {
+            const audiobooks = data.audiobooks;
+            const listContainer = document.getElementById("audiobooks-list");
+
+            audiobooks.forEach(book => {
+                if (book.audio_url) {  // Ensure there's an audio file
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = `
+                        <h3>${book.title}</h3>
+                        <p><strong>Author:</strong> ${book.author}</p>
+                        <img src="${book.cover_image}" alt="Cover Image" width="150"><br>
+                        <audio controls>
+                            <source src="${book.audio_url}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    `;
+                    listContainer.appendChild(listItem);
+                }
+            });
+        })
+        .catch(error => {
+            console.error("Error fetching audiobooks:", error);
+        });
+</script>

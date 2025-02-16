@@ -6,19 +6,32 @@ from django.conf import settings
 from django.contrib.auth import login as auth_login, logout as auth_logout, update_session_auth_hash, authenticate
 from django.contrib.auth.decorators import login_required
 from django.templatetags.static import static
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse , StreamingHttpResponse
 from django.contrib.auth.forms import PasswordChangeForm
 from django.views.decorators.http import require_POST
+import ffmpeg
+from pydub import AudioSegment
+from io import BytesIO
+import audible
+import feedparser
 import json
+import requests
 from django.urls import reverse
 from django.contrib.auth.hashers import check_password  # Import check_password
 from django.core.exceptions import ValidationError  # Import ValidationError
 from django.db.models import F
 from django.core.files.storage import default_storage #For deleting file.
+from bs4 import BeautifulSoup
+from .models import Audiobook
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import SuspiciousOperation
+#from .fetch_audiobooks import fetch_audiobooks
 
 
-def home(request):
-    return render(request, 'Homepage.html')
+"""def home(request):
+    audiobooks = fetch_audiobooks()
+    return render(request, "home.html", {"audiobooks": audiobooks})"""
+
 
 def signup(request):
     if request.method == 'POST':
@@ -349,3 +362,124 @@ def adminlogin(request):
 
 def admindashboard(request):
     return render(request, 'admindashboard.html')
+
+
+def scrape_audiobooks(request):
+    url = "https://librivox.org/search?genre=fiction"  # Example: Fiction genre from LibriVox
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        books = soup.find_all("li", class_="book-item")
+        
+        for book in books:
+            title = book.find("h3", class_="book-title").text.strip()
+            author = book.find("h4", class_="book-author").text.strip() if book.find("h4", class_="book-author") else "Unknown"
+            link = book.find("a")["href"]  # Audiobook URL
+            
+            # Save to database if not already stored
+            Audiobook.objects.get_or_create(
+                title=title,
+                author=author,
+                url=link
+            )
+        
+        return JsonResponse({"message": "Audiobooks scraped successfully!"})
+    
+    return JsonResponse({"error": "Failed to fetch data"}, status=400)
+
+
+
+
+
+
+
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import SuspiciousOperation
+import requests
+import feedparser
+
+def fetch_audiobooks(request):  
+    rss_feeds = [
+        "https://librivox.org/rss/47",  # Count of Monte Cristo
+        "https://librivox.org/rss/52",  # Letters of Two Brides
+        "https://librivox.org/rss/53",  # Bleak House
+        "https://librivox.org/rss/54",  # Penguin Island
+        "https://librivox.org/rss/59",  # Crime and Punishment
+        "https://librivox.org/rss/60",  # Beyond Good and Evil
+        "https://librivox.org/rss/61",  # The Apology
+        "https://librivox.org/rss/62"   # Mirza Ghalib
+    ]
+    
+    audiobooks = []
+    
+    for rss_url in rss_feeds:
+        feed = feedparser.parse(rss_url)
+        if not feed.entries:
+            continue  
+
+        chapters = []
+        for entry in feed.entries:  
+            audio_url = entry.enclosures[0].href if entry.enclosures else None  
+            chapters.append({
+                "chapter_title": entry.title,
+                "audio_url": f"/stream_audio?url={audio_url}" if audio_url else None  
+            })
+        
+        title = feed.feed.get('title', 'Unknown')
+        author = feed.feed.get('author', 'Unknown')
+        cover_image = feed.feed.image.href if hasattr(feed.feed, 'image') else None
+        
+        audiobooks.append({
+            "title": title,
+            "author": author,
+            "cover_image": f"/fetch_cover_image?url={cover_image}" if cover_image else None,
+            "chapters": chapters
+        })
+    
+    return JsonResponse({"audiobooks": audiobooks})  
+
+def home(request):
+    audiobooks = fetch_audiobooks(request)  
+    return render(request, "home.html", {"audiobooks": audiobooks})
+
+@csrf_exempt
+def stream_audio(request):
+    audio_url = request.GET.get("url")
+    if not audio_url:
+        return JsonResponse({"error": "No audio URL provided"}, status=400)
+
+    try:
+        response = requests.get(audio_url, stream=True)
+        if response.status_code != 200:
+            return JsonResponse({"error": "Failed to fetch audio"}, status=response.status_code)
+
+        def generate():
+            for chunk in response.iter_content(chunk_size=8192):  
+                yield chunk
+        
+        return StreamingHttpResponse(generate(), content_type="audio/mpeg")
+
+    except requests.RequestException:
+        return JsonResponse({"error": "Error processing audio"}, status=500)
+
+@csrf_exempt
+def fetch_cover_image(request):
+    image_url = request.GET.get("url")
+    if not image_url:
+        return JsonResponse({"error": "No image URL provided"}, status=400)
+    
+    try:
+        response = requests.get(image_url, stream=True)
+        if response.status_code == 200:
+            return HttpResponse(response.content, content_type=response.headers['Content-Type'])
+        else:
+            return JsonResponse({"error": "Failed to fetch image"}, status=response.status_code)
+    except requests.RequestException:
+        raise SuspiciousOperation("Invalid image request")
+
+
+"""def home(request):
+    audiobooks = fetch_audiobooks(request).content.decode("utf-8")
+    return render(request, 'home.html', {"audiobooks": audiobooks})"""

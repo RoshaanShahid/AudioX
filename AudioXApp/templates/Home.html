@@ -1,1 +1,52 @@
 {% extends 'Homepage.html' %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Audiobooks</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        {% for book in audiobooks %}
+        <div class="bg-white shadow-lg rounded-lg p-4">
+            <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="w-full h-60 object-cover rounded-lg cursor-pointer" onclick="toggleChapters('{{ book.title }}')">
+            <h2 class="text-xl font-semibold mt-4">{{ book.title }}</h2>
+            <p class="text-gray-600">Author: {{ book.author }}</p>
+            <p class="text-gray-500">Genre: {{ book.genre|default:'Unknown' }}</p>
+            <div id="chapters-{{ book.title }}" class="hidden mt-4">
+                <h3 class="text-lg font-semibold">Chapters:</h3>
+                <ul class="list-disc pl-5">
+                    {% for chapter in book.chapters %}
+                    <li class="cursor-pointer mt-2" onclick="playAudio('{{ chapter.audio_url }}')">
+                        <img src="{{ book.cover_image }}" alt="{{ chapter.chapter_title }}" class="w-12 h-12 object-cover rounded-lg inline-block mr-2">
+                        <span class="text-blue-600">{{ chapter.chapter_title }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <audio id="audioPlayer" controls class="w-full mt-6 hidden">
+        <source id="audioSource" src="" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+</div>
+
+<script>
+function toggleChapters(title) {
+    const chaptersDiv = document.getElementById(`chapters-${title}`);
+    chaptersDiv.classList.toggle('hidden');
+}
+
+function playAudio(url) {
+    const audioPlayer = document.getElementById("audioPlayer");
+    const audioSource = document.getElementById("audioSource");
+    audioSource.src = `/stream_audio?url=${encodeURIComponent(url)}`;
+    audioPlayer.load();
+    audioPlayer.classList.remove("hidden");
+    audioPlayer.play();
+}
+</script>
+{% endblock %}
+
+
+
+

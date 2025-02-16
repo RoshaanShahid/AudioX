@@ -4,11 +4,16 @@ from django.contrib import admin
 from django.urls import path, include
 from AudioXApp import views  # Corrected import
 from django.shortcuts import redirect
+from django.urls import path
+from AudioXApp.views import fetch_audiobooks
+from AudioXApp.views import fetch_audiobooks
+
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # Admin URL included once
-    path('Home/', views.home, name='home'),  # Your custom index view
+    #path('Home/', views.home, name='home'),  # Your custom index view
+    path('Home/', views.home, name='home'), 
     path('ourteam/', views.ourteam, name='ourteam'),
     path('paymentpolicy/', views.paymentpolicy, name='paymentpolicy'),
     path('privacypolicy/', views.privacypolicy, name='privacypolicy'),
@@ -24,6 +29,10 @@ urlpatterns = [
     path('adminlogin', views.adminlogin, name='adminlogin'),
     path('adminsignup', views.adminsignup, name='adminsignup'),
     path('admindashboard', views.admindashboard, name='admindashboard'),  
+    path('scrape/', views.scrape_audiobooks, name='scrape_audiobooks'),
+    #path("api/audiobooks/", fetch_audiobooks, name="fetch_audiobooks"),
+    path("api/audiobooks/", fetch_audiobooks, name="fetch_audiobooks"),
+
 
 
 

@@ -8,10 +8,13 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from AudioXApp import views
+from .views import scrape_audiobooks
+from .views import fetch_audiobooks
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('Home/', views.Index, name='Home'),
+    #path('Home/', views.Index, name='Home'),
+    path('Home/', views.home, name='home'), 
     path('ourteam/', views.ourteam, name='ourteam'),
     path('paymentpolicy/', views.paymentpolicy, name='paymentpolicy'),
     path('privacypolicy/', views.privacypolicy, name='privacypolicy'),
@@ -29,6 +32,9 @@ urlpatterns = [
     path('admindashboard', views.admindashboard, name='admindashboard'),  
     path('mywallet/', views.my_wallet, name='my_wallet'),
     path('buy_coins/', views.buy_coins, name='buy_coins'),
+    path('scrape/', scrape_audiobooks, name='scrape_audiobooks'),
+    #path("api/audiobooks/", fetch_audiobooks, name="fetch_audiobooks"),
+    path("api/audiobooks/", fetch_audiobooks, name="fetch_audiobooks"),
 
 
 
