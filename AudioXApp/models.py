@@ -161,6 +161,23 @@ class Audiobook(models.Model):
     class Meta:
         db_table = "AUDIOBOOKS"
 
+
+class Chapter(models.Model):
+    chapter_id = models.AutoField(primary_key=True)
+    audiobook = models.ForeignKey(Audiobook, on_delete=models.CASCADE, related_name="chapters")
+    chapter_name = models.CharField(max_length=255)
+    chapter_order = models.PositiveIntegerField()
+    chapter_time = models.PositiveIntegerField(help_text="Start time in seconds")
+    chapter_duration = models.PositiveIntegerField(help_text="Duration in seconds")
+    audio_file = models.FileField(upload_to="chapters/", blank=True, null=True)  # 📌 New: Stores actual audio file
+
+    class Meta:
+        db_table = "CHAPTERS"
+        ordering = ['chapter_order']  # Ensures chapters are retrieved in order
+
+    def __str__(self):
+        return f"{self.chapter_order}: {self.chapter_name} ({self.audiobook.title})"
+
 class Subscription(models.Model):
     PLAN_CHOICES = (
         ('monthly', 'Monthly Premium'),
