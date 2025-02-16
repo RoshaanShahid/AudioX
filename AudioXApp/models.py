@@ -2,9 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-#from .models import User, Admin, CoinTransaction, Subscription
-
-
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -26,7 +23,6 @@ class UserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self.create_user(email, password, **extra_fields)
-
 
 class User(AbstractBaseUser, PermissionsMixin):
     user_id = models.AutoField(primary_key=True)
@@ -62,7 +58,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-
 
 class Admin(models.Model):
     class RoleChoices(models.TextChoices):
@@ -110,7 +105,6 @@ class Admin(models.Model):
     class Meta:
         db_table = 'ADMINS'
 
-
 class CoinTransaction(models.Model):
     TRANSACTION_TYPES = (
         ('purchase', 'Purchase'),
@@ -139,7 +133,6 @@ class CoinTransaction(models.Model):
     class Meta:
         db_table = 'COIN_TRANSACTIONS'
 
-
 class Creator(models.Model):
     creator_id = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     total_audiobooks = models.PositiveIntegerField(default=0)
@@ -151,7 +144,6 @@ class Creator(models.Model):
 
     def __str__(self):
         return f"Creator: {self.creator_id.email}"
-
 
 class Audiobook(models.Model):
     audiobook_id = models.AutoField(primary_key=True)
@@ -168,3 +160,50 @@ class Audiobook(models.Model):
 
     class Meta:
         db_table = "AUDIOBOOKS"
+
+class Subscription(models.Model):
+    PLAN_CHOICES = (
+        ('monthly', 'Monthly Premium'),
+        ('annual', 'Annual Premium'),
+        ('free', 'Free Tier')
+    )
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('canceled', 'Canceled'),
+        ('expired', 'Expired'),
+        ('pending', 'Pending Payment'),
+    )
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
+    plan = models.CharField(max_length=20, choices=PLAN_CHOICES)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_plan_display()} ({self.status})"
+
+    class Meta:
+        db_table = 'SUBSCRIPTIONS'
+
+    def is_active(self):
+        return self.status == 'active' and self.end_date >= timezone.now()
+    
+    def cancel(self):
+        self.status = 'canceled'
+        self.save()
+
+    def update_status(self):
+        now = timezone.now()
+        if self.status == 'active' and self.end_date < now:
+            self.status = 'expired'
+            self.save()
+
+    @property
+    def remaining_days(self):
+        if self.status == 'active':
+            remaining = self.end_date - timezone.now()
+            return max(0, remaining.days)
+        return 0

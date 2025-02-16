@@ -1,0 +1,15 @@
+/* Reset */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa; /* Light background for contrast */
+    min-height: 100%; /* Ensure body takes full height */
+}
+
+/* Flexbox to ensure footer stays at the bottom */
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}

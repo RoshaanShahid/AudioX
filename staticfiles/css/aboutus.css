@@ -1,0 +1,254 @@
+/* General Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #212529;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header Styles */
+header {
+    background-color: #091e65;
+    color: #fff;
+    padding: 20px 0;
+}
+
+.logo img {
+    height: 50px;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+nav li {
+    margin-left: 20px;
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+nav a.active,
+nav a:hover {
+    background-color: #f5f5f5;
+    color: #091e65;
+}
+
+/* Hero Section Styles */
+.hero {
+    background-color: #f5f5f5;
+    padding: 50px 0;
+}
+
+.hero-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hero-text {
+    width: 45%;
+}
+
+.hero-text h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #091e65;
+}
+
+.hero-text p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.hero-text button {
+    background-color: #091e65;
+    color: #fff;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.hero-text button:hover {
+    background-color: #07164a;
+}
+
+.hero-image {
+    width: 50%;
+}
+
+.hero-image img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Why AUDIOX Section Styles */
+.why-audiox {
+    padding: 50px 0;
+}
+
+.why-audiox h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 40px;
+    color: #091e65;
+}
+
+.reasons {
+    display: flex;
+    justify-content: space-around;
+}
+
+.reason {
+    text-align: center;
+}
+
+.reason h3 {
+    font-size: 1.8rem;
+    color: #091e65;
+    margin-bottom: 10px;
+}
+
+.reason p {
+    font-size: 1.1rem;
+}
+
+/* AUDIOX Premium Section Styles */
+.audiox-premium {
+    background-color: #f5f5f5;
+    padding: 50px 0;
+}
+
+.audiox-premium h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 40px;
+    color: #091e65;
+}
+
+.premium-items {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.premium-item {
+    text-align: center;
+    margin-bottom: 30px;
+    width: 150px;
+}
+
+.premium-item img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.premium-item p {
+    font-size: 1rem;
+}
+
+/* Testimonials Section Styles */
+.testimonials {
+    padding: 50px 0;
+}
+
+.testimonials h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 40px;
+    color: #091e65;
+}
+
+.testimonial-list {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.testimonial {
+    width: 45%;
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.user-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.user-info h4 {
+    font-size: 1.2rem;
+    color: #091e65;
+}
+
+.testimonial p {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+/* Creators Section Styles */
+.creators {
+    background-color: #f5f5f5;
+    padding: 50px 0;
+}
+
+.creators h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 40px;
+    color: #091e65;
+}
+
+.creator-list {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.creator {
+    text-align: center;
+    margin-bottom: 30px;
+    width: 150px;
+}
+
+.creator img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.creator p {
+    font-size: 1rem;
+}
