@@ -71,6 +71,10 @@
                     </div>
                 </div>
 
+                <div class="text-right">
+                    <a href="{% url 'forgot_password' %}" class="text-primary hover:text-primary-light text-sm">Forgot Password?</a>
+                </div>
+
                 <button class="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl transition duration-200"
                         type="submit">
                     Sign In
@@ -139,18 +143,18 @@
         });
 
 
-    document.querySelector('.fa-eye').addEventListener('click', function() {
-        const passwordInput = document.getElementById('password');
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            this.classList.remove('fa-eye');
-            this.classList.add('fa-eye-slash');
-        } else {
-            passwordInput.type = 'password';
-            this.classList.remove('fa-eye-slash');
-            this.classList.add('fa-eye');
-        }
-    });
+        document.querySelector('.fa-eye').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.classList.remove('fa-eye');
+                this.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                this.classList.remove('fa-eye-slash');
+                this.classList.add('fa-eye');
+            }
+        });
 
     </script>
 

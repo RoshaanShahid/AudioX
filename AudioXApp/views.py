@@ -30,6 +30,8 @@ from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt  # Import this
 from django.core.exceptions import SuspiciousOperation
 from django.utils.text import slugify  # Import slugify HERE, at the top level
+import random  # Import the random module
+
 
 
 
@@ -893,3 +895,88 @@ def cancel_subscription(request):
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
         return redirect('managesubscription')
+
+def forgot_password_view(request):
+    return render(request, 'forgotpassword.html')
+
+def handle_forgot_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+
+        try:
+            user = User.objects.get(email=email)  # Check if the email exists
+        except User.DoesNotExist:
+            messages.error(request, 'No account found with this email address.')
+            return render(request, 'forgotpassword.html') # Re-render with error
+
+        # Generate OTP
+        otp = str(random.randint(100000, 999999))  # 6-digit OTP
+        request.session['reset_otp'] = otp  # Store OTP in session
+        request.session['reset_email'] = email  # Store email for later
+
+        # Send OTP via email
+        try:
+            send_mail(
+                'Password Reset OTP',
+                f'Your OTP for password reset is: {otp}',
+                settings.EMAIL_HOST_USER,  # Or settings.DEFAULT_FROM_EMAIL
+                [email],
+                fail_silently=False,
+            )
+            messages.success(request, 'An OTP has been sent to your email address.')
+            # Redirect to a new OTP verification page.  *CRUCIAL*
+            return redirect('verify_otp') # Redirect to new route
+
+
+        except Exception as e:
+            messages.error(request, f'Error sending email: {e}')
+            return render(request, 'forgotpassword.html')
+
+    # Should not normally reach here with a POST request; good practice
+    return render(request, 'forgotpassword.html')
+
+def verify_otp_view(request):
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp')
+        stored_otp = request.session.get('reset_otp')
+
+        if entered_otp == stored_otp:
+            # OTP is correct, proceed to password reset
+            del request.session['reset_otp']  # Clear OTP from session
+            # Render the password reset form.  *NEW TEMPLATE*
+            return render(request, 'reset_password.html')
+        else:
+            messages.error(request, 'Incorrect OTP.')
+            return render(request, 'verify_otp.html') # Re-render OTP form.
+
+    # GET request: show OTP entry form
+    return render(request, 'verify_otp.html')
+
+def reset_password_view(request):
+  if request.method == 'POST':
+    email = request.session.get('reset_email') # Get email from when OTP sent
+    new_password = request.POST.get('password')
+    confirm_password = request.POST.get('confirm_password')
+
+    if not email:
+        messages.error(request, 'Password reset session expired.  Please start again.')
+        return redirect('forgot_password')
+
+    if new_password != confirm_password:
+        messages.error(request, 'Passwords do not match.')
+        return render(request, 'reset_password.html')
+
+    try:
+        user = User.objects.get(email=email)
+        user.set_password(new_password)
+        user.save()
+        del request.session['reset_email']  # Clean up the session
+        messages.success(request, 'Password reset successfully.  You can now log in.')
+        return redirect('login')
+
+    except User.DoesNotExist:
+        # This *should* not happen, but is good for extra safety.
+        messages.error(request, 'User not found.  Please start the password reset process again.')
+        return redirect('forgot_password')
+  else:
+    return render(request, "reset_password.html")

@@ -37,8 +37,11 @@ urlpatterns = [
     path('audiobook/<slug:audiobook_slug>/', views.audiobook_detail, name='audiobook_detail'),
     path('signup/', views.signup, name='signup'),
     path('login/', views.login, name='login'),
-    # No redirects needed here! The project-level urls.py handles the root redirect.
-]
+    path('forgot-password/', views.forgot_password_view, name='forgot_password'),
+    path('handle-forgot-password/', views.handle_forgot_password, name='handle_forgot_password'),
+    path('verify-otp/', views.verify_otp_view, name='verify_otp'),
+    path('reset-password/', views.reset_password_view, name='reset_password'),
+     ]
 
 urlpatterns += staticfiles_urlpatterns()
 if settings.DEBUG:
