@@ -1,11 +1,11 @@
 from django.conf import settings
 from django.conf.urls.static import static as static_files
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include  # Keep include, it's good practice for larger projects
 from django.shortcuts import redirect
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from AudioXApp import views
-from AudioXApp.views import *
+from AudioXApp.views import *  # It's generally better to import specific views, but this works for now.
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,6 +27,17 @@ urlpatterns = [
     path('admindashboard/', views.admindashboard, name='admindashboard'),
     path('scrape/', views.scrape_audiobooks, name='scrape_audiobooks'),
     path("api/audiobooks/", fetch_audiobooks, name="fetch_audiobooks"),
+    path('subscribe/', views.subscribe, name='subscribe'),
+    path('subscribe_now/', views.subscribe_now, name='subscribe_now'),
+    path('managesubscription/', views.managesubscription, name='managesubscription'),
+    path('cancel_subscription/', views.cancel_subscription, name='cancel_subscription'),
+    path('mywallet/', views.mywallet, name='mywallet'),
+    path('buycoins/', views.buycoins, name='buycoins'),
+    path('buy_coins/', views.buy_coins, name='buy_coins'),  # URL for the AJAX POST request
+    path('gift_coins/', views.gift_coins, name='gift_coins'),
+    path("stream_audio/", stream_audio, name="stream_audio"),
+    path("fetch_cover_image/", fetch_cover_image, name="fetch_cover_image"),
+
 
     # Redirects
     path('', lambda request: redirect('home'), name='home_redirect'),
