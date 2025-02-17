@@ -114,7 +114,7 @@ AUTH_USER_MODEL = 'AudioXApp.User'
 LOGIN_URL = '/login/'
 
 EMAIL_HOST_USER = 'iam.burhanaqeel@gmail.com'  # Your Gmail address
-EMAIL_HOST_PASSWORD = 'zzlmvxvawqobzbql'  # The 16-character App Password
+EMAIL_HOST_PASSWORD = 'mvwyczriqsxklgfb'  # The 16-character App Password
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
