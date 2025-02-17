@@ -1,52 +1,106 @@
 {% extends 'Homepage.html' %}
 
 {% block content %}
-<div class="container mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">Audiobooks</h1>
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        {% for book in audiobooks %}
-        <div class="bg-white shadow-lg rounded-lg p-4">
-            <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="w-full h-60 object-cover rounded-lg cursor-pointer" onclick="toggleChapters('{{ book.title }}')">
-            <h2 class="text-xl font-semibold mt-4">{{ book.title }}</h2>
-            <p class="text-gray-600">Author: {{ book.author }}</p>
-            <p class="text-gray-500">Genre: {{ book.genre|default:'Unknown' }}</p>
-            <div id="chapters-{{ book.title }}" class="hidden mt-4">
-                <h3 class="text-lg font-semibold">Chapters:</h3>
-                <ul class="list-disc pl-5">
-                    {% for chapter in book.chapters %}
-                    <li class="cursor-pointer mt-2" onclick="playAudio('{{ chapter.audio_url }}')">
-                        <img src="{{ book.cover_image }}" alt="{{ chapter.chapter_title }}" class="w-12 h-12 object-cover rounded-lg inline-block mr-2">
-                        <span class="text-blue-600">{{ chapter.chapter_title }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
+<div class="bg-gray-50 min-h-screen font-sans antialiased">
+
+    <div class="relative overflow-hidden">  <div class="absolute inset-0">
+            <video autoplay muted loop class="w-full h-full object-cover">
+                <source src="https://cdn.coverr.co/videos/coverr-reading-a-book-7883/1080p.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-[#091e65]/70 to-[#091e65]/20"></div>
+        </div>
+
+        <div class="relative flex flex-col items-center justify-center h-[700px] md:h-[800px] px-6 md:px-12 text-center">
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold text-white mb-6 leading-tight tracking-tighter"
+                style="text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);">
+                Your World of Audiobooks Awaits
+            </h1>
+            <p class="text-xl md:text-2xl lg:text-3xl text-white mb-10 max-w-4xl mx-auto leading-relaxed"
+                style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);">
+                Discover captivating stories, narrated by masters of the craft.
+            </p>
+
+            <a href="/subscribe"
+                class="inline-block bg-gradient-to-br from-[#3f51b5] to-[#1a237e] hover:from-[#091e65] hover:to-[#091e65] text-white font-bold py-4 px-12 rounded-full text-lg tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl">
+                Explore Now
+            </a>
+
+            <div class="mt-12 w-full overflow-hidden">
+                <div class="marquee flex items-center whitespace-nowrap space-x-8">
+                    <span class="text-lg md:text-xl font-bold text-white">Fiction</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Mystery</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Thriller</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Sci-Fi</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Fantasy</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Romance</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Biography</span>
+                    <span class="text-lg md:text-xl font-bold text-white">History</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Self-Help</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Business</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Fiction</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Mystery</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Thriller</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Sci-Fi</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Fantasy</span>
+                    <span class="text-lg md:text-xl font-bold text-white">Romance</span>
+                </div>
             </div>
         </div>
-        {% endfor %}
+    </div>  <div class="container mx-auto px-4 py-24">
+        <h2 class="text-4xl font-bold text-center text-gray-800 mb-16">Discover New Favorites</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
+            {% for book in audiobooks %}
+            <a href="{% url 'audiobook_detail' audiobook_slug=book.slug %}">
+                <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl relative group">
+                    <div class="relative h-80">
+                        <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="w-full h-full object-cover rounded-t-3xl">
+                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                            <button onclick="playFirstChapter('{{ book.audio_sample_url }}')" title="Play First Chapter"
+                                class="bg-white/80 text-[#091e65] rounded-full p-4 transition-all hover:scale-110 hover:bg-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                    stroke="currentColor" class="w-8 h-8">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
     </div>
-    <audio id="audioPlayer" controls class="w-full mt-6 hidden">
-        <source id="audioSource" src="" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
 </div>
 
 <script>
-function toggleChapters(title) {
-    const chaptersDiv = document.getElementById(`chapters-${title}`);
-    chaptersDiv.classList.toggle('hidden');
-}
+    function playFirstChapter(audioUrl) {
+        console.log("Playing audio (but no player visible):", audioUrl);
+    }
 
-function playAudio(url) {
-    const audioPlayer = document.getElementById("audioPlayer");
-    const audioSource = document.getElementById("audioSource");
-    audioSource.src = `/stream_audio?url=${encodeURIComponent(url)}`;
-    audioPlayer.load();
-    audioPlayer.classList.remove("hidden");
-    audioPlayer.play();
-}
+    const marquee = document.querySelector('.marquee');
+    let marqueeWidth = marquee.offsetWidth;
+    let animationDuration = marqueeWidth / 50;
+
+    marquee.style.animation = `marquee ${animationDuration}s linear infinite`;
+
 </script>
+
+<style>
+    @keyframes marquee {
+        from {
+            transform: translateX(0);
+        }
+
+        to {
+            transform: translateX(-50%);
+        }
+    }
+
+  .tracking-tighter {
+        letter-spacing: -0.075em;
+    }
+</style>
+
 {% endblock %}
-
-
-
-

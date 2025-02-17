@@ -1,0 +1,66 @@
+{% extends 'Homepage.html' %}
+
+{% block content %}
+<div class="bg-white min-h-screen font-sans antialiased">
+    <div class="container mx-auto px-4 py-16 md:py-20">
+        <div class="max-w-6xl mx-auto flex flex-col">
+            <div class="md:flex -mx-4">
+                <div class="md:w-1/3 px-4 mb-8 md:mb-0">
+                    <img src="{{ audiobook.cover_image }}" alt="{{ audiobook.title }}" class="w-full rounded-3xl shadow-lg">
+                </div>
+
+                <div class="md:w-2/3 px-4">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-[#091e65] mb-4 font-serif leading-tight">{{ audiobook.title }}</h1>
+                    <p class="text-gray-600 mb-6 text-lg leading-relaxed">{{ audiobook.description|truncatewords:50 }}</p>
+
+                    <div class="mb-10">
+                        <audio id="audioPlayer" controls class="w-full rounded-full shadow-inner bg-gray-50">
+                            <source id="audioSource" src="" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-4 mt-12">
+                <h2 class="text-3xl font-semibold text-[#091e65] mb-8 text-center border-b pb-3 border-gray-200 relative">
+                    <span class="text-[#091e65]">Chapters</span>
+                     <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-[#091e65] rounded-full"></div>
+                </h2>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 w-1 bg-[#091e65] rounded-full ml-8" aria-hidden="true"></div>
+                  <div class="grid grid-cols-1 gap-8 relative">
+
+                    {% for chapter in audiobook.chapters %}
+                      <div class="bg-white rounded-3xl shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-1 flex items-center pl-16 pr-6 py-4 relative z-10 border border-gray-200">
+                        <div class="absolute left-0 top-1/2 transform -translate-y-1/2 -ml-2 w-10 h-10 bg-[#091e65] rounded-full flex items-center justify-center text-white font-bold shadow-md z-20">
+                            {{ forloop.counter }}
+                          </div>
+                            <a href="#" onclick="playChapter('{{ chapter.audio_url|urlencode }}')" class="flex items-center w-full">
+                                <span class="text-[#091e65] font-semibold text-lg leading-tight ml-4">{{ chapter.chapter_title }}</span>
+                            </a>
+                        </div>
+
+                    {% empty %}
+                    <div class="text-gray-600 col-span-full text-center">No chapters available.</div>
+                    {% endfor %}
+                  </div>
+                  </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function playChapter(audioUrl) {
+        const audioPlayer = document.getElementById("audioPlayer");
+        const audioSource = document.getElementById("audioSource");
+
+        audioSource.src = "/stream_audio?url=" + audioUrl;
+        audioPlayer.load();
+        audioPlayer.play();
+        // Ensure only one audio plays at a time
+        document.querySelectorAll('audio').forEach(el => { if (el !== audioPlayer) { el.pause(); } });
+    }
+</script>
+{% endblock %}

@@ -1,39 +1,37 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import User, Admin, CoinTransaction, Subscription
+from .models import User, Admin, CoinTransaction, Subscription, Audiobook  
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import login as auth_login, logout as auth_logout, update_session_auth_hash, authenticate
 from django.contrib.auth.decorators import login_required
 from django.templatetags.static import static
-from django.http import JsonResponse, HttpResponse , StreamingHttpResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponse, StreamingHttpResponse, HttpResponseForbidden
 from django.views.decorators.http import require_POST
 from django.db.utils import IntegrityError
 from decimal import Decimal
-
-import ffmpeg
+import ffmpeg  # You might not need this if you aren't doing processing
 from bs4 import BeautifulSoup
-from pydub import AudioSegment
+# from pydub import AudioSegment  # You probably don't need this for simple streaming
 from django.contrib.auth.forms import PasswordChangeForm
 from io import BytesIO
-import audible
+import audible  # Likely not needed for LibriVox
 import feedparser
 import json
 import requests
 from django.urls import reverse
-from django.contrib.auth.hashers import check_password  # Import check_password
-from django.core.exceptions import ValidationError  # Import ValidationError
+from django.contrib.auth.hashers import check_password
+from django.core.exceptions import ValidationError
 from django.db.models import F
-from django.core.files.storage import default_storage #For deleting file.
+from django.core.files.storage import default_storage
 from django.utils import timezone
-from AudioXApp.models import Audiobook
+# from AudioXApp.models import Audiobook  # If you use it
 from django.db import transaction
+from django.views.decorators.csrf import csrf_exempt  # Import this
+from django.core.exceptions import SuspiciousOperation
+from django.utils.text import slugify  # Import slugify HERE, at the top level
 
 
-
-
-"""def home(request):
-    return render(request, 'Homepage.html')"""
 
 def signup(request):
     if request.method == 'POST':
@@ -59,7 +57,7 @@ def signup(request):
             return JsonResponse({'status': 'error', 'message': "Username already exists."})
 
         if email_verified != 'true':
-          return JsonResponse({'status': 'error', 'message': "Email not verified."})
+            return JsonResponse({'status': 'error', 'message': "Email not verified."})
 
         if not entered_otp:
             return JsonResponse({'status': 'error', 'message': "OTP is required."})
@@ -81,7 +79,7 @@ def signup(request):
                 full_name=full_name,
                 username=username,
                 phone_number=phone_number,
-                coins = 0
+                coins=0
             )
             return JsonResponse({'status': 'success', 'message': 'Account created successfully!'})
 
@@ -89,6 +87,7 @@ def signup(request):
             return JsonResponse({'status': 'error', 'message': f"An error occurred: {e}"})
 
     return render(request, 'signup.html')
+
 
 def send_otp(request):
     if request.method == 'POST':
@@ -146,12 +145,14 @@ def login(request):
             return JsonResponse({'status': 'error', 'message': "Incorrect email or username"}, status=401)
     return render(request, 'login.html')
 
+
 @login_required
 def myprofile(request):
     context = {
         'subscription_type': request.user.subscription_type or 'FR',
     }
     return render(request, 'myprofile.html', context)
+
 
 @login_required
 @require_POST
@@ -176,7 +177,7 @@ def update_profile(request):
             except Exception as e:
                 print("Error saving profile picture:", e)
                 return JsonResponse({'status': 'error', 'message': f'Error saving profile picture: {e}'}, status=500)
-        
+
         if 'remove_profile_pic' in request.POST:
             if user.profile_pic:
                 default_storage.delete(user.profile_pic.path)
@@ -207,7 +208,7 @@ def update_profile(request):
                 if User.objects.exclude(pk=user.pk).filter(email=email).exists():
                     return JsonResponse({'status': 'error', 'message': 'Email already exists'}, status=400)
                 user.email = email
-                
+
             if 'bio' in data:
                 user.bio = data['bio']
 
@@ -224,6 +225,7 @@ def update_profile(request):
             return JsonResponse({'status': 'error', 'message': f'Invalid JSON data: {e}'}, status=400)
     print("Invalid request")
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
 
 @login_required
 def change_password(request):
@@ -247,11 +249,13 @@ def ourteam(request):
     }
     return render(request, 'ourteam.html', context)
 
+
 def paymentpolicy(request):
     context = {
         'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
     }
     return render(request, 'paymentpolicy.html', context)
+
 
 def privacypolicy(request):
     context = {
@@ -259,11 +263,13 @@ def privacypolicy(request):
     }
     return render(request, 'privacypolicy.html', context)
 
+
 def piracypolicy(request):
     context = {
         'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
     }
     return render(request, 'piracypolicy.html', context)
+
 
 def termsandconditions(request):
     context = {
@@ -271,11 +277,13 @@ def termsandconditions(request):
     }
     return render(request, 'termsandconditions.html', context)
 
+
 def aboutus(request):
     context = {
         'subscription_type': request.user.subscription_type or 'FR' if request.user.is_authenticated else 'FR'
     }
     return render(request, 'aboutus.html', context)
+
 
 def contactus(request):
     context = {
@@ -283,9 +291,11 @@ def contactus(request):
     }
     return render(request, 'contactus.html', context)
 
+
 def logout_view(request):
     auth_logout(request)
     return redirect('home')
+
 
 def adminsignup(request):
     if request.method == 'POST':
@@ -301,9 +311,9 @@ def adminsignup(request):
         if not roles_list:
             return JsonResponse({'status': 'error', 'message': 'Please select at least one role.'}, status=400)
         if Admin.objects.filter(email=email).exists():
-            return JsonResponse({'status':'error', 'message': 'An admin with this email already exists.'}, status=400)
+            return JsonResponse({'status': 'error', 'message': 'An admin with this email already exists.'}, status=400)
         if Admin.objects.filter(username=username).exists():
-            return JsonResponse({'status':'error', 'message': 'An admin with this username already exists.'}, status=400)
+            return JsonResponse({'status': 'error', 'message': 'An admin with this username already exists.'}, status=400)
 
         try:
             roles_string = ','.join(roles_list)
@@ -317,6 +327,7 @@ def adminsignup(request):
 
     else:
         return render(request, 'adminsignup.html')
+
 
 def adminlogin(request):
     if request.method == 'POST':
@@ -347,6 +358,7 @@ def adminlogin(request):
 
     return render(request, 'adminlogin.html')
 
+
 def admindashboard(request):
     return render(request, 'admindashboard.html')
 
@@ -354,40 +366,29 @@ def admindashboard(request):
 def scrape_audiobooks(request):
     url = "https://librivox.org/search?genre=fiction"  # Example: Fiction genre from LibriVox
     response = requests.get(url)
-    
+
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, "html.parser")
         books = soup.find_all("li", class_="book-item")
-        
+
         for book in books:
             title = book.find("h3", class_="book-title").text.strip()
             author = book.find("h4", class_="book-author").text.strip() if book.find("h4", class_="book-author") else "Unknown"
             link = book.find("a")["href"]  # Audiobook URL
-            
+
             # Save to database if not already stored
-            Audiobook.objects.get_or_create(
-                title=title,
-                author=author,
-                url=link
-            )
-        
+            # Audiobook.objects.get_or_create(
+            #     title=title,
+            #     author=author,
+            #     url=link
+            # )
+
         return JsonResponse({"message": "Audiobooks scraped successfully!"})
-    
+
     return JsonResponse({"error": "Failed to fetch data"}, status=400)
 
 
-
-
-
-
-
-from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import SuspiciousOperation
-import requests
-import feedparser
-
-def fetch_audiobooks(request):  
+def fetch_audiobooks(request):
     rss_feeds = [
         "https://librivox.org/rss/47",  # Count of Monte Cristo
         "https://librivox.org/rss/52",  # Letters of Two Brides
@@ -398,39 +399,73 @@ def fetch_audiobooks(request):
         "https://librivox.org/rss/61",  # The Apology
         "https://librivox.org/rss/62"   # Mirza Ghalib
     ]
-    
-    audiobooks = []
-    
-    for rss_url in rss_feeds:
-        feed = feedparser.parse(rss_url)
-        if not feed.entries:
-            continue  
 
-        chapters = []
-        for entry in feed.entries:  
-            audio_url = entry.enclosures[0].href if entry.enclosures else None  
-            chapters.append({
-                "chapter_title": entry.title,
-                "audio_url": f"/stream_audio?url={audio_url}" if audio_url else None  
+    audiobooks = []
+
+    for rss_url in rss_feeds:
+        try:
+            feed = feedparser.parse(rss_url)
+            if not feed.entries:
+                print(f"Warning: No entries found for feed: {rss_url}")  # Log a warning
+                continue  # Skip to the next feed
+
+            chapters = []
+            for entry in feed.entries:
+                audio_url = entry.enclosures[0].href if entry.enclosures else None
+                # Crucially, don't add /stream_audio here. Add it in the template.
+                chapters.append({"chapter_title": entry.title,
+                                 "audio_url": audio_url if audio_url else None  # Keep the original LibriVox URL
+                                 })
+
+            title = feed.feed.get('title', 'Unknown')
+            # author = feed.feed.get('author', 'Unknown')  #Removed author
+            cover_image = feed.feed.image.href if hasattr(feed.feed, 'image') and hasattr(feed.feed.image, 'href') else None
+
+            audiobooks.append({
+                "title": title,  # Keep the title for internal use (like IDs)
+                # "author": author, # Removed author
+                "cover_image": f"/fetch_cover_image?url={cover_image}" if cover_image else None,
+                "chapters": chapters,
+                "first_chapter_audio_url": chapters[0]["audio_url"] if chapters else None  # Add this line
             })
-        
-        title = feed.feed.get('title', 'Unknown')
-        author = feed.feed.get('author', 'Unknown')
-        cover_image = feed.feed.image.href if hasattr(feed.feed, 'image') else None
-        
-        audiobooks.append({
-            "title": title,
-            "author": author,
-            "cover_image": f"/fetch_cover_image?url={cover_image}" if cover_image else None,
-            "chapters": chapters
-        })
-    
-    return JsonResponse({"audiobooks": audiobooks})  
+        except Exception as e:
+            print(f"Error parsing feed {rss_url}: {e}")  # Log any errors
+
+    return JsonResponse({"audiobooks": audiobooks})
+
 
 def home(request):
+    audiobooks_response = fetch_audiobooks(request)
+
+    if audiobooks_response.status_code != 200:
+        context = {
+            "audiobooks": [],
+            "subscription_type": "FR",
+            "error_message": "Failed to load audiobooks. Please try again later.",
+        }
+        if request.user.is_authenticated:
+            context["subscription_type"] = request.user.subscription_type or "FR"
+        return render(request, "home.html", context)
+
+    try:
+        audiobooks_data = json.loads(audiobooks_response.content.decode('utf-8'))
+    except json.JSONDecodeError:
+        context = {
+            "audiobooks": [],
+            "subscription_type": "FR",
+            "error_message": "Failed to load audiobook data. Please try again.",
+        }
+        if request.user.is_authenticated:
+            context["subscription_type"] = request.user.subscription_type or "FR"
+        return render(request, "home.html", context)
+
+    # Add slugs to the audiobook data
+    for book in audiobooks_data["audiobooks"]:
+        book['slug'] = slugify(book['title'])  # Create URL-safe slug
+
     context = {
-        "audiobooks": fetch_audiobooks(request),  # Fetch audiobooks
-        "subscription_type": "FR",  # Default to Free
+        "audiobooks": audiobooks_data["audiobooks"],
+        "subscription_type": "FR",
     }
 
     if request.user.is_authenticated:
@@ -439,32 +474,113 @@ def home(request):
     return render(request, "home.html", context)
 
 
-@csrf_exempt
+
+def audiobook_detail(request, audiobook_slug):
+    """Displays details for a single audiobook."""
+    audiobooks_response = fetch_audiobooks(request)  # Fetch all books
+
+    if audiobooks_response.status_code != 200:
+        # Handle error (e.g., show an error message)
+        return render(request, 'error_page.html', {'message': 'Failed to load audiobooks.'})
+
+    audiobooks_data = json.loads(audiobooks_response.content.decode('utf-8'))
+    audiobook = None
+    for book in audiobooks_data["audiobooks"]:
+        if slugify(book['title']) == audiobook_slug:
+            audiobook = book
+            break
+
+    if not audiobook:
+        # Handle case where audiobook is not found (404)
+        return HttpResponse("Audiobook not found", status=404)
+        # Or, for a better user experience, use:
+        # return render(request, '404.html'), 404  # Create a 404.html template
+
+    context = {
+        'audiobook': audiobook,
+        'subscription_type': request.user.subscription_type if request.user.is_authenticated else 'FR',
+    }
+    return render(request, 'audiobook_detail.html', context)
+
+# ... (rest of your views: stream_audio, etc.) ...
+
+@csrf_exempt  # CSRF exemption is generally NOT recommended for production.  Consider proper CSRF handling.
 def stream_audio(request):
     audio_url = request.GET.get("url")
     if not audio_url:
         return JsonResponse({"error": "No audio URL provided"}, status=400)
 
     try:
-        response = requests.get(audio_url, stream=True)
-        if response.status_code != 200:
-            return JsonResponse({"error": "Failed to fetch audio"}, status=response.status_code)
+        # --- Initial request to get headers ---
+        initial_response = requests.get(audio_url, stream=True)
+        initial_response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+
+        # Get the content type.  Default to audio/mpeg if not provided.
+        content_type = initial_response.headers.get('Content-Type', 'audio/mpeg')
+
+        # Check if content type is supported, or use a reasonable default
+        if not content_type.startswith('audio/'):
+            content_type = 'audio/mpeg'  # A reasonable default for audio
+
+        # --- Calculate skip bytes ---
+        #  We *can't* reliably seek within a *streamed* response from requests.
+        #  We *must* read and discard the bytes we want to skip.  This is very
+        #  important. Seeking only works on local files or servers that VERY
+        #  specifically support range requests in a way that requests.get can use.
+
+        # Determine a reasonable bitrate.  This is an *estimate*.  LibriVox uses
+        # variable bitrate, so this won't be perfectly accurate, but it'll be
+        # close enough for a 15-second skip.  Use a default if we can't get it.
+        bitrate_str = initial_response.headers.get('icy-br')  # LibriVox often sends this
+        if bitrate_str:
+            try:
+                bitrate = int(bitrate_str) * 1000  # Convert kbps to bps
+            except ValueError:
+                bitrate = 128000  # Default to 128kbps
+        else:
+            bitrate = 128000  # A reasonable default (128 kbps)
+
+        bytes_per_second = bitrate / 8
+        skip_bytes = int(bytes_per_second * 15)  # Calculate bytes to skip
+
+        # --- Close the initial connection ---
+        initial_response.close()
+
+        # --- New request with Range header (if supported by the server) ---
+        headers = {'Range': f'bytes={skip_bytes}-'}
+        response = requests.get(audio_url, stream=True, headers=headers)
+        response.raise_for_status()  # Check for errors again
 
         def generate():
-            for chunk in response.iter_content(chunk_size=8192):  
-                yield chunk
-        
-        return StreamingHttpResponse(generate(), content_type="audio/mpeg")
+            # --- Read and discard initial bytes if Range header wasn't fully honored ---
+            bytes_read = 0
+            if 'Content-Range' not in response.headers:
+                # Server might not support Range, or might have sent from start.
+                # Read and discard the bytes.
+                for chunk in response.iter_content(chunk_size=8192):
+                    bytes_read += len(chunk)
+                    if bytes_read >= skip_bytes:
+                        # Yield the remaining part of the chunk after skipping.
+                        yield chunk[skip_bytes - (bytes_read - len(chunk)):]
+                        break  # Stop discarding
 
-    except requests.RequestException:
+            # --- Stream the remaining content ---
+            for chunk in response.iter_content(chunk_size=8192):
+                yield chunk
+
+        return StreamingHttpResponse(generate(), content_type=content_type)
+
+    except requests.RequestException as e:
+        print(f"Error streaming audio: {e}")  # Log the error
         return JsonResponse({"error": "Error processing audio"}, status=500)
+
 
 @csrf_exempt
 def fetch_cover_image(request):
     image_url = request.GET.get("url")
     if not image_url:
         return JsonResponse({"error": "No image URL provided"}, status=400)
-    
+
     try:
         response = requests.get(image_url, stream=True)
         if response.status_code == 200:
@@ -475,10 +591,6 @@ def fetch_cover_image(request):
         raise SuspiciousOperation("Invalid image request")
 
 
-"""def home(request):
-    audiobooks = fetch_audiobooks(request).content.decode("utf-8")
-    return render(request, 'home.html', {"audiobooks": audiobooks})"""
-
 @login_required
 def buycoins(request):  # Corrected function name here
     purchase_history = CoinTransaction.objects.filter(
@@ -486,7 +598,7 @@ def buycoins(request):  # Corrected function name here
     ).order_by('-transaction_date')
     context = {
         'purchase_history': purchase_history,
-        'subscription_type': request.user.subscription_type or 'FR', # Add this. Very important
+        'subscription_type': request.user.subscription_type or 'FR',  # Add this. Very important
     }
 
     return render(request, 'buycoins.html', context)
@@ -505,7 +617,7 @@ def buy_coins(request):
 
         if coins <= 0 or price <= 0:
             return JsonResponse({'status': 'error', 'message': 'Coins and price must be positive values.'}, status=400)
-        
+
         user = request.user
         payment_successful = True
         if coins == 100:
@@ -521,7 +633,7 @@ def buy_coins(request):
         elif coins == 2000:
             pack_name = "Diamond Pack"
         else:
-          pack_name = f"{coins} Coins"
+            pack_name = f"{coins} Coins"
 
         if payment_successful:
             transaction = CoinTransaction.objects.create(
@@ -554,7 +666,6 @@ def buy_coins(request):
             return JsonResponse({'status': 'error', 'message': 'Invalid request data.'}, status=400)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'An unexpected error occurred: {str(e)}'}, status=500)
-
 
 
 @login_required
@@ -595,7 +706,7 @@ def gift_coins(request):
             # Add coins to recipient
             recipient.coins = F('coins') + amount
             recipient.save()
-            recipient.refresh_from_db() # also good practice to refresh here
+            recipient.refresh_from_db()  # also good practice to refresh here
 
             # Create transaction records
             sent_transaction = CoinTransaction.objects.create(
@@ -604,8 +715,8 @@ def gift_coins(request):
                 amount=amount,
                 recipient=recipient,
                 status='completed',
-                pack_name = None, # gift doesn't have a pack name
-                price = None,  # gift sent doesnt have price
+                pack_name=None,  # gift doesn't have a pack name
+                price=None,  # gift sent doesnt have price
             )
             received_transaction = CoinTransaction.objects.create(
                 user=recipient,
@@ -613,8 +724,8 @@ def gift_coins(request):
                 amount=amount,
                 sender=sender,
                 status='completed',
-                pack_name = None,  # gift doesn't have a pack name
-                price = None, # gift received doesnt have price
+                pack_name=None,  # gift doesn't have a pack name
+                price=None,  # gift received doesnt have price
             )
 
         return JsonResponse({
@@ -632,6 +743,7 @@ def gift_coins(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'An error occurred: {str(e)}'}, status=500)
 
+
 @login_required
 def mywallet(request):
     # Fetch gift history for the *current user*,  but only coin-related transactions
@@ -641,7 +753,7 @@ def mywallet(request):
         # Exclude subscription purchases
         transaction_type='purchase',
         pack_name__in=['Monthly Premium Subscription', 'Annual Premium Subscription']
-     ).select_related('sender', 'recipient', 'user').order_by('-transaction_date')  # Optimized query
+    ).select_related('sender', 'recipient', 'user').order_by('-transaction_date')  # Optimized query
 
     print("Current User:", request.user)
     print("Gift History:", gift_history)
@@ -649,10 +761,9 @@ def mywallet(request):
     context = {
         'user': request.user,
         'gift_history': gift_history,
-        'subscription_type': request.user.subscription_type or 'FR', #Important
+        'subscription_type': request.user.subscription_type or 'FR',  # Important
     }
     return render(request, 'mywallet.html', context)
-
 
 
 @login_required
@@ -686,11 +797,10 @@ def subscribe_now(request):
             price = Decimal('3000')  # Use Decimal for monetary values
         elif plan == 'annual':
             end_date = now + timezone.timedelta(days=365)
-            price = Decimal('30000') # Use Decimal for monetary values
+            price = Decimal('30000')  # Use Decimal for monetary values
         else:  # Should never happen, but good practice
             messages.error(request, 'Invalid plan selected.')
             return redirect('subscribe')
-
 
         try:
             # Try to update existing subscription, if it exists
@@ -733,6 +843,7 @@ def subscribe_now(request):
         messages.error(request, 'Payment failed. Please try again.')
         return redirect('subscribe')
 
+
 @login_required
 def managesubscription(request):
     """Displays subscription details and allows cancellation."""
@@ -751,7 +862,6 @@ def managesubscription(request):
         # Correct pack names, matching what's created in subscribe_now
         pack_name__in=['Monthly Premium Subscription', 'Annual Premium Subscription']
     ).order_by('-transaction_date')
-
 
     context = {
         'subscription': subscription,
