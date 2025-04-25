@@ -3,7 +3,8 @@
 {% block content %}
 <div class="bg-gray-50 min-h-screen font-sans antialiased">
 
-    <div class="relative overflow-hidden">  <div class="absolute inset-0">
+    <div class="relative overflow-hidden">
+        <div class="absolute inset-0">
             <video autoplay muted loop class="w-full h-full object-cover">
                 <source src="https://cdn.coverr.co/videos/coverr-reading-a-book-7883/1080p.mp4" type="video/mp4">
                 Your browser does not support the video tag.
@@ -23,53 +24,87 @@
 
             <a href="/subscribe"
                 class="inline-block bg-gradient-to-br from-[#3f51b5] to-[#1a237e] hover:from-[#091e65] hover:to-[#091e65] text-white font-bold py-4 px-12 rounded-full text-lg tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl">
-                Explore Now
+                Subscribe Now
             </a>
 
             <div class="mt-12 w-full overflow-hidden">
-                <div class="marquee flex items-center whitespace-nowrap space-x-8">
-                    <span class="text-lg md:text-xl font-bold text-white">Fiction</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Mystery</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Thriller</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Sci-Fi</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Fantasy</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Romance</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Biography</span>
-                    <span class="text-lg md:text-xl font-bold text-white">History</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Self-Help</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Business</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Fiction</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Mystery</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Thriller</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Sci-Fi</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Fantasy</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Romance</span>
+                <div class="marquee-container">
+                    <div class="marquee-genre flex items-center whitespace-nowrap space-x-8">
+                        <a href="/genre/fiction" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fiction</a>
+                        <a href="/genre/mystery" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Mystery</a>
+                        <a href="/genre/thriller" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Thriller</a>
+                        <a href="/genre/sci-fi" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Sci-Fi</a>
+                        <a href="/genre/fantasy" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fantasy</a>
+                        <a href="/genre/romance" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Romance</a>
+                        <a href="/genre/biography" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Biography</a>
+                        <a href="/genre/history" class="text-lg md:text-xl font-bold text-white flex-shrink-0">History</a>
+                        <a href="/genre/self-help" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Self-Help</a>
+                        <a href="/genre/business" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Business</a>
+                        <a href="/genre/fiction" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fiction</a>
+                        <a href="/genre/mystery" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Mystery</a>
+                        <a href="/genre/thriller" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Thriller</a>
+                        <a href="/genre/sci-fi" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Sci-Fi</a>
+                        <a href="/genre/fantasy" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fantasy</a>
+                        <a href="/genre/romance" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Romance</a>
+                        <a href="/genre/biography" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Biography</a>
+                        <a href="/genre/history" class="text-lg md:text-xl font-bold text-white flex-shrink-0">History</a>
+                        <a href="/genre/self-help" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Self-Help</a>
+                        <a href="/genre/business" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Business</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>  <div class="container mx-auto px-4 py-24">
-        <h2 class="text-4xl font-bold text-center text-gray-800 mb-16">Discover New Favorites</h2>
+    </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
-            {% for book in audiobooks %}
-            <a href="{% url 'audiobook_detail' audiobook_slug=book.slug %}">
-                <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl relative group">
-                    <div class="relative h-80">
-                        <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="w-full h-full object-cover rounded-t-3xl">
-                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
-                            <button onclick="playFirstChapter('{{ book.audio_sample_url }}')" title="Play First Chapter"
-                                class="bg-white/80 text-[#091e65] rounded-full p-4 transition-all hover:scale-110 hover:bg-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                    stroke="currentColor" class="w-8 h-8">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                                </svg>
-                            </button>
+<!--
+<div class="container mx-auto px-4 py-24">
+    <h2 class="text-4xl font-bold text-center text-gray-800 mb-16">Discover New Favorites</h2>
+</div>
+-->
+
+<div class="py-8"></div>
+
+        <div class="relative w-full overflow-hidden">
+            <div class="marquee-audiobooks flex space-x-8">
+                {% for book in audiobooks %}
+                    <a href="{% url 'audiobook_detail' audiobook_slug=book.slug %}" class="audiobook-item flex-shrink-0">
+                        <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl relative group w-72 sm:w-80 md:w-96 lg:w-96 xl:w-96">
+                            <div class="relative h-80 w-full">
+                                <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="w-full h-full object-cover rounded-t-3xl">
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                                    <button onclick="playFirstChapter('{{ book.audio_sample_url }}')" title="Play First Chapter"
+                                        class="bg-white/80 text-[#091e65] rounded-full p-4 transition-all hover:scale-110 hover:bg-white">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                            stroke="currentColor" class="w-8 h-8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </a>
-            {% endfor %}
+                    </a>
+                {% endfor %}
+                {% for book in audiobooks %}
+                    <a href="{% url 'audiobook_detail' audiobook_slug=book.slug %}" class="audiobook-item flex-shrink-0">
+                        <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl relative group w-72 sm:w-80 md:w-96 lg:w-96 xl:w-96">
+                            <div class="relative h-80 w-full">
+                                <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="w-full h-full object-cover rounded-t-3xl">
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                                    <button onclick="playFirstChapter('{{ book.audio_sample_url }}')" title="Play First Chapter"
+                                        class="bg-white/80 text-[#091e65] rounded-full p-4 transition-all hover:scale-110 hover:bg-white">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                            stroke="currentColor" class="w-8 h-8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
@@ -78,29 +113,77 @@
     function playFirstChapter(audioUrl) {
         console.log("Playing audio (but no player visible):", audioUrl);
     }
-
-    const marquee = document.querySelector('.marquee');
-    let marqueeWidth = marquee.offsetWidth;
-    let animationDuration = marqueeWidth / 50;
-
-    marquee.style.animation = `marquee ${animationDuration}s linear infinite`;
-
 </script>
 
 <style>
-    @keyframes marquee {
-        from {
-            transform: translateX(0);
-        }
+    /* Container for the marquee effect */
+    .marquee-container {
+        overflow: hidden;
+    }
 
-        to {
-            transform: translateX(-50%);
+    /* Base styles for the scrolling content */
+    .marquee-genre,
+    .marquee-audiobooks {
+        display: flex;
+        white-space: nowrap;
+        will-change: transform; /* Hint for performance */
+    }
+
+    .marquee-genre a,
+    .marquee-audiobooks a {
+        flex-shrink: 0;
+    }
+
+    /* Keyframes for the genre marquee */
+    @keyframes marquee-genre {
+        0% {
+            transform: translateX(0%);
+        }
+        100% {
+            transform: translateX(-50%); /* Move to the left by the width of the original content */
         }
     }
 
-  .tracking-tighter {
-        letter-spacing: -0.075em;
+    /* Keyframes for the audiobooks marquee */
+    @keyframes marquee-audiobooks {
+        0% {
+            transform: translateX(0%);
+        }
+        100% {
+            transform: translateX(calc(-100% / {{ audiobooks|length }} * {{ audiobooks|length }})); /* Move left by the width of the original audiobook list */
+        }
+    }
+
+    .marquee-genre {
+        animation: marquee-genre 30s linear infinite; /* Apply animation here */
+    }
+
+    .marquee-audiobooks {
+        animation: marquee-audiobooks 40s linear infinite; /* Apply animation here */
+    }
+
+    /* Responsive adjustments for speed */
+    @media (max-width: 640px) {
+        .marquee-genre {
+            animation-duration: 20s;
+        }
+        .marquee-audiobooks {
+            animation-duration: 25s;
+        }
     }
 </style>
 
+<div class="py-8"></div>
+
 {% endblock %}
+
+
+
+
+
+
+
+
+
+
+

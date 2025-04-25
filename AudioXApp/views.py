@@ -414,26 +414,32 @@ def fetch_audiobooks(request):
             chapters = []
             for entry in feed.entries:
                 audio_url = entry.enclosures[0].href if entry.enclosures else None
-                # Crucially, don't add /stream_audio here. Add it in the template.
-                chapters.append({"chapter_title": entry.title,
-                                 "audio_url": audio_url if audio_url else None  # Keep the original LibriVox URL
-                                 })
+                chapters.append({
+                    "chapter_title": entry.title,
+                    "audio_url": audio_url if audio_url else None  # Keep the original LibriVox URL
+                })
 
             title = feed.feed.get('title', 'Unknown')
-            # author = feed.feed.get('author', 'Unknown')  #Removed author
             cover_image = feed.feed.image.href if hasattr(feed.feed, 'image') and hasattr(feed.feed.image, 'href') else None
 
             audiobooks.append({
-                "title": title,  # Keep the title for internal use (like IDs)
-                # "author": author, # Removed author
+                "title": title,
                 "cover_image": f"/fetch_cover_image?url={cover_image}" if cover_image else None,
                 "chapters": chapters,
-                "first_chapter_audio_url": chapters[0]["audio_url"] if chapters else None  # Add this line
+                "first_chapter_audio_url": chapters[0]["audio_url"] if chapters else None
             })
+            
+            # Log the title and chapter count
+            print(f"Fetched {title} with {len(chapters)} chapters.")
+            
         except Exception as e:
             print(f"Error parsing feed {rss_url}: {e}")  # Log any errors
 
+    # Log the total number of books after all feeds are processed
+    print(f"Total Audiobooks Fetched: {len(audiobooks)}")
+
     return JsonResponse({"audiobooks": audiobooks})
+
 
 
 def home(request):
@@ -460,6 +466,9 @@ def home(request):
         if request.user.is_authenticated:
             context["subscription_type"] = request.user.subscription_type or "FR"
         return render(request, "home.html", context)
+
+    # Log the audiobooks data for debugging
+    print(f"Audiobooks Data: {audiobooks_data}")
 
     # Add slugs to the audiobook data
     for book in audiobooks_data["audiobooks"]:

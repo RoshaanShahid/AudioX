@@ -6,16 +6,28 @@
             const listContainer = document.getElementById("audiobooks-list");
 
             audiobooks.forEach(book => {
-                if (book.audio_url) {  // Ensure there's an audio file
+                // Log each book to check if any are missing data
+                console.log("Book:", book.title, "Audio URL:", book.first_chapter_audio_url);
+
+                if (book.first_chapter_audio_url) {  // Only show books with audio URL
                     const listItem = document.createElement("li");
                     listItem.innerHTML = `
                         <h3>${book.title}</h3>
-                        <p><strong>Author:</strong> ${book.author}</p>
+                        <p><strong>Author:</strong> Unknown</p>
                         <img src="${book.cover_image}" alt="Cover Image" width="150"><br>
                         <audio controls>
-                            <source src="${book.audio_url}" type="audio/mpeg">
+                            <source src="${book.first_chapter_audio_url}" type="audio/mpeg">
                             Your browser does not support the audio element.
                         </audio>
+                    `;
+                    listContainer.appendChild(listItem);
+                } else {
+                    // Handle books without audio URL
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = `
+                        <h3>${book.title}</h3>
+                        <p><strong>Author:</strong> Unknown</p>
+                        <p>No audio available for this book.</p>
                     `;
                     listContainer.appendChild(listItem);
                 }
