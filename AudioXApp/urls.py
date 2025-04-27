@@ -41,6 +41,9 @@ urlpatterns = [
     path('handle-forgot-password/', views.handle_forgot_password, name='handle_forgot_password'),
     path('verify-otp/', views.verify_otp_view, name='verify_otp'),
     path('reset-password/', views.reset_password_view, name='reset_password'),
+    path('Urdu/', views.urdu_page, name='urdu_page'),
+    path('Punjabi/', views.punjabi_page, name='punjabi_page'),
+    path('Sindhi/', views.sindhi_page, name='sindhi_page'),
      ]
 
 urlpatterns += staticfiles_urlpatterns()

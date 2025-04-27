@@ -456,15 +456,17 @@
             </div>
 
             <div class="flex items-center space-x-3">
-                <select class="px-2 py-1 border border-[#091e65] rounded-full text-gray-700 focus-ring text-sm"
-                    id="language-selector">
-                    <option value="en">English</option>
-                    <option value="ur">اردو</option>
-                    <option value="pun"> پنجابی </option>
-                    <option value="sd"> سنڌي </option>
-
-
+                <select 
+                    class="px-2 py-1 border border-[#091e65] rounded-full text-gray-700 focus-ring text-sm" 
+                    id="language-selector"
+                    onchange="redirectToLanguage()">
+                    
+                    <option value="English">English</option>
+                    <option value="Urdu">اردو</option>
+                    <option value="Punjabi">پنجابی</option>
+                    <option value="Sindhi">سنڌي</option>
                 </select>
+            </div>
 
                 {% if user.is_authenticated %}
                 <button class="coin-wallet-btn">
@@ -639,7 +641,7 @@
         {% endif %}
 
         <footer>
-            <p>Made with <span class="text-red-500">❤️</span> in Pakistan</p>
+            <p>Made  <span class="text-red-500">❤️</span> in Pakistan</p>
         </footer>
     </div>
     {% endblock %}
@@ -664,7 +666,7 @@
                         and beyond, by offering content in various regional languages.</p>
                     <hr class="border-t border-gray-400 my-4">
                     <h3 class="font-bold">FOLLOW US ON</h3>
-                    <div class="mt-2 space-x-4">
+                    <div class="mt-2 space-x-8">
                         <a href="https://facebook.com" class="hover:text-gray-300" title="Facebook">
                             <i class="fab fa-facebook-f"></i>
                         </a>
@@ -673,6 +675,8 @@
                         </a>
                     </div>
                 </div>
+
+                
                 <div class="w-full lg:w-2/3 flex flex-wrap justify-between">
                     <div class="w-1/2 md:w-1/4 mb-6 md:mb-0">
                         <h3 class="font-bold mb-2">COMPANY</h3>
@@ -703,9 +707,16 @@
                     <div class="w-1/2 md:w-1/4 mb-6 md:mb-0">
                         <h3 class="font-bold mb-2">GENRES</h3>
                         <ul>
-                            <li class="mb-2"><a href="#" class="hover:text-gray-300">Historical</a></li>
-                            <li class="mb-2"><a href="#" class="hover:text-gray-300">Love</a></li>
-                            <li><a href="#" class="hover:text-gray-300">Information</a></li>
+                            <li class="mb-2"><a href="/genrefiction" class="hover:text-gray-300">Fiction</a></li>
+                            <li class="mb-2"><a href="/genremystery" class="hover:text-gray-300">Mystery</a></li>
+                            <li class="mb-2"><a href="/genrethriller" class="hover:text-gray-300">Thriller</a></li>
+                            <li class="mb-2"><a href="/genrescifi" class="hover:text-gray-300">Sci-Fi</a></li>
+                            <li class="mb-2"><a href="/genrefantasy" class="hover:text-gray-300">Fantasy</a></li>
+                            <li class="mb-2"><a href="/genreromance" class="hover:text-gray-300">Romance</a></li>
+                            <li class="mb-2"><a href="/genrebiography" class="hover:text-gray-300">Biography</a></li>
+                            <li class="mb-2"><a href="/genrehistory" class="hover:text-gray-300">History</a></li>
+                            <li class="mb-2"><a href="/genreselfhelp" class="hover:text-gray-300">Self-Help</a></li>
+                            <li class="mb-2"><a href="/genrebusiness" class="hover:text-gray-300">Business</a></li>
                         </ul>
                     </div>
                 </div>
@@ -812,7 +823,36 @@
             }
 
         });
+
+        function redirectToLanguage() {
+            const selector = document.getElementById('language-selector');
+            const selectedLang = selector.value;
+    
+            if (selectedLang === 'English') {
+                window.location.href = '/'; // Home page
+            } else {
+                window.location.href = '/' + selectedLang + '/'; // Language-specific pages
+            }
+        }
+    
+        // This part is for "remembering" the selected language based on URL
+        window.addEventListener('DOMContentLoaded', () => {
+            const path = window.location.pathname;  // e.g., "/ur/" or "/pun/"
+            const selector = document.getElementById('language-selector');
+    
+            if (path.startsWith('/Urdu/')) {
+                selector.value = 'Urdu';
+            } else if (path.startsWith('/Punjabi/')) {
+                selector.value = 'Punjabi';
+            } else if (path.startsWith('/Sindhi/')) {
+                selector.value = 'Sindhi';
+            } else {
+                selector.value = 'English'; // Default Home
+            }
+        });
+
     </script>
+
     {% block javascript %}{% endblock %}
 </body>
 

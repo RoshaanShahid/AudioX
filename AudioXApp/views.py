@@ -989,3 +989,22 @@ def reset_password_view(request):
         return redirect('forgot_password')
   else:
     return render(request, "reset_password.html")
+  
+
+
+
+
+
+
+
+
+
+
+def urdu_page(request):
+    return render(request, 'urdu.html')
+
+def punjabi_page(request):
+    return render(request, 'punjabi.html')
+
+def sindhi_page(request):
+    return render(request, 'sindhi.html')
