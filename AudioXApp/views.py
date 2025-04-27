@@ -1008,3 +1008,37 @@ def punjabi_page(request):
 
 def sindhi_page(request):
     return render(request, 'sindhi.html')
+
+
+def genre_fiction(request):
+    return render(request, 'genrefiction.html')
+
+def genre_mystery(request):
+    return render(request, 'genremystery.html')
+
+def genre_thriller(request):
+    return render(request, 'genrethriller.html')
+
+
+def genre_scifi(request):
+    return render(request, 'genrescifi.html')
+
+def genre_fantasy(request):
+    return render(request, 'genrefantasy.html')
+
+def genre_romance(request):
+    return render(request, 'genre_romance.html')
+
+
+def genre_biography(request):
+    return render(request, 'genrebiography.html')
+
+def genre_history(request):
+    return render(request, 'genrehistory.html')
+
+def genre_selfhelp(request):
+    return render(request, 'genreselfhelp.html')
+
+def genre_business(request):
+    return render(request, 'genrebusiness.html')
+

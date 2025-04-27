@@ -44,6 +44,16 @@ urlpatterns = [
     path('Urdu/', views.urdu_page, name='urdu_page'),
     path('Punjabi/', views.punjabi_page, name='punjabi_page'),
     path('Sindhi/', views.sindhi_page, name='sindhi_page'),
+    path('genrefiction/', views.genre_fiction, name='genre_fiction'),
+    path('genremystery/', views.genre_mystery, name='genre_mystery'),
+    path('genrethriller/', views.genre_thriller, name='genre_thriller'),
+    path('genrescifi/', views.genre_scifi, name='genre_scifi'),
+    path('genrefantasy/', views.genre_fantasy, name='genre_fantasy'),
+    path('genrebiography/', views.genre_biography, name='genre_biography'),
+    path('genreromance/', views.genre_romance, name='genre_romance'),
+    path('genrehistory/', views.genre_history, name='genre_history'),
+    path('genreselfhelp/', views.genre_selfhelp, name='genre_selfhelp'),
+    path('genrebusiness/', views.genre_business, name='genre_business'),
      ]
 
 urlpatterns += staticfiles_urlpatterns()
