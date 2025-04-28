@@ -16,716 +16,482 @@
     <link rel="stylesheet" href="{% static 'css/piracypolicy.css' %}">
     <link rel="stylesheet" href="{% static 'css/termsandconditions.css' %}">
     <link rel="stylesheet" href="{% static 'css/aboutus.css' %}">
-    <link rel="stylesheet" href="{% static 'css/ourteamstyle.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'theme-primary': '#091e65',      // Main theme color
+            'theme-primary-hover': '#071852',  // Darker shade for hover
+            'theme-primary-light': '#eef2ff',  // Light shade (Indigo 50)
+            'theme-primary-lighter': '#f0f3ff', // Even lighter shade
+            'theme-secondary': '#facc15',      // Secondary color (yellow - kept for logo dot)
+            'theme-secondary-hover': '#eab308', // Darker yellow
+            'theme-text-primary': '#1f2937',    // Dark gray (gray-800)
+            'theme-text-secondary': '#4b5563', // Medium gray (gray-600)
+            'theme-text-light': '#6b7280',     // Lighter gray (gray-500)
+          }
+        }
+      }
+    }
+    </script>
+
     <style>
-        /* ... (Your existing CSS styles - keep them all) ... */
-        /*  I am putting your styles. I am not removing them you can remove duplicate if needed */
+        /* --- Custom Styles --- */
+
+        /* Logo Dot Style (Used in Header and Footer) */
         .audiotype-logo .logo-dot {
-            width: 0.5rem;
-            height: 0.5rem;
-            margin-left: 0.05rem;
-        }
-
-        .focus-ring:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px #091e65, 0 0 0 4px rgba(9, 30, 101, 0.3);
+            width: 0.5rem; height: 0.5rem; margin-left: 0.1rem;
+            background-color: theme('colors.theme-secondary'); /* Keep yellow for logo dot */
             border-radius: 9999px;
         }
 
-        .btn-primary {
-            background-color: #091e65;
-            color: white;
-            padding: 0.5rem 1rem;
-            font-weight: 600;
-            border-radius: 9999px;
-            transition: background-color 0.2s ease;
-        }
-
-        .btn-primary:hover {
-            background-color: #071852;
-        }
-
-        .btn-secondary {
-            border: 2px solid #091e65;
-            color: #091e65;
-            padding: 0.5rem 1rem;
-            font-weight: 600;
-            border-radius: 9999px;
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
-
-        .btn-secondary:hover {
-            background-color: #091e65;
-            color: white;
-        }
-
-        .btn-icon {
-            padding: 0.5rem;
-            border-radius: 9999px;
-            transition: background-color 0.2s ease;
-            color: #6b7280;
-        }
-
-        .btn-icon:hover {
-            background-color: #f3f4f6;
-        }
-
+        /* Header Profile Picture */
         .header-profile-picture {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #fff;
+            width: 36px; height: 36px;
+            border-radius: 50%; object-fit: cover;
+            border: 2px solid transparent; transition: border-color 0.2s ease;
         }
+         #profile-dropdown-toggle:hover .header-profile-picture,
+         #profile-dropdown-toggle:focus .header-profile-picture {
+             border-color: theme('colors.theme-primary');
+         }
 
+        /* Default Profile Icon in Header */
         .default-profile-icon-header {
-            font-size: 20px;
+            font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            background-color: #e5e7eb; color: theme('colors.theme-text-secondary');
+            border-radius: 50%; border: 2px solid transparent;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
         }
+         #profile-dropdown-toggle:hover .default-profile-icon-header,
+         #profile-dropdown-toggle:focus .default-profile-icon-header {
+             background-color: theme('colors.theme-primary-light');
+             color: theme('colors.theme-primary');
+             border-color: theme('colors.theme-primary');
+         }
 
-
-        /* ---  New Sidemenu Styles  --- */
-        .slide-menu {
-            position: fixed;
-            top: 0;
-            left: -300px;
-            /* Start off-screen */
-            width: 300px;
-            height: 100%;
-            background-color: #1a237e;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-            transition: left 0.3s ease;
-            z-index: 1000;
-            overflow-y: auto;
-            /* Scrollable content */
-            display: flex;
-            flex-direction: column;
-            /* Stack content vertically */
+        /* --- Sidemenu Styles --- */
+        #slide-menu {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(-100%); /* Start off-screen */
         }
-
-        .slide-menu.open {
-            left: 0;
+        #slide-menu.open {
+            transform: translateX(0);
         }
+        /* Custom scrollbar */
+        #slide-menu .menu-content::-webkit-scrollbar { width: 6px; }
+        #slide-menu .menu-content::-webkit-scrollbar-track { background: transparent; }
+        #slide-menu .menu-content::-webkit-scrollbar-thumb { background-color: theme('colors.gray.300'); border-radius: 3px; border: 1px solid transparent; background-clip: content-box; }
+        #slide-menu .menu-content::-webkit-scrollbar-thumb:hover { background-color: theme('colors.theme-primary'); }
 
-        .slide-menu .slider-header {
-            padding: 1rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
+         /* Submenu transition */
+         .submenu {
+             max-height: 0; overflow: hidden;
+             transition: max-height 0.3s ease-out, opacity 0.2s ease-out, padding 0.3s ease-out;
+             opacity: 0; padding-top: 0; padding-bottom: 0;
+         }
+         .submenu-open .submenu {
+             max-height: 500px; /* Adjust as needed */
+             opacity: 1; padding-top: 0.25rem; padding-bottom: 0.25rem; /* Add padding when open */
+         }
+        /* --- End Sidemenu Styles --- */
 
-        .slide-menu .close-btn {
-            cursor: pointer;
-            color: #fff;
-            font-size: 1.8rem;
-            transition: color 0.2s;
-            order: 2;
-            /* Close button on the right */
-        }
+        /* Dropdown Transition */
+        #profile-dropdown { transition: opacity 0.2s ease-out, transform 0.2s ease-out; }
+        #profile-dropdown.hidden { opacity: 0; transform: translateY(-10px); pointer-events: none; }
 
-        .slide-menu .close-btn:hover {
-            color: #bbb;
-        }
+        /* Voice Search Button Icon Styling */
+        #voice-search-btn img, #voice-search-btn-mobile img { height: 1.25rem; width: 1.25rem; filter: grayscale(50%); transition: filter 0.2s ease; }
+        #voice-search-btn:hover img, #voice-search-btn-mobile:hover img { filter: grayscale(0%); }
+        #voice-search-btn.recording, #voice-search-btn-mobile.recording { background-color: #fee2e2; /* red-100 */ }
+        #voice-search-btn.recording img, #voice-search-btn-mobile.recording img { filter: none; animation: pulse 1.5s infinite ease-in-out; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-        .slide-menu .audiotype-logo {
-            display: flex;
-            align-items: center;
-            color: white;
-            text-decoration: none;
-            order: 1;
-            /* Logo on the left */
-        }
+        /* Ensure dropdown items have proper contrast on hover */
+        #profile-dropdown a:hover { background-color: theme('colors.theme-primary-lighter'); color: theme('colors.theme-primary'); }
+        #profile-dropdown a:hover i { color: theme('colors.theme-primary'); }
 
-        .slide-menu .logo-dot {
-            width: 0.4rem;
-            height: 0.4rem;
-            margin-left: 0.1rem;
-            background-color: #facc15;
-            border-radius: 50%;
-        }
-
-        .slide-menu .menu-content {
-            flex-grow: 1;
-            /* Allow content to take remaining space */
-            padding: 1rem 0;
-            /* Padding for the main menu area */
-            overflow-y: auto;
-            /* Scrollable if content overflows */
-        }
-
-        .slide-menu ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .slide-menu a {
-            display: flex;
-            /* Use flex for icon alignment */
-            align-items: center;
-            padding: 0.8rem 1.5rem;
-            color: #eee;
-            text-decoration: none;
-            transition: background-color 0.2s, color 0.2s;
-        }
-
-        .slide-menu a:hover {
-            background-color: #303f9f;
-            /* Darker on hover */
-            color: #fff;
-        }
-
-        .slide-menu .menu-item i {
-            margin-right: 1rem;
-            width: 20px;
-            /* Consistent icon width */
-            text-align: center;
-        }
-
-        .slide-menu .sub-menu {
-            display: none;
-            /* Hidden by default */
-            background-color: rgba(0, 0, 0, 0.1);
-            margin-left: 0;
-            padding-left: 0;
-        }
-
-        .slide-menu .sub-menu a {
-            padding-left: 3rem;
-            /* Indent submenu items */
-            font-size: 0.9rem;
-        }
-
-        .has-submenu:hover + .sub-menu,
-        .sub-menu:hover {
-            display: block;
-        }
-
-        .slide-menu .separator {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            margin: 1rem 1.5rem;
-        }
-
-        /* --- User Info Styles --- */
-        .slide-menu .user-info {
-            padding: 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 1rem;
-            display: flex;
-            /* Use flexbox for layout */
-            flex-direction: column;
-            /* Stack items vertically */
-            align-items: center;
-            /* Center items horizontally */
-        }
-
-        .slide-menu .user-info .profile-picture-wrapper {
-            width: 80px;
-            /* Or whatever size you want */
-            height: 80px;
-            border-radius: 50%;
-            overflow: hidden;
-            /* Clip image to circle */
-            border: 3px solid #facc15;
-            margin-bottom: 0.75rem;
-            /* Space below picture */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .slide-menu .user-info img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            /* Ensure the image fills the circle */
-        }
-
-        .slide-menu .user-info .default-profile-icon {
-            font-size: 48px;
-            /* Larger default icon */
-            color: #fff;
-            line-height: 80px;
-            /* Vertically center the icon */
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid #facc15;
-            margin-bottom: 0.75rem;
-        }
-
-        .slide-menu .user-info .user-names {
-            color: #fff;
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            /* Space below name */
-        }
-
-        .slide-menu .user-info .user-bio {
-            color: #ccc;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            /* Improve readability for longer bios */
-            margin-bottom: 1rem;
-            font-style: italic;
-        }
-
-        /* ---  Login/Signup Section --- */
-        .slide-menu .login-signup-section {
-            padding: 1.5rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 1rem;
-        }
-
-        .slide-menu .login-signup-btn {
-            background-color: #facc15;
-            color: #1a237e;
-            font-weight: bold;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.375rem;
-            text-decoration: none;
-            transition: background-color 0.2s;
-            display: inline-block;
-            /* Important for centering */
-            width: 80%;
-            margin: 0 auto;
-        }
-
-        .slide-menu .login-signup-btn:hover {
-            background-color: #eab308;
-        }
-
-        .slide-menu .login-signup-section small {
-            display: block;
-            /* Make the small text a block element */
-            margin-top: 0.5rem;
-            /* Add some space above */
-            color: #ccc;
-        }
-
-        /* --- Feature Item Styles --- */
-        .slide-menu .feature-item a {
-            background-color: #facc15;
-            color: #1a237e;
-            font-weight: bold;
-            border-radius: 0.375rem;
-            margin: 0.5rem 1.5rem;
-            /* Remove padding overrides from .menu-item */
-            padding: 0.8rem 1.5rem;
-        }
-
-        .slide-menu .feature-item a:hover {
-            background-color: #eab308;
-        }
-
-
-        /* --- Footer Styles --- */
-        .slide-menu footer {
-            padding: 1.5rem;
-            text-align: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: auto;
-            /* Push to bottom */
-            font-size: 0.85rem;
-            color: #ccc;
-        }
-
-        /* Logout Button */
-        .logout-btn {
-            display: block;
-            width: 80%;
-            margin: 1rem auto;
-            padding: 0.75rem 1.5rem;
-            background-color: #e53e3e;
-            /* Red */
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            border-radius: 0.375rem;
-            text-decoration: none;
-            transition: background-color 0.2s;
-        }
-
-        .logout-btn:hover {
-            background-color: #c53030;
-        }
-
-        /* Coin Wallet Button */
-        .coin-wallet-btn {
-            background-color: #facc15;
-            /* Yellow background */
-            color: #1a237e;
-            /* Dark blue text */
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            /* Fully rounded corners */
-            font-weight: 600;
-            display: flex;
-            /* Use flexbox for alignment */
-            align-items: center;
-            /* Vertically center icon and text */
-            transition: background-color 0.2s ease;
-            /* Smooth transition */
-            border: none;
-            /* Remove default button border */
-            cursor: pointer;
-            /* Show pointer cursor on hover */
-        }
-
-        .coin-wallet-btn i {
-            margin-right: 0.5rem;
-            /* Space between icon and text */
-        }
-
-        .coin-wallet-btn:hover {
-            background-color: #eab308;
-            /* Slightly darker yellow on hover */
-            text-decoration: none;
-            /* Remove underline on hover, if any */
-            color: #1a237e;
-            /* Ensure text color stays consistent */
-        }
-
-        .subscription-status-box {
-            background-color: rgba(255, 255, 255, 0.1);
-            /* Semi-transparent white */
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            /* Subtle border */
-            border-radius: 0.375rem;
-            padding: 0.5rem 1rem;
-            text-align: center;
-            margin-bottom: 1rem;
-            color: #fff;
-            font-size: 0.9rem;
-        }
-
-        .subscription-status-box.free {
-            background-color: rgba(250, 204, 21, 0.2);
-            /* Lighter Yellow */
-            border-color: #facc15;
-            color: #facc15;
-            font-weight: bold;
-        }
-
-        .subscription-status-box.premium {
-            background-color: rgba(21, 128, 61, 0.2);
-            /* Lighter Green */
-            border-color: #15803d;
-            color: #15803d;
-            font-weight: bold;
-
-        }
     </style>
 </head>
 
-<body style="display: flex; flex-direction: column; min-height: 100vh;" class="bg-gray-50">
+<body style="display: flex; flex-direction: column; min-height: 100vh;" class="bg-white font-sans"> 
+
     {% block header %}
-    <header class="bg-white shadow-md py-2">
-        <div class="container mx-auto flex items-center justify-between px-4">
-
-            <div class="flex items-center">
-                <button id="menu-toggle" class="btn-icon mr-4">
+    <header class="bg-white shadow-md sticky top-0 z-50 border-b-2 border-theme-primary">
+        <div class="container mx-auto flex items-center justify-between px-4 h-16">
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="text-theme-text-secondary hover:text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 rounded-md p-2 transition duration-150 ease-in-out">
                     <i class="fas fa-bars text-xl"></i>
+                    <span class="sr-only">Open Menu</span>
                 </button>
-
-                <a href="/Home" class="flex items-center mr-6">
+                <a href="/Home" class="flex items-center shrink-0">
                     <div class="flex items-center audiotype-logo">
-                        <span class="text-2xl font-extrabold text-[#091e65] tracking-tighter">AUDIO</span>
+                        <span class="text-2xl font-extrabold text-theme-primary tracking-tighter">AUDIO</span>
                         <span class="text-2xl font-extrabold text-red-600 tracking-tighter">X</span>
-                        <div class="w-4 h-4 bg-yellow-400 rounded-full ml-1 logo-dot"></div>
+                        <div class="w-2 h-2 bg-theme-secondary rounded-full ml-1 logo-dot"></div>
                     </div>
                 </a>
             </div>
-            <div class="flex items-center w-full max-w-xl mx-4">
-                <div class="relative w-full">
-                    <input type="text" id="search-input" placeholder="Search audiobooks & stories"
-                        class="w-full pl-10 pr-16 py-2 border border-[#091e65] rounded-full focus-ring placeholder-gray-500 text-gray-800" />
-                    <button class="absolute left-3 top-1/2 -translate-y-1/2 btn-icon" id="search-btn" title="Search">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    <button id="voice-search-btn" class="absolute right-3 top-1/2 -translate-y-1/2 btn-icon"
-                        title="Search by Voice">
-                        <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5">
-                    </button>
+            <div class="flex-grow max-w-xl mx-4 hidden md:flex items-center">
+                 <div class="relative w-full">
+                     <input type="text" id="search-input" placeholder="Search audiobooks & stories..."
+                            class="w-full pl-12 pr-16 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-500 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out" />
+                     <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-secondary hover:text-theme-primary rounded-l-full focus:outline-none transition duration-150 ease-in-out" id="search-btn" title="Search">
+                         <i class="fas fa-search text-base"></i>
+                     </button>
+                     <button id="voice-search-btn" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-secondary hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out" title="Search by Voice">
+                          <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone">
+                     </button>
+                 </div>
+            </div>
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                <div class="relative">
+                     <select class="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-full text-theme-text-secondary focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none text-sm bg-white shadow-sm hover:border-gray-400 transition duration-150 ease-in-out"
+                             id="language-selector"
+                             onchange="redirectToLanguage()">
+                         <option value="English">English</option>
+                         <option value="Urdu">اردو</option>
+                         <option value="Punjabi">پنجابی</option>
+                         <option value="Sindhi">سنڌي</option>
+                     </select>
+                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-theme-text-secondary">
+                          <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                     </div>
                 </div>
-            </div>
-
-            <div class="flex items-center space-x-3">
-                <select 
-                    class="px-2 py-1 border border-[#091e65] rounded-full text-gray-700 focus-ring text-sm" 
-                    id="language-selector"
-                    onchange="redirectToLanguage()">
-                    
-                    <option value="English">English</option>
-                    <option value="Urdu">اردو</option>
-                    <option value="Punjabi">پنجابی</option>
-                    <option value="Sindhi">سنڌي</option>
-                </select>
-            </div>
-
                 {% if user.is_authenticated %}
-                <button class="coin-wallet-btn">
-                    <i class="fas fa-coins"></i>
-                    <span>{{ user.coins }} Coins</span>
-                </button>
+                <a href="/mywallet" class="bg-theme-primary-light hover:bg-indigo-100 text-theme-primary font-semibold px-4 h-9 rounded-full flex items-center border border-indigo-200 transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-theme-primary">
+                    <i class="fas fa-coins mr-2 text-base text-theme-primary opacity-80"></i>
+                    <span>{{ user.coins|default:0 }}</span> <span class="hidden sm:inline ml-1">Coins</span>
+                </a>
                 {% else %}
-                <button class="btn-primary flex items-center">
-                    <i class="fas fa-coins mr-1"></i>
-                    GET PREMIUM
-                </button>
+                 <a href="/subscribe" class="bg-theme-primary hover:bg-theme-primary-hover text-white font-semibold px-4 h-9 rounded-full flex items-center shadow-sm transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-theme-primary">
+                     <i class="fas fa-star mr-1.5 text-base"></i>
+                     GET PREMIUM
+                 </a>
                 {% endif %}
-
                 {% if user.is_authenticated %}
                 <div class="relative">
-                    <button class="btn-icon focus:outline-none" id="profile-dropdown-toggle">
-                        <div class="profile-picture-icon flex items-center">
-                            {% if user.profile_pic %}
-                            <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="header-profile-picture">
-                            {% else %}
-                            <i class="fas fa-user default-profile-icon-header"></i>
-                            {% endif %}
-                        </div>
+                    <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary" id="profile-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
+                        <span class="sr-only">Open user menu</span>
+                        {% if user.profile_pic %}
+                        <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="header-profile-picture">
+                        {% else %}
+                        <span class="default-profile-icon-header">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        {% endif %}
                     </button>
-
-                    <div id="profile-dropdown" class="absolute right-0 mt-2 w-64 rounded-lg shadow-xl bg-white ring-1 ring-gray-900/10 z-10 hidden">
-                        <div class="p-4">
-                            <div class="flex items-center mb-3">
-                                 {% if user.profile_pic %}
-                                    <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="h-10 w-10 rounded-full mr-3">
-                                {% else %}
-                                     <i class="fas fa-user h-10 w-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xl mr-3"></i>
-                                {% endif %}
-                                <div>
-                                    <p class="text-sm font-semibold text-gray-900">{{ user.full_name|default:user.username }}</p>
-                                     {% if subscription_type == 'FR' %}
-                                        <p class="text-xs text-gray-500">Free Plan</p>
-                                     {% elif subscription_type == 'PR' %}
-                                        <p class="text-xs text-green-600">Premium Plan</p>
+                    <div id="profile-dropdown"
+                         class="absolute right-0 mt-2 w-64 origin-top-right rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-60"
+                         role="menu" aria-orientation="vertical" aria-labelledby="profile-dropdown-toggle" tabindex="-1">
+                        <div class="px-4 py-3 border-b border-gray-200 bg-theme-primary-lighter">
+                            <div class="flex items-center">
+                                <div class="shrink-0 mr-3">
+                                    {% if user.profile_pic %}
+                                    <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="h-10 w-10 rounded-full object-cover ring-1 ring-offset-1 ring-theme-primary">
                                     {% else %}
-                                       <p class="text-xs text-gray-500">No Plan</p>
+                                    <span class="h-10 w-10 rounded-full bg-gray-300 text-theme-text-secondary flex items-center justify-center text-xl ring-1 ring-offset-1 ring-gray-400">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-semibold text-theme-text-primary truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
+                                    {% if subscription_type == 'FR' %}
+                                    <p class="text-xs text-theme-text-secondary">Free Plan</p>
+                                    {% elif subscription_type == 'PR' %}
+                                    <p class="text-xs font-medium text-green-600">Premium Plan <i class="fas fa-check-circle text-xs ml-0.5"></i></p>
+                                    {% else %}
+                                    <p class="text-xs text-theme-text-secondary">No Plan</p>
                                     {% endif %}
                                 </div>
                             </div>
                             {% if subscription_type == 'FR' %}
-                            <a href="/subscribe" class="block w-full py-2 px-4 text-center bg-gradient-to-r from-yellow-400 to-amber-500 text-white font-bold rounded-full hover:from-yellow-500 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-opacity-50 transition-colors duration-200 my-2">
-                                <i class="fas fa-star mr-2"></i> Upgrade to Premium
+                            <a href="/subscribe" class="block w-full mt-3 py-1.5 px-3 text-center bg-gradient-to-r from-theme-secondary to-amber-500 text-white text-xs font-bold rounded-full hover:from-theme-secondary-hover hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-75 transition duration-150 ease-in-out">
+                                <i class="fas fa-star mr-1"></i> Upgrade to Premium
                             </a>
                             {% endif %}
-
                         </div>
-                        <div class="border-t border-gray-200"></div>
-                        <div class="py-2">
-                            <a href="/myprofile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"><i class="fas fa-user mr-2"></i> My Profile</a>
+                        <div class="py-1" role="none">
+                            <a href="/myprofile" class="flex items-center px-4 py-2 text-sm text-theme-text-secondary transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
+                                <i class="fas fa-user w-5 mr-3 text-gray-400"></i> My Profile
+                            </a>
                             {% if subscription_type == 'PR' %}
-                            <a href="/managesubscription" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"><i class="fas fa-cog mr-2"></i> Manage Subscription</a>
+                            <a href="/managesubscription" class="flex items-center px-4 py-2 text-sm text-theme-text-secondary transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
+                                <i class="fas fa-cog w-5 mr-3 text-gray-400"></i> Manage Subscription
+                            </a>
                             {% endif %}
-                            <a href="/buycoins" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"><i class="fas fa-coins mr-2"></i> Buy Coins</a>
-                            <a href="/mywallet" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"><i class="fas fa-wallet mr-2"></i> My Wallet</a>
-
+                            <a href="/buycoins" class="flex items-center px-4 py-2 text-sm text-theme-text-secondary transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
+                                <i class="fas fa-coins w-5 mr-3 text-gray-400"></i> Buy Coins
+                            </a>
+                            <a href="/mywallet" class="flex items-center px-4 py-2 text-sm text-theme-text-secondary transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
+                                <i class="fas fa-wallet w-5 mr-3 text-gray-400"></i> My Wallet
+                            </a>
                         </div>
-                        <div class="border-t border-gray-200"></div>
-                         <div class="py-2">
-                            <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
+                        <div class="border-t border-gray-100"></div>
+                        <div class="py-1" role="none">
+                            <a href="/logout" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
+                                <i class="fas fa-sign-out-alt w-5 mr-3"></i> Logout
+                            </a>
                         </div>
                     </div>
-
                 </div>
-
-
                 {% else %}
-                <a href="/login" class="btn-secondary">Login</a>
-                <a href="/signup" class="btn-secondary">Signup</a>
+                <div class="hidden sm:flex items-center space-x-2">
+                    <a href="/login" class="text-theme-primary hover:text-theme-primary-hover font-semibold px-4 h-9 flex items-center rounded-full text-sm transition duration-150 ease-in-out hover:bg-theme-primary-lighter focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Login</a>
+                    <a href="/signup" class="bg-theme-primary hover:bg-theme-primary-hover text-white font-semibold px-4 h-9 flex items-center rounded-full shadow-sm text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Signup</a>
+                </div>
+                 <div class="flex sm:hidden items-center space-x-1"> <a href="/login" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Login">
+                         <i class="fas fa-sign-in-alt text-lg"></i>
+                     </a>
+                      <a href="/signup" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Signup">
+                           <i class="fas fa-user-plus text-lg"></i>
+                      </a>
+                 </div>
                 {% endif %}
             </div>
         </div>
+         <div class="container mx-auto px-4 pb-3 md:hidden">
+              <div class="relative w-full">
+                   <input type="text" id="search-input-mobile" placeholder="Search..."
+                          class="w-full pl-10 pr-16 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-500 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out" />
+                   <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-10 text-theme-text-secondary hover:text-theme-primary rounded-l-full focus:outline-none" id="search-btn-mobile" title="Search">
+                        <i class="fas fa-search text-base"></i>
+                   </button>
+                   <button id="voice-search-btn-mobile" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-secondary hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none" title="Search by Voice">
+                        <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5">
+                   </button>
+              </div>
+         </div>
     </header>
     {% endblock %}
 
     {% block slider-menu %}
-    <div id="slide-menu" class="slide-menu">
-        <div class="slider-header">
-            <a href="/Home" class="audiotype-logo">
-                <span class="text-2xl font-extrabold tracking-tighter">AUDIO</span>
-                <span class="text-2xl font-extrabold text-red-600 tracking-tighter">X</span>
-                <div class="logo-dot"></div>
-            </a>
-            <span id="close-menu" class="close-btn">&times;</span>
-        </div>
-
-        <div class="menu-content">
-            {% if user.is_authenticated %}
-            <div class="user-info">
-                <div class="profile-picture-wrapper">
-                    {% if user.profile_pic %}
-                    <img src="{{ user.profile_pic.url }}" alt="Profile Picture">
-                    {% else %}
-                    <i class="fas fa-user default-profile-icon"></i>
-                    {% endif %}
-                </div>
-                <div class="user-names">{{ user.full_name|default:user.username }}</div>
-                <div class="user-bio">{{ user.bio|default:"No Bio Yet" }}</div>
-                {% if user.is_authenticated %}
-                <div
-                    class="subscription-status-box {% if subscription_type == 'FR' %}free{% elif subscription_type == 'PR' %}premium{% endif %}">
-                    {% if subscription_type == 'FR' %}
-                    Free User
-                    {% elif subscription_type == 'PR' %}
-                    Premium User
-                    {% else %}
-                    Unknown Subscription
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-            {% else %}
-            <div class="login-signup-section">
-                <a href="/login" class="login-signup-btn">
-                    <i class="fas fa-sign-in-alt mr-2"></i> Login / Signup
+        <div id="slide-menu" class="fixed top-0 left-0 w-72 h-full bg-white shadow-xl z-[1000] flex flex-col transform -translate-x-full">
+           <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <a href="/Home" class="flex items-center shrink-0">
+                    <div class="flex items-center audiotype-logo">
+                        <span class="text-xl font-extrabold text-theme-primary tracking-tighter">AUDIO</span>
+                        <span class="text-xl font-extrabold text-red-600 tracking-tighter">X</span>
+                        <div class="w-1.5 h-1.5 bg-theme-secondary rounded-full ml-1 logo-dot"></div>
+                    </div>
                 </a>
-                <small>Get a personalized experience</small>
+                <button id="close-menu" class="text-gray-500 hover:text-theme-primary transition duration-150 ease-in-out p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-theme-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span class="sr-only">Close Menu</span>
+                </button>
+           </div>
+
+            <div class="flex-grow overflow-y-auto menu-content pt-4 pb-2">
+                {% if user.is_authenticated %}
+                <div class="px-4 mb-4 text-center"> <div class="flex justify-center items-center space-x-3 mb-3"> <div class="shrink-0">
+                        {% if user.profile_pic %}
+                        <img src="{{ user.profile_pic.url }}" alt="Profile" class="h-14 w-14 rounded-full object-cover ring-2 ring-offset-2 ring-theme-primary"> {% else %}
+                        <span class="h-14 w-14 rounded-full bg-gray-200 text-theme-text-secondary flex items-center justify-center text-2xl ring-1 ring-gray-300"> <i class="fas fa-user"></i>
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="min-w-0 flex-1 text-left"> <p class="text-md font-semibold text-theme-text-primary truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
+                        <p class="text-sm text-theme-text-secondary truncate">{{ user.bio|default:""|truncatechars:35 }}</p>
+                    </div>
+                </div>
+                <div class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold shadow-sm
+                    {% if subscription_type == 'FR' %} bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-300
+                    {% elif subscription_type == 'PR' %} bg-gradient-to-r from-theme-primary to-blue-800 text-white ring-1 ring-inset ring-theme-primary-hover
+                    {% else %} bg-gray-100 text-gray-800 ring-1 ring-inset ring-gray-300 {% endif %}">
+                    {% if subscription_type == 'FR' %}
+                        <i class="fas fa-user mr-1.5 text-yellow-600"></i> Free Account
+                    {% elif subscription_type == 'PR' %}
+                        <i class="fas fa-star mr-1.5 text-yellow-300"></i> Premium Account
+                    {% else %}
+                        <i class="fas fa-question-circle mr-1.5 text-gray-500"></i> No Plan
+                    {% endif %}
+                </div>
+                </div>
+                <hr class="mx-4 border-gray-100 mb-4">
+
+                {% else %}
+                <div class="px-4 mb-4 text-center">
+                    <p class="text-sm text-theme-text-secondary mb-3">Login or sign up to personalize your experience.</p>
+                    <div class="flex space-x-2">
+                        <a href="/login" class="flex-1 bg-white border border-theme-primary text-theme-primary hover:bg-theme-primary-lighter font-semibold px-4 py-2 rounded-md text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">
+                            Login
+                        </a>
+                        <a href="/signup" class="flex-1 bg-theme-primary hover:bg-theme-primary-hover text-white font-semibold px-4 py-2 rounded-md shadow-sm text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">
+                            Signup
+                        </a>
+                    </div>
+                </div>
+                <hr class="mx-4 border-gray-100 mb-4">
+                {% endif %}
+
+                <nav class="flex-grow px-2 space-y-1">
+                    <a href="/Home" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md bg-theme-primary-light text-theme-primary hover:bg-indigo-100 border border-indigo-200 transition duration-150 ease-in-out mb-2">
+                        <i class="fas fa-file-pdf mr-3 text-base w-5 text-center opacity-80"></i> Generate Audio from PDF
+                    </a>
+                    <a href="/Home" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md bg-theme-primary-light text-theme-primary hover:bg-indigo-100 border border-indigo-200 transition duration-150 ease-in-out mb-3">
+                        <i class="fas fa-users mr-3 text-base w-5 text-center opacity-80"></i> Creator Portal
+                    </a>
+
+                    {% if user.is_authenticated %}
+                    <a href="/browse" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
+                        <i class="fas fa-book-open mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Browse Audiobooks
+                    </a>
+                    <a href="/mylibrary" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
+                        <i class="fas fa-bookmark mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> My Library
+                    </a>
+                    <a href="/downloads" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
+                        <i class="fas fa-download mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Downloaded Audiobooks
+                    </a>
+                    {% else %}
+                     <a href="/Home" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
+                        <i class="fas fa-home mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Home
+                      </a>
+                       <a href="/browse" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
+                        <i class="fas fa-book-open mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Browse Audiobooks
+                       </a>
+                    {% endif %}
+
+
+                    <div class="pt-2 pb-1">
+                        <hr class="border-gray-200">
+                    </div>
+
+                    <div class="has-submenu-container">
+                        <button class="group w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out submenu-toggle">
+                            <span class="inline-flex items-center">
+                                <i class="fas fa-info-circle mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> About
+                            </span>
+                            <i class="fas fa-chevron-down text-xs text-theme-text-light group-hover:text-theme-primary transition-transform duration-200 transform"></i>
+                        </button>
+                        <div class="submenu ml-6 mt-1 space-y-0.5">
+                            <a href="/ourteam" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Our Team</a>
+                            <a href="/aboutus" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">About Us</a>
+                        </div>
+                    </div>
+
+                    <div class="has-submenu-container">
+                        <button class="group w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out submenu-toggle">
+                             <span class="inline-flex items-center">
+                                <i class="fas fa-gavel mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Legal
+                            </span>
+                            <i class="fas fa-chevron-down text-xs text-theme-text-light group-hover:text-theme-primary transition-transform duration-200 transform"></i>
+                        </button>
+                        <div class="submenu ml-6 mt-1 space-y-0.5">
+                            <a href="/privacypolicy" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Privacy Policy</a>
+                            <a href="/paymentpolicy" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Payment Policy</a>
+                            <a href="/piracypolicy" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Piracy Policy</a>
+                            <a href="/termsandconditions" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Terms & Conditions</a>
+                        </div>
+                    </div>
+
+                    <a href="/contactus" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
+                        <i class="fas fa-envelope mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Contact Support
+                    </a>
+
+                </nav>
             </div>
-            {% endif %}
 
-            <ul>
-                <li class="feature-item">
-                    <a href="/Home" class="menu-item">
-                        <i class="fas fa-file-pdf"></i> Generate Audio from PDF
-                    </a>
-                </li>
-                <li class="feature-item">
-                    <a href="/Home" class="menu-item">
-                        <i class="fas fa-users"></i> Creator Portal
-                    </a>
-                </li>
-
-                <li class="separator"></li>
-
-                <li>
-                    <a href="#" class="menu-item has-submenu">
-                        <i class="fas fa-info-circle"></i> About
-                    </a>
-                    <ul class="sub-menu">
-                        <li><a href="/ourteam" class="menu-item"><i class="fas fa-users me-2"></i> Our Team</a></li>
-                        <li><a href="/aboutus" class="menu-item"><i class="fas fa-building me-2"></i> About Us</a></li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="#" class="menu-item has-submenu">
-                        <i class="fas fa-gavel"></i> Legal
-                    </a>
-                    <ul class="sub-menu">
-                        <li><a href="/privacypolicy" class="menu-item"><i class="fas fa-user-secret me-2"></i> Privacy
-                                Policy</a></li>
-                        <li><a href="/paymentpolicy" class="menu-item"><i class="fas fa-money-check-alt me-2"></i>
-                                Payment Policy</a></li>
-                        <li><a href="/piracypolicy" class="menu-item"><i class="fas fa-ban me-2"></i> Piracy Policy</a>
-                        </li>
-                        <li><a href="/termsandconditions" class="menu-item"><i
-                                    class="fas fa-file-contract me-2"></i> Terms and Conditions</a></li>
-                    </ul>
-                </li>
-                <li>
-                    <a href="/contactus" class="menu-item">
-                        <i class="fas fa-envelope"></i> Contact AudioX Support
-                    </a>
-                </li>
-            </ul>
+            <div class="p-4 mt-auto border-t border-gray-200">
+                {% if user.is_authenticated %}
+                <a href="/logout" class="group w-full flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+                {% endif %}
+                <p class="mt-4 text-center text-xs text-gray-500">
+                    Made with <span class="text-red-500">❤️</span> in Pakistan<br>
+                    &copy; {% now "Y" %} AudioX
+                </p>
+            </div>
         </div>
-        {% if user.is_authenticated %}
-        <a href="/logout" class="logout-btn">Logout</a>
-        {% endif %}
-
-        <footer>
-            <p>Made  <span class="text-red-500">❤️</span> in Pakistan</p>
-        </footer>
-    </div>
     {% endblock %}
 
     <main style="flex-grow: 1;">
         {% block content %}
+        <div class="container mx-auto p-8">
+            <h1 class="text-3xl font-bold text-theme-text-primary">Main Content Area</h1>
+            <p class="mt-4 text-theme-text-secondary">Your page content goes here...</p>
+             <div class="mt-8 space-y-4">
+                 <button class="bg-theme-primary text-white px-4 py-2 rounded hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2">Primary Button</button>
+                 <button class="bg-theme-secondary text-theme-primary px-4 py-2 rounded hover:bg-theme-secondary-hover focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-2">Secondary Button</button>
+                 <input type="text" placeholder="Input field" class="border border-gray-300 rounded px-3 py-2 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none">
+             </div>
+        </div>
         {% endblock %}
     </main>
 
     {% block footer %}
-    <footer class="bg-[#091e65] text-white py-8">
+    <footer class="bg-theme-primary text-gray-300 py-10">
         <div class="container mx-auto px-4">
-            <div class="flex flex-wrap justify-between">
-                <div class="w-full lg:w-1/3 mb-6 lg:mb-0">
-                    <a href="/Home" class="flex items-center audiotype-logo mb-4">
-                        <span class="text-3xl font-extrabold tracking-tighter">AUDIO</span>
-                        <span class="text-3xl font-extrabold text-red-600 tracking-tighter">X</span>
-                        <div class="w-4 h-4 bg-yellow-400 rounded-full ml-1 logo-dot"></div>
-                    </a>
-                    <p class="mb-4">AudioX is a unique audiobook platform that provides audiobooks in multiple
-                        languages. Our mission is to make reading easier and more accessible for people across Pakistan
-                        and beyond, by offering content in various regional languages.</p>
-                    <hr class="border-t border-gray-400 my-4">
-                    <h3 class="font-bold">FOLLOW US ON</h3>
-                    <div class="mt-2 space-x-8">
-                        <a href="https://facebook.com" class="hover:text-gray-300" title="Facebook">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="https://instagram.com" class="hover:text-gray-300" title="Instagram">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                    </div>
-                </div>
-
-                
-                <div class="w-full lg:w-2/3 flex flex-wrap justify-between">
-                    <div class="w-1/2 md:w-1/4 mb-6 md:mb-0">
-                        <h3 class="font-bold mb-2">COMPANY</h3>
-                        <ul>
-                            <li class="mb-2"><a href="/aboutus" class="hover:text-gray-300">About Us</a></li>
-                            <li><a href="/ourteam" class="hover:text-gray-300">Our Team</a></li>
-                        </ul>
-                    </div>
-                    <div class="w-1/2 md:w-1/4 mb-6 md:mb-0">
-                        <h3 class="font-bold mb-2">GENERAL</h3>
-                        <ul>
-                            <li class="mb-2"><a href="/Home" class="hover:text-gray-300">Creator Portal</a></li>
-                            <li><a href="/contactus" class="hover:text-gray-300">Contact Us</a></li>
-                        </ul>
-                    </div>
-                    <div class="w-1/2 md:w-1/4 mb-6 md:mb-0">
-                        <h3 class="font-bold mb-2">LEGAL</h3>
-                        <ul>
-                            <li class="mb-2"><a href="/paymentpolicy" class="hover:text-gray-300">Payment Policy</a>
-                            </li>
-                            <li class="mb-2"><a href="/piracypolicy" class="hover:text-gray-300">Piracy Policy</a>
-                            </li>
-                            <li class="mb-2"><a href="/termsandconditions" class="hover:text-gray-300">Terms &
-                                    Conditions</a></li>
-                            <li><a href="/privacypolicy" class="hover:text-gray-300">Privacy Policy</a></li>
-                        </ul>
-                    </div>
-                    <div class="w-1/2 md:w-1/4 mb-6 md:mb-0">
-                        <h3 class="font-bold mb-2">GENRES</h3>
-                        <ul>
-                            <li class="mb-2"><a href="/genrefiction" class="hover:text-gray-300">Fiction</a></li>
-                            <li class="mb-2"><a href="/genremystery" class="hover:text-gray-300">Mystery</a></li>
-                            <li class="mb-2"><a href="/genrethriller" class="hover:text-gray-300">Thriller</a></li>
-                            <li class="mb-2"><a href="/genrescifi" class="hover:text-gray-300">Sci-Fi</a></li>
-                            <li class="mb-2"><a href="/genrefantasy" class="hover:text-gray-300">Fantasy</a></li>
-                            <li class="mb-2"><a href="/genreromance" class="hover:text-gray-300">Romance</a></li>
-                            <li class="mb-2"><a href="/genrebiography" class="hover:text-gray-300">Biography</a></li>
-                            <li class="mb-2"><a href="/genrehistory" class="hover:text-gray-300">History</a></li>
-                            <li class="mb-2"><a href="/genreselfhelp" class="hover:text-gray-300">Self-Help</a></li>
-                            <li class="mb-2"><a href="/genrebusiness" class="hover:text-gray-300">Business</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="text-center mt-8">
-                <p>© 2025 AudioX. All Rights Reserved.</p>
-            </div>
+             <div class="flex flex-wrap justify-between gap-8">
+                 <div class="w-full lg:w-1/3 mb-6 lg:mb-0">
+                     <a href="/Home" class="flex items-center audiotype-logo mb-4">
+                         <span class="text-3xl font-extrabold tracking-tighter text-white">AUDIO</span>
+                         <span class="text-3xl font-extrabold text-red-500 tracking-tighter">X</span>
+                         <div class="w-3 h-3 bg-theme-secondary rounded-full ml-1.5 logo-dot"></div>
+                     </a>
+                     <p class="mb-4 text-sm leading-relaxed opacity-90">
+                         AudioX: Your gateway to audiobooks in English, Urdu, Punjabi, Sindhi, and more. Making literature accessible across Pakistan and beyond.
+                     </p>
+                     <hr class="border-t border-gray-700 my-4">
+                     <h3 class="font-semibold text-white text-sm uppercase tracking-wider mb-2">Follow Us</h3>
+                     <div class="mt-2 space-x-4">
+                         <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition duration-150 ease-in-out" title="Facebook"><i class="fab fa-facebook-f text-lg"></i></a>
+                         <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition duration-150 ease-in-out" title="Instagram"><i class="fab fa-instagram text-lg"></i></a>
+                         <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition duration-150 ease-in-out" title="Twitter"><i class="fab fa-twitter text-lg"></i></a>
+                         <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition duration-150 ease-in-out" title="LinkedIn"><i class="fab fa-linkedin-in text-lg"></i></a>
+                     </div>
+                 </div>
+                 <div class="w-full lg:w-2/3 flex flex-wrap justify-between lg:pl-10 gap-8">
+                     <div class="w-1/2 sm:w-1/3 md:w-1/4">
+                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Company</h3>
+                         <ul class="space-y-2">
+                             <li><a href="/aboutus" class="text-sm hover:text-white transition duration-150 ease-in-out">About Us</a></li>
+                             <li><a href="/ourteam" class="text-sm hover:text-white transition duration-150 ease-in-out">Our Team</a></li>
+                             <li><a href="/careers" class="text-sm hover:text-white transition duration-150 ease-in-out">Careers</a></li>
+                         </ul>
+                     </div>
+                     <div class="w-1/2 sm:w-1/3 md:w-1/4">
+                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">General</h3>
+                         <ul class="space-y-2">
+                              <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out">Browse</a></li>
+                              <li><a href="/Home" class="text-sm hover:text-white transition duration-150 ease-in-out">Creator Portal</a></li>
+                              <li><a href="/contactus" class="text-sm hover:text-white transition duration-150 ease-in-out">Contact Us</a></li>
+                              <li><a href="/faq" class="text-sm hover:text-white transition duration-150 ease-in-out">FAQ</a></li>
+                         </ul>
+                     </div>
+                     <div class="w-1/2 sm:w-1/3 md:w-1/4">
+                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Legal</h3>
+                         <ul class="space-y-2">
+                             <li><a href="/paymentpolicy" class="text-sm hover:text-white transition duration-150 ease-in-out">Payment Policy</a></li>
+                             <li><a href="/piracypolicy" class="text-sm hover:text-white transition duration-150 ease-in-out">Piracy Policy</a></li>
+                             <li><a href="/termsandconditions" class="text-sm hover:text-white transition duration-150 ease-in-out">Terms & Conditions</a></li>
+                             <li><a href="/privacypolicy" class="text-sm hover:text-white transition duration-150 ease-in-out">Privacy Policy</a></li>
+                         </ul>
+                     </div>
+                     <div class="w-1/2 sm:w-1/3 md:w-1/4">
+                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Genres</h3>
+                         <ul class="space-y-2">
+                             <li><a href="/genrefiction" class="text-sm hover:text-white transition duration-150 ease-in-out">Fiction</a></li>
+                             <li><a href="/genremystery" class="text-sm hover:text-white transition duration-150 ease-in-out">Mystery</a></li>
+                             <li><a href="/genrethriller" class="text-sm hover:text-white transition duration-150 ease-in-out">Thriller</a></li>
+                              <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out font-medium">More...</a></li>
+                         </ul>
+                     </div>
+                 </div>
+             </div>
+             <div class="text-center mt-10 pt-8 border-t border-gray-700">
+                 <p class="text-sm opacity-80">&copy; {% now "Y" %} AudioX. All Rights Reserved. Made with <span class="text-red-500">❤️</span> in Pakistan.</p>
+             </div>
         </div>
-    </footer>
+      </footer>
     {% endblock %}
 
     <script>
@@ -733,124 +499,153 @@
             const menuToggle = document.getElementById('menu-toggle');
             const slideMenu = document.getElementById('slide-menu');
             const closeMenu = document.getElementById('close-menu');
-            const voiceSearchBtn = document.getElementById('voice-search-btn');
-            const searchInput = document.getElementById('search-input');
             const profileDropdownToggle = document.getElementById('profile-dropdown-toggle');
             const profileDropdown = document.getElementById('profile-dropdown');
 
-            if (menuToggle) {
-                menuToggle.addEventListener('click', function () {
-                    slideMenu.classList.toggle('open');
-                });
+            if (menuToggle && slideMenu && closeMenu) {
+                menuToggle.addEventListener('click', () => slideMenu.classList.add('open'));
+                closeMenu.addEventListener('click', () => slideMenu.classList.remove('open'));
+                 document.addEventListener('keydown', (event) => {
+                     if (event.key === 'Escape' && slideMenu.classList.contains('open')) {
+                         slideMenu.classList.remove('open');
+                     }
+                 });
             }
 
-            if (closeMenu) {
-                closeMenu.addEventListener('click', function () {
-                    slideMenu.classList.remove('open');
+            if (profileDropdownToggle && profileDropdown) {
+                profileDropdownToggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const isHidden = profileDropdown.classList.contains('hidden');
+                    profileDropdown.classList.toggle('hidden', !isHidden);
+                    profileDropdownToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                     if (isHidden) {
+                         const firstItem = profileDropdown.querySelector('[role="menuitem"]');
+                         if (firstItem) setTimeout(() => firstItem.focus(), 0);
+                     }
                 });
-            }
-
-            // Close menu when clicking outside
-            if (slideMenu && menuToggle) {
-                document.addEventListener('click', function (event) {
-                    if (!slideMenu.contains(event.target) && !menuToggle.contains(event.target) && slideMenu.classList.contains('open')) {
-                        slideMenu.classList.remove('open');
+                document.addEventListener('click', (event) => {
+                    if (!profileDropdown.contains(event.target) && !profileDropdownToggle.contains(event.target) && !profileDropdown.classList.contains('hidden')) {
+                        profileDropdown.classList.add('hidden');
+                         profileDropdownToggle.setAttribute('aria-expanded', 'false');
                     }
                 });
+                 document.addEventListener('keydown', (event) => {
+                     if (event.key === 'Escape' && !profileDropdown.classList.contains('hidden')) {
+                         profileDropdown.classList.add('hidden');
+                         profileDropdownToggle.setAttribute('aria-expanded', 'false');
+                         profileDropdownToggle.focus();
+                     }
+                 });
             }
 
+            const setupVoiceSearch = (buttonId, inputId) => {
+                const voiceSearchBtn = document.getElementById(buttonId);
+                const searchInput = document.getElementById(inputId);
+                if (!voiceSearchBtn || !searchInput) return;
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                     console.warn("Speech recognition not supported.");
+                     voiceSearchBtn.disabled = true;
+                     voiceSearchBtn.title = "Voice search not supported";
+                     return;
+                 }
+                 const recognition = new SpeechRecognition();
+                 recognition.lang = document.documentElement.lang || 'en-US';
+                 recognition.interimResults = false;
+                 recognition.maxAlternatives = 1;
+                 let isRecording = false;
 
-            if (voiceSearchBtn) {
-                voiceSearchBtn.addEventListener('click', function () {
-                    // Check for browser support
-                    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                        alert('Speech recognition is not supported in this browser.  Please use Chrome, Edge, or Safari.');
-                        return;
-                    }
+                 voiceSearchBtn.addEventListener('click', () => {
+                     if (isRecording) { recognition.stop(); return; }
+                     try { recognition.start(); } catch (error) { console.error("Speech recognition start error:", error); }
+                 });
+                 recognition.onstart = () => { isRecording = true; voiceSearchBtn.classList.add('recording'); voiceSearchBtn.title = "Stop recording"; };
+                 recognition.onend = () => { isRecording = false; voiceSearchBtn.classList.remove('recording'); voiceSearchBtn.title = "Search by Voice"; };
+                 recognition.onresult = (event) => { searchInput.value = event.results[0][0].transcript; };
+                 recognition.onerror = (event) => { console.error("Speech recognition error:", event.error); };
+            };
+            setupVoiceSearch('voice-search-btn', 'search-input');
+            setupVoiceSearch('voice-search-btn-mobile', 'search-input-mobile');
 
-                    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                    recognition.lang = 'en-US';
-                    recognition.interimResults = false;
-                    recognition.maxAlternatives = 1;
+            const langSelector = document.getElementById('language-selector');
+            if (langSelector) {
+                const path = window.location.pathname;
+                if (path.match(/^\/Urdu(\/|$)/)) langSelector.value = 'Urdu';
+                else if (path.match(/^\/Punjabi(\/|$)/)) langSelector.value = 'Punjabi';
+                else if (path.match(/^\/Sindhi(\/|$)/)) langSelector.value = 'Sindhi';
+                else langSelector.value = 'English';
+            }
 
-                    recognition.onstart = function () {
-                        // Visually indicate that recording has started
-                        voiceSearchBtn.classList.add('bg-red-500');
-                        voiceSearchBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
-                    };
-
-                    recognition.onend = function () {
-                        // Visually indicate that recording has ended
-                        voiceSearchBtn.classList.remove('bg-red-500');
-                        voiceSearchBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-                    };
-
-                    recognition.start();
-
-                    recognition.onresult = function (event) {
-                        const speechResult = event.results[0][0].transcript;
-                        searchInput.value = speechResult;
-                    };
-
-
-                    recognition.onerror = function (event) {
-                        console.error("Speech recognition error:", event.error);
-                        if (event.error === 'no-speech') {
-                            alert('No speech detected. Please try again.');
-                        } else if (event.error === 'audio-capture') {
-                            alert('No microphone detected. Please connect a microphone and try again.');
-                        } else if (event.error === 'not-allowed') {
-                            alert('Microphone access denied. Please allow microphone access in your browser settings.');
-                        } else {
-                            alert('Speech recognition error: ' + event.error);
+            const setupSearchButton = (buttonId, inputId) => {
+                const searchBtn = document.getElementById(buttonId);
+                const searchInput = document.getElementById(inputId);
+                if (searchBtn && searchInput) {
+                    const performSearch = () => {
+                        const query = searchInput.value.trim();
+                        if (query) {
+                            console.log(`Searching for: ${query}`);
+                            // window.location.href = `/search?q=${encodeURIComponent(query)}`;
                         }
                     };
-                });
-            }
-            if (profileDropdownToggle) {
-                profileDropdownToggle.addEventListener('click', function (event) {
-                    event.stopPropagation(); // Prevent the click from immediately closing the dropdown
-                    profileDropdown.classList.toggle('hidden');
-                });
-            }
-            // Close the dropdown when clicking outside of it
-            if (profileDropdown) {
-                document.addEventListener('click', function (event) {
-                    if (!profileDropdown.contains(event.target) && !profileDropdownToggle.contains(event.target)) {
-                        profileDropdown.classList.add('hidden');
+                    searchBtn.addEventListener('click', performSearch);
+                    searchInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') performSearch(); });
+                }
+            };
+            setupSearchButton('search-btn', 'search-input');
+            setupSearchButton('search-btn-mobile', 'search-input-mobile');
+
+            const submenuToggles = document.querySelectorAll('.submenu-toggle');
+            submenuToggles.forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const submenu = toggle.nextElementSibling;
+                    const parentContainer = toggle.closest('.has-submenu-container');
+                    const icon = toggle.querySelector('.fa-chevron-down');
+
+                    if (submenu && parentContainer) {
+                        parentContainer.classList.toggle('submenu-open');
+                        if (icon) {
+                           icon.classList.toggle('rotate-180');
+                        }
                     }
                 });
-            }
+            });
 
-        });
+        }); // End DOMContentLoaded
 
         function redirectToLanguage() {
             const selector = document.getElementById('language-selector');
             const selectedLang = selector.value;
-    
+            const currentPath = window.location.pathname;
+            let basePath = '/';
+            const langRegex = /^\/(Urdu|Punjabi|Sindhi)(\/.*)?$/;
+            const match = currentPath.match(langRegex);
+
+            if (match) {
+                basePath = match[2] || '/';
+            } else if (currentPath !== '/') {
+                 basePath = currentPath;
+            }
+             if (!basePath.startsWith('/')) {
+                 basePath = '/' + basePath;
+             }
+
+            let newUrl = '/';
             if (selectedLang === 'English') {
-                window.location.href = '/'; // Home page
+                newUrl = basePath;
             } else {
-                window.location.href = '/' + selectedLang + '/'; // Language-specific pages
+                newUrl = `/${selectedLang}${basePath === '/' ? '' : basePath}`;
+            }
+
+            newUrl = newUrl.replace(/\/+/g, '/');
+            if (newUrl === '') newUrl = '/';
+
+            console.log(`Attempting redirect: From ${currentPath} To ${newUrl}`);
+            if (newUrl !== currentPath) {
+                window.location.href = newUrl;
+            } else {
+                console.log("Already on the correct language page.");
             }
         }
-    
-        // This part is for "remembering" the selected language based on URL
-        window.addEventListener('DOMContentLoaded', () => {
-            const path = window.location.pathname;  // e.g., "/ur/" or "/pun/"
-            const selector = document.getElementById('language-selector');
-    
-            if (path.startsWith('/Urdu/')) {
-                selector.value = 'Urdu';
-            } else if (path.startsWith('/Punjabi/')) {
-                selector.value = 'Punjabi';
-            } else if (path.startsWith('/Sindhi/')) {
-                selector.value = 'Sindhi';
-            } else {
-                selector.value = 'English'; // Default Home
-            }
-        });
-
     </script>
 
     {% block javascript %}{% endblock %}

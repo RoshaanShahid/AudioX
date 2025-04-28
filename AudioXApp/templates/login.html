@@ -18,147 +18,418 @@
                 extend: {
                     colors: {
                         primary: '#091e65',
-                        'primary-light': '#12348f',
-                        'accent': '#60a5fa',
+                        'primary-light': '#12348f', // Consider a lighter shade for focus rings if needed
+                        'accent': '#60a5fa', // blue-400
                     }
                 }
             }
         }
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Apply Inter font */
+        }
+        /* Removed empty input:focus rule */
+
+        /* Style for OTP input */
+        .otp-input {
+            width: 3rem; /* Adjust size as needed */
+            height: 3.5rem;
+            text-align: center;
+            font-size: 1.5rem; /* Larger font for OTP digits */
+            border: 1px solid #cbd5e1; /* slate-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin: 0 0.25rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .otp-input:focus {
+             border-color: #091e65; /* primary */
+             box-shadow: 0 0 0 2px #bfdbfe; /* blue-200 focus ring */
+             outline: none;
+        }
+        /* Hide number input spinners */
+       input[type=number]::-webkit-inner-spin-button,
+       input[type=number]::-webkit-outer-spin-button {
+           -webkit-appearance: none;
+           margin: 0;
+       }
+       input[type=number] {
+           -moz-appearance: textfield; /* Firefox */
+           appearance: textfield; /* Standard */
+       }
+    </style>
 </head>
 
-<body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans">
+<body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans p-4">
 
     <div class="bg-white rounded-3xl shadow-xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row">
 
         <div class="w-full md:w-1/2 p-8 md:p-12">
-            <div class="flex flex-col items-center mb-6">  <a href="/Home" class="flex items-center justify-center">  <img alt="Logo" class="w-24 h-24 mr-3" src="{% static 'img/loginlogo.png' %}" />  </a>
-                <a href="/Home" class="md:hidden text-gray-500 hover:text-gray-700 mt-2">  <i class="fas fa-times text-xl"></i>
+            <div class="flex flex-col items-center mb-6">
+                <a href="{% url 'AudioXApp:home' %}" class="flex items-center justify-center">
+                    <img alt="Logo" class="w-24 h-24 mr-3" src="{% static 'img/loginlogo.png' %}" onerror="this.onerror=null; this.src='https://placehold.co/96x96/091e65/ffffff?text=Logo';" />
                 </a>
+                 <a href="{% url 'AudioXApp:home' %}" class="md:hidden text-gray-500 hover:text-gray-700 mt-2 absolute top-4 right-4">
+                     <i class="fas fa-times text-xl"></i>
+                 </a>
             </div>
 
+            <div id="login-form-container">
+                <h2 class="text-2xl md:text-3xl font-bold text-primary mb-4 text-center md:text-left">Welcome Back!</h2>
+                <p class="text-gray-600 mb-8 text-center md:text-left">Log in to your account.</p>
 
-            <h2 class="text-2xl md:text-3xl font-bold text-primary mb-4">Welcome Back!</h2>
-            <p class="text-gray-600 mb-8">Log in to your account.</p>
-
-           <div class="flex justify-center mb-6">
-                <button class="flex items-center justify-center w-full py-2.5 px-5 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition-colors duration-200">
-                    <img src="https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-512.png" alt="Google Logo" class="w-6 h-6 mr-3">
-                    <span>Sign in with Google</span>
-                </button>
-            </div>
-
-
-
-            <div class="flex items-center mb-6">
-                <hr class="flex-grow border-gray-300" />
-                <span class="px-3 text-gray-500 text-sm">OR</span>
-                <hr class="flex-grow border-gray-300" />
-            </div>
-
-            <form id="loginForm" method="post" class="space-y-6">
-                {% csrf_token %}
-                <div>
-                    <label for="loginIdentifier" class="sr-only">Email or Username</label>
-                    <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200"
-                           placeholder="Email or Username" type="text" name="loginIdentifier" id="loginIdentifier" required />
+                <div class="flex justify-center mb-6">
+                    <button class="flex items-center justify-center w-full py-2.5 px-5 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                        <img src="https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-512.png" alt="Google Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/eeeeee/999999?text=G';">
+                        <span>Sign in with Google</span>
+                    </button>
                 </div>
-                <div>
-                    <label for="password" class="sr-only">Password</label>
-                    <div class="relative">
-                        <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200 pr-12"  placeholder="Password" type="password" name="password" id="password" required />
-                        <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"></i>
+
+                <div class="flex items-center mb-6">
+                    <hr class="flex-grow border-gray-300" />
+                    <span class="px-3 text-gray-500 text-sm">OR</span>
+                    <hr class="flex-grow border-gray-300" />
+                </div>
+
+                <form id="loginForm" method="post" class="space-y-6">
+                    {% csrf_token %}
+                    <div id="credentials-section"> {# Wrapper for credentials #}
+                        <div>
+                            <label for="loginIdentifier" class="sr-only">Email or Username</label>
+                            <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-200"
+                                   placeholder="Email or Username" type="text" name="loginIdentifier" id="loginIdentifier" required />
+                        </div>
+                        <div>
+                            <label for="password" class="sr-only">Password</label>
+                            <div class="relative">
+                                <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-200 pr-12"
+                                       placeholder="Password" type="password" name="password" id="password" required />
+                                 <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors password-toggle">
+                                     <i class="fas fa-eye"></i>
+                                 </button>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <a href="{% url 'AudioXApp:forgot_password' %}" class="text-primary hover:text-primary-light text-sm font-medium">Forgot Password?</a>
+                        </div>
                     </div>
-                </div>
 
-                <div class="text-right">
-                    <a href="{% url 'forgot_password' %}" class="text-primary hover:text-primary-light text-sm">Forgot Password?</a>
-                </div>
+                    <button id="submitButton" class="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            type="submit">
+                        Sign In
+                    </button>
+                </form>
+            </div>
 
-                <button class="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl transition duration-200"
-                        type="submit">
-                    Sign In
-                </button>
-            </form>
+            <div id="otp-form-container" class="hidden">
+                 <h2 class="text-2xl md:text-3xl font-bold text-primary mb-4 text-center">Enter Verification Code</h2>
+                 <p class="text-gray-600 mb-6 text-center">
+                     A 6-digit code has been sent to <strong id="otp-email-display" class="font-medium">your email</strong>.
+                     Please enter it below.
+                 </p>
+                 <form id="otpForm" method="post" class="space-y-6"> {# Use a separate form or handle submission differently #}
+                     {% csrf_token %} {# Include CSRF if submitting to a Django view #}
+                     <div class="flex justify-center space-x-2" dir="ltr">
+                         {# Individual OTP inputs (optional, can use single input) #}
+                         <input type="number" name="otp1" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                         <input type="number" name="otp2" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                         <input type="number" name="otp3" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                         <input type="number" name="otp4" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                         <input type="number" name="otp5" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                         <input type="number" name="otp6" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                     </div>
+                     {# Hidden input to store the full OTP #}
+                     <input type="hidden" name="full_otp" id="full_otp">
+
+                     {# Optional: Resend OTP link #}
+                     <div class="text-center text-sm">
+                         <button type="button" id="resendOtpButton" class="text-primary hover:text-primary-light font-medium disabled:opacity-50 disabled:cursor-not-allowed">Resend Code</button>
+                         <span id="resendTimer" class="text-gray-500 ml-2"></span>
+                     </div>
+
+                     <button id="verifyOtpButton" class="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                             type="button"> {# Change type to button to prevent form submission, handle via JS #}
+                         Verify Code
+                     </button>
+                     {# Optional: Go back link #}
+                     <div class="text-center mt-4">
+                         <button type="button" id="backToLoginButton" class="text-sm text-gray-600 hover:text-primary">Back to Login</button>
+                     </div>
+                 </form>
+            </div>
+
+             <p class="mt-6 text-center text-gray-600">
+                 Don't have an account?
+                 <a href="{% url 'AudioXApp:signup' %}" class="text-primary hover:underline font-semibold">Sign Up</a>
+             </p>
         </div>
 
-        <div class="hidden md:flex w-1/2 bg-gradient-to-r from-primary to-primary-light text-white p-12  justify-center items-center rounded-r-3xl">
+        <div class="hidden md:flex w-1/2 bg-gradient-to-r from-primary to-primary-light text-white p-12 justify-center items-center rounded-r-3xl">
             <div class="text-center">
-              <i class="fas fa-user-plus text-4xl mb-4"></i>
-                <h2 class="text-3xl font-bold mb-4">New Here?</h2>
-                <p class="mb-6 text-lg">Sign up and unlock a world of possibilities!</p>
-                <a href="{% url 'signup' %}" class="bg-white text-primary px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition duration-200">
-                    Sign Up
-                </a>
+               <i class="fas fa-headphones-alt text-6xl mb-6 text-accent"></i> {# Changed icon #}
+                <h2 class="text-3xl font-bold mb-4">Immerse Yourself</h2>
+                <p class="mb-6 text-lg">Listen to captivating stories and audiobooks.</p>
+                <a href="{% url 'AudioXApp:signup' %}" class="bg-white text-primary px-8 py-3 rounded-xl font-semibold hover:bg-gray-100 transition duration-200 shadow-md">Sign Up Now</a>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
+        const loginForm = document.getElementById('loginForm');
+        const otpFormContainer = document.getElementById('otp-form-container');
+        const loginFormContainer = document.getElementById('login-form-container');
+        const credentialsSection = document.getElementById('credentials-section'); // Wrapper for email/pass
+        const submitButton = document.getElementById('submitButton');
+        const verifyOtpButton = document.getElementById('verifyOtpButton');
+        const otpEmailDisplay = document.getElementById('otp-email-display');
+        const otpInputs = document.querySelectorAll('.otp-input');
+        const fullOtpInput = document.getElementById('full_otp');
+        const backToLoginButton = document.getElementById('backToLoginButton');
+        // Add Resend elements if implemented
+        // const resendOtpButton = document.getElementById('resendOtpButton');
+        // const resendTimer = document.getElementById('resendTimer');
+
+        // --- Function to switch between Login and OTP forms ---
+        function showOtpForm(email) {
+            loginFormContainer.classList.add('hidden');
+            otpFormContainer.classList.remove('hidden');
+            if (otpEmailDisplay && email) {
+                otpEmailDisplay.textContent = email; // Display user's email
+            }
+            otpInputs[0].focus(); // Focus the first OTP input
+        }
+
+        function showLoginForm() {
+            otpFormContainer.classList.add('hidden');
+            loginFormContainer.classList.remove('hidden');
+            document.getElementById('loginIdentifier').focus(); // Focus email/user input
+        }
+
+        // --- Login Form Submission ---
+        loginForm.addEventListener('submit', function(event) {
             event.preventDefault();
             const formData = new FormData(this);
 
-            fetch("{% url 'login' %}", {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...'; // Add spinner
+
+            fetch("{% url 'AudioXApp:login' %}", {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest' // Indicate AJAX
                 }
             })
-            .then(response => response.json())
+            .then(async response => {
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await response.json() : null;
+
+                if (!response.ok) {
+                    let errorMsg = `Login failed! Status: ${response.status}`;
+                    if (data && data.message) {
+                        errorMsg = data.message;
+                    } else if (!isJson) {
+                         // Try to get text if not JSON
+                         const textResponse = await response.text();
+                         errorMsg = textResponse || errorMsg;
+                    }
+                    throw new Error(errorMsg); // Throw error with message
+                }
+                return data; // Return parsed JSON data
+            })
             .then(data => {
                 if (data.status === 'success') {
+                    // Direct login successful (2FA disabled)
                     Swal.fire({
-                        title: 'Success',
-                        text: 'Login successful!',
-                        icon: 'success',
-                        showCancelButton: false,
-                        confirmButtonText: 'OK',
-                        allowOutsideClick: false,
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = "{% url 'myprofile' %}";
-                        }
+                        title: 'Success!', text: 'Login successful!', icon: 'success',
+                        confirmButtonColor: '#091e65', allowOutsideClick: false
+                    }).then(() => {
+                        window.location.href = "{% url 'AudioXApp:myprofile' %}"; // Redirect on success
                     });
+                } else if (data.status === '2fa_required') {
+                    // 2FA is required, switch to OTP form
+                    console.log("2FA required, showing OTP form for email:", data.email);
+                    showOtpForm(data.email); // Pass email to display
+                    // No need for SweetAlert here, UI changes instead
                 } else {
-                    Swal.fire('Error', data.message, 'error');
+                    // Handle other potential non-success statuses from backend
+                    Swal.fire({
+                        title: 'Login Error', text: data.message || 'An unexpected issue occurred.',
+                        icon: 'error', confirmButtonColor: '#091e65'
+                    });
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                Swal.fire('Error', 'An error occurred during login.', 'error');
+                console.error('Login Fetch Error:', error);
+                Swal.fire({
+                    title: 'Login Error',
+                    text: error.message || 'Could not connect to server. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#091e65'
+                });
+            })
+            .finally(() => {
+                // Re-enable button unless OTP form is shown
+                if (!otpFormContainer.classList.contains('hidden')) {
+                    // Keep login button disabled if OTP form is active
+                } else {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Sign In';
+                }
             });
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const messages = JSON.parse(document.getElementById('django-messages').textContent);
-            messages.forEach(message => {
-                Swal.fire({
-                    title: message.tags ? message.tags.charAt(0).toUpperCase() + message.tags.slice(1) : '',
-                    text: message.message,
-                    icon: message.tags ? message.tags : 'info',
+        // --- OTP Input Handling ---
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                // Move focus to next input if a digit is entered
+                if (input.value.length === 1 && index < otpInputs.length - 1) {
+                    otpInputs[index + 1].focus();
+                }
+                // Combine OTP values
+                let combinedOtp = '';
+                otpInputs.forEach(i => combinedOtp += i.value);
+                fullOtpInput.value = combinedOtp; // Update hidden input
+
+                // Optional: Auto-submit if 6 digits entered
+                if (combinedOtp.length === 6) {
+                     verifyOtpButton.focus(); // Focus verify button
+                     // verifyOtpButton.click(); // Or automatically click verify
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                // Move focus backward on backspace if input is empty
+                if (e.key === 'Backspace' && input.value.length === 0 && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+                // Allow only digits and navigation keys
+                if (!/[0-9]/.test(e.key) && !['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete'].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+
+             // Select content on focus for easy replacement
+             input.addEventListener('focus', () => input.select());
+        });
+
+        // --- OTP Verification Button Click ---
+        if (verifyOtpButton) {
+            verifyOtpButton.addEventListener('click', function() {
+                const enteredOtp = fullOtpInput.value;
+
+                if (enteredOtp.length !== 6) {
+                    Swal.fire({ title: 'Incomplete Code', text: 'Please enter all 6 digits of the verification code.', icon: 'warning', confirmButtonColor: '#091e65' });
+                    return;
+                }
+
+                verifyOtpButton.disabled = true;
+                verifyOtpButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verifying...';
+
+                // *** NEED A NEW URL AND VIEW FOR OTP VERIFICATION ***
+                fetch("{% url 'AudioXApp:verify_login_otp' %}", { // Replace with your actual OTP verification URL name
+                    method: 'POST',
+                    body: JSON.stringify({ otp: enteredOtp }), // Send OTP as JSON
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(async response => {
+                    const isJson = response.headers.get('content-type')?.includes('application/json');
+                    const data = isJson ? await response.json() : null;
+                    if (!response.ok) {
+                        let errorMsg = `Verification failed! Status: ${response.status}`;
+                        if (data && data.message) { errorMsg = data.message; }
+                        throw new Error(errorMsg);
+                    }
+                    return data;
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            title: 'Success!', text: 'Verification successful! Logging in...', icon: 'success',
+                            confirmButtonColor: '#091e65', allowOutsideClick: false, timer: 1500, showConfirmButton: false
+                        }).then(() => {
+                            window.location.href = "{% url 'AudioXApp:myprofile' %}"; // Redirect on success
+                        });
+                    } else {
+                        // Handle specific errors like 'invalid_otp', 'expired_otp' from backend
+                        Swal.fire({ title: 'Verification Failed', text: data.message || 'Invalid OTP entered.', icon: 'error', confirmButtonColor: '#091e65' });
+                        // Clear OTP inputs on failure
+                        otpInputs.forEach(input => input.value = '');
+                        fullOtpInput.value = '';
+                        otpInputs[0].focus();
+                    }
+                })
+                .catch(error => {
+                    console.error('OTP Verification Error:', error);
+                    Swal.fire({ title: 'Error', text: error.message || 'An error occurred during verification.', icon: 'error', confirmButtonColor: '#091e65' });
+                })
+                .finally(() => {
+                    verifyOtpButton.disabled = false;
+                    verifyOtpButton.innerHTML = 'Verify Code';
                 });
             });
+        }
+
+        // --- Back to Login Button ---
+        if (backToLoginButton) {
+            backToLoginButton.addEventListener('click', () => {
+                // Clear OTP fields and session data if necessary (backend might handle session clearing)
+                otpInputs.forEach(input => input.value = '');
+                fullOtpInput.value = '';
+                // Clear relevant session keys if needed (optional, depends on flow)
+                // Example: fetch('/clear-2fa-session/');
+                showLoginForm(); // Show the main login form again
+                // Re-enable the main submit button
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Sign In';
+            });
+        }
+
+
+        // --- Password Visibility Toggle ---
+        document.querySelectorAll('.password-toggle').forEach(button => {
+            button.addEventListener('click', function() {
+                const passwordInput = this.previousElementSibling;
+                const icon = this.querySelector('i');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            });
         });
 
-
-        document.querySelector('.fa-eye').addEventListener('click', function() {
-            const passwordInput = document.getElementById('password');
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                this.classList.remove('fa-eye');
-                this.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                this.classList.remove('fa-eye-slash');
-                this.classList.add('fa-eye');
+        // --- Django Messages Handling ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const messagesElement = document.getElementById('django-messages');
+            if (messagesElement && messagesElement.textContent.trim() !== '[]') {
+                try {
+                    const messages = JSON.parse(messagesElement.textContent);
+                    messages.forEach(message => {
+                        let iconType = 'info'; let title = 'Info'; let color = '#60a5fa';
+                        if (message.tags.includes('success')) { iconType = 'success'; title = 'Success'; color = '#091e65'; }
+                        else if (message.tags.includes('error')) { iconType = 'error'; title = 'Error'; color = '#091e65'; }
+                        else if (message.tags.includes('warning')) { iconType = 'warning'; title = 'Warning'; }
+                        else if (message.tags) { title = message.tags.charAt(0).toUpperCase() + message.tags.slice(1); }
+                        Swal.fire({ title: title, text: message.message, icon: iconType, confirmButtonColor: color });
+                    });
+                } catch (e) { console.error("Could not parse Django messages JSON:", e); }
             }
         });
 
     </script>
 
-    <script id="django-messages" type="application/json">
+    <script id="django-messages" type="application/json" style="display: none;">
         {% autoescape off %}
         [
             {% for message in messages %}

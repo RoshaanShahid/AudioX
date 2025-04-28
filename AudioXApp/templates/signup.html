@@ -24,26 +24,40 @@
             }
         }
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Apply Inter font */
+        }
+        /* Add some subtle input focus styling */
+        input:focus {
+             box-shadow: 0 0 0 2px theme('colors.primary-light');
+        }
+        /* Optional: Style SweetAlert confirm button globally if desired */
+        /* .swal2-confirm { background-color: #091e65 !important; } */
+    </style>
 </head>
 
-<body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans">
+<body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans p-4">
     <div class="bg-white rounded-3xl shadow-xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row">
 
         <div class="w-full md:w-1/2 p-8 md:p-12">
             <div class="flex flex-col items-center mb-6">
-                <a href="/Home" class="flex items-center justify-center">
-                    <img alt="Logo" class="w-24 h-24 mr-3" src="{% static 'img/loginlogo.png' %}" />
+                 <a href="{% url 'AudioXApp:home' %}" class="flex items-center justify-center">
+                    <img alt="Logo" class="w-24 h-24 mr-3" src="{% static 'img/loginlogo.png' %}" onerror="this.onerror=null; this.src='https://placehold.co/96x96/091e65/ffffff?text=Logo';" />
                 </a>
-                <a href="/Home" class="md:hidden text-gray-500 hover:text-gray-700 mt-2">
+                 <a href="{% url 'AudioXApp:home' %}" class="md:hidden text-gray-500 hover:text-gray-700 mt-2 absolute top-4 right-4">
                     <i class="fas fa-times text-xl"></i>
                 </a>
             </div>
-            <h2 class="text-2xl md:text-3xl font-bold text-primary mb-4">Create an Account</h2>
-            <p class="text-gray-600 mb-8">Sign up to get started.</p>
+            <h2 class="text-2xl md:text-3xl font-bold text-primary mb-4 text-center md:text-left">Create an Account</h2>
+            <p class="text-gray-600 mb-8 text-center md:text-left">Sign up to get started.</p>
 
             <div class="flex justify-center mb-6">
                 <button class="flex items-center justify-center w-full py-2.5 px-5 border border-gray-300 rounded-full text-gray-700 hover:bg-gray-100 transition-colors duration-200">
-                    <img src="https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-512.png" alt="Google Logo" class="w-6 h-6 mr-3">
+                    <img src="https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-512.png" alt="Google Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/eeeeee/999999?text=G';">
                     <span>Sign up using Google</span>
                 </button>
             </div>
@@ -70,8 +84,8 @@
                     <label for="email" class="sr-only">Email Address</label>
                     <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200"
                            placeholder="Email Address" type="email" name="email" id="email" required />
-                    <button type="button" id="sendOtpButton"
-                            class="mt-2 w-full bg-primary text-white py-2 rounded-xl hover:bg-primary-light transition-colors">
+                     <button type="button" id="sendOtpButton"
+                            class="mt-2 w-full bg-primary text-white py-2 rounded-xl hover:bg-primary-light transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                         Send OTP
                     </button>
                 </div>
@@ -84,14 +98,15 @@
                 <div>
                     <label for="phone" class="sr-only">Phone Number (Optional)</label>
                     <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200"
-                           placeholder="Phone Number (Optional)" type="text" name="phone" id="phone">
-                </div>
+                           placeholder="Phone Number (Optional)" type="tel" name="phone" id="phone"> </div>
                 <div>
                     <label for="password" class="sr-only">Password</label>
                     <div class="relative">
                         <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200 pr-12"
                                placeholder="Password" type="password" name="password" id="password" required />
-                        <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"></i>
+                        <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors password-toggle">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
                 </div>
                 <div>
@@ -99,148 +114,343 @@
                     <div class="relative">
                         <input class="w-full px-4 py-3 border border-gray-300 rounded-xl placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-primary transition duration-200 pr-12"
                                placeholder="Confirm Password" type="password" name="confirm-password" id="confirm-password" required/>
-                        <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"></i>
+                        <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700 transition-colors password-toggle">
+                             <i class="fas fa-eye"></i>
+                        </button>
                     </div>
+                    <p id="password-match-error" class="text-red-500 text-sm mt-1 hidden">Passwords do not match.</p>
                 </div>
 
-                <button class="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl transition duration-200"
+                <button id="submitButton" class="w-full bg-primary hover:bg-primary-light text-white py-3 rounded-xl transition duration-200"
                         type="submit">
                     Sign Up
                 </button>
             </form>
+
+             <p class="mt-6 text-center text-gray-600">
+                Already have an account?
+                <a href="{% url 'AudioXApp:login' %}" class="text-primary hover:underline font-semibold">Sign In</a>
+            </p>
         </div>
 
         <div class="hidden md:flex w-1/2 bg-gradient-to-r from-primary to-primary-light text-white p-12 justify-center items-center rounded-r-3xl">
             <div class="text-center">
-               <i class="fas fa-sign-in-alt text-4xl mb-4"></i>
-                <h2 class="text-3xl font-bold mb-4">Already have an account?</h2>
-                <p class="mb-6 text-lg">Login and continue your journey with us!</p>
-                <a href="{% url 'login' %}" class="bg-white text-primary px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition duration-200">
+               <i class="fas fa-user-plus text-6xl mb-6 text-accent"></i> <h2 class="text-3xl font-bold mb-4">Welcome Back!</h2>
+                <p class="mb-6 text-lg">Already have an account? Login and continue your journey with us!</p>
+                 <a href="{% url 'AudioXApp:login' %}" class="bg-white text-primary px-8 py-3 rounded-xl font-semibold hover:bg-gray-100 transition duration-200 shadow-md">
                     Sign In
                 </a>
             </div>
         </div>
     </div>
-    <script>
 
-        document.getElementById('sendOtpButton').addEventListener('click', function() {
-            const email = document.getElementById('email').value;
-            if (!email) {
-                Swal.fire('Error', 'Please enter your email address.', 'error');
+    <script>
+        // --- OTP Sending Logic ---
+        const sendOtpButton = document.getElementById('sendOtpButton');
+        const emailInput = document.getElementById('email');
+        const otpInput = document.getElementById('otp');
+        const emailVerifiedInput = document.getElementById('emailVerified');
+
+        sendOtpButton.addEventListener('click', function() {
+            const email = emailInput.value.trim(); // Trim whitespace
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email validation
+
+            if (!email || !emailRegex.test(email)) { // Check if email is empty or invalid format
+                Swal.fire({ // Added color
+                    title: 'Error',
+                    text: 'Please enter a valid email address.',
+                    icon: 'error',
+                    confirmButtonColor: '#091e65' // Set confirm button color
+                });
                 return;
             }
 
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            // Disable button while sending
+            sendOtpButton.disabled = true;
+            sendOtpButton.textContent = 'Sending...';
 
-            fetch("{% url 'send_otp' %}", {
+            fetch("{% url 'AudioXApp:send_otp' %}", { // Added namespace
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value // More robust CSRF
                 },
-                body: `email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`
+                body: `email=${encodeURIComponent(email)}` // Only send email
             })
-            .then(response => response.json())
+            .then(async response => { // Make the callback async to use await
+                // Check if response is ok (status 200-299)
+                if (!response.ok) {
+                    // *** REVISED ERROR HANDLING START ***
+                    let errorMsg = `HTTP error! Status: ${response.status}`; // Default error message
+                    try {
+                        // Attempt to parse the response body as JSON
+                        const errData = await response.json();
+                        // If parsing succeeds and message exists, use it
+                        if (errData && errData.message) {
+                            errorMsg = errData.message;
+                        }
+                    } catch (jsonParseError) {
+                        // If JSON parsing fails, log it but keep the default HTTP error message
+                        console.error("Could not parse error response as JSON:", jsonParseError);
+                        // Optionally, you could try response.text() here as a fallback
+                    }
+                    // Throw an error with the determined message
+                    throw new Error(errorMsg);
+                    // *** REVISED ERROR HANDLING END ***
+                }
+                // If response IS ok, parse the JSON body for the success case
+                return response.json();
+            })
             .then(data => {
+                 // This block only runs if the response was OK (status 200-299)
                 if (data.status === 'success') {
-                    Swal.fire('Success', 'OTP sent to your email!', 'success');
+                    Swal.fire({ // Added color to success for consistency (optional)
+                        title: 'Success',
+                        text: data.message || 'OTP sent to your email!',
+                        icon: 'success',
+                        confirmButtonColor: '#091e65' // Set confirm button color
+                    });
+                    otpInput.focus();
                 } else {
-                    Swal.fire('Error', data.message || 'Failed to send OTP.', 'error');
+                    // This case might not be strictly necessary if non-ok responses are caught above
+                    // but kept as a fallback.
+                    Swal.fire({ // Added color
+                        title: 'Error',
+                        text: data.message || 'An unexpected issue occurred.',
+                        icon: 'error',
+                        confirmButtonColor: '#091e65' // Set confirm button color
+                    });
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                Swal.fire('Error', 'An error occurred while sending the OTP.', 'error');
+                // Catch errors thrown from the !response.ok block or network errors
+                console.error('Error sending OTP request:', error);
+                // *** Display the specific error message caught ***
+                Swal.fire({ // Added color
+                    title: 'Error',
+                    text: error.message || 'An unknown error occurred while sending the OTP.',
+                    icon: 'error',
+                    confirmButtonColor: '#091e65' // Set confirm button color
+                });
+            })
+            .finally(() => {
+                 // Re-enable button after request finishes
+                 sendOtpButton.disabled = false;
+                 sendOtpButton.textContent = 'Send OTP';
             });
         });
 
+        // --- Form Submission Logic ---
+        const signupForm = document.getElementById('signupForm');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        const passwordMatchError = document.getElementById('password-match-error');
+        const submitButton = document.getElementById('submitButton');
 
-
-        document.getElementById('signupForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const enteredOTP = document.getElementById('otp').value;
-            if (enteredOTP) {
-                document.getElementById('emailVerified').value = 'true';
+        // Password confirmation check
+        function validatePasswords() {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                passwordMatchError.classList.remove('hidden');
+                confirmPasswordInput.classList.add('border-red-500'); // Add red border
+                return false;
             } else {
-                Swal.fire('Error', 'Please verify your email with OTP.', 'error');
-                return;
+                passwordMatchError.classList.add('hidden');
+                confirmPasswordInput.classList.remove('border-red-500'); // Remove red border
+                return true;
             }
+        }
+
+        // Add event listeners for real-time validation
+        passwordInput.addEventListener('input', validatePasswords);
+        confirmPasswordInput.addEventListener('input', validatePasswords);
+
+
+        signupForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Re-validate passwords on submit
+            if (!validatePasswords()) {
+                 Swal.fire({ // Added color
+                    title: 'Error',
+                    text: 'Passwords do not match.',
+                    icon: 'error',
+                    confirmButtonColor: '#091e65' // Set confirm button color
+                 });
+                 confirmPasswordInput.focus(); // Focus the mismatching field
+                 return; // Stop submission
+            }
+
+            const enteredOTP = otpInput.value.trim(); // Trim OTP input
+
+            // Check if OTP is entered (basic check, server verifies correctness)
+            if (!enteredOTP) {
+                Swal.fire({ // Added color
+                    title: 'Error',
+                    text: 'Please enter the OTP sent to your email.',
+                    icon: 'error',
+                    confirmButtonColor: '#091e65' // Set confirm button color
+                });
+                otpInput.focus(); // Focus the OTP field
+                return; // Stop submission
+            }
+
+            // Set emailVerified to true *only if* OTP field has content.
+            // The backend will perform the actual OTP verification.
+            emailVerifiedInput.value = 'true';
+
+            // Disable submit button during submission
+            submitButton.disabled = true;
+            submitButton.textContent = 'Signing Up...';
+
 
             const formData = new FormData(this);
 
-            fetch("{% url 'signup' %}", {
+            fetch("{% url 'AudioXApp:signup' %}", { // Added namespace
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    // FormData sets Content-Type automatically, including boundary
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value // More robust CSRF
                 }
             })
-            .then(response => response.json())
+            .then(async response => { // Make async
+                 // Check if response is ok (status 200-299) before parsing JSON
+                 if (!response.ok) {
+                    // *** REVISED ERROR HANDLING START ***
+                    let errorMsg = `Signup failed! Status: ${response.status}`; // Default
+                    try {
+                        const errData = await response.json();
+                        if (errData && errData.message) {
+                            errorMsg = errData.message;
+                        }
+                    } catch (jsonParseError) {
+                         console.error("Could not parse signup error response as JSON:", jsonParseError);
+                    }
+                    throw new Error(errorMsg);
+                    // *** REVISED ERROR HANDLING END ***
+                 }
+                 return response.json();
+            })
             .then(data => {
+                // This block runs only if signup response was OK
                 if (data.status === 'success') {
                     Swal.fire({
-                        title: 'Success',
-                        text: data.message,
+                        title: 'Success!',
+                        text: data.message || 'Account created successfully!', // Use backend message
                         icon: 'success',
                         showCancelButton: false,
-                        confirmButtonText: 'LOGIN',
-                        allowOutsideClick: false,
+                        confirmButtonText: 'Go to Login',
+                        confirmButtonColor: '#091e65', // Match primary color
+                        allowOutsideClick: false, // Prevent closing by clicking outside
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = "{% url 'login' %}";
+                            window.location.href = "{% url 'AudioXApp:login' %}"; // Added namespace
                         }
                     });
                 } else {
-                    Swal.fire('Error', data.message, 'error');
+                     // Fallback if status is not 'success' even with 2xx response
+                    Swal.fire({ // Added color
+                        title: 'Signup Error',
+                        text: data.message || 'An unknown error occurred during signup.',
+                        icon: 'error',
+                        confirmButtonColor: '#091e65' // Set confirm button color
+                    });
+                    emailVerifiedInput.value = 'false'; // Reset verification status
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                Swal.fire('Error', 'An error occurred during signup.', 'error');
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const messages = JSON.parse(document.getElementById('django-messages').textContent);
-            messages.forEach(message => {
-                Swal.fire({
-                    title: message.tags ? message.tags.charAt(0).toUpperCase() + message.tags.slice(1) : '',
-                    text: message.message,
-                    icon: message.tags ? message.tags : 'info',
+                 // Catch errors thrown from !response.ok block or network errors
+                console.error('Error during signup fetch:', error);
+                 // *** Display the specific error message caught ***
+                Swal.fire({ // Added color
+                    title: 'Signup Error',
+                    text: error.message || 'An error occurred. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#091e65' // Set confirm button color
                 });
+                emailVerifiedInput.value = 'false'; // Reset verification status
+            })
+            .finally(() => {
+                // Re-enable submit button
+                submitButton.disabled = false;
+                submitButton.textContent = 'Sign Up';
             });
         });
 
-        document.querySelectorAll('.fa-eye').forEach(icon => {
-        icon.addEventListener('click', function() {
-            const passwordInput = this.previousElementSibling;
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                this.classList.remove('fa-eye');
-                this.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                this.classList.remove('fa-eye-slash');
-                this.classList.add('fa-eye');
+        // --- Password Visibility Toggle ---
+        document.querySelectorAll('.password-toggle').forEach(button => {
+            button.addEventListener('click', function() {
+                const passwordInput = this.previousElementSibling; // Get the input field before the button
+                const icon = this.querySelector('i'); // Get the icon inside the button
+
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+
+        // --- Django Messages Handling (Optional, if you still use Django messages framework elsewhere) ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const messagesElement = document.getElementById('django-messages');
+            if (messagesElement && messagesElement.textContent.trim() !== '[]') {
+                try {
+                    const messages = JSON.parse(messagesElement.textContent);
+                    messages.forEach(message => {
+                        // Map Django message tags to SweetAlert2 icons
+                        let iconType = 'info'; // Default
+                        let title = 'Info';    // Default
+                        let color = '#60a5fa'; // Default accent color for info/warning
+
+                        if (message.tags.includes('success')) {
+                             iconType = 'success';
+                             title = 'Success';
+                             color = '#091e65'; // Use primary for success
+                        } else if (message.tags.includes('error')) {
+                             iconType = 'error';
+                             title = 'Error';
+                             color = '#091e65'; // Use primary for error
+                        } else if (message.tags.includes('warning')) {
+                             iconType = 'warning';
+                             title = 'Warning';
+                             // color = '#facc15'; // Example yellow for warning
+                        } else if (message.tags) {
+                            // Use tag as title if not standard
+                             title = message.tags.charAt(0).toUpperCase() + message.tags.slice(1);
+                        }
+
+
+                        Swal.fire({
+                            title: title,
+                            text: message.message,
+                            icon: iconType,
+                            confirmButtonColor: color // Set color based on type
+                        });
+                    });
+                } catch (e) {
+                    console.error("Could not parse Django messages JSON:", e);
+                }
             }
         });
-    });
-</script>
+    </script>
 
-<script id="django-messages" type="application/json">
-    {% autoescape off %}
-    [
-        {% for message in messages %}
-            {
-                "message": "{{ message|escapejs }}",
-                "tags": "{{ message.tags|escapejs }}"
-            }
-            {% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ]
-    {% endautoescape %}
-</script>
+    <script id="django-messages" type="application/json" style="display: none;">
+        {% autoescape off %}
+        [
+            {% for message in messages %}
+                {
+                    "message": "{{ message|escapejs }}",
+                    "tags": "{{ message.tags|escapejs }}"
+                }
+                {% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+        {% endautoescape %}
+    </script>
 </body>
-
 </html>

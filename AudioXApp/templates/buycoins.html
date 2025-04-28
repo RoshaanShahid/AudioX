@@ -4,150 +4,395 @@
 {% block title %}AudioX - Acquire Coins{% endblock %}
 
 {% block content %}
-<div class="bg-gradient-to-br from-gray-50 to-gray-200 min-h-screen py-16">
-    <div class="container mx-auto px-4">
-        <h1 class="text-4xl md:text-5xl font-extrabold text-center text-[#091e65] mb-6 md:mb-10">
-            Enhance Your AudioX Experience
-        </h1>
-        <p class="text-center text-gray-600 text-lg md:text-xl mb-12 md:mb-16 max-w-3xl mx-auto">
-            Purchase coins to unlock premium features, exclusive content, and more.
-        </p>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+<style>
+    :root {
+        --theme-primary-v9: #091e65;
+        --theme-primary-hover-v9: #1e3a8a;
+        --theme-primary-rgb-v9: 9, 30, 101;
+        --theme-focus-ring-v9: rgba(var(--theme-primary-rgb-v9), 0.3);
+        --theme-light-bg-v9: #f0f3ff;
+        --text-primary-v9: #111827;
+        --text-secondary-v9: #374151;
+        --text-muted-v9: #6b7280;
+        --border-light-v9: #f3f4f6;
+        --border-medium-v9: #e5e7eb;
+        --card-shadow-v9: 0 4px 12px -1px rgba(0, 0, 0, 0.05);
+        --card-hover-shadow-v9: 0 10px 20px -3px rgba(0, 0, 0, 0.07);
+        --accent-gold-v9: #f59e0b;
+        --accent-silver-v9: #9ca3af;
+        --accent-bronze-v9: #ca8a04;
+    }
 
-            {% comment %} Coin Pack Cards {% endcomment %}
-            <div class="bg-white rounded-3xl shadow-lg p-8 text-center transform transition duration-500 hover:scale-105 hover:shadow-xl relative overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600 opacity-10 rounded-3xl"></div>
-                <div class="relative z-10">
-                    <i class="fas fa-coins text-5xl text-red-500 mb-4"></i>
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">100 Coins</h2>
-                    <p class="text-red-500 mb-4">Bronze Pack</p>
-                    <p class="text-3xl font-bold text-gray-800 mb-6">PKR 99</p>
-                    <button data-pack-name="Bronze Pack" data-pack-coins="100" data-pack-price="99" class="buy-coins-btn w-full bg-gradient-to-r from-red-500 to-red-700 hover:from-red-700 hover:to-red-900 text-white font-bold py-3 px-8 rounded-full transition duration-300 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50">
-                        Buy Now
-                    </button>
+    body {
+        background-color: #ffffff;
+        color: var(--text-primary-v9);
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    .hero-section-v9 {
+        padding: 5rem 0 4rem 0; /* Reduced bottom padding */
+        background-color: #f9fafb; /* Light background */
+        border-bottom: 1px solid var(--border-medium-v9);
+    }
+
+    .card-v9 {
+        background-color: #ffffff;
+        border-radius: 0.75rem;
+        box-shadow: var(--card-shadow-v9);
+        border: 1px solid var(--border-medium-v9);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        position: relative;
+    }
+    .card-v9:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--card-hover-shadow-v9);
+    }
+    .card-v9.highlight {
+        border-color: var(--theme-primary-v9);
+        background: linear-gradient(160deg, var(--theme-light-bg-v9) 0%, #ffffff 100%);
+        box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb-v9), 0.1), var(--card-hover-shadow-v9);
+        transform: scale(1.02); /* Slightly larger */
+    }
+     .card-v9.highlight:hover {
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 0 0 3px rgba(var(--theme-primary-rgb-v9), 0.1), var(--card-hover-shadow-v9);
+     }
+
+    .btn-v9 {
+        padding: 0.8rem 1.5rem;
+        border-radius: 0.625rem;
+        font-weight: 600;
+        transition: all 0.25s ease-in-out;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: none;
+        line-height: 1.375rem;
+        font-size: 0.875rem;
+        text-align: center;
+        width: 100%;
+    }
+    .btn-v9-primary {
+        background-color: var(--theme-primary-v9);
+        color: white;
+        box-shadow: 0 2px 4px 0 rgba(var(--theme-primary-rgb-v9), 0.15);
+    }
+    .btn-v9-primary:hover {
+        background-color: var(--theme-primary-hover-v9);
+        box-shadow: 0 4px 8px 0 rgba(var(--theme-primary-rgb-v9), 0.2);
+        transform: translateY(-1px);
+    }
+    .btn-v9-secondary {
+        background-color: #ffffff;
+        color: var(--text-secondary-v9);
+        border: 1px solid var(--border-medium-v9);
+        box-shadow: 0 1px 1px 0 rgba(0,0,0,0.03);
+    }
+    .btn-v9-secondary:hover {
+        background-color: #f9fafb;
+        border-color: #d1d5db;
+    }
+    .btn-v9-outline {
+        background-color: transparent;
+        color: var(--theme-primary-v9);
+        border: 1.5px solid var(--theme-primary-v9);
+        box-shadow: none;
+    }
+     .btn-v9-outline:hover {
+        background-color: var(--theme-light-bg-v9);
+     }
+
+    .highlight-badge-v9 {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background-color: var(--theme-primary-v9);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .feature-section-v9 {
+        background-color: #ffffff;
+    }
+    .feature-item-v9 {
+        display: flex;
+        align-items: flex-start; /* Align icon top */
+        gap: 1.25rem;
+        padding: 1.5rem 0;
+    }
+
+    .feature-icon-v9 {
+        flex-shrink: 0;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--theme-light-bg-v9);
+        color: var(--theme-primary-v9);
+        font-size: 1.25rem;
+    }
+
+    #confirmation-modal-v9 { transition: opacity 0.3s ease; }
+    #modal-content-el-v9 { transition: transform 0.3s ease, opacity 0.3s ease; }
+    #success-message-modal-v9 { transition: opacity 0.3s ease; }
+    #success-modal-content-v9 { transition: transform 0.3s ease, opacity 0.3s ease; }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none; appearance: none; margin: 0;
+    }
+    input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+    .coin-display-v9 {
+        font-weight: 700; /* Bold */
+        letter-spacing: -0.02em;
+        line-height: 1;
+        color: var(--text-primary-v9);
+    }
+    .coin-label-v9 {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-muted-v9);
+        margin-left: 0.25rem;
+        display: inline-block;
+        vertical-align: baseline;
+    }
+    .price-display-v9 {
+        font-weight: 600; /* Semibold */
+        color: var(--theme-primary-v9);
+    }
+    .pack-icon-v9 {
+        height: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+    }
+    .pack-icon-v9.bronze { color: var(--accent-bronze-v9); }
+    .pack-icon-v9.silver { color: var(--accent-silver-v9); }
+    .pack-icon-v9.gold { color: var(--accent-gold-v9); }
+    .card-v9.highlight .pack-icon-v9.gold { color: var(--theme-primary-v9); opacity: 1; }
+
+    .card-header-v9 {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-medium-v9);
+        background-color: #f9fafb; /* Light header */
+    }
+    .card-v9.highlight .card-header-v9 {
+        background-color: var(--theme-light-bg-v9);
+        border-bottom-color: rgba(var(--theme-primary-rgb-v9), 0.2);
+    }
+
+</style>
+
+<div class="min-h-screen">
+
+    <div class="hero-section-v9">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-var(--theme-primary-v9) mb-4 tracking-tight leading-tight">
+                Acquire AudioX Coins
+            </h1>
+            <p class="text-lg md:text-xl text-var(--text-secondary-v9) max-w-3xl mx-auto">
+                Enhance your listening experience. Purchase coins to unlock premium content, support creators, and access exclusive features.
+            </p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16 md:mb-24 relative z-20"> 
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+
+            <div class="card-v9">
+                <div class="card-header-v9 text-center">
+                    <i class="fas fa-shield-alt text-4xl pack-icon-v9 bronze"></i>
+                    <h2 class="text-xl font-semibold text-var(--text-primary-v9)">Bronze Pack</h2>
+                </div>
+                <div class="p-8 flex flex-col flex-grow">
+                    <div class="text-center mb-6 flex-grow">
+                        <p class="text-5xl coin-display-v9">100<span class="coin-label-v9">Coins</span></p>
+                        <p class="text-sm text-var(--text-muted-v9) mt-2">Ideal for starting out</p>
+                    </div>
+                    <p class="text-3xl price-display-v9 text-center mb-8">PKR 99</p>
+                    <div class="mt-auto">
+                        <button data-pack-name="Bronze Pack" data-pack-coins="100" data-pack-price="99" class="buy-coins-btn btn-v9 btn-v9-outline">
+                            Choose Bronze
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-3xl shadow-lg p-8 text-center transform transition duration-500 hover:scale-105 hover:shadow-xl relative overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-yellow-400 to-yellow-600 opacity-10 rounded-3xl"></div>
-                <div class="relative z-10">
-                    <i class="fas fa-coins text-5xl text-yellow-500 mb-4"></i>
-                     <h2 class="text-2xl font-semibold text-gray-800 mb-2">250 Coins</h2>
-                    <p class="text-yellow-500 mb-4">Emerald Pack</p>
-                    <p class="text-3xl font-bold text-gray-800 mb-6">PKR 225</p>
-                    <button data-pack-name="Emerald Pack" data-pack-coins="250" data-pack-price="225" class="buy-coins-btn w-full bg-gradient-to-r from-yellow-500 to-yellow-700 hover:from-yellow-700 hover:to-yellow-900 text-white font-bold py-3 px-8 rounded-full transition duration-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50">
-                        Buy Now
-                    </button>
+            <div class="card-v9 highlight relative">
+                 <div class="highlight-badge-v9">Popular</div>
+                 <div class="card-header-v9 text-center">
+                    <i class="fas fa-star text-4xl pack-icon-v9 gold"></i>
+                    <h2 class="text-xl font-bold text-var(--theme-primary-v9)">Gold Pack</h2>
+                 </div>
+                 <div class="p-8 flex flex-col flex-grow">
+                    <div class="text-center mb-6 flex-grow">
+                        <p class="text-6xl coin-display-v9">500<span class="coin-label-v9">Coins</span></p>
+                        <p class="text-sm text-var(--text-muted-v9) mt-2">Best value for avid listeners</p>
+                    </div>
+                    <p class="text-3xl price-display-v9 text-center mb-8">PKR 400</p>
+                    <div class="mt-auto">
+                        <button data-pack-name="Gold Pack" data-pack-coins="500" data-pack-price="400" class="buy-coins-btn btn-v9 btn-v9-primary">
+                           Choose Gold
+                        </button>
+                    </div>
                 </div>
             </div>
 
-
-            <div class="bg-white rounded-3xl shadow-lg p-8 text-center transform transition duration-500 hover:scale-105 hover:shadow-xl relative overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-br from-[#091e65] to-[#06134d] opacity-10 rounded-3xl"></div>
-                <div class="absolute top-4 right-4 bg-gradient-to-r from-[#091e65] to-[#06134d] text-white text-sm font-bold px-6 py-2 rounded-full">
-                    Best Value
-                </div>
-                <div class="relative z-10">
-                    <i class="fas fa-coins text-5xl text-[#091e65] mb-4"></i>
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">500 Coins</h2>
-                    <p class="text-[#091e65] mb-4">Gold Pack</p>
-                    <p class="text-3xl font-bold text-gray-800 mb-6">PKR 400</p>
-                    <button data-pack-name="Gold Pack" data-pack-coins="500" data-pack-price="400" class="buy-coins-btn w-full bg-gradient-to-r from-[#091e65] to-[#06134d] hover:from-[#06134d] hover:to-[#091e65] text-white font-bold py-3 px-8 rounded-full transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-opacity-50">
-                        Buy Now
-                    </button>
+            <div class="card-v9">
+                 <div class="card-header-v9 text-center">
+                    <i class="fas fa-gem text-4xl pack-icon-v9 silver"></i>
+                    <h2 class="text-xl font-semibold text-var(--text-primary-v9)">Silver Pack</h2>
+                 </div>
+                 <div class="p-8 flex flex-col flex-grow">
+                    <div class="text-center mb-6 flex-grow">
+                        <p class="text-5xl coin-display-v9">250<span class="coin-label-v9">Coins</span></p>
+                        <p class="text-sm text-var(--text-muted-v9) mt-2">Perfect for regular users</p>
+                    </div>
+                    <p class="text-3xl price-display-v9 text-center mb-8">PKR 225</p>
+                    <div class="mt-auto">
+                        <button data-pack-name="Silver Pack" data-pack-coins="250" data-pack-price="225" class="buy-coins-btn btn-v9 btn-v9-outline">
+                            Choose Silver
+                        </button>
+                    </div>
                 </div>
             </div>
+
         </div>
 
-        <div class="mt-16 bg-white rounded-3xl shadow-lg p-8">
-             <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Why Buy AudioX Coins?</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <h3 class="text-xl font-semibold text-gray-700 mb-3"><i class="fas fa-gift text-blue-500 mr-2"></i> Gift Coins to Friends</h3>
-                        <p class="text-gray-600">Share the joy of AudioX by gifting coins to your friends.  They can use the coins to unlock premium features or content.</p>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-semibold text-gray-700 mb-3"><i class="fas fa-star text-yellow-500 mr-2"></i> Unlock Premium Features</h3>
-                        <p class="text-gray-600">Access exclusive features like ad-free listening, higher audio quality, and offline downloads.</p>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-semibold text-gray-700 mb-3"><i class="fas fa-microphone text-purple-500 mr-2"></i> Support Your Favorite Creators</h3>
-                        <p class="text-gray-600">Use coins to directly support the creators you love.  Show your appreciation for their hard work and help them create more amazing content.</p>
-                    </div>
-                    <div>
-                         <h3 class="text-xl font-semibold text-gray-700 mb-3"><i class="fas fa-lock text-green-500 mr-2"></i> Access Exclusive Content</h3>
-                        <p class="text-gray-600">Unlock exclusive content like bonus episodes, behind-the-scenes material, and early access to new releases.</p>
-                    </div>
-                </div>
+        <div class="feature-section-v9 mt-16 md:mt-24 p-8 md:p-12">
+             <h2 class="text-3xl md:text-4xl font-semibold text-gray-900 mb-10 md:mb-12 text-center">Coin <span style="color: var(--theme-primary-v9);">Advantages</span></h2>
+              <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+
+                  <div class="feature-item-v9">
+                      <div class="feature-icon-v9">
+                          <i class="fas fa-gift"></i>
+                      </div>
+                      <div>
+                          <h3 class="text-lg font-semibold text-var(--text-primary-v9) mb-1.5">Gift Audio Experiences</h3>
+                          <p class="text-var(--text-secondary-v9) text-sm leading-relaxed">Share the joy of stories by gifting coins to friends and family, allowing them to select their own audio adventures.</p>
+                      </div>
+                  </div>
+
+                  <div class="feature-item-v9">
+                      <div class="feature-icon-v9">
+                           <i class="fas fa-star"></i>
+                      </div>
+                      <div>
+                          <h3 class="text-lg font-semibold text-var(--text-primary-v9) mb-1.5">Unlock Premium Content</h3>
+                          <p class="text-var(--text-secondary-v9) text-sm leading-relaxed">Gain exclusive access to a curated library of premium audiobooks, bonus content, and early releases.</p>
+                      </div>
+                  </div>
+
+                  <div class="feature-item-v9">
+                      <div class="feature-icon-v9">
+                           <i class="fas fa-users"></i>
+                      </div>
+                      <div>
+                          <h3 class="text-lg font-semibold text-var(--text-primary-v9) mb-1.5">Support Creators Directly</h3>
+                          <p class="text-var(--text-secondary-v9) text-sm leading-relaxed">Show appreciation for talented narrators and authors. Your coin usage directly contributes to their continued work.</p>
+                      </div>
+                  </div>
+
+                  <div class="feature-item-v9">
+                      <div class="feature-icon-v9">
+                           <i class="fas fa-headphones-alt"></i>
+                      </div>
+                      <div>
+                           <h3 class="text-lg font-semibold text-var(--text-primary-v9) mb-1.5">Enhanced Listening Features</h3>
+                           <p class="text-var(--text-secondary-v9) text-sm leading-relaxed">Enjoy an uninterrupted, high-fidelity experience with ad-free listening and superior audio quality options.</p>
+                      </div>
+                  </div>
+
+              </div>
         </div>
     </div>
 </div>
 
-<div id="purchase-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="relative bg-white rounded-2xl shadow-lg w-full max-w-md mx-4 sm:mx-auto">
-        <button type="button" id="close-purchase-modal-btn" class="absolute top-3 right-4 text-gray-600 hover:text-gray-800 focus:outline-none">
-            <i class="fas fa-times text-xl"></i>
+<div id="purchase-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-md" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div id="modal-content-el-v9" class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-auto transform transition-all scale-95 opacity-0">
+        <button type="button" id="close-purchase-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none p-1 rounded-full hover:bg-gray-100 transition-colors">
+            <i class="fas fa-times text-lg"></i>
+            <span class="sr-only">Close modal</span>
         </button>
 
-        <div class="p-6 sm:p-8">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#091e65] via-blue-400 to-[#06134d] rounded-t-2xl"></div>
+        <div class="p-7 sm:p-8">
+            <div class="text-center mb-6">
+                 <div class="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 bg-var(--theme-light-bg-v8)">
+                    <i class="fas fa-shopping-cart text-2xl text-var(--theme-primary-v8)"></i>
+                 </div>
+                 <h2 id="modal-title" class="text-xl font-semibold text-gray-900">Confirm Your Purchase</h2>
+                 <p class="text-gray-500 text-sm mt-1.5">Please review your selected coin pack.</p>
+            </div>
 
-            <div class="flex items-center justify-center mb-6">
-                 <i class="fas fa-check-circle text-5xl text-green-500"></i>  </div>
-            <h2 id="modal-title" class="text-2xl font-bold text-[#091e65] text-center mb-1">Confirm Purchase</h2>
-            <p class="text-gray-400 text-sm text-center mb-6">Please review the details before proceeding.</p>
-
-            <div class="mb-6">
-                <div class="flex justify-between items-center border-b border-gray-200 py-2">
-                    <span class="text-gray-600">Pack:</span>
-                    <span id="confirm-pack-name" class="font-medium text-gray-900"></span>
+            <div class="mb-8 space-y-3.5 bg-gray-50 p-5 sm:p-6 rounded-lg border border-gray-200 text-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-var(--text-muted-v8)">Selected Pack:</span>
+                    <span id="confirm-pack-name" class="font-semibold text-var(--text-primary-v8)"></span>
                 </div>
-                <div class="flex justify-between items-center border-b border-gray-200 py-2">
-                    <span class="text-gray-600">Coins:</span>
-                    <span id="confirm-pack-coins" class="font-medium text-gray-900"></span>
+                <div class="flex justify-between items-center">
+                    <span class="text-var(--text-muted-v8)">Coins to Receive:</span>
+                    <span id="confirm-pack-coins" class="font-semibold text-var(--text-primary-v8)"></span>
                 </div>
-                <div class="flex justify-between items-center pt-2">
-                    <span class="text-gray-600">Price:</span>
-                    <span id="confirm-pack-price" class="font-bold text-xl text-[#091e65]"></span>
+                <div class="flex justify-between items-center pt-3 border-t border-gray-200 mt-3">
+                    <span class="text-var(--text-secondary-v8) font-semibold text-base">Total Amount:</span>
+                    <span id="confirm-pack-price" class="font-bold text-xl text-var(--theme-primary-v8)"></span>
                 </div>
             </div>
 
-
-            <div class="flex justify-center space-x-4">
-                <button id="confirm-purchase-btn" class="px-8 py-3 bg-gradient-to-r from-[#091e65] to-[#06134d] hover:from-[#06134d] hover:to-[#091e65] text-white rounded-full shadow-lg transition duration-300 ease-in-out font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transform hover:scale-105">
-                    Confirm
-                </button>
-                <button id="cancel-purchase-btn" class="px-8 py-3 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-full shadow-md transition duration-300 ease-in-out font-semibold focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+            <div class="flex flex-col sm:flex-row justify-end gap-3">
+                <button id="cancel-purchase-btn" type="button" class="btn-v9 btn-v9-secondary w-full sm:w-auto">
                     Cancel
                 </button>
+                <button id="confirm-purchase-btn" type="button" class="btn-v9 btn-v9-primary w-full sm:w-auto">
+                    Confirm & Proceed
+                </button>
             </div>
         </div>
-
-        <div class="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-[#06134d] via-blue-400 to-[#091e65] rounded-b-2xl"></div>
     </div>
 </div>
 
-<div id="success-message-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center" role="alert" aria-live="assertive">
-    <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 text-center relative">
-        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-500 via-green-400 to-green-600 rounded-t-2xl"></div>
-        <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Purchase Successful!</h2>
-        <p class="text-gray-600 mb-6">Thank you for your purchase.  Please reload the page to see your updated coin balance.</p>
-         <button id="close-success-modal-btn" class="px-8 py-3 bg-gradient-to-r from-green-500 to-green-700 hover:from-green-700 hover:to-green-900 text-white font-bold rounded-full shadow-md transition duration-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50">
-            Close
+<div id="success-message-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-md" role="alert" aria-live="assertive">
+    <div id="success-modal-content-v9" class="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto p-7 sm:p-8 text-center transform transition-all scale-95 opacity-0">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-5">
+           <i class="fas fa-check text-3xl text-green-600"></i>
+        </div>
+        <h2 class="text-xl font-semibold text-gray-900 mb-2.5">Purchase Successful!</h2>
+        <p class="text-var(--text-secondary-v8) mb-7 text-sm leading-relaxed">Your coins are now available in your wallet. Explore premium content or gift them to friends!</p>
+        <button id="close-success-modal-btn" class="btn-v9 bg-green-600 hover:bg-green-700 text-white w-full">
+            View My Wallet
         </button>
-        <div class="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-green-600 via-green-400 to-green-500 rounded-b-2xl"></div>
     </div>
 </div>
 
 {% endblock %}
 
 {% block javascript %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" integrity="sha512-yFjZbTYRCJodnuyGlsKamNE/LlEaEAxSUk5Y+D00/SaPMPwoYDA+uSBUH/NwXmJdlwVTbWzP/WfUqLhO7RI/wA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const buyButtons = document.querySelectorAll('.buy-coins-btn');
     const confirmationModal = document.getElementById('purchase-confirmation-modal');
+    const modalContentEl = document.getElementById('modal-content-el-v9'); /* Updated ID */
     const confirmPackName = document.getElementById('confirm-pack-name');
     const confirmPackCoins = document.getElementById('confirm-pack-coins');
     const confirmPackPrice = document.getElementById('confirm-pack-price');
@@ -155,20 +400,55 @@ document.addEventListener('DOMContentLoaded', function() {
     const cancelPurchaseBtn = document.getElementById('cancel-purchase-btn');
     const closePurchaseModalBtn = document.getElementById('close-purchase-modal-btn');
     const successModal = document.getElementById('success-message-modal');
+    const successModalContent = document.getElementById('success-modal-content-v9'); /* Updated ID */
     const closeSuccessModalBtn = document.getElementById('close-success-modal-btn');
     let purchaseData = {};
 
-    function showConfirmationModal() {
-        confirmationModal.classList.remove('hidden');
+    function showModal(modal, content) {
+        if(modal && content) {
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('opacity-0', 'scale-95');
+                content.classList.add('opacity-100', 'scale-100');
+            });
+        }
     }
-    function hideConfirmationModal() {
-        confirmationModal.classList.add('hidden');
+
+    function hideModal(modal, content) {
+        if(modal && content) {
+             content.classList.remove('opacity-100', 'scale-100');
+             content.classList.add('opacity-0', 'scale-95');
+             modal.classList.add('opacity-0');
+             setTimeout(() => {
+                 modal.classList.add('hidden');
+             }, 300);
+        }
     }
-    function showSuccessModal() {
-        successModal.classList.remove('hidden');
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
-    function hideSuccessModal() {
-        successModal.classList.add('hidden');
+
+    function showPurchaseError(message) {
+        Swal.fire({
+            title: 'Purchase Error',
+            text: message,
+            icon: 'error',
+            confirmButtonColor: '#091e65',
+             customClass: { popup: 'text-sm rounded-xl' }
+        });
     }
 
     buyButtons.forEach(button => {
@@ -179,66 +459,94 @@ document.addEventListener('DOMContentLoaded', function() {
                 packName: this.dataset.packName
             };
 
-            confirmPackName.textContent = purchaseData.packName;
-            confirmPackCoins.textContent = `${purchaseData.coins} Coins`;
-            confirmPackPrice.textContent = `PKR ${purchaseData.price}`;
-            showConfirmationModal();
+            if(confirmPackName) confirmPackName.textContent = purchaseData.packName;
+            if(confirmPackCoins) confirmPackCoins.textContent = `${purchaseData.coins} Coins`;
+            if(confirmPackPrice) confirmPackPrice.textContent = `PKR ${purchaseData.price}`;
+            showModal(confirmationModal, modalContentEl);
         });
     });
 
-    cancelPurchaseBtn.addEventListener('click', hideConfirmationModal);
-    closePurchaseModalBtn.addEventListener('click', hideConfirmationModal);
+    if(cancelPurchaseBtn) cancelPurchaseBtn.addEventListener('click', () => hideModal(confirmationModal, modalContentEl));
+    if(closePurchaseModalBtn) closePurchaseModalBtn.addEventListener('click', () => hideModal(confirmationModal, modalContentEl));
 
-    confirmPurchaseBtn.addEventListener('click', function() {
-        confirmPurchaseBtn.disabled = true;
-        cancelPurchaseBtn.disabled = true;
-        closePurchaseModalBtn.disabled = true;
+    if(confirmPurchaseBtn) {
+        confirmPurchaseBtn.addEventListener('click', function() {
+            confirmPurchaseBtn.disabled = true;
+            if(cancelPurchaseBtn) cancelPurchaseBtn.disabled = true;
+            if(closePurchaseModalBtn) closePurchaseModalBtn.disabled = true;
+            confirmPurchaseBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
 
-        fetch("{% url 'buy_coins' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify(purchaseData)
-        })
-        .then(response => {
-            if (!response.ok) {
-              return response.json().then(errData => {
-                    throw new Error(errData.message || 'Unknown Error');  //Consistent error handling
-                });
-            }
-            return response.json();
-          })
-        .then(data => {
-            if (data.status === 'success') {
-                 hideConfirmationModal();
-                showSuccessModal();  // Show success *after* hiding confirmation
-
-                const coinBalanceElement = document.querySelector('header .coin-wallet-btn span');
-                if (coinBalanceElement) {
-                  coinBalanceElement.textContent = `${data.new_coin_balance} Coins`; //Update balance immediately
+            fetch("{% url 'AudioXApp:buy_coins' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(purchaseData)
+            })
+            .then(async response => {
+                const responseData = await response.json();
+                if (!response.ok) {
+                    throw new Error(responseData.message || `HTTP error! Status: ${response.status}`);
                 }
+                return responseData;
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    hideModal(confirmationModal, modalContentEl);
+                    showModal(successModal, successModalContent);
 
-            } else {
-               alert(`Error: ${data.message}`); // Keep alert for errors
+                    const headerCoinBalanceElement = document.querySelector('header a[href="/mywallet"] span:first-of-type');
+                    if (headerCoinBalanceElement && typeof data.new_coin_balance !== 'undefined') {
+                        headerCoinBalanceElement.textContent = `${data.new_coin_balance}`;
+                    }
+
+                } else {
+                    hideModal(confirmationModal, modalContentEl);
+                    showPurchaseError(data.message || 'Failed to complete purchase.');
+                }
+            })
+            .catch(error => {
+                console.error('Purchase Error:', error);
+                hideModal(confirmationModal, modalContentEl);
+                showPurchaseError(error.message || 'An error occurred while processing your request.');
+            })
+            .finally(() => {
+                confirmPurchaseBtn.disabled = false;
+                if(cancelPurchaseBtn) cancelPurchaseBtn.disabled = false;
+                if(closePurchaseModalBtn) closePurchaseModalBtn.disabled = false;
+                confirmPurchaseBtn.innerHTML = 'Confirm & Proceed';
+            });
+        });
+    }
+
+    if(closeSuccessModalBtn) {
+        closeSuccessModalBtn.addEventListener('click', function() {
+            hideModal(successModal, successModalContent);
+            window.location.href = "{% url 'AudioXApp:mywallet' %}";
+        });
+    }
+
+     /* Intersection Observer for fade-in animation */
+     const animatedElements = document.querySelectorAll('.grid > div, .feature-section-v9'); /* Updated selector */
+     const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                observer.unobserve(entry.target);
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-             alert('An error occurred while processing your request.');
-        })
-          .finally(() => {
-             confirmPurchaseBtn.disabled = false;
-             cancelPurchaseBtn.disabled = false;
-             closePurchaseModalBtn.disabled = false; // Re-enable all buttons
-         });
-    });
+        });
+     }, { threshold: 0.1 }); /* Adjusted threshold */
 
-    closeSuccessModalBtn.addEventListener('click', function() {
-        hideSuccessModal();
-        location.reload(); // Reload after closing success modal
-    });
+     animatedElements.forEach((el, index) => {
+         el.style.opacity = '0';
+         el.style.transform = 'translateY(20px)'; /* Start slightly lower */
+         el.style.transition = `opacity 0.6s cubic-bezier(0.645, 0.045, 0.355, 1) ${index * 0.08}s, transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1) ${index * 0.08}s`; /* Slightly faster stagger */
+         observer.observe(el);
+     });
+
 });
 </script>
 {% endblock %}

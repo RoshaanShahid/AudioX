@@ -1,9 +1,10 @@
 {% extends 'Homepage.html' %}
+{% load static %}
 
 {% block title %}Subscribe to Premium - AudioX{% endblock %}
 
 {% block content %}
-<div class="bg-white min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+<div class="bg-white min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans"> {# Added font-sans #}
     <div class="max-w-7xl w-full space-y-12">
 
         <div class="text-center">
@@ -15,130 +16,130 @@
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
-            {# Features Card #}
-            <div class="bg-[#091e65] rounded-3xl shadow-xl p-8 text-white">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12 items-stretch"> {# Added items-stretch #}
+
+            <div class="bg-[#091e65] rounded-3xl shadow-xl p-8 text-white flex flex-col"> {# Added flex flex-col #}
                 <h2 class="text-3xl font-semibold text-yellow-400 mb-8">Premium Benefits</h2>
-                <ul class="space-y-6">
+                <ul class="space-y-6 flex-grow"> {# Added flex-grow #}
                     <li class="flex items-center">
-                        <svg class="w-7 h-7 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <svg class="w-7 h-7 text-green-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <span class="text-lg">Unlimited Access</span>
                     </li>
                     <li class="flex items-center">
-                       <svg class="w-7 h-7 text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                       <svg class="w-7 h-7 text-yellow-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
                         <span class="text-lg">Ad-Free Listening</span>
                     </li>
                     <li class="flex items-center">
-                        <svg class="w-7 h-7 text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <svg class="w-7 h-7 text-blue-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                         <span class="text-lg">Offline Downloads</span>
                     </li>
                     <li class="flex items-center">
-                         <svg class="w-7 h-7 text-red-400 mr-3"  fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                         <svg class="w-7 h-7 text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <span class="text-lg">High-Quality Audio</span>
                     </li>
                     <li class="flex items-center">
-                        <svg class="w-7 h-7 text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                        <svg class="w-7 h-7 text-yellow-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
                         <span class="text-lg">Exclusive Content</span>
                     </li>
-                      <li class="flex items-center">
-                         <svg class="w-7 h-7 text-indigo-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                     <li class="flex items-center">
+                         <svg class="w-7 h-7 text-indigo-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                         <span class="text-lg">Support Creators</span>
                     </li>
                 </ul>
             </div>
 
-            {# Monthly Plan Card #}
-            <div class="bg-white rounded-3xl shadow-xl p-8 hover:scale-105 transition-transform duration-300 relative border-4 border-yellow-500">
-                <div class="absolute top-0 right-0 bg-yellow-500 text-white px-4 py-2 rounded-br-3xl rounded-tl-md text-md font-bold">
+            <div class="bg-white rounded-3xl shadow-xl p-8 hover:scale-105 transition-transform duration-300 relative border-4 border-yellow-500 flex flex-col"> {# Added flex flex-col #}
+                <div class="absolute top-0 right-0 bg-yellow-500 text-white px-4 py-2 rounded-br-3xl rounded-tl-md text-sm font-bold"> {# Adjusted size #}
                     Most Popular
                 </div>
-                <h3 class="text-4xl font-bold text-[#091e65] text-center mb-4">Monthly</h3>
-                <p class="text-center text-gray-600 mb-6">Flexibility and premium features.</p>
-                <div class="text-center text-5xl font-extrabold text-[#091e65] mb-6">
-                    <span class="text-xl">PKR</span> 3000 <span class="text-lg text-gray-500">/ month</span>
+                <div class="flex-grow"> {# Added flex-grow #}
+                    <h3 class="text-4xl font-bold text-[#091e65] text-center mb-4">Monthly</h3>
+                    <p class="text-center text-gray-600 mb-6">Flexibility and premium features.</p>
+                    <div class="text-center text-5xl font-extrabold text-[#091e65] mb-6">
+                        <span class="text-xl align-top">PKR</span> 3,000 <span class="text-lg text-gray-500">/ month</span>
+                    </div>
                 </div>
-                <button type="button" data-plan="monthly" class="subscribe-btn block w-full py-4 px-8 bg-[#091e65] hover:bg-indigo-700 text-white font-bold rounded-full text-lg transition-colors duration-200">
+                <button type="button" data-plan="monthly" class="subscribe-btn block w-full py-4 px-8 bg-[#091e65] hover:bg-indigo-700 text-white font-bold rounded-full text-lg transition-colors duration-200 mt-auto"> {# Added mt-auto #}
                     Subscribe Monthly
                 </button>
                  <p class="text-center text-sm text-gray-400 mt-4">Cancel anytime.</p>
             </div>
 
-             {# Annual Plan Card #}
-            <div class="bg-white rounded-3xl shadow-xl p-8 hover:scale-105 transition-transform duration-300 relative border-4 border-green-500">
-                <div class="absolute top-0 right-0 bg-green-500 text-white px-4 py-2 rounded-br-3xl rounded-tl-md text-md font-bold">
+             <div class="bg-white rounded-3xl shadow-xl p-8 hover:scale-105 transition-transform duration-300 relative border-4 border-green-500 flex flex-col"> {# Added flex flex-col #}
+                <div class="absolute top-0 right-0 bg-green-500 text-white px-4 py-2 rounded-br-3xl rounded-tl-md text-sm font-bold"> {# Adjusted size #}
                    Best Value
                 </div>
-                <h3 class="text-4xl font-bold text-[#091e65] text-center mb-4">Annually</h3>
-                 <p class="text-center text-gray-600 mb-2">The ultimate AudioX experience.</p>
-                 <div class="text-center text-5xl font-extrabold text-[#091e65] mb-2">
-                    <span class="text-xl">PKR</span> 30,000 <span class="text-lg text-gray-500">/ year</span>
+                 <div class="flex-grow"> {# Added flex-grow #}
+                    <h3 class="text-4xl font-bold text-[#091e65] text-center mb-4">Annually</h3>
+                     <p class="text-center text-gray-600 mb-2">The ultimate AudioX experience.</p>
+                     <div class="text-center text-5xl font-extrabold text-[#091e65] mb-2">
+                        <span class="text-xl align-top">PKR</span> 30,000 <span class="text-lg text-gray-500">/ year</span>
+                    </div>
+                    <p class="text-center text-sm text-green-600 font-bold mb-6">
+                        Save PKR 6,000!
+                    </p>
                 </div>
-                <p class="text-center text-sm text-green-500 font-bold mb-6">
-                    Save PKR 6,000
-                </p>
-
-                <button type="button" data-plan="annual"  class="subscribe-btn block w-full py-4 px-8 bg-[#091e65] hover:bg-indigo-700 text-white font-bold rounded-full text-lg transition-colors duration-200">
+                <button type="button" data-plan="annual" class="subscribe-btn block w-full py-4 px-8 bg-[#091e65] hover:bg-indigo-700 text-white font-bold rounded-full text-lg transition-colors duration-200 mt-auto"> {# Added mt-auto #}
                     Subscribe Annually
                 </button>
-                <p class="text-center text-sm text-gray-400 mt-4">Cancel anytime.</p>
+                 <p class="text-center text-sm text-gray-400 mt-4">Cancel anytime.</p>
             </div>
 
         </div>
 
-          {# FAQ Section #}
-        <div class="bg-white rounded-3xl shadow-xl p-8 border border-gray-200">
-             <h2 class="text-3xl font-semibold text-[#091e65] mb-8">Frequently Asked Questions</h2>
-            <div class="space-y-6">
-                <details class="group">
-                    <summary class="text-lg font-medium text-gray-700 cursor-pointer list-none flex items-center justify-between">
-                         <span class="flex-1">What payment methods do you accept?</span>
-                        <span class="ml-4  group-open:rotate-180 transition-transform">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+         <div class="mt-16 bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-200">
+             <h2 class="text-3xl font-semibold text-[#091e65] mb-8 text-center">Frequently Asked Questions</h2>
+            <div class="space-y-6 max-w-3xl mx-auto"> {# Added max-width and centering #}
+                <details class="group border-b pb-4"> {# Added border #}
+                    <summary class="text-lg font-medium text-gray-700 cursor-pointer list-none flex items-center justify-between hover:text-[#091e65] transition-colors">
+                        <span class="flex-1">What payment methods do you accept?</span>
+                        <span class="ml-4 group-open:rotate-180 transition-transform transform"> {# Added transform #}
+                            <svg class="w-5 h-5 text-gray-500 group-hover:text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </span>
                     </summary>
-                    <p class="mt-2 text-gray-600 pl-6">
-                       We accept all major credit cards, debit cards, and various digital payment options through our secure payment gateway.
+                    <p class="mt-3 text-gray-600 pl-2 text-sm leading-relaxed"> {# Adjusted padding/size #}
+                        We accept all major credit cards, debit cards, and various digital payment options through our secure payment gateway.
                     </p>
                 </details>
-                 <details class="group">
-                    <summary class="text-lg font-medium text-gray-700 cursor-pointer list-none flex items-center justify-between">
+                 <details class="group border-b pb-4">
+                    <summary class="text-lg font-medium text-gray-700 cursor-pointer list-none flex items-center justify-between hover:text-[#091e65] transition-colors">
                         <span class="flex-1">Can I cancel my subscription anytime?</span>
-                        <span class="ml-4 group-open:rotate-180 transition-transform">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <span class="ml-4 group-open:rotate-180 transition-transform transform">
+                            <svg class="w-5 h-5 text-gray-500 group-hover:text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </span>
                     </summary>
-                    <p class="mt-2 text-gray-600 pl-6">
-                       Yes, you can cancel your subscription at any time from your account settings. Your premium access will remain active until the end of your current billing period.
+                    <p class="mt-3 text-gray-600 pl-2 text-sm leading-relaxed">
+                        Yes, you can cancel your subscription at any time from your account settings page. Your premium access will remain active until the end of your current billing period.
                     </p>
                 </details>
-                <details class="group">
-                     <summary class="text-lg font-medium text-gray-700 cursor-pointer list-none flex items-center justify-between">
+                <details class="group border-b pb-4">
+                     <summary class="text-lg font-medium text-gray-700 cursor-pointer list-none flex items-center justify-between hover:text-[#091e65] transition-colors">
                         <span class="flex-1">Is there a free trial?</span>
-                        <span class="ml-4 group-open:rotate-180 transition-transform">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <span class="ml-4 group-open:rotate-180 transition-transform transform">
+                            <svg class="w-5 h-5 text-gray-500 group-hover:text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </span>
                     </summary>
-                    <p class="mt-2 text-gray-600 pl-6">
-                       We currently offer a selection of free content to explore before you commit to a premium subscription.
+                    <p class="mt-3 text-gray-600 pl-2 text-sm leading-relaxed">
+                        We currently offer a selection of free content for all users to explore before committing to a premium subscription. Check out our free library!
                     </p>
                 </details>
-                <details class="group">
-                    <summary class="text-lg font-medium text-gray-700 cursor-pointer list-none flex items-center justify-between">
+                <details class="group border-b pb-4">
+                    <summary class="text-lg font-medium text-gray-700 cursor-pointer list-none flex items-center justify-between hover:text-[#091e65] transition-colors">
                         <span class="flex-1">How do I access premium content after subscribing?</span>
-                        <span class="ml-4 group-open:rotate-180 transition-transform">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <span class="ml-4 group-open:rotate-180 transition-transform transform">
+                            <svg class="w-5 h-5 text-gray-500 group-hover:text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </span>
                     </summary>
-                    <p class="mt-2 text-gray-600 pl-6">
-                        Once you subscribe, all premium content will be automatically unlocked. Just log in to your account to enjoy the full AudioX library.
+                    <p class="mt-3 text-gray-600 pl-2 text-sm leading-relaxed">
+                        Once your subscription is active, all premium content and features will be automatically unlocked. Just ensure you are logged in to enjoy the full AudioX library.
                     </p>
                 </details>
 
@@ -147,38 +148,39 @@
     </div>
 </div>
 
-{# Confirmation Modal #}
 <div id="confirm-modal" class="fixed z-50 inset-0 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200">
             <div class="bg-white px-6 pt-6 pb-4">
                 <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
-                         <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                         </svg>
                     </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-2xl leading-6 font-medium text-[#091e65]" id="modal-title">
+                        <h3 class="text-xl leading-6 font-medium text-[#091e65]" id="modal-title">
                             Confirm Subscription
                         </h3>
                         <div class="mt-4">
-                            <p class="text-lg text-gray-700" id="modal-plan-text">
-                                You are about to subscribe to the <span id="modal-plan-name" class="font-semibold"></span> plan.
+                            <p class="text-base text-gray-700" id="modal-plan-text">
+                                You are about to subscribe to the <span id="modal-plan-name" class="font-semibold text-[#091e65]"></span> plan.
                             </p>
+                            <p class="text-sm text-gray-500 mt-1">Your payment method will be charged accordingly.</p> {# Added clarification #}
                         </div>
                     </div>
                 </div>
             </div>
              <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <form id="confirm-form" action="{% url 'subscribe_now' %}" method="post">
-                {% csrf_token %}
+                <form id="confirm-form" action="{% url 'AudioXApp:subscribe_now' %}" method="post">
+                    {% csrf_token %}
                     <input type="hidden" id="confirm-plan-input" name="plan" value="">
                     <button type="submit" class="w-full inline-flex justify-center rounded-full border border-transparent shadow-sm px-6 py-3 bg-[#091e65] text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200">
-                        Confirm
+                        Confirm & Pay
                     </button>
                 </form>
-
                 <button type="button" id="cancel-modal" class="mt-3 w-full inline-flex justify-center rounded-full border border-gray-300 shadow-sm px-6 py-3 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                     Cancel
                 </button>
@@ -190,37 +192,73 @@
 {% endblock %}
 
 {% block javascript %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" integrity="sha512-yFjZbTYRCJodnuyGlsKamNE/LlEaEAxSUk5Y+D00/SaPMPwoYDA+uSBUH/NwXmJdlwVTbWzP/WfUqLhO7RI/wA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const subscribeButtons = document.querySelectorAll('.subscribe-btn');
     const confirmModal = document.getElementById('confirm-modal');
     const modalPlanName = document.getElementById('modal-plan-name');
     const confirmPlanInput = document.getElementById('confirm-plan-input');
-    const confirmForm = document.getElementById('confirm-form');
+    const confirmForm = document.getElementById('confirm-form'); // Form itself for submission
     const cancelModalBtn = document.getElementById('cancel-modal');
 
+    // --- Show/Hide Modal ---
+    function showModal(plan) {
+         if (modalPlanName) modalPlanName.textContent = plan.charAt(0).toUpperCase() + plan.slice(1); // Capitalize
+         if (confirmPlanInput) confirmPlanInput.value = plan;
+         if (confirmModal) confirmModal.classList.remove('hidden');
+    }
+
+    function hideModal() {
+        if (confirmModal) confirmModal.classList.add('hidden');
+    }
+
+    // --- Event Listeners ---
     subscribeButtons.forEach(button => {
         button.addEventListener('click', (event) => {
             const plan = event.currentTarget.dataset.plan;
-            modalPlanName.textContent = plan.charAt(0).toUpperCase() + plan.slice(1); // Capitalize
-            confirmPlanInput.value = plan;
-            confirmModal.classList.remove('hidden');
+            showModal(plan);
         });
     });
 
-     if(cancelModalBtn){
-        cancelModalBtn.addEventListener('click', () => {
-            confirmModal.classList.add('hidden');
-        });
-     }
+    if(cancelModalBtn){
+        cancelModalBtn.addEventListener('click', hideModal);
+    }
 
+    // Close modal if clicking outside of it
     if(confirmModal){
-        window.addEventListener('click', (event) => {
+        confirmModal.addEventListener('click', (event) => {
+            // Check if the click is directly on the backdrop (the modal container itself)
             if (event.target === confirmModal) {
-                confirmModal.classList.add('hidden');
+                hideModal();
             }
         });
     }
-});
+
+    // Handle potential success/error messages passed via URL query parameters
+     const urlParams = new URLSearchParams(window.location.search);
+     if (urlParams.get('success') === 'true') {
+          Swal.fire({
+             title: 'Subscription Successful!',
+             text: 'Welcome to AudioX Premium!',
+             icon: 'success',
+             confirmButtonColor: '#091e65'
+         });
+          // Clean the URL
+          window.history.replaceState(null, null, window.location.pathname);
+     } else if (urlParams.get('error')) {
+          Swal.fire({
+             title: 'Subscription Error',
+             text: decodeURIComponent(urlParams.get('error')), // Decode potential URL encoded message
+             icon: 'error',
+             confirmButtonColor: '#091e65'
+         });
+         // Clean the URL
+         window.history.replaceState(null, null, window.location.pathname);
+     }
+
+}); // End DOMContentLoaded
 </script>
 {% endblock %}
