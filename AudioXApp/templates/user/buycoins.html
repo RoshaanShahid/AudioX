@@ -1,0 +1,424 @@
+{% extends 'Homepage.html' %}
+{% load static %}
+{% load tz %} {# Load timezone if needed #}
+
+{% block title %}AudioX - Acquire Coins{% endblock %}
+
+{% block content %}
+{# Tailwind CSS, JS libraries, and config are inherited from Homepage.html #}
+<script src="https://cdn.tailwindcss.com"></script> {# Ensure Tailwind is loaded #}
+{# *** ADD Stripe.js SCRIPT HERE *** #}
+<script src="https://js.stripe.com/v3/"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"> {# Load Inter font #}
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  /* Define theme colors used in JS if not globally defined */
+  :root {
+    --theme-primary: #091e65; /* Example primary color */
+    --theme-primary-lighter: #e0e7ff; /* Example lighter primary */
+    --theme-primary-hover: #1e3a8a; /* Example hover primary */
+    --theme-secondary: #f59e0b; /* Example secondary color */
+    --theme-text-primary: #1f2937; /* Example text primary */
+    --theme-text-secondary: #4b5563; /* Example text secondary */
+    --theme-text-light: #6b7280; /* Example light text */
+    --theme-green: #10b981; /* Example green */
+    --theme-green-light: #d1fae5; /* Example light green */
+    --theme-green-hover: #059669; /* Example hover green */
+    --theme-error: #ef4444; /* Example error red */
+    --theme-error-light: #fee2e2; /* Example light error red */
+    --theme-warning: #f59e0b; /* Example warning yellow */
+    --theme-warning-light: #fffbeb; /* Example light warning yellow */
+    --shadow-focus-ring: 0 0 0 3px rgba(9, 30, 101, 0.3); /* Example focus ring */
+  }
+</style>
+
+{# Main content wrapper #}
+<div class="min-h-screen">
+
+    <div class="relative bg-gradient-to-b from-theme-primary-lighter via-white to-white pt-20 pb-16 md:pt-28 md:pb-24 overflow-hidden">
+        <div class="absolute inset-0 opacity-30" style="background-image: radial-gradient(circle at top left, rgba(9, 30, 101, 0.1) 0%, transparent 50%), radial-gradient(circle at bottom right, rgba(9, 30, 101, 0.1) 0%, transparent 50%); background-size: 40px 40px;"></div>
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-theme-primary mb-5 tracking-tight leading-tight drop-shadow-sm">
+                Acquire AudioX Coins
+            </h1>
+            <p class="text-lg md:text-xl text-theme-text-secondary max-w-3xl mx-auto leading-relaxed">
+                Enhance your listening experience. Purchase coins to unlock premium content, support creators, and access exclusive features. (1 Coin = 1 PKR)
+            </p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-12 md:mt-16 mb-16 md:mb-24 relative z-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"> {# Adjusted grid for responsiveness #}
+
+            {# --- UPDATED STARTER PACK (250 Coins) --- #}
+            <div class="coin-pack-card flex flex-col bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1.5">
+                <div class="card-header p-6 text-center bg-gray-50 border-b border-gray-200">
+                    <i class="fas fa-coins text-5xl mb-3 text-yellow-600 opacity-80"></i>
+                    <h2 class="text-xl font-semibold text-theme-text-primary">Starter Pack</h2>
+                </div>
+                <div class="p-6 md:p-8 flex flex-col flex-grow">
+                    <div class="text-center mb-6 flex-grow">
+                        {# UPDATED Coin Amount Display #}
+                        <p class="text-6xl font-bold tracking-tight text-theme-text-primary">250<span class="text-lg font-medium text-theme-text-light ml-1">Coins</span></p>
+                        <p class="text-sm text-theme-text-secondary mt-2">Ideal for starting out</p>
+                    </div>
+                    {# UPDATED Price Display #}
+                    <p class="text-4xl font-semibold text-theme-primary text-center mb-8">PKR 250</p>
+                    <div class="mt-auto">
+                        {# UPDATED Button Data Attributes #}
+                        <button data-item-type="coins" data-item-id="250" data-pack-name="Starter Pack" data-pack-coins="250" data-pack-price="250" class="buy-coins-btn w-full inline-flex items-center justify-center gap-2 rounded-lg border-2 border-theme-primary bg-white px-6 py-3 text-base font-semibold text-theme-primary shadow-sm hover:bg-theme-primary-lighter focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition duration-150 ease-in-out">
+                            Choose Starter
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {# --- END UPDATED STARTER PACK --- #}
+
+            <div class="coin-pack-card flex flex-col bg-white rounded-2xl shadow-xl border-2 border-theme-primary overflow-hidden transition-all duration-300 ease-in-out relative ring-4 ring-theme-primary/20 hover:shadow-2xl transform scale-100 md:scale-105 hover:scale-[1.07]">
+                 <div class="absolute top-4 right-4 bg-theme-primary text-white text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">Popular</div>
+                 <div class="card-header p-6 text-center bg-theme-primary-lighter border-b border-theme-primary/20">
+                    <i class="fas fa-star text-5xl mb-3 text-theme-secondary"></i>
+                    <h2 class="text-xl font-bold text-theme-primary">Value Pack</h2>
+                 </div>
+                 <div class="p-6 md:p-8 flex flex-col flex-grow">
+                    <div class="text-center mb-6 flex-grow">
+                        <p class="text-7xl font-bold tracking-tight text-theme-text-primary">500<span class="text-xl font-medium text-theme-text-light ml-1.5">Coins</span></p>
+                        <p class="text-sm text-theme-text-secondary mt-2">Great value for regular listeners</p>
+                    </div>
+                    <p class="text-4xl font-semibold text-theme-primary text-center mb-8">PKR 500</p>
+                    <div class="mt-auto">
+                         {# Pass item_id (coins amount) in data attribute #}
+                        <button data-item-type="coins" data-item-id="500" data-pack-name="Value Pack" data-pack-coins="500" data-pack-price="500" class="buy-coins-btn w-full inline-flex items-center justify-center gap-2 rounded-lg bg-theme-primary px-6 py-3 text-base font-semibold text-white shadow-md hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition duration-150 ease-in-out transform hover:scale-[1.03]">
+                            Choose Value
+                        </button>
+                    </div>
+                 </div>
+            </div>
+
+            <div class="coin-pack-card flex flex-col bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1.5">
+                 <div class="card-header p-6 text-center bg-gray-50 border-b border-gray-200">
+                    <i class="fas fa-gem text-5xl mb-3 text-indigo-500 opacity-80"></i> {# Changed icon color #}
+                    <h2 class="text-xl font-semibold text-theme-text-primary">Pro Pack</h2>
+                 </div>
+                 <div class="p-6 md:p-8 flex flex-col flex-grow">
+                    <div class="text-center mb-6 flex-grow">
+                        <p class="text-6xl font-bold tracking-tight text-theme-text-primary">1000<span class="text-lg font-medium text-theme-text-light ml-1">Coins</span></p>
+                        <p class="text-sm text-theme-text-secondary mt-2">For the dedicated listener</p>
+                    </div>
+                    <p class="text-4xl font-semibold text-theme-primary text-center mb-8">PKR 1000</p>
+                    <div class="mt-auto">
+                         {# Pass item_id (coins amount) in data attribute #}
+                        <button data-item-type="coins" data-item-id="1000" data-pack-name="Pro Pack" data-pack-coins="1000" data-pack-price="1000" class="buy-coins-btn w-full inline-flex items-center justify-center gap-2 rounded-lg border-2 border-theme-primary bg-white px-6 py-3 text-base font-semibold text-theme-primary shadow-sm hover:bg-theme-primary-lighter focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition duration-150 ease-in-out">
+                            Choose Pro
+                        </button>
+                    </div>
+                 </div>
+            </div>
+
+        </div>
+
+        <div class="feature-section mt-20 md:mt-28 py-16 md:py-20 bg-white rounded-3xl shadow-xl border border-gray-100/50 ring-1 ring-black/5">
+             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl md:text-4xl font-bold text-theme-primary mb-12 md:mb-16 text-center">
+                    Coin <span class="text-theme-secondary">Advantages</span>
+                </h2>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-theme-primary-lighter text-theme-primary text-xl shadow-sm border border-black/5"> <i class="fas fa-gift"></i> </div>
+                        <div> <h3 class="text-lg font-semibold text-theme-text-primary mb-1.5">Gift Audio Experiences</h3> <p class="text-theme-text-secondary text-sm leading-relaxed">Share the joy of stories by gifting coins to friends and family, allowing them to select their own audio adventures.</p> </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                         <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-theme-primary-lighter text-theme-primary text-xl shadow-sm border border-black/5"> <i class="fas fa-star"></i> </div>
+                         <div> <h3 class="text-lg font-semibold text-theme-text-primary mb-1.5">Unlock Premium Content</h3> <p class="text-theme-text-secondary text-sm leading-relaxed">Gain exclusive access to a curated library of premium audiobooks, bonus content, and early releases.</p> </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                         <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-theme-primary-lighter text-theme-primary text-xl shadow-sm border border-black/5"> <i class="fas fa-users"></i> </div>
+                         <div> <h3 class="text-lg font-semibold text-theme-text-primary mb-1.5">Support Creators Directly</h3> <p class="text-theme-text-secondary text-sm leading-relaxed">Show appreciation for talented narrators and authors. Your coin usage directly contributes to their continued work.</p> </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                         <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center bg-theme-primary-lighter text-theme-primary text-xl shadow-sm border border-black/5"> <i class="fas fa-headphones-alt"></i> </div>
+                         <div> <h3 class="text-lg font-semibold text-theme-text-primary mb-1.5">Enhanced Listening Features</h3> <p class="text-theme-text-secondary text-sm leading-relaxed">Enjoy an uninterrupted, high-fidelity experience with ad-free listening and superior audio quality options.</p> </div>
+                    </div>
+                 </div>
+             </div>
+        </div>
+    </div>
+</div>
+
+{# --- Purchase Confirmation Modal --- #}
+<div id="purchase-confirmation-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-opacity duration-300 ease-out opacity-0" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div id="modal-content-el-v9" class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-auto transform transition-all duration-300 ease-out scale-95 opacity-0">
+        <button type="button" id="close-purchase-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 focus:outline-none p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <i class="fas fa-times text-lg"></i> <span class="sr-only">Close modal</span>
+        </button>
+        <div class="p-7 sm:p-8">
+            <div class="text-center mb-6">
+                 <div class="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 bg-theme-primary-lighter"> <i class="fas fa-shopping-cart text-2xl text-theme-primary"></i> </div>
+                <h2 id="modal-title" class="text-xl font-semibold text-gray-900">Confirm Your Purchase</h2>
+                <p class="text-gray-500 text-sm mt-1.5">Please review your selected coin pack.</p>
+            </div>
+            <div class="mb-8 space-y-3.5 bg-gray-50 p-5 sm:p-6 rounded-lg border border-gray-200 text-sm">
+                <div class="flex justify-between items-center"> <span class="text-theme-text-light">Selected Pack:</span> <span id="confirm-pack-name" class="font-semibold text-theme-text-primary"></span> </div>
+                <div class="flex justify-between items-center"> <span class="text-theme-text-light">Coins to Receive:</span> <span id="confirm-pack-coins" class="font-semibold text-theme-text-primary"></span> </div>
+                <div class="flex justify-between items-center pt-3 border-t border-gray-200 mt-3"> <span class="text-theme-text-secondary font-semibold text-base">Total Amount:</span> <span id="confirm-pack-price" class="font-bold text-xl text-theme-primary"></span> </div>
+            </div>
+             <p class="text-sm text-gray-500 text-center mb-6"> You will be redirected to our secure payment partner (Stripe) to complete your purchase. </p>
+            <div class="flex flex-col sm:flex-row justify-end gap-3">
+                <button id="cancel-purchase-btn" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out w-full sm:w-auto order-2 sm:order-1"> Cancel </button>
+                {# UPDATED Button Text & ID for clarity #}
+                <button id="proceed-to-payment-btn" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg bg-theme-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto order-1 sm:order-2">
+                    Proceed to Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# --- Success Message Modal (Shown via redirect/session flag, not directly here) --- #}
+<div id="success-message-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-opacity duration-300 ease-out opacity-0" role="alert" aria-live="assertive">
+    <div id="success-modal-content-v9" class="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto p-7 sm:p-8 text-center transform transition-all duration-300 ease-out scale-95 opacity-0">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-theme-green-light mb-5"> <i class="fas fa-check text-3xl text-theme-green"></i> </div>
+        <h2 class="text-xl font-semibold text-gray-900 mb-2.5">Purchase Successful!</h2>
+        <p class="text-theme-text-secondary mb-7 text-sm leading-relaxed">Your coins are now available in your wallet. Explore premium content or gift them to friends!</p>
+        <button id="close-success-modal-btn" class="inline-flex items-center justify-center gap-2 rounded-lg bg-theme-green px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-theme-green-hover focus:outline-none focus:ring-2 focus:ring-theme-green focus:ring-offset-2 transition duration-150 ease-in-out w-full"> View My Wallet </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{# Font Awesome JS is loaded in Homepage.html or via CDN link below #}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" integrity="sha512-yFjZbTYRCJodnuyGlsKamNE/LlEaEAxSUk5Y+D00/SaPMPwoYDA+uSBUH/NwXmJdlwVTbWzP/WfUqLhO7RI/wA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{# SweetAlert2 JS is loaded in Homepage.html or via CDN link below #}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Element Selectors ---
+    const buyButtons = document.querySelectorAll('.buy-coins-btn');
+    const confirmationModal = document.getElementById('purchase-confirmation-modal');
+    const modalContentEl = document.getElementById('modal-content-el-v9');
+    const confirmPackName = document.getElementById('confirm-pack-name');
+    const confirmPackCoins = document.getElementById('confirm-pack-coins');
+    const confirmPackPrice = document.getElementById('confirm-pack-price');
+    const proceedToPaymentBtn = document.getElementById('proceed-to-payment-btn'); // Updated ID
+    const cancelPurchaseBtn = document.getElementById('cancel-purchase-btn');
+    const closePurchaseModalBtn = document.getElementById('close-purchase-modal-btn');
+    const successModal = document.getElementById('success-message-modal');
+    const successModalContent = document.getElementById('success-modal-content-v9');
+    const closeSuccessModalBtn = document.getElementById('close-success-modal-btn');
+    const headerCoinBalance = document.getElementById('header-coin-balance');
+    let purchaseData = {}; // To store details of the selected pack
+
+    // --- Get Stripe Instance ---
+    // Use the publishable key passed from the Django view context
+    const stripePublishableKey = "{{ STRIPE_PUBLISHABLE_KEY|escapejs }}"; // Get key from context
+    let stripe;
+    if (stripePublishableKey && stripePublishableKey !== 'None') {
+         try {
+            stripe = Stripe(stripePublishableKey);
+         } catch (error) {
+            console.error("Error initializing Stripe:", error);
+            showPurchaseError("Payment system could not be initialized. Please contact support.");
+            // Optionally disable purchase buttons if Stripe fails to load
+            buyButtons.forEach(btn => btn.disabled = true);
+         }
+    } else {
+        console.error("Stripe Publishable Key not found in context.");
+        showPurchaseError("Payment configuration error. Please contact support.");
+        buyButtons.forEach(btn => btn.disabled = true);
+    }
+
+
+    // --- Modal Handling ---
+    function showModal(modal, content) { /* ... (modal show logic - no changes needed) ... */
+        if(modal && content) {
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('opacity-0', 'scale-95');
+                content.classList.add('opacity-100', 'scale-100');
+            });
+        }
+    }
+    function hideModal(modal, content) { /* ... (modal hide logic - no changes needed) ... */
+        if(modal && content) {
+             content.classList.remove('opacity-100', 'scale-100');
+             content.classList.add('opacity-0', 'scale-95');
+             modal.classList.add('opacity-0');
+             setTimeout(() => {
+                 modal.classList.add('hidden');
+             }, 300);
+        }
+    }
+
+    // --- CSRF Token Helper ---
+    function getCookie(name) { /* ... (getCookie function - no changes needed) ... */
+        let cookieValue = null; if (document.cookie && document.cookie !== '') { const cookies = document.cookie.split(';'); for (let i = 0; i < cookies.length; i++) { const cookie = cookies[i].trim(); if (cookie.substring(0, name.length + 1) === (name + '=')) { cookieValue = decodeURIComponent(cookie.substring(name.length + 1)); break; } } } return cookieValue;
+    }
+
+    // --- Error Notification ---
+    function showPurchaseError(message) { /* ... (showPurchaseError function - no changes needed) ... */
+        const SwalToShow = typeof SwalStyled !== 'undefined' ? SwalStyled : Swal;
+        SwalToShow.fire({
+            title: 'Purchase Error', text: message, icon: 'error', confirmButtonText: 'Okay',
+             customClass: { title: 'text-xl font-bold text-theme-error mb-2', confirmButton: 'bg-theme-primary hover:bg-theme-primary-hover text-white font-bold py-2 px-4 rounded-lg' },
+            buttonsStyling: false
+        });
+    }
+
+    // --- Buy Button Listeners ---
+    buyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Store all relevant data needed for confirmation AND for creating the session
+            purchaseData = {
+                item_type: this.dataset.itemType, // Should be 'coins'
+                item_id: this.dataset.itemId,     // e.g., '250', '500', '1000' <-- Updated example
+                packName: this.dataset.packName,  // For display in modal
+                coins: this.dataset.packCoins,    // For display in modal
+                price: this.dataset.packPrice     // For display in modal
+            };
+
+            // Populate confirmation modal
+            if(confirmPackName) confirmPackName.textContent = purchaseData.packName;
+            if(confirmPackCoins) confirmPackCoins.textContent = `${purchaseData.coins} Coins`;
+            if(confirmPackPrice) confirmPackPrice.textContent = `PKR ${purchaseData.price}`;
+            showModal(confirmationModal, modalContentEl);
+        });
+    });
+
+    // --- Modal Close/Cancel Listeners ---
+    if(cancelPurchaseBtn) cancelPurchaseBtn.addEventListener('click', () => hideModal(confirmationModal, modalContentEl));
+    if(closePurchaseModalBtn) closePurchaseModalBtn.addEventListener('click', () => hideModal(confirmationModal, modalContentEl));
+    if(confirmationModal) { /* ... (click outside/escape key logic - no changes needed) ... */
+        confirmationModal.addEventListener('click', (event) => { if (event.target === confirmationModal) hideModal(confirmationModal, modalContentEl); });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !confirmationModal.classList.contains('hidden')) hideModal(confirmationModal, modalContentEl); });
+    }
+
+    // --- Proceed to Payment Logic (Calls Backend to Create Session, Redirects to Stripe) ---
+    if(proceedToPaymentBtn && stripe) { // Check if stripe object is initialized
+        proceedToPaymentBtn.addEventListener('click', function() {
+            // Disable buttons and show loading state
+            proceedToPaymentBtn.disabled = true;
+            if(cancelPurchaseBtn) cancelPurchaseBtn.disabled = true;
+            if(closePurchaseModalBtn) closePurchaseModalBtn.disabled = true;
+            proceedToPaymentBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+
+            // Data needed by the backend to create the checkout session
+            const sessionData = {
+                item_type: purchaseData.item_type, // 'coins'
+                item_id: purchaseData.item_id      // '250', '500', '1000' <-- Updated example
+            };
+
+            // Call the backend endpoint to create the session
+            fetch("{% url 'AudioXApp:create_checkout_session' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(sessionData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Try to get error message from backend JSON response
+                    return response.json().then(errData => {
+                        throw new Error(errData.error || `Server error: ${response.status}`);
+                    }).catch(() => {
+                        // Fallback if backend didn't send JSON error
+                        throw new Error(`Server error: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(session => {
+                if (session.sessionId) {
+                    // --- Redirect to Stripe Checkout ---
+                    console.log("Redirecting to Stripe Checkout with session ID:", session.sessionId);
+                    return stripe.redirectToCheckout({ sessionId: session.sessionId });
+                } else {
+                    // Handle case where backend didn't return a session ID
+                    throw new Error(session.error || 'Failed to create checkout session (no session ID).');
+                }
+            })
+            .then(result => {
+                // This promise resolves when the customer is redirected.
+                // If `redirectToCheckout` fails (e.g., network error, invalid session ID),
+                // the promise rejects, and the `.catch` block below handles it.
+                // If redirection succeeds, the user navigates away, so this part might not execute
+                // unless there was an immediate issue *before* redirection.
+                if (result && result.error) {
+                     // This might catch errors before actual redirection attempt
+                    console.error('Stripe redirectToCheckout error:', result.error);
+                    showPurchaseError(result.error.message || 'Could not redirect to payment page.');
+                    // Re-enable buttons if redirection fails immediately
+                    proceedToPaymentBtn.disabled = false;
+                    if(cancelPurchaseBtn) cancelPurchaseBtn.disabled = false;
+                    if(closePurchaseModalBtn) closePurchaseModalBtn.disabled = false;
+                    proceedToPaymentBtn.innerHTML = 'Proceed to Payment';
+                }
+            })
+            .catch(error => {
+                console.error('Error creating checkout session or redirecting:', error);
+                hideModal(confirmationModal, modalContentEl); // Hide the modal on error
+                showPurchaseError(error.message || 'An error occurred while preparing your payment. Please try again.');
+                // Re-enable buttons
+                proceedToPaymentBtn.disabled = false;
+                if(cancelPurchaseBtn) cancelPurchaseBtn.disabled = false;
+                if(closePurchaseModalBtn) closePurchaseModalBtn.disabled = false;
+                proceedToPaymentBtn.innerHTML = 'Proceed to Payment';
+            });
+        });
+    } else if (!stripe) {
+         console.error("Stripe object not available, Proceed to Payment button listener not added.");
+    }
+
+
+    // --- Success Modal Close Listener (Remains the same, triggered by redirect) ---
+    if(closeSuccessModalBtn) {
+        closeSuccessModalBtn.addEventListener('click', function() {
+            hideModal(successModal, successModalContent);
+            // Redirect to the wallet page after closing the success modal
+            window.location.href = "{% url 'AudioXApp:mywallet' %}";
+        });
+    }
+
+    // --- Handle Redirect Status Messages (Optional) ---
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('status') === 'success' && urlParams.get('stripe_session_id')) {
+        // Payment was likely successful, but confirmation relies on the webhook.
+        // You could show a temporary "Processing your purchase..." message here.
+        // The success modal should ideally only be shown after webhook confirmation,
+        // perhaps by setting a flag in the session via the webhook handler and checking it here.
+        // For now, we won't show the success modal directly from here.
+        console.log("Returned from Stripe with success status. Waiting for webhook confirmation.");
+        // Optionally clear query params: window.history.replaceState(null, null, window.location.pathname);
+    } else if (urlParams.get('status') === 'cancel') {
+        // User cancelled the payment on the Stripe page
+        showPurchaseError('Your purchase was cancelled.'); // Or a less alarming message
+        // Optionally clear query params: window.history.replaceState(null, null, window.location.pathname);
+    }
+
+
+     // --- Intersection Observer for fade-in animation ---
+     // ... (observer logic - no changes needed) ...
+     const animatedElements = document.querySelectorAll('.coin-pack-card, .feature-section');
+     const observer = new IntersectionObserver((entries) => {
+         entries.forEach(entry => {
+             if (entry.isIntersecting) {
+                 entry.target.classList.remove('opacity-0', 'translate-y-5');
+                 entry.target.classList.add('opacity-100', 'translate-y-0');
+                 observer.unobserve(entry.target); // Stop observing once animated
+             }
+         });
+     }, { threshold: 0.1 });
+
+     animatedElements.forEach((el, index) => {
+         el.classList.add('opacity-0', 'translate-y-5', 'transition-all', 'duration-700', 'ease-out');
+         el.style.transitionDelay = `${index * 100}ms`;
+         observer.observe(el);
+     });
+
+});
+</script>
+{% endblock %}

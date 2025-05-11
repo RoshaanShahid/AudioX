@@ -1,0 +1,130 @@
+{% load static %} {# Load static tag if you need any static assets #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioX Admin Portal - Welcome</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> {# Font Awesome for icons #}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"> {# Inter font #}
+    <script>
+      // Extend Tailwind theme to include your specific colors
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'theme-primary': '#091e65', // Your primary color
+              'theme-primary-hover': '#1e3a8a', // A slightly lighter shade for hover
+              'theme-secondary': '#f59e0b', // Your secondary color (amber-500)
+              'theme-secondary-hover': '#d97706', // Darker amber for hover
+              'theme-bg-light': '#f7fafc', // A very light gray for background contrast
+              'theme-text-primary': '#1a202c', // Dark text
+              'theme-text-secondary': '#4a5568', // Medium gray text
+              'theme-text-light': '#718096', // Lighter gray text
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Subtle gradient using a light background and a hint of the primary color */
+            background: linear-gradient(135deg, #e2e8f0 0%, #dde4f1 100%); /* Light slate/blueish gradient */
+        }
+        /* Animation for the card */
+        .card-enter {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+            animation: cardEnterAnimation 0.6s ease-out forwards;
+        }
+        @keyframes cardEnterAnimation {
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        /* Premium button styling */
+        .btn {
+            transition: all 0.3s ease; /* Smoother transition */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Default shadow */
+        }
+        .btn:hover {
+            transform: translateY(-2px); /* Lift effect */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Enhanced shadow */
+        }
+        .btn-primary {
+            background-color: #091e65; /* theme-primary */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1e3a8a; /* theme-primary-hover */
+        }
+        .btn-secondary {
+            background-color: white;
+            color: #091e65; /* theme-primary */
+            border: 2px solid #091e65; /* theme-primary */
+        }
+        .btn-secondary:hover {
+            background-color: #eef2ff; /* Very light primary shade */
+            color: #1e3a8a; /* theme-primary-hover */
+            border-color: #1e3a8a; /* theme-primary-hover */
+        }
+        /* Logo dot color */
+        .logo-dot { 
+             width: 0.75rem; /* Slightly larger dot */
+             height: 0.75rem; 
+             background-color: #f59e0b; /* theme-secondary */
+             border-radius: 9999px; 
+             margin-left: 0.15rem; 
+             align-self: flex-end; /* Align dot nicely */
+             margin-bottom: 0.2rem; /* Adjust vertical alignment */
+        }
+
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-3xl p-10 md:p-14 space-y-10 bg-white rounded-xl shadow-lg text-center card-enter border border-gray-200">
+        
+        <div>
+             <div class="flex items-center justify-center text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+                <span class="text-theme-primary">AUDIO</span><span class="text-red-500">X</span>
+                <div class="logo-dot"></div> {# Use theme-secondary color via style #}
+                <span class="ml-4 text-2xl md:text-3xl font-medium text-theme-text-light">Admin Portal</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold text-theme-text-primary mt-5">
+                Welcome, Administrator
+            </h1>
+            <p class="mt-4 text-lg text-theme-text-secondary">
+                Manage the core aspects of the AudioX platform.
+            </p>
+        </div>
+
+        <div class="border-t border-gray-200 pt-8"></div>
+
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-5 md:gap-8">
+            <a href="{% url 'AudioXApp:adminlogin' %}" 
+               class="w-full sm:w-auto inline-flex items-center justify-center px-10 py-3 text-lg font-medium rounded-md btn btn-primary">
+               <i class="fas fa-sign-in-alt mr-2.5 h-5 w-5" aria-hidden="true"></i>
+               Admin Login
+            </a>
+            
+            <a href="{% url 'AudioXApp:adminsignup' %}" 
+               class="w-full sm:w-auto inline-flex items-center justify-center px-10 py-3 text-lg font-medium rounded-md btn btn-secondary">
+                <i class="fas fa-user-plus mr-2.5 h-5 w-5" aria-hidden="true"></i>
+                Register Admin
+            </a>
+        </div>
+
+        <div class="text-base text-center pt-8">
+            <a href="{% url 'AudioXApp:home' %}" class="font-medium text-theme-primary hover:text-theme-primary-hover hover:underline">
+                <i class="fas fa-arrow-left mr-1.5"></i> Go Back to Main Site
+            </a>
+        </div>
+
+    </div>
+
+</body>
+</html>

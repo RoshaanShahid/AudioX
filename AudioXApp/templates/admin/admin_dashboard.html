@@ -1,0 +1,219 @@
+{% extends 'admin/admin_base.html' %} {# Assumes admin_base.html is in templates/admin/ #}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Admin Dashboard - AudioX{% endblock %} {# Set specific page title #}
+
+{% block header_title %}Dashboard Overview{% endblock %} {# Set specific header title #}
+
+{% block content %}
+{# The main content for the dashboard page goes here #}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card hover:shadow-card-lg transition-shadow duration-300 p-5 flex items-center space-x-4">
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-info-light text-info text-xl flex-shrink-0">
+            <i class="fas fa-users"></i>
+        </span>
+        <div class="flex-grow">
+            <span class="text-sm font-medium text-brand-text-secondary block">Total Users</span>
+            <p class="text-2xl font-bold text-brand-text-primary">{{ total_user_count|default:"0"|intcomma }}</p>
+        </div>
+    </div>
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card hover:shadow-card-lg transition-shadow duration-300 p-5 flex items-center space-x-4">
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-success-light text-success text-xl flex-shrink-0">
+            <i class="fas fa-user-check"></i>
+        </span>
+        <div class="flex-grow">
+            <span class="text-sm font-medium text-brand-text-secondary block">Subscribed Users</span>
+            <p class="text-2xl font-bold text-brand-text-primary">{{ subscribed_user_count|default:"0"|intcomma }}</p>
+        </div>
+    </div>
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card hover:shadow-card-lg transition-shadow duration-300 p-5 flex items-center space-x-4">
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-navy-surface text-brand-navy text-xl flex-shrink-0">
+            <i class="fas fa-user-alt"></i>
+        </span>
+        <div class="flex-grow">
+            <span class="text-sm font-medium text-brand-text-secondary block">Free Users</span>
+            <p class="text-2xl font-bold text-brand-text-primary">{{ free_user_count|default:"0"|intcomma }}</p>
+        </div>
+    </div>
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card hover:shadow-card-lg transition-shadow duration-300 p-5 flex items-center space-x-4">
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-purple-light text-purple text-xl flex-shrink-0">
+            <i class="fas fa-microphone-alt"></i>
+        </span>
+        <div class="flex-grow">
+            <span class="text-sm font-medium text-brand-text-secondary block">Active Creators</span>
+            <p class="text-2xl font-bold text-brand-text-primary">{{ active_creator_count|default:"0"|intcomma }}</p>
+        </div>
+    </div>
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card hover:shadow-card-lg transition-shadow duration-300 p-5 flex items-center space-x-4">
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-accent-surface text-accent text-xl flex-shrink-0">
+            <i class="fas fa-book-open"></i>
+        </span>
+        <div class="flex-grow">
+            <span class="text-sm font-medium text-brand-text-secondary block">Total Audiobooks</span>
+            <p class="text-2xl font-bold text-brand-text-primary">{{ total_audiobook_count|default:"0"|intcomma }}</p>
+        </div>
+    </div>
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card hover:shadow-card-lg transition-shadow duration-300 p-5 flex items-center space-x-4">
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-teal-light text-teal text-xl flex-shrink-0">
+            <i class="fas fa-upload"></i>
+        </span>
+        <div class="flex-grow">
+            <span class="text-sm font-medium text-brand-text-secondary block">Creator Uploads</span>
+            <p class="text-2xl font-bold text-brand-text-primary">{{ creator_audiobook_count|default:"0"|intcomma }}</p>
+        </div>
+    </div>
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card hover:shadow-card-lg transition-shadow duration-300 p-5 flex items-center space-x-4">
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-warning-light text-warning text-xl flex-shrink-0">
+            <i class="fas fa-user-clock"></i>
+        </span>
+        <div class="flex-grow">
+            <span class="text-sm font-medium text-brand-text-secondary block">Pending Verification</span>
+            <p class="text-2xl font-bold text-brand-text-primary">{{ pending_verification_count|default:"0"|intcomma }}</p>
+        </div>
+    </div>
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card hover:shadow-card-lg transition-shadow duration-300 p-5 flex items-center space-x-4">
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-danger-light text-danger text-xl flex-shrink-0">
+            <i class="fas fa-hand-holding-usd"></i>
+        </span>
+        <div class="flex-grow">
+            <span class="text-sm font-medium text-brand-text-secondary block">Pending Withdrawals</span>
+            <p class="text-2xl font-bold text-brand-text-primary">{{ pending_withdrawal_count|default:"0"|intcomma }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="bg-earnings-gradient rounded-3xl shadow-lg p-6 text-brand-text-on-navy flex items-center justify-between">
+    <div>
+         <span class="text-base font-semibold uppercase tracking-wider opacity-80 block mb-1">Total Earnings</span>
+         <p class="text-4xl md:text-5xl font-extrabold leading-none">PKR {{ total_earnings|default:"0.00"|intcomma }}</p>
+         <p class="text-sm opacity-70 mt-1">(Based on completed purchases)</p>
+    </div>
+     <i class="fas fa-sack-dollar text-5xl md:text-6xl opacity-20 ml-4 transform -rotate-12"></i>
+</div>
+
+<div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card overflow-hidden">
+    <div class="px-6 py-5 border-b border-brand-border">
+        <h3 class="text-lg font-semibold text-brand-text-primary">User Growth</h3>
+    </div>
+    <div class="p-6">
+        <div class="bg-brand-surface-alt rounded-xl border border-dashed border-brand-border-light flex items-center justify-center min-h-[20rem] text-brand-text-muted text-lg font-medium">
+            <i class="fas fa-chart-line mr-3 text-brand-navy-light text-2xl"></i> Chart Placeholder
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+    <div class="lg:col-span-2 bg-brand-surface rounded-2xl border border-brand-border shadow-card overflow-hidden">
+        <div class="px-6 py-5 border-b border-brand-border flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-brand-text-primary">Recent Activity</h3>
+            <a href="#" class="text-sm font-medium text-brand-navy hover:text-brand-navy-dark transition-colors duration-200 flex items-center gap-1">
+                View All <i class="fas fa-arrow-right text-xs"></i>
+            </a>
+        </div>
+        <div class="flow-root">
+            <ul role="list" class="divide-y divide-brand-border">
+                {# Activity Item Structure #}
+                <li class="flex items-center p-4 hover:bg-brand-surface-alt transition-colors duration-150 cursor-pointer">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4 text-base bg-brand-success-light text-brand-success"><i class="fas fa-user-plus"></i></div>
+                    <div class="flex-grow min-w-0">
+                        <p class="text-sm text-brand-text-secondary truncate">New user <span class="font-semibold text-brand-text-primary">john_doe</span> registered.</p>
+                        <p class="text-xs text-brand-text-muted truncate">1 hour ago</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-brand-text-muted ml-4 flex-shrink-0"></i>
+                </li>
+                <li class="flex items-center p-4 hover:bg-brand-surface-alt transition-colors duration-150 cursor-pointer">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4 text-base bg-brand-teal-light text-brand-teal"><i class="fas fa-upload"></i></div>
+                    <div class="flex-grow min-w-0">
+                        <p class="text-sm text-brand-text-secondary truncate">Creator <span class="font-semibold text-brand-text-primary">voice_artist</span> uploaded <span class="font-semibold text-brand-text-primary">"The Midnight Hour"</span>.</p>
+                        <p class="text-xs text-brand-text-muted truncate">3 hours ago</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-brand-text-muted ml-4 flex-shrink-0"></i>
+                </li>
+                <li class="flex items-center p-4 hover:bg-brand-surface-alt transition-colors duration-150 cursor-pointer">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4 text-base bg-brand-info-light text-brand-info"><i class="fas fa-check-circle"></i></div>
+                    <div class="flex-grow min-w-0">
+                        <p class="text-sm text-brand-text-secondary truncate">Creator application for <span class="font-semibold text-brand-text-primary">narrator_pro</span> was approved.</p>
+                        <p class="text-xs text-brand-text-muted truncate">1 day ago</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-brand-text-muted ml-4 flex-shrink-0"></i>
+                </li>
+                <li class="flex items-center p-4 hover:bg-brand-surface-alt transition-colors duration-150 cursor-pointer">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4 text-base bg-brand-danger-light text-brand-danger"><i class="fas fa-hand-holding-usd"></i></div>
+                    <div class="flex-grow min-w-0">
+                        <p class="text-sm text-brand-text-secondary truncate">Withdrawal request <span class="font-semibold text-brand-text-primary">PKR 5,000</span> from <span class="font-semibold text-brand-text-primary">voice_artist</span>.</p>
+                        <p class="text-xs text-brand-text-muted truncate">2 days ago</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-brand-text-muted ml-4 flex-shrink-0"></i>
+                </li>
+                <li class="flex items-center p-4 hover:bg-brand-surface-alt transition-colors duration-150 cursor-pointer">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4 text-base bg-brand-accent-surface text-brand-accent"><i class="fas fa-comment-dots"></i></div>
+                    <div class="flex-grow min-w-0">
+                        <p class="text-sm text-brand-text-secondary truncate">New comment on <span class="font-semibold text-brand-text-primary">"Chapter 5"</span> by <span class="font-semibold text-brand-text-primary">listener_fan</span>.</p>
+                        <p class="text-xs text-brand-text-muted truncate">3 days ago</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-brand-text-muted ml-4 flex-shrink-0"></i>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card overflow-hidden">
+        <div class="px-6 py-5 border-b border-brand-border">
+            <h3 class="text-lg font-semibold text-brand-text-primary">Quick Actions</h3>
+        </div>
+        <div class="p-6 space-y-3">
+            {# Quick Action Button Structure (List Style with Navy Accent) #}
+             <a href="#" class="group flex items-center p-3 rounded-xl border border-transparent hover:border-brand-navy/20 hover:bg-brand-navy-surface transition-all duration-200 ease-smooth">
+                <span class="w-9 h-9 mr-3 inline-flex items-center justify-center rounded-lg text-base transition-all duration-200 ease-smooth bg-brand-navy text-white">
+                    <i class="fas fa-plus"></i>
+                </span>
+                <span class="text-sm font-medium text-brand-navy">Add Audiobook</span>
+                <i class="fas fa-arrow-right text-xs text-brand-navy opacity-0 group-hover:opacity-100 ml-auto transition-opacity"></i>
+            </a>
+             <a href="{% url 'AudioXApp:admin_pending_creator_applications' %}" class="group flex items-center p-3 rounded-xl border border-transparent hover:border-brand-success/20 hover:bg-brand-success-light transition-all duration-200 ease-smooth">
+                <span class="w-9 h-9 mr-3 inline-flex items-center justify-center rounded-lg text-base transition-all duration-200 ease-smooth bg-brand-success text-white">
+                    <i class="fas fa-user-check"></i>
+                </span>
+                <span class="text-sm font-medium text-brand-success">Approve Creators</span>
+                <i class="fas fa-arrow-right text-xs text-brand-success opacity-0 group-hover:opacity-100 ml-auto transition-opacity"></i>
+            </a>
+            <a href="#" class="group flex items-center p-3 rounded-xl border border-transparent hover:border-brand-danger/20 hover:bg-brand-danger-light transition-all duration-200 ease-smooth">
+                <span class="w-9 h-9 mr-3 inline-flex items-center justify-center rounded-lg text-base transition-all duration-200 ease-smooth bg-brand-danger text-white">
+                    <i class="fas fa-money-check-alt"></i>
+                </span>
+                <span class="text-sm font-medium text-brand-danger">Process Withdrawals</span>
+                <i class="fas fa-arrow-right text-xs text-brand-danger opacity-0 group-hover:opacity-100 ml-auto transition-opacity"></i>
+            </a>
+            <a href="#" class="group flex items-center p-3 rounded-xl border border-transparent hover:border-brand-accent/20 hover:bg-brand-accent-surface transition-all duration-200 ease-smooth">
+                <span class="w-9 h-9 mr-3 inline-flex items-center justify-center rounded-lg text-base transition-all duration-200 ease-smooth bg-brand-accent text-white">
+                    <i class="fas fa-chart-pie"></i>
+                </span>
+                <span class="text-sm font-medium text-brand-accent">View Reports</span>
+                <i class="fas fa-arrow-right text-xs text-brand-accent opacity-0 group-hover:opacity-100 ml-auto transition-opacity"></i>
+            </a>
+            <a href="#" class="group flex items-center p-3 rounded-xl border border-transparent hover:border-brand-warning/20 hover:bg-brand-warning-light transition-all duration-200 ease-smooth">
+                <span class="w-9 h-9 mr-3 inline-flex items-center justify-center rounded-lg text-base transition-all duration-200 ease-smooth bg-brand-warning text-white">
+                    <i class="fas fa-shield-alt"></i>
+                </span>
+                <span class="text-sm font-medium text-brand-warning">Manage Admins</span>
+                <i class="fas fa-arrow-right text-xs text-brand-warning opacity-0 group-hover:opacity-100 ml-auto transition-opacity"></i>
+            </a>
+            <a href="#" class="group flex items-center p-3 rounded-xl border border-transparent hover:border-brand-info/20 hover:bg-brand-info-light transition-all duration-200 ease-smooth">
+                <span class="w-9 h-9 mr-3 inline-flex items-center justify-center rounded-lg text-base transition-all duration-200 ease-smooth bg-brand-info text-white">
+                    <i class="fas fa-cog"></i>
+                </span>
+                <span class="text-sm font-medium text-brand-info">Settings</span>
+                <i class="fas fa-arrow-right text-xs text-brand-info opacity-0 group-hover:opacity-100 ml-auto transition-opacity"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+{# Add any page-specific JS here, e.g., for charts #}
+{% endblock %}
+

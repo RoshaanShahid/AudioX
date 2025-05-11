@@ -1,0 +1,546 @@
+{% extends 'creator/creator_base.html' %}
+{% load static %}
+{% load humanize %}
+{% load l10n %}
+
+{% block title %}Manage Audiobook: {{ audiobook.title|default:"Untitled" }} - Creator Area{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}
+
+{% block page_title %}Manage Audiobook{% endblock %}
+
+{% block page_subtitle %}
+<p class="mt-1 text-sm text-[#091e65]/80">Edit details and manage chapters for "<span class="font-semibold">{{ audiobook.title|default:"Untitled Audiobook" }}</span>".</p>
+{% endblock %}
+
+{% block content %}
+<div class="w-full py-8">
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-10">
+
+        <div class="lg:col-span-1 space-y-8">
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
+                <h2 class="text-lg font-semibold text-[#091e65] mb-4 pb-3 border-b border-slate-200 flex items-center">
+                    <i class="fas fa-image mr-3 text-[#091e65]/70 text-xl"></i> Cover Art
+                </h2>
+                <div class="flex-grow flex flex-col justify-center">
+                    <div class="relative group aspect-[4/3] rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center text-center bg-slate-50 overflow-hidden hover:border-[#091e65]/60 transition-colors duration-200 {% if audiobook.cover_image %}border-solid border-[#091e65]/80{% endif %}">
+                        <img id="coverImagePreview" 
+                             src="{% if submitted_values.cover_image_preview_url %}{{ submitted_values.cover_image_preview_url }}{% elif audiobook.cover_image %}{{ audiobook.cover_image.url }}{% else %}https://placehold.co/400x300/e2e8f0/64748b?text=No+Cover{% endif %}" 
+                             alt="Cover Preview" 
+                             class="absolute inset-0 h-full w-full object-cover z-0 transition-opacity duration-300">
+                        <label for="cover_image_input_main_form" class="absolute inset-0 cursor-pointer z-20 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/50 rounded-xl transition-opacity duration-300">
+                            <div class="text-white text-center">
+                                <svg class="mx-auto h-10 w-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
+                                <span class="mt-2 block text-xs font-semibold">Change Cover</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div id="coverImageNameDisplay" class="mt-1.5 text-xs text-slate-500 font-medium truncate max-w-full text-center">
+                        {% if audiobook.cover_image %}{{ audiobook.cover_image.name|cut:"audiobook_covers/" }}{% else %}No image uploaded{% endif %}
+                    </div>
+                    {% if form_errors.cover_image %}<p class="text-red-500 text-sm mt-1 text-center">{{ form_errors.cover_image }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
+                <h2 class="text-lg font-semibold text-[#091e65] mb-4 pb-3 border-b border-slate-200 flex items-center">
+                   <i class="fas fa-tags mr-3 text-[#091e65]/70 text-xl"></i> Pricing
+                </h2>
+                <div class="space-y-2">
+                    <p class="text-sm text-slate-600">Pricing Type:</p>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold {% if audiobook.is_paid %}bg-blue-100 text-[#091e65]{% else %}bg-green-100 text-green-800{% endif %}">
+                        <i class="fas mr-2 {% if audiobook.is_paid %}fa-dollar-sign{% else %}fa-gift{% endif %}"></i>
+                        {% if audiobook.is_paid %}Paid{% else %}Free{% endif %}
+                    </span>
+                    {% if audiobook.is_paid %}
+                    <div>
+                        <p class="text-sm text-slate-600 mt-3">Price:</p>
+                        <p class="text-lg font-bold text-slate-800">PKR {{ audiobook.price|floatformat:2|intcomma }}</p>
+                    </div>
+                    {% endif %}
+                    <p class="text-xs text-slate-400 pt-2">Pricing cannot be changed after creation.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-200">
+                    <h2 class="text-lg font-semibold text-[#091e65] flex items-center">
+                        <i class="fas fa-sliders-h mr-3 text-[#091e65]/70 text-xl"></i> Audiobook Status
+                    </h2>
+                    {% with status_val=audiobook.status %}
+                        {% if status_val == 'PUBLISHED' %}
+                            <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 items-center">
+                                <i class="fas fa-check-circle mr-1.5"></i> Published
+                            </span>
+                        {% elif status_val == 'PENDING' %}
+                            <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 items-center">
+                                <i class="fas fa-clock mr-1.5"></i> Pending Review
+                            </span>
+                        {% elif status_val == 'INACTIVE' %}
+                             <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800 items-center">
+                                <i class="fas fa-pause-circle mr-1.5"></i> Inactive
+                            </span>
+                        {% elif status_val == 'REJECTED' %}
+                            <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 items-center">
+                                <i class="fas fa-times-circle mr-1.5"></i> Rejected
+                            </span>
+                        {% elif status_val == 'PAUSED_BY_ADMIN' %}
+                            <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 items-center">
+                                <i class="fas fa-exclamation-triangle mr-1.5"></i> Paused by Admin
+                            </span>
+                        {% else %}
+                             <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-700 items-center">
+                                <i class="fas fa-question-circle mr-1.5"></i> {{ audiobook.get_status_display }}
+                            </span>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <div class="space-y-3">
+                    {% if audiobook.status == 'PAUSED_BY_ADMIN' or audiobook.status == 'REJECTED' %}
+                        <div class="p-3.5 rounded-lg {% if audiobook.status == 'REJECTED' %}bg-red-50 border border-red-200{% else %}bg-orange-50 border border-orange-200{% endif %}">
+                            <p class="text-sm {% if audiobook.status == 'REJECTED' %}text-red-700{% else %}text-orange-700{% endif %}">
+                                This audiobook's status ({{ audiobook.get_status_display|lower }}) was set by an administrator.
+                                {% if audiobook.status == 'PAUSED_BY_ADMIN' %}Please <a href="{% url 'AudioXApp:contactus' %}" class="font-medium underline hover:text-orange-800">contact support</a> if you have questions.{% endif %}
+                                {% if audiobook.status == 'REJECTED' %}It cannot be changed by you.{% endif %}
+                            </p>
+                        </div>
+                    {% endif %}
+
+                    {% if can_creator_change_status %}
+                        <form method="post" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" id="statusUpdateFormHtml" class="manage-audiobook-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_status_only">
+                            <div>
+                                <label for="status_only_select_html" class="block text-sm font-medium text-slate-700 mb-1.5">Change Status to:</label>
+                                <div class="relative">
+                                    <select name="status_only_select" id="status_only_select_html"
+                                            class="block w-full pl-3 pr-10 py-2.5 text-base border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm rounded-lg shadow-sm appearance-none transition duration-150 ease-in-out">
+                                        {% for value, display_name in creator_allowed_status_choices_for_toggle %}
+                                            <option value="{{ value }}" {% if submitted_values.status_only_select|default:audiobook.status == value %}selected{% endif %}>
+                                                {{ display_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                        <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+                                    </div>
+                                </div>
+                                {% if form_errors.status_update_status %} 
+                                    <p class="text-red-500 text-sm mt-1">{{ form_errors.status_update_status }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="mt-5 flex justify-end">
+                                <button type="submit" 
+                                        class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-md text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
+                                        {% if submitted_values.status_only_select|default:audiobook.status == audiobook.status %}disabled{% endif %}>
+                                    <i class="fas fa-check-circle mr-2"></i>Update Status
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <p class="text-sm text-slate-500 bg-slate-50 p-3 rounded-md border border-slate-200">
+                            The current status (<span class="font-semibold">{{ audiobook.get_status_display }}</span>) does not allow for changes from your end.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-8">
+            <form method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" id="detailsForm" class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-100 manage-audiobook-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_audiobook_details">
+                <input type="file" name="cover_image" id="cover_image_input_main_form" class="hidden" accept="image/jpeg, image/png, image/jpg">
+
+                <h2 class="text-lg font-semibold text-[#091e65] mb-6 pb-4 border-b border-slate-200 flex items-center">
+                    <i class="fas fa-info-circle mr-3 text-[#091e65]/70 text-xl"></i> Audiobook Information
+                </h2>
+                <div class="space-y-5">
+                    <div>
+                        <label for="title-edit" class="block text-sm font-medium text-slate-700 mb-1">Audiobook Title <span class="text-red-600">*</span></label>
+                        <input type="text" name="title" id="title-edit" required value="{{ submitted_values.title|default:audiobook.title|default_if_none:'' }}" class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out">
+                        {% if form_errors.title %}<p class="text-red-500 text-sm mt-1">{{ form_errors.title }}</p>{% endif %}
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                            <label for="author-edit" class="block text-sm font-medium text-slate-700 mb-1">Author Name <span class="text-red-600">*</span></label>
+                            <input type="text" name="author" id="author-edit" required value="{{ submitted_values.author|default:audiobook.author|default_if_none:'' }}" class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out">
+                            {% if form_errors.author %}<p class="text-red-500 text-sm mt-1">{{ form_errors.author }}</p>{% endif %}
+                        </div>
+                        <div>
+                            <label for="narrator-edit" class="block text-sm font-medium text-slate-700 mb-1">Narrator Name <span class="text-red-600">*</span></label>
+                            <input type="text" name="narrator" id="narrator-edit" required value="{{ submitted_values.narrator|default:audiobook.narrator|default_if_none:'' }}" class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out">
+                           {% if form_errors.narrator %}<p class="text-red-500 text-sm mt-1">{{ form_errors.narrator }}</p>{% endif %}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div>
+                            <label for="genre-edit" class="block text-sm font-medium text-slate-700 mb-1">Genre <span class="text-red-600">*</span></label>
+                            <input type="text" name="genre" id="genre-edit" required value="{{ submitted_values.genre|default:audiobook.genre|default_if_none:'' }}" class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out">
+                            {% if form_errors.genre %}<p class="text-red-500 text-sm mt-1">{{ form_errors.genre }}</p>{% endif %}
+                        </div>
+                        <div>
+                            <label for="language-edit" class="block text-sm font-medium text-slate-700 mb-1">Language <span class="text-red-600">*</span></label>
+                            <div class="relative">
+                                <select name="language" id="language-edit" required class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm appearance-none pr-10 bg-no-repeat transition duration-150 ease-in-out" style="background-position: right 0.5rem center; background-size: 1.5em 1.5em;">
+                                    <option value="" {% if not submitted_values.language and not audiobook.language %}selected{% endif %} disabled>Select Language...</option>
+                                    {% with current_lang=submitted_values.language|default:audiobook.language %}
+                                    <option value="English" {% if current_lang == "English" %}selected{% endif %}>English</option>
+                                    <option value="Urdu" {% if current_lang == "Urdu" %}selected{% endif %}>Urdu (اردو)</option>
+                                    <option value="Punjabi" {% if current_lang == "Punjabi" %}selected{% endif %}>Punjabi (پنجابی)</option>
+                                    <option value="Sindhi" {% if current_lang == "Sindhi" %}selected{% endif %}>Sindhi (سنڌي)</option>
+                                    {% endwith %}
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                     <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+                                </div>
+                            </div>
+                            {% if form_errors.language %}<p class="text-red-500 text-sm mt-1">{{ form_errors.language }}</p>{% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <label for="description-edit" class="block text-sm font-medium text-slate-700 mb-1">Description <span class="text-red-600">*</span></label>
+                        <textarea name="description" id="description-edit" rows="6" required class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out">{{ submitted_values.description|default:audiobook.description|default_if_none:'' }}</textarea>
+                        {% if form_errors.description %}<p class="text-red-500 text-sm mt-1">{{ form_errors.description }}</p>{% endif %}
+                    </div>
+                    {% if form_errors.general_error %}<div class="mt-3 p-3 bg-red-50 border-l-4 border-red-500 rounded-md"><p class="text-sm text-red-700 font-medium">{{ form_errors.general_error }}</p></div>{% endif %}
+                    <div class="pt-5 border-t border-slate-200 flex justify-end">
+                        <button type="submit" class="inline-flex justify-center items-center py-2.5 px-6 border border-transparent rounded-lg shadow-md text-sm font-semibold text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition duration-150 ease-in-out">
+                            <i class="fas fa-save w-4 h-4 mr-2 -ml-1"></i> Save Details
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-100">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-slate-200">
+                    <h2 class="text-lg font-semibold text-[#091e65] flex items-center">
+                       <i class="fas fa-list-ol mr-3 text-[#091e65]/70 text-xl"></i> Chapters
+                    </h2>
+                    <button type="button" id="toggleAddChapterFormBtn" class="inline-flex items-center px-4 py-2 border text-sm font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out whitespace-nowrap bg-[#091e65] text-white hover:bg-[#071852] focus:ring-[#091e65]">
+                        <i id="addChapterIcon" class="fas fa-plus transition-transform duration-300 ease-in-out"></i>
+                        <span id="addChapterText" class="ml-2">Add New Chapter</span>
+                    </button>
+                </div>
+
+                <div id="addChapterFormContainer" class="border border-slate-200 p-6 rounded-xl mb-6 bg-slate-50 hidden"> 
+                    <h4 class="text-lg font-semibold text-slate-800 mb-4">Add New Chapter Details</h4>
+                    <form method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" id="addChapterForm" class="manage-audiobook-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_chapter">
+                        <div class="space-y-4">
+                            <div>
+                                <label for="new_chapter_title" class="block text-sm font-medium text-slate-700 mb-1">Chapter Title <span class="text-red-600">*</span></label>
+                                <input type="text" name="new_chapter_title" id="new_chapter_title" required value="{{ submitted_values.new_chapter_title|default:'' }}" class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-1 focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out bg-white">
+                                {% if form_errors.new_chapter_title %}<p class="text-red-500 text-sm mt-1">{{ form_errors.new_chapter_title }}</p>{% endif %}
+                            </div>
+                            <div>
+                                <label for="new_chapter_audio" class="block text-sm font-medium text-slate-700 mb-1">Audio File <span class="text-red-600">*</span> <span class="text-slate-400 text-xs">(MP3, WAV, OGG - Max 50MB)</span></label>
+                                <input type="file" name="new_chapter_audio" id="new_chapter_audio" required accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#091e65]/10 file:text-[#091e65] hover:file:bg-[#091e65]/20 cursor-pointer transition duration-150 ease-in-out"/>
+                                {% if form_errors.new_chapter_audio %}<p class="text-red-500 text-sm mt-1">{{ form_errors.new_chapter_audio }}</p>{% endif %}
+                            </div>
+                            {% if form_errors.add_chapter_general %}<p class="text-red-500 text-sm mt-1 text-center">{{ form_errors.add_chapter_general }}</p>{% endif %}
+                            <div class="flex justify-end pt-2">
+                                <button type="submit" class="inline-flex items-center px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#091e65] hover:bg-[#071852] transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65]">
+                                    <i class="fas fa-check mr-1.5"></i> Confirm Add
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                {% if chapters_context_list %}
+                    <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                        {% for chapter_item in chapters_context_list %}
+                        {% with chapter=chapter_item.instance %}
+                        <div class="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden transition-all duration-150 ease-in-out relative group">
+                            <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                                <div class="flex items-center min-w-0">
+                                    <span class="flex-shrink-0 w-7 h-7 flex items-center justify-center bg-slate-100 text-slate-600 rounded-full text-xs font-bold mr-3">{{ chapter.chapter_order }}</span>
+                                    <h3 class="text-base font-semibold text-[#091e65] truncate" title="{{ chapter.chapter_name }}">{{ chapter.chapter_name }}</h3>
+                                </div>
+                                <div class="flex-shrink-0 flex items-center space-x-1 sm:space-x-2">
+                                    <button type="button" onclick="toggleEditChapterForm('{{ chapter.chapter_id }}')" class="p-2 rounded-full text-[#091e65] hover:bg-[#091e65]/10 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]/50 transition-colors duration-150" title="Edit Chapter">
+                                        <i class="fas fa-edit fa-fw text-sm"></i>
+                                    </button>
+                                    <form method="post" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" style="display:inline;" onsubmit="return confirmDeleteChapter('{{ chapter.chapter_name|escapejs }}');" class="manage-audiobook-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete_chapter_{{ chapter.chapter_id }}">
+                                        <button type="submit" class="p-2 rounded-full text-red-600 hover:bg-red-100 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 transition-colors duration-150" title="Delete Chapter">
+                                            <i class="fas fa-trash-alt fa-fw text-sm"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="px-5 py-2 text-xs text-slate-500 truncate">
+                                <i class="fas fa-file-audio mr-1 opacity-70"></i> 
+                                {% if chapter.audio_file and chapter.audio_file.name %}{{ chapter.audio_file.name|cut:"chapters_audio/" }}{% if chapter.audio_file.size %} <span class="ml-2 opacity-70">({{ chapter.audio_file.size|filesizeformat }})</span>{% endif %}{% else %}No audio file.{% endif %}
+                            </div>
+                            <div id="editChapterFormContainer_{{ chapter.chapter_id }}" class="border-t border-blue-200 bg-blue-50/70 hidden">
+                                <form method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" class="p-5 manage-audiobook-form">
+                                    {% csrf_token %}
+                                     <h4 class="text-sm font-medium text-blue-800 mb-3">Edit Chapter {{ chapter.chapter_order }}: <span class="font-normal italic">{{ chapter.chapter_name }}</span></h4>
+                                    <input type="hidden" name="action" value="edit_chapter_{{ chapter.chapter_id }}">
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label for="chapter_title_{{ chapter.chapter_id }}" class="block text-sm font-medium text-slate-700 mb-1">Chapter Title <span class="text-red-600">*</span></label>
+                                            <input type="text" name="chapter_title_{{ chapter.chapter_id }}" id="chapter_title_{{ chapter.chapter_id }}" required 
+                                                   value="{{ chapter_item.submitted_title_value|default_if_none:'' }}" 
+                                                   class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-1 focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out bg-white">
+                                            {% if chapter_item.errors.title %}<p class="text-red-500 text-sm mt-1">{{ chapter_item.errors.title }}</p>{% endif %}
+                                        </div>
+                                        <div>
+                                            <label for="chapter_audio_{{ chapter.chapter_id }}" class="block text-sm font-medium text-slate-700 mb-1">Replace Audio File <span class="text-slate-400 text-xs">(Optional, Max 50MB)</span></label>
+                                            <input type="file" name="chapter_audio_{{ chapter.chapter_id }}" id="chapter_audio_{{ chapter.chapter_id }}" accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#091e65]/10 file:text-[#091e65] hover:file:bg-[#091e65]/20 cursor-pointer transition duration-150 ease-in-out"/>
+                                            <p class="mt-1 text-xs text-slate-500">Current: {% if chapter.audio_file and chapter.audio_file.name %}{{ chapter.audio_file.name|cut:"chapters_audio/" }}{% else %}None{% endif %}</p>
+                                            {% if chapter_item.errors.audio %}<p class="text-red-500 text-sm mt-1">{{ chapter_item.errors.audio }}</p>{% endif %}
+                                        </div>
+                                        {% if chapter_item.errors.general %}<p class="text-red-500 text-sm mt-1 text-center">{{ chapter_item.errors.general }}</p>{% endif %}
+                                        <div class="flex justify-end space-x-3 pt-2">
+                                            <button type="button" onclick="toggleEditChapterForm('{{ chapter.chapter_id }}')" class="px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition duration-150 ease-in-out">Cancel</button>
+                                            <button type="submit" class="inline-flex items-center px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                <i class="fas fa-save mr-1.5"></i> Save Chapter
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12 px-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                        <i class="fas fa-folder-open text-5xl text-slate-300"></i>
+                        <p class="mt-4 text-sm font-semibold text-slate-700">No chapters added yet.</p>
+                        <p class="mt-1 text-xs text-slate-500">Click 'Add New Chapter' above to upload audio files.</p>
+                    </div>
+                {% endif %}
+                {% if form_errors.general_error_chapter %}<div class="mt-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-md"><p class="text-sm text-red-700 font-medium">{{ form_errors.general_error_chapter }}</p></div>{% endif %}
+            </div>
+        </div> 
+    </div> 
+</div>
+
+<div id="loadingOverlayManage" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/75 backdrop-blur-sm hidden">
+    <div class="bg-white p-10 rounded-2xl shadow-2xl text-center max-w-sm w-full">
+        <div class="mb-6">
+            <svg class="animate-spin h-12 w-12 text-[#091e65] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+        <h2 id="loaderMessageManage" class="text-xl font-semibold text-[#091e65] mb-2">Processing Request...</h2>
+        <p class="text-slate-500 text-sm">Please wait a moment.</p>
+    </div>
+</div>
+
+<script id="django-form-errors-data-for-js" type="application/json">{{ form_errors|json_script:"django-form-errors-data-for-js" }}</script>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const THEME_COLOR_PRIMARY = '#091e65'; 
+    const coverInput = document.getElementById('cover_image_input_main_form');
+    const coverPreview = document.getElementById('coverImagePreview');
+    const coverNameDisplay = document.getElementById('coverImageNameDisplay');
+    const loadingOverlayManage = document.getElementById('loadingOverlayManage');
+    const loaderMessageManage = document.getElementById('loaderMessageManage');
+    
+    const originalCoverSrc = `{% if audiobook.cover_image %}{{ audiobook.cover_image.url|escapejs }}{% else %}https://placehold.co/400x300/e2e8f0/64748b?text=No+Cover{% endif %}`;
+    const originalCoverName = `{% if audiobook.cover_image %}{{ audiobook.cover_image.name|cut:"audiobook_covers/"|escapejs }}{% else %}No image uploaded{% endif %}`;
+
+    if (coverInput && coverPreview) {
+        coverInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) { 
+                    Swal.fire({ title: 'Cover Image Too Large', html: `Cover image must be under <strong>2MB</strong>. <br/>Selected file is ${(file.size / (1024*1024)).toFixed(2)}MB.`, icon: 'error', confirmButtonColor: THEME_COLOR_PRIMARY });
+                    event.target.value = ''; 
+                    if(coverPreview) coverPreview.src = originalCoverSrc;
+                    if(coverNameDisplay) coverNameDisplay.textContent = originalCoverName;
+                    return;
+                }
+                if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+                    Swal.fire({ title: 'Invalid File Type', text: 'Please select a JPG, JPEG, or PNG image.', icon: 'error', confirmButtonColor: THEME_COLOR_PRIMARY });
+                    event.target.value = '';
+                    if(coverPreview) coverPreview.src = originalCoverSrc;
+                    if(coverNameDisplay) coverNameDisplay.textContent = originalCoverName;
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if(coverPreview) coverPreview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+                if(coverNameDisplay) coverNameDisplay.textContent = file.name;
+            } else {
+                if(coverPreview) coverPreview.src = originalCoverSrc;
+                if(coverNameDisplay) coverNameDisplay.textContent = originalCoverName;
+            }
+        });
+    }
+
+    const addChapterBtn = document.getElementById('toggleAddChapterFormBtn');
+    const addChapterFormContainer = document.getElementById('addChapterFormContainer');
+    const addChapterIcon = document.getElementById('addChapterIcon');
+    const addChapterText = document.getElementById('addChapterText');
+
+    let formErrors = {};
+    const formErrorsDataScript = document.getElementById('django-form-errors-data-for-js');
+    if (formErrorsDataScript) {
+        try {
+            formErrors = JSON.parse(formErrorsDataScript.textContent || '{}');
+        } catch(e) {
+            // Silently ignore parsing errors
+        }
+    }
+    
+    const addChapterErrorKeys = ['new_chapter_title', 'new_chapter_audio', 'add_chapter_general'];
+    let showAddFormInitially = false;
+    for (const key of addChapterErrorKeys) {
+        if (formErrors[key]) {
+            showAddFormInitially = true;
+            break;
+        }
+    }
+
+    if (addChapterFormContainer) {
+        if (showAddFormInitially) {
+            addChapterFormContainer.classList.remove('hidden');
+            if (addChapterIcon) addChapterIcon.className = 'fas fa-times transition-transform duration-300 ease-in-out';
+            if (addChapterText) addChapterText.textContent = 'Cancel Adding';
+        } else {
+             addChapterFormContainer.classList.add('hidden');
+        }
+    }
+
+    if (addChapterBtn && addChapterFormContainer) {
+        addChapterBtn.addEventListener('click', function() {
+            const isHidden = addChapterFormContainer.classList.contains('hidden');
+            if(isHidden) {
+                addChapterFormContainer.classList.remove('hidden');
+                if (addChapterIcon) addChapterIcon.className = 'fas fa-times transition-transform duration-300 ease-in-out';
+                if (addChapterText) addChapterText.textContent = 'Cancel Adding';
+                addChapterFormContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                addChapterFormContainer.classList.add('hidden');
+                if (addChapterIcon) addChapterIcon.className = 'fas fa-plus transition-transform duration-300 ease-in-out';
+                if (addChapterText) addChapterText.textContent = 'Add New Chapter';
+            }
+        });
+    }
+    
+    document.querySelectorAll('[id^="editChapterFormContainer_"]').forEach(container => {
+        const chapterId = container.id.split('_').pop();
+        if (formErrors[`chapter_edit_${chapterId}_title`] || 
+            formErrors[`chapter_edit_${chapterId}_audio`] || 
+            formErrors[`chapter_edit_${chapterId}_general`]) {
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            container.classList.add('hidden');
+        }
+    });
+
+    const statusSelect = document.getElementById('status_only_select_html');
+    const statusUpdateForm = document.getElementById('statusUpdateFormHtml'); 
+
+    if (statusSelect && statusUpdateForm) { 
+        const statusUpdateButton = statusUpdateForm.querySelector('button[type="submit"]'); 
+        const initialAudiobookStatus = '{{ audiobook.status|escapejs }}'; 
+
+        function toggleStatusButtonState() {
+            if (statusUpdateButton && statusSelect) { 
+                if (statusSelect.value === initialAudiobookStatus) {
+                    statusUpdateButton.disabled = true;
+                } else {
+                    statusUpdateButton.disabled = false;
+                }
+            }
+        }
+        toggleStatusButtonState();
+        statusSelect.addEventListener('change', toggleStatusButtonState);
+    }
+
+    function showManageLoader(message = "Processing Request...") {
+        if (loadingOverlayManage && loaderMessageManage) {
+            loaderMessageManage.textContent = message;
+            loadingOverlayManage.classList.remove('hidden');
+            setTimeout(() => {
+                loadingOverlayManage.classList.add('hidden');
+            }, 3000); 
+        }
+    }
+
+    document.querySelectorAll('.manage-audiobook-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            let actionMessage = "Processing request...";
+            const actionInput = form.querySelector('input[name="action"]');
+            if (actionInput) {
+                if (actionInput.value.startsWith('add_chapter')) {
+                    actionMessage = "Adding new chapter...";
+                } else if (actionInput.value.startsWith('edit_chapter_')) {
+                    actionMessage = "Updating chapter...";
+                } else if (actionInput.value.startsWith('delete_chapter_')) {
+                    actionMessage = "Deleting chapter...";
+                } else if (actionInput.value === 'update_status_only') {
+                    actionMessage = "Updating status...";
+                } else if (actionInput.value === 'edit_audiobook_details'){
+                    actionMessage = "Saving audiobook details...";
+                }
+            }
+            showManageLoader(actionMessage);
+        });
+    });
+});
+
+function toggleEditChapterForm(chapterId) {
+    const formContainer = document.getElementById(`editChapterFormContainer_${chapterId}`);
+    if (formContainer) {
+        const isCurrentlyHidden = formContainer.classList.contains('hidden');
+        document.querySelectorAll('[id^="editChapterFormContainer_"]').forEach(otherContainer => {
+            if (otherContainer.id !== formContainer.id) {
+                otherContainer.classList.add('hidden');
+            }
+        });
+        if(isCurrentlyHidden) {
+            formContainer.classList.remove('hidden');
+            formContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            formContainer.classList.add('hidden');
+        }
+    }
+}
+
+function confirmDeleteChapter(chapterName) {
+    return Swal.fire({
+        title: 'Delete Chapter?',
+        html: `Are you sure you want to delete chapter: "<strong>${chapterName}</strong>"?<br/>This action cannot be undone.`,
+        icon: 'warning',
+        iconColor: '#ef4444', 
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Delete It!',
+        confirmButtonColor: '#dc2626', 
+        cancelButtonText: 'Keep Chapter',
+        reverseButtons: true,
+        customClass: {
+            popup: 'rounded-xl shadow-2xl font-sans text-sm',
+            title: 'text-lg font-semibold text-slate-800',
+            htmlContainer: 'text-slate-600 pt-1 leading-normal',
+            confirmButton: 'px-5 py-2.5 rounded-lg text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow',
+            cancelButton: 'px-5 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-colors'
+        }
+    }).then((result) => {
+        return result.isConfirmed; 
+    });
+}
+</script>
+{% endblock %}

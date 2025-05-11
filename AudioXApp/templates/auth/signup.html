@@ -1,0 +1,724 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up - AudioX | Create Your Account</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        // Tailwind config matching the login page's light theme
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { DEFAULT: '#091e65', light: '#1a3a8a', dark: '#05134d', text: '#ffffff' },
+                        gray: { 50: '#f9fafb', 100: '#f3f4f6', 200: '#e5e7eb', 300: '#d1d5db', 400: '#9ca3af', 500: '#6b7280', 600: '#4b5563', 700: '#374151', 800: '#1f2937', 900: '#111827' },
+                        error: '#dc2626', success: '#16a34a', warning: '#f59e0b',
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    borderRadius: { 'lg': '0.5rem', 'xl': '0.75rem', '2xl': '1rem' },
+                    boxShadow: {
+                        'input': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+                        'input-focus': '0 0 0 3px rgba(9, 30, 101, 0.2)',
+                        'input-error': '0 0 0 3px rgba(220, 38, 38, 0.2)',
+                        'input-success': '0 0 0 3px rgba(22, 163, 74, 0.2)', // Added success focus shadow
+                        'button-primary': '0 4px 6px -1px rgba(9, 30, 101, 0.1), 0 2px 4px -2px rgba(9, 30, 101, 0.1)',
+                        'button-primary-hover': '0 10px 15px -3px rgba(9, 30, 101, 0.1), 0 4px 6px -4px rgba(9, 30, 101, 0.1)',
+                        'card': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+                    },
+                    animation: { 'fade-in': 'fade-in 0.5s ease-out forwards' },
+                    keyframes: { 'fade-in': { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } } }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Basic body styling */
+        html, body { height: 100%; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background-color: theme('colors.gray.100'); }
+
+        /* Input field with icon styling */
+        .input-with-icon { position: relative; }
+        .input-icon { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: theme('colors.gray.400'); pointer-events: none; font-size: 0.875rem; transition: color 0.15s ease-in-out; z-index: 2; } /* Ensure icon is above input */
+        .form-input:focus ~ .input-icon:not(.text-success):not(.text-error) { color: theme('colors.primary.DEFAULT'); }
+        .form-input.border-error ~ .input-icon { color: theme('colors.error') !important; }
+        .form-input.border-success ~ .input-icon { color: theme('colors.success') !important; }
+
+        /* Password input specific padding and toggle button */
+        .password-input { padding-right: 3rem !important; }
+        .password-toggle-btn { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); color: theme('colors.gray.400'); cursor: pointer; padding: 0.5rem; transition: color 0.15s ease-in-out; z-index: 3; background: none; border: none; } /* Ensure button is above input */
+        .password-toggle-btn:hover { color: theme('colors.primary.DEFAULT'); }
+
+        /* Phone Input Styling - FIXED */
+        .phone-input-container { position: relative; display: flex; align-items: center; }
+        .phone-prefix {
+            position: absolute;
+            left: 1px; top: 1px; bottom: 1px;
+            display: flex; align-items: center;
+            padding-left: 0.75rem; padding-right: 0.5rem;
+            font-size: 0.875rem; color: theme('colors.gray.500');
+            pointer-events: none;
+            border-right: 1px solid theme('colors.gray.300');
+            background-color: theme('colors.gray.50');
+            border-top-left-radius: theme('borderRadius.lg');
+            border-bottom-left-radius: theme('borderRadius.lg');
+            z-index: 2; /* Keep prefix above input */
+        }
+        .phone-prefix .flag { font-size: 1rem; margin-right: 0.375rem; line-height: 1; }
+        .phone-input-field {
+            padding-left: 5.75rem !important; /* Adjust based on prefix width */
+            border-top-left-radius: theme('borderRadius.lg') !important;
+            border-bottom-left-radius: theme('borderRadius.lg') !important;
+            position: relative;
+            z-index: 1; /* Input is behind prefix */
+        }
+        /* Remove z-index change on focus for phone input */
+
+        /* SweetAlert2 Light Theme Customization (same as before) */
+        body.swal2-shown > [aria-hidden="true"] { filter: blur(3px); }
+        .swal2-popup { background: theme('colors.white') !important; border-radius: theme('borderRadius.xl') !important; box-shadow: theme('boxShadow.card'); color: theme('colors.gray.700') !important; }
+        .swal2-title { color: theme('colors.gray.900') !important; font-weight: 600 !important; }
+        .swal2-html-container { color: theme('colors.gray.600') !important; }
+        .swal2-confirm, .swal2-cancel, .swal2-deny { border-radius: theme('borderRadius.lg') !important; padding: 0.75rem 1.5rem !important; font-weight: 500 !important; font-size: 0.875rem !important; transition: all 0.2s ease; margin: 0 0.375rem !important; border: none; box-shadow: theme('boxShadow.input'); }
+        .swal2-confirm { background-color: theme('colors.primary.DEFAULT') !important; color: theme('colors.primary.text') !important; }
+        .swal2-confirm:hover { background-color: theme('colors.primary.dark') !important; transform: translateY(-1px); box-shadow: theme('boxShadow.button-primary'); }
+        .swal2-cancel { background-color: theme('colors.gray.200') !important; color: theme('colors.gray.700') !important; }
+        .swal2-cancel:hover { background-color: theme('colors.gray.300') !important; }
+        .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(22, 163, 74, 0.3) !important; }
+        .swal2-icon.swal2-success .swal2-success-line-tip, .swal2-icon.swal2-success .swal2-success-line-long { background-color: theme('colors.success') !important; }
+        .swal2-icon.swal2-error { border-color: rgba(220, 38, 38, 0.3) !important; color: theme('colors.error') !important; }
+        .swal2-icon.swal2-warning { border-color: rgba(245, 158, 11, 0.3) !important; color: theme('colors.warning') !important; }
+
+        /* Scrollbar styling (same as before) */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: theme('colors.gray.100'); }
+        ::-webkit-scrollbar-thumb { background-color: theme('colors.gray.300'); border-radius: 10px; border: 2px solid theme('colors.gray.100'); }
+        ::-webkit-scrollbar-thumb:hover { background-color: theme('colors.gray.400'); }
+
+        /* Animation delays */
+        .animation-delay-100 { animation-delay: 100ms; } .animation-delay-200 { animation-delay: 200ms; } .animation-delay-300 { animation-delay: 300ms; } .animation-delay-400 { animation-delay: 400ms; } .animation-delay-500 { animation-delay: 500ms; } .animation-delay-600 { animation-delay: 600ms; }
+
+        /* Style for verified OTP input */
+        #otp.border-success { border-color: theme('colors.success'); }
+        #otp.border-success:focus { box-shadow: theme('boxShadow.input-success') + ', ' + theme('boxShadow.input'); } /* Green focus ring */
+        #otp.border-error { border-color: theme('colors.error'); }
+        #otp.border-error:focus { box-shadow: theme('boxShadow.input-error') + ', ' + theme('boxShadow.input'); } /* Red focus ring */
+
+    </style>
+</head>
+
+<body class="bg-gray-100 text-gray-900">
+
+    <div class="w-full min-h-screen grid grid-cols-1 lg:grid-cols-2">
+
+        <div class="bg-white flex flex-col justify-center items-center p-8 sm:p-12 lg:p-16 order-last lg:order-first relative overflow-hidden">
+            <div class="absolute -top-10 -left-10 w-48 h-48 border-[16px] border-primary/5 rounded-full opacity-50"></div>
+            <div class="absolute -bottom-16 -right-16 w-72 h-72 bg-primary/5 rounded-full opacity-60"></div>
+
+            <div class="text-center max-w-md relative z-10">
+                <div class="mb-8 inline-block p-5 bg-primary/5 border border-primary/10 rounded-full shadow-lg transform transition duration-500 hover:scale-105">
+                    <i class="fas fa-user-plus text-4xl text-primary"></i>
+                </div>
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4 text-gray-900 animate-fade-in animation-delay-100 opacity-0">Join the Audio Revolution</h2>
+                <p class="text-base lg:text-lg text-gray-600 mb-10 leading-relaxed animate-fade-in animation-delay-200 opacity-0">Create your AudioX account to unlock a world of premium sound quality and personalized audio experiences.</p>
+                <div class="space-y-3 text-left text-gray-700 text-sm font-medium animate-fade-in animation-delay-300 opacity-0">
+                    <div class="flex items-center p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition duration-200 transform hover:scale-[1.02]"><i class="fa-solid fa-check-circle text-primary w-5 h-5 mr-3 shrink-0"></i><span>Simple and Secure Sign Up</span></div>
+                    <div class="flex items-center p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition duration-200 transform hover:scale-[1.02] animation-delay-200"><i class="fa-solid fa-headphones-simple text-primary w-5 h-5 mr-3 shrink-0"></i><span>Instant Access to Millions of Tracks</span></div>
+                    <div class="flex items-center p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition duration-200 transform hover:scale-[1.02] animation-delay-400"><i class="fa-solid fa-sliders text-primary w-5 h-5 mr-3 shrink-0"></i><span>Personalize Your Listening Profile</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-100 flex flex-col justify-center p-6 sm:p-10 lg:p-16 order-first lg:order-last">
+            <div class="w-full max-w-md mx-auto">
+                <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-card animate-fade-in animation-delay-400 opacity-0">
+
+                    <div class="text-center mb-8">
+                        <h1 class="text-2xl font-bold text-gray-900 mb-1">Create Account</h1>
+                        <p class="text-sm text-gray-500">Start your premium audio journey.</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <button class="w-full flex items-center justify-center py-2.5 px-4 border border-gray-300 bg-white hover:bg-gray-50 transition-colors duration-200 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-primary/50 text-sm font-medium transform hover:scale-[1.02] shadow-sm">
+                            <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M21.8 10.1c0-.7-.1-1.4-.2-2.1H12v3.9h5.5c-.2 1.3-.9 2.4-1.9 3.2v2.5h3.2c1.9-1.7 3-4.2 3-7.5z" fill="#4285F4"/><path d="M12 22c2.7 0 4.9-.9 6.6-2.4l-3.2-2.5c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.8-5.6-4.2H3.1v2.6C4.8 19.9 8.1 22 12 22z" fill="#34A853"/><path d="M6.4 13.7c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8V7.6H3.1C2.4 9 2 10.5 2 12s.4 3 1.1 4.4l3.3-2.7z" fill="#FBBC05"/><path d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8C16.9 2.9 14.7 2 12 2 8.1 2 4.8 4.1 3.1 7.6l3.3 2.7c.8-2.4 3-4.2 5.6-4.2z" fill="#EA4335"/></svg>
+                            Sign up with Google
+                        </button>
+                    </div>
+
+                    <div class="flex items-center my-6">
+                        <hr class="flex-grow border-gray-200" />
+                        <span class="px-3 text-gray-400 text-xs font-medium uppercase">OR</span>
+                        <hr class="flex-grow border-gray-200" />
+                    </div>
+
+                    <form id="signupForm" method="post" class="space-y-4">
+                        {% csrf_token %}
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="input-with-icon">
+                                <label for="full_name" class="sr-only">Full Name</label>
+                                <input class="form-input w-full block px-4 py-3 border border-gray-300 bg-white placeholder-gray-400 text-gray-900 text-sm transition duration-150 ease-in-out rounded-lg shadow-input appearance-none pl-11 focus:border-primary focus:ring-0 focus:shadow-input-focus" placeholder="Full Name" type="text" name="full_name" id="full_name" required />
+                                <i class="fas fa-user input-icon"></i>
+                            </div>
+                            <div class="input-with-icon">
+                                <label for="username" class="sr-only">Username</label>
+                                <input class="form-input w-full block px-4 py-3 border border-gray-300 bg-white placeholder-gray-400 text-gray-900 text-sm transition duration-150 ease-in-out rounded-lg shadow-input appearance-none pl-11 focus:border-primary focus:ring-0 focus:shadow-input-focus" placeholder="Username" type="text" name="username" id="username" required />
+                                <i class="fas fa-at input-icon"></i>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="email" class="sr-only">Email Address</label>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <div class="relative flex-grow input-with-icon">
+                                    <input class="form-input w-full block px-4 py-3 border border-gray-300 bg-white placeholder-gray-400 text-gray-900 text-sm transition duration-150 ease-in-out rounded-lg shadow-input appearance-none pl-11 focus:border-primary focus:ring-0 focus:shadow-input-focus" placeholder="Email Address" type="email" name="email" id="email" required />
+                                    <i class="fas fa-envelope input-icon"></i>
+                                </div>
+                                <button type="button" id="sendOtpButton"
+                                        class="w-full sm:w-auto shrink-0 bg-primary text-primary-text px-4 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap text-xs shadow-button-primary hover:shadow-button-primary-hover transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-primary">
+                                    Send OTP
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="input-with-icon">
+                            <label for="otp" class="sr-only">Enter OTP</label>
+                            <input class="form-input w-full block px-4 py-3 border border-gray-300 bg-white placeholder-gray-400 text-gray-900 text-sm transition duration-150 ease-in-out rounded-lg shadow-input appearance-none pl-11 focus:border-primary focus:ring-0 focus:shadow-input-focus" placeholder="Enter 6-Digit OTP" type="text" name="otp" id="otp" required inputmode="numeric" maxlength="6" />
+                            <i class="fas fa-key input-icon"></i>
+                            <input type="hidden" name="emailVerified" id="emailVerified" value="false"> {# This tracks if OTP was successfully verified via JS #}
+                            <p id="otp-error" class="text-error text-xs mt-1.5 hidden"><i class="fas fa-exclamation-circle mr-1"></i>Invalid OTP entered.</p>
+                            <p id="otp-success" class="text-success text-xs mt-1.5 hidden"><i class="fas fa-check-circle mr-1"></i>OTP Verified!</p>
+                        </div>
+
+                        <div>
+                            <label for="phone_number_only" class="sr-only">Phone Number</label>
+                            <div class="phone-input-container input-with-icon">
+                                <span class="phone-prefix">
+                                    <span class="flag" aria-label="Pakistan Flag">🇵🇰</span> +92
+                                </span>
+                                <input
+                                    class="form-input phone-input-field w-full block px-4 py-3 border border-gray-300 bg-white placeholder-gray-400 text-gray-900 text-sm transition duration-150 ease-in-out rounded-lg shadow-input appearance-none focus:border-primary focus:ring-0 focus:shadow-input-focus"
+                                    placeholder="Mobile Number (e.g. 3001234567)"
+                                    type="tel"
+                                    name="phone_number_only" id="phone_number_only"
+                                    pattern="[0-9]{10}" title="Enter 10 digit phone number (e.g., 3001234567)"
+                                    inputmode="numeric"
+                                    required />
+                                <input type="hidden" name="phone" id="phone">
+                            </div>
+                            <p id="phone-error" class="text-error text-xs mt-1.5 hidden"><i class="fas fa-exclamation-circle mr-1"></i>Please enter a valid 10-digit number.</p>
+                        </div>
+
+                        <div class="input-with-icon relative">
+                            <label for="password" class="sr-only">Password</label>
+                            <input class="form-input password-input w-full block px-4 py-3 border border-gray-300 bg-white placeholder-gray-400 text-gray-900 text-sm transition duration-150 ease-in-out rounded-lg shadow-input appearance-none pl-11 focus:border-primary focus:ring-0 focus:shadow-input-focus" placeholder="Password" type="password" name="password" id="password" required />
+                            <i class="fas fa-lock input-icon"></i>
+                            <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <div class="input-with-icon relative">
+                             <label for="confirm-password" class="sr-only">Confirm Password</label>
+                             <input class="form-input password-input w-full block px-4 py-3 border border-gray-300 bg-white placeholder-gray-400 text-gray-900 text-sm transition duration-150 ease-in-out rounded-lg shadow-input appearance-none pl-11 focus:border-primary focus:ring-0 focus:shadow-input-focus" placeholder="Confirm Password" type="password" name="confirm-password" id="confirm-password" required/>
+                             <i class="fas fa-check-circle input-icon text-gray-400"></i> <button type="button" class="password-toggle-btn" aria-label="Toggle confirm password visibility">
+                                 <i class="fas fa-eye"></i>
+                             </button>
+                             <p id="password-match-error" class="text-error text-xs mt-1.5 hidden"><i class="fas fa-exclamation-circle mr-1"></i> Passwords do not match.</p>
+                        </div>
+
+                        <div class="flex items-start space-x-2 pt-2">
+                            <input type="checkbox" id="terms" name="terms" class="h-4 w-4 mt-0.5 shrink-0 rounded border-gray-300 bg-white text-primary focus:ring-primary/50 focus:ring-offset-white" required>
+                            <label for="terms" class="text-xs text-gray-500">
+                                I agree to the
+                                <a href="#" class="font-medium text-primary hover:text-primary-dark transition duration-150 ease-in-out">Terms of Service</a> and
+                                <a href="#" class="font-medium text-primary hover:text-primary-dark transition duration-150 ease-in-out">Privacy Policy</a>.
+                            </label>
+                        </div>
+
+                        <button id="submitButton" class="w-full bg-primary hover:bg-primary-dark text-primary-text py-3 rounded-lg font-semibold transition-all duration-300 ease-in-out shadow-button-primary hover:shadow-button-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-primary text-sm mt-6 transform hover:-translate-y-0.5"
+                                type="submit">
+                            Create Account
+                        </button>
+                    </form>
+
+                    <div class="mt-8 text-center text-xs text-gray-500">
+                        <span>Already have an account?
+                            <a href="{% url 'AudioXApp:login' %}" class="font-semibold text-primary hover:text-primary-dark transition duration-150 ease-in-out">Sign In</a>
+                        </span>
+                        <span class="mx-2">|</span>
+                        <a href="{% url 'AudioXApp:home' %}" class="hover:text-primary transition duration-150 ease-in-out">Go to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const sendOtpButton = document.getElementById('sendOtpButton');
+        const emailInput = document.getElementById('email');
+        const otpInput = document.getElementById('otp');
+        const emailVerifiedInput = document.getElementById('emailVerified'); // Hidden input
+        const signupForm = document.getElementById('signupForm');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        const passwordMatchError = document.getElementById('password-match-error');
+        const phoneInput = document.getElementById('phone'); // Hidden input for full number
+        const phoneNumberOnlyInput = document.getElementById('phone_number_only'); // Visible input for digits
+        const phoneError = document.getElementById('phone-error');
+        const termsCheckbox = document.getElementById('terms');
+        const submitButton = document.getElementById('submitButton');
+        const passwordToggleButtons = document.querySelectorAll('.password-toggle-btn');
+        const djangoMessagesElement = document.getElementById('django-messages');
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        const allFormInputs = document.querySelectorAll('.form-input');
+        const otpError = document.getElementById('otp-error');
+        const otpSuccess = document.getElementById('otp-success');
+
+        // --- State Variables ---
+        let primaryColor, errorColor, successColor, warningColor, grayBorderColor, grayTextColor, inputFocusShadow, errorFocusShadow, successFocusShadow, inputBaseShadow;
+        let isOtpVerified = false; // Track OTP verification status (will be set by backend on submit)
+
+        // --- Initialization ---
+        function initializeThemeColors() {
+             try {
+                 primaryColor = tailwind.config.theme.extend.colors.primary.DEFAULT;
+                 errorColor = tailwind.config.theme.extend.colors.error;
+                 successColor = tailwind.config.theme.extend.colors.success;
+                 warningColor = tailwind.config.theme.extend.colors.warning;
+                 grayBorderColor = tailwind.config.theme.extend.colors.gray[300];
+                 grayTextColor = tailwind.config.theme.extend.colors.gray[400];
+                 inputFocusShadow = tailwind.config.theme.extend.boxShadow['input-focus'];
+                 errorFocusShadow = tailwind.config.theme.extend.boxShadow['input-error'];
+                 successFocusShadow = tailwind.config.theme.extend.boxShadow['input-success']; // Added
+                 inputBaseShadow = tailwind.config.theme.extend.boxShadow['input'];
+             } catch (e) {
+                 console.warn("Tailwind config not fully ready, using fallback colors.");
+                 primaryColor = '#091e65'; errorColor = '#dc2626'; successColor = '#16a34a'; warningColor = '#f59e0b'; grayBorderColor = '#d1d5db'; grayTextColor = '#9ca3af'; inputFocusShadow = '0 0 0 3px rgba(9, 30, 101, 0.2)'; errorFocusShadow = '0 0 0 3px rgba(220, 38, 38, 0.2)'; successFocusShadow = '0 0 0 3px rgba(22, 163, 74, 0.2)'; inputBaseShadow = '0 1px 2px 0 rgb(0 0 0 / 0.05)';
+             }
+        }
+        initializeThemeColors();
+
+        // --- Utility Functions ---
+        const showNotification = (title, text, icon) => {
+             let effectiveConfirmButtonColor = primaryColor;
+             if (icon === 'success') effectiveConfirmButtonColor = successColor;
+             else if (icon === 'error') effectiveConfirmButtonColor = errorColor;
+             else if (icon === 'warning') effectiveConfirmButtonColor = warningColor;
+
+             Swal.fire({
+                 title: title, text: text, icon: icon,
+                 confirmButtonColor: effectiveConfirmButtonColor,
+                 customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm', cancelButton: 'swal2-cancel', title: 'swal2-title', htmlContainer: 'swal2-html-container' },
+                 buttonsStyling: false,
+             });
+        };
+
+        function markInputError(inputElement, showMessage = true) {
+             if (!inputElement) return;
+             inputElement.classList.add('border-error');
+             inputElement.classList.remove('border-success');
+             inputElement.style.borderColor = errorColor;
+             const icon = inputElement.parentElement?.querySelector('.input-icon');
+             if (icon) { icon.style.color = errorColor; icon.classList.add('text-error'); icon.classList.remove('text-success'); }
+             const errorElementId = inputElement.id + '-error';
+             const errorElement = document.getElementById(errorElementId);
+             if (errorElement && showMessage) { errorElement.classList.remove('hidden'); }
+             const successElementId = inputElement.id + '-success';
+             const successElement = document.getElementById(successElementId);
+             if (successElement) { successElement.classList.add('hidden'); }
+        }
+
+        function clearInputError(inputElement) {
+             if (!inputElement) return;
+             inputElement.classList.remove('border-error', 'border-success');
+             inputElement.style.borderColor = grayBorderColor;
+             const icon = inputElement.parentElement?.querySelector('.input-icon');
+             if (icon) { icon.style.color = grayTextColor; icon.classList.remove('text-error', 'text-success'); }
+             const errorElementId = inputElement.id + '-error';
+             const errorElement = document.getElementById(errorElementId);
+             if (errorElement) { errorElement.classList.add('hidden'); }
+             const successElementId = inputElement.id + '-success';
+             const successElement = document.getElementById(successElementId);
+             if (successElement) { successElement.classList.add('hidden'); }
+        }
+
+        function markInputSuccess(inputElement, showMessage = true) {
+             if (!inputElement) return;
+             clearInputError(inputElement);
+             inputElement.classList.add('border-success');
+             inputElement.style.borderColor = successColor;
+             const icon = inputElement.parentElement?.querySelector('.input-icon');
+             if (icon) { icon.style.color = successColor; icon.classList.add('text-success'); }
+             const successElementId = inputElement.id + '-success';
+             const successElement = document.getElementById(successElementId);
+             if (successElement && showMessage) { successElement.classList.remove('hidden'); }
+        }
+
+        function clearAllFormErrors() {
+             allFormInputs.forEach(clearInputError);
+             clearInputError(phoneNumberOnlyInput);
+             clearInputError(confirmPasswordInput);
+             clearInputError(otpInput);
+             passwordMatchError.classList.add('hidden');
+             phoneError.classList.add('hidden');
+             otpError.classList.add('hidden');
+             otpSuccess.classList.add('hidden');
+        }
+
+
+        // --- Input Focus/Blur Styling ---
+        allFormInputs.forEach(input => {
+            const icon = input.parentElement?.querySelector('.input-icon');
+            input.addEventListener('focus', function(e) {
+                const isError = e.target.classList.contains('border-error');
+                const isSuccess = e.target.classList.contains('border-success');
+                const focusBorderColor = isError ? errorColor : (isSuccess ? successColor : primaryColor);
+                const focusBoxShadow = isError ? errorFocusShadow : (isSuccess ? successFocusShadow : inputFocusShadow); // Use success shadow
+
+                e.target.style.borderColor = focusBorderColor;
+                e.target.style.boxShadow = focusBoxShadow + ', ' + inputBaseShadow;
+
+                if(icon && !isError && !isSuccess) { icon.style.color = primaryColor; }
+                // REMOVED z-index change for phone input on focus
+            });
+
+            input.addEventListener('blur', function(e) {
+                const isError = e.target.classList.contains('border-error');
+                const isSuccess = e.target.classList.contains('border-success');
+                e.target.style.borderColor = isError ? errorColor : (isSuccess ? successColor : grayBorderColor);
+                e.target.style.boxShadow = inputBaseShadow;
+
+                if(icon && !isError && !isSuccess) { icon.style.color = grayTextColor; }
+                else if (icon && isError) { icon.style.color = errorColor; }
+                else if (icon && isSuccess) { icon.style.color = successColor; }
+                // REMOVED z-index reset for phone input on blur
+            });
+        });
+
+
+        // --- Phone Number Formatting and Validation ---
+        if (phoneNumberOnlyInput && phoneInput && phoneError) {
+            phoneNumberOnlyInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                value = value.slice(0, 10); // Limit to 10 digits
+                e.target.value = value;
+
+                const isValid = value.length === 10;
+                const isEmpty = value.length === 0;
+
+                phoneInput.value = isValid ? '+92' + value : ''; // Update hidden input
+
+                if (isEmpty) {
+                    clearInputError(phoneNumberOnlyInput);
+                    phoneError.classList.add('hidden');
+                } else if (isValid) {
+                    markInputSuccess(phoneNumberOnlyInput, false);
+                    phoneError.classList.add('hidden');
+                } else {
+                    markInputError(phoneNumberOnlyInput, false);
+                    phoneError.classList.remove('hidden');
+                }
+            });
+             // Initial validation on load (if pre-filled)
+             const initialValue = phoneNumberOnlyInput.value.replace(/\D/g, '');
+             if (initialValue.length > 0 && initialValue.length !== 10) {
+                 markInputError(phoneNumberOnlyInput, false);
+                 phoneError.classList.remove('hidden');
+             } else if (initialValue.length === 10) {
+                 markInputSuccess(phoneNumberOnlyInput, false);
+                 phoneInput.value = '+92' + initialValue;
+             }
+        }
+
+
+        // --- OTP Sending ---
+        if (sendOtpButton && emailInput && otpInput && emailVerifiedInput && csrfToken) {
+            sendOtpButton.addEventListener('click', function() {
+                const email = emailInput.value.trim();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                clearInputError(emailInput);
+                clearInputError(otpInput); // Clear OTP state when sending new one
+                isOtpVerified = false; // Reset verification status
+                emailVerifiedInput.value = 'false';
+
+                if (!email || !emailRegex.test(email)) {
+                    showNotification('Invalid Email', 'Please enter a valid email address.', 'warning');
+                    markInputError(emailInput);
+                    emailInput.focus();
+                    return;
+                }
+
+                sendOtpButton.disabled = true;
+                sendOtpButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-1.5 text-xs"></i> Sending...`;
+
+                fetch("{% url 'AudioXApp:send_otp' %}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ email: email, purpose: 'signup' })
+                })
+                .then(async response => {
+                    const isJson = response.headers.get('content-type')?.includes('application/json');
+                    const data = isJson ? await response.json() : null;
+                    if (!response.ok) {
+                        const errorMsg = data?.message || response.statusText || `HTTP error! Status: ${response.status}`;
+                        throw new Error(errorMsg);
+                    }
+                    return data;
+                })
+                .then(data => {
+                    if (data?.status === 'success') {
+                        showNotification('OTP Sent!', data.message || 'An OTP has been sent to your email.', 'success');
+                        otpInput.focus();
+                        markInputSuccess(emailInput, false);
+                    } else {
+                        throw new Error(data?.message || 'Could not send OTP.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending OTP:', error);
+                    showNotification('OTP Error', error.message || 'An unknown error occurred.', 'error');
+                    markInputError(emailInput);
+                })
+                .finally(() => {
+                    sendOtpButton.disabled = false;
+                    sendOtpButton.innerHTML = 'Send OTP';
+                });
+            });
+
+            // --- REMOVED OTP Verification on Input ---
+            // otpInput.addEventListener('input', function() { ... });
+
+        } else {
+            if (!csrfToken) console.error("CSRF Token not found!");
+            else console.warn("OTP elements (button, email, otp, hidden) not found.");
+        }
+
+        // --- REMOVED OTP Verification Function ---
+        // function verifyOtp(email, otp) { ... }
+
+
+        // --- Password Matching Validation ---
+        const validatePasswords = () => {
+            if (!passwordInput || !confirmPasswordInput || !passwordMatchError) return true;
+            const pass1 = passwordInput.value;
+            const pass2 = confirmPasswordInput.value;
+            const match = pass1 === pass2;
+            const confirmHasValue = pass2.length > 0;
+            const pass1HasValue = pass1.length > 0;
+
+            passwordMatchError.classList.toggle('hidden', match || !confirmHasValue);
+            const confirmIcon = confirmPasswordInput.parentElement?.querySelector('.input-icon');
+
+            if (!pass1HasValue || !confirmHasValue) {
+                 clearInputError(confirmPasswordInput);
+                 if (confirmIcon) confirmIcon.className = 'fas fa-check-circle input-icon text-gray-400';
+                 return true;
+            }
+            if (match) {
+                 markInputSuccess(confirmPasswordInput, false);
+                 if (confirmIcon) confirmIcon.className = 'fas fa-check-circle input-icon text-success';
+            } else {
+                 markInputError(confirmPasswordInput, false);
+                 if (confirmIcon) confirmIcon.className = 'fas fa-times-circle input-icon text-error';
+            }
+            return match;
+        };
+
+        if (passwordInput && confirmPasswordInput) {
+            passwordInput.addEventListener('input', validatePasswords);
+            confirmPasswordInput.addEventListener('input', validatePasswords);
+        }
+
+        // --- Form Submission ---
+        if (signupForm && submitButton && termsCheckbox && csrfToken) {
+            signupForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                clearAllFormErrors();
+
+                let isValid = true;
+
+                // Basic required field checks (add more if needed)
+                const requiredInputs = ['full_name', 'username', 'email', 'otp', 'password', 'confirm-password'];
+                requiredInputs.forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input && !input.value.trim()) {
+                        markInputError(input);
+                        isValid = false;
+                    }
+                });
+
+                // Validate Phone Number
+                const phoneDigits = phoneNumberOnlyInput.value.replace(/\D/g, '');
+                if (phoneDigits.length !== 10) {
+                    markInputError(phoneNumberOnlyInput, false);
+                    phoneError.classList.remove('hidden');
+                    isValid = false;
+                } else {
+                    phoneInput.value = '+92' + phoneDigits; // Ensure hidden field is updated
+                }
+
+                // Validate Passwords Match
+                if (!validatePasswords()) {
+                    isValid = false;
+                }
+
+                // Check Terms Agreement
+                if (!termsCheckbox.checked) {
+                    showNotification('Agreement Required', 'Please agree to the Terms & Privacy Policy.', 'warning');
+                    termsCheckbox.classList.add('ring-2', 'ring-warning', 'ring-offset-1', 'ring-offset-white');
+                    setTimeout(() => termsCheckbox.classList.remove('ring-2', 'ring-warning', 'ring-offset-1', 'ring-offset-white'), 2000);
+                    isValid = false;
+                }
+
+                // If any validation failed, stop submission
+                if (!isValid) {
+                    showNotification('Incomplete Form', 'Please check the highlighted fields and try again.', 'error');
+                    const firstError = signupForm.querySelector('.border-error');
+                    if (firstError) firstError.focus();
+                    return;
+                }
+
+                // --- If all validations pass, proceed with submission ---
+                submitButton.disabled = true;
+                submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-1.5 text-xs"></i> Creating Account...`;
+                // emailVerifiedInput.value = 'true'; // We removed JS verification, backend will handle OTP check
+
+                const formData = new FormData(this);
+
+                fetch("{% url 'AudioXApp:signup' %}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(async response => {
+                    const isJson = response.headers.get('content-type')?.includes('application/json');
+                    const data = isJson ? await response.json() : null;
+                    if (!response.ok || data?.status !== 'success') { // Check both HTTP status and backend status
+                        const errorMsg = data?.message || response.statusText || `Signup failed! Status: ${response.status}`;
+                        const error = new Error(errorMsg);
+                        error.data = data;
+                        throw error;
+                    }
+                    return data;
+                })
+                .then(data => {
+                    Swal.fire({
+                        title: 'Account Created!', text: data.message || 'Success! Redirecting you to login...', icon: 'success',
+                        confirmButtonText: 'Login Now', confirmButtonColor: primaryColor,
+                        allowOutsideClick: false, allowEscapeKey: false,
+                        customClass: { popup: 'swal2-popup', confirmButton: 'swal2-confirm' }, buttonsStyling: false,
+                    }).then((result) => {
+                        if (result.isConfirmed) { window.location.href = "{% url 'AudioXApp:login' %}"; }
+                    });
+                })
+                .catch(error => {
+                    console.error('Signup Error:', error);
+                    showNotification('Signup Error', error.message || 'An error occurred. Please check details and try again.', 'error');
+                    // Handle specific field errors from backend
+                    if (error.data?.errors) {
+                        Object.keys(error.data.errors).forEach(fieldName => {
+                            let inputId = fieldName;
+                            if (fieldName === 'phone_number_only' || fieldName === 'phone') inputId = 'phone_number_only';
+                            if (fieldName === 'confirm_password') inputId = 'confirm-password';
+                            if (fieldName === 'confirm-password') inputId = 'confirm-password'; // Duplicate? Check backend response key
+
+                            const inputField = document.getElementById(inputId);
+                            if (inputField) { markInputError(inputField); }
+                            // Special handling for OTP error
+                            if (fieldName === 'otp') {
+                                markInputError(otpInput, false);
+                                otpError.textContent = error.data.errors[fieldName]; // Show backend message
+                                otpError.classList.remove('hidden');
+                                otpSuccess.classList.add('hidden');
+                                isOtpVerified = false; // Reset status
+                                emailVerifiedInput.value = 'false';
+                            }
+                        });
+                        const firstBackendErrorFieldKey = Object.keys(error.data.errors)[0];
+                        let firstBackendErrorFieldId = firstBackendErrorFieldKey;
+                         if (firstBackendErrorFieldKey === 'phone_number_only' || firstBackendErrorFieldKey === 'phone') firstBackendErrorFieldId = 'phone_number_only';
+                         if (firstBackendErrorFieldKey === 'confirm_password') firstBackendErrorFieldId = 'confirm-password';
+                         const firstBackendErrorField = document.getElementById(firstBackendErrorFieldId);
+                        if(firstBackendErrorField) firstBackendErrorField.focus();
+                    } else if (error.message.toLowerCase().includes('otp')) {
+                        markInputError(otpInput, false);
+                        otpError.textContent = error.message; // Show general OTP error
+                        otpError.classList.remove('hidden');
+                        otpSuccess.classList.add('hidden');
+                        otpInput.focus();
+                        isOtpVerified = false;
+                        emailVerifiedInput.value = 'false';
+                    }
+                    // Re-enable button
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Create Account';
+                });
+            });
+        } else {
+            if (!csrfToken) console.error("CSRF Token not found!");
+            else console.warn("Signup form critical elements (form, button, terms, csrf) not found.");
+        }
+
+
+        // --- Password Visibility Toggle ---
+        passwordToggleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const parent = this.closest('div.relative');
+                const targetInput = parent?.querySelector('input[type="password"], input[type="text"].password-input');
+                const icon = this.querySelector('i');
+                if (targetInput && icon) {
+                    const isPassword = targetInput.type === 'password';
+                    targetInput.type = isPassword ? 'text' : 'password';
+                    icon.classList.toggle('fa-eye', !isPassword);
+                    icon.classList.toggle('fa-eye-slash', isPassword);
+                    targetInput.focus();
+                }
+            });
+        });
+
+        // --- Django Messages Handling ---
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof primaryColor === 'undefined') initializeThemeColors();
+            if (djangoMessagesElement && djangoMessagesElement.textContent.trim() !== '[]') {
+                try {
+                    const messages = JSON.parse(djangoMessagesElement.textContent);
+                    messages.forEach(message => {
+                        let iconType = 'info', title = 'Notification';
+                        if (message.tags.includes('success')) { iconType = 'success'; title = 'Success'; }
+                        else if (message.tags.includes('error')) { iconType = 'error'; title = 'Error'; }
+                        else if (message.tags.includes('warning')) { iconType = 'warning'; title = 'Warning'; }
+                        else if (message.tags) { title = message.tags.charAt(0).toUpperCase() + message.tags.slice(1); }
+                        showNotification(title, message.message, iconType);
+                    });
+                } catch (e) { console.error("Could not parse Django messages:", e); }
+            }
+        });
+
+    </script>
+
+    <script id="django-messages" type="application/json" style="display: none;">
+        {% autoescape off %}
+        [
+            {% for message in messages %}
+                { "message": "{{ message|escapejs }}", "tags": "{{ message.tags|escapejs }}" } {% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+        {% endautoescape %}
+    </script>
+
+</body>
+</html>

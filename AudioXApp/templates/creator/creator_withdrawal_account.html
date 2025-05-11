@@ -1,0 +1,420 @@
+{% extends "creator/creator_base.html" %}
+{% load static %}
+{% load humanize %}
+{% load mathfilters %}
+{% load i18n %}
+
+{% block title %}Manage Payout Methods - AudioX Creator{% endblock %}
+
+{% block page_title %}Payout Methods{% endblock %}
+
+{% block page_subtitle %}
+<p class="mt-1 text-base text-gray-500">Configure and manage how you receive your earnings.</p>
+{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endblock %}
+
+
+{% block content %}
+<div class="w-full px-4 sm:px-6 lg:px-8 py-8 space-y-10 bg-slate-50 min-h-screen">
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 xl:gap-10">
+
+        <div class="lg:col-span-2">
+            {% if can_add_more %}
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200/80 overflow-hidden"
+                     x-data="{ accountType: 'bank', bankNameRequired: true }"
+                     x-init="$watch('accountType', value => {
+                         bankNameRequired = (value === 'bank');
+                         if (value !== 'bank') {
+                             const bankSelect = $refs.bankNameSelect;
+                             if (bankSelect) bankSelect.value = '';
+                         }
+                     })">
+
+                    <div class="px-6 py-5 border-b border-gray-200/80 bg-gray-50/50">
+                        <h3 class="text-lg font-semibold leading-7 text-gray-800 flex items-center gap-2.5">
+                            <svg class="h-5 w-5 text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Add New Payout Method
+                        </h3>
+                        {% with remaining_slots=3|sub:withdrawal_accounts.count|default:3 %}
+                        <p class="mt-1.5 text-xs text-gray-500">You can add up to 3 methods. {{ remaining_slots }} slot{{ remaining_slots|pluralize }} remaining.</p>
+                        {% endwith %}
+                    </div>
+
+                    <div class="p-6 sm:p-7">
+                        <form id="add-account-form" method="POST" action="{% url 'AudioXApp:creator_manage_withdrawal_accounts' %}" class="space-y-6"
+                              onsubmit="handleAddAccount(event, this);">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="add_account">
+
+                            <div>
+                                <label for="id_account_type" class="block text-sm font-medium leading-6 text-gray-700 mb-1.5">Account Type</label>
+                                <select name="account_type" id="id_account_type"
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-[#091e65] sm:text-sm transition duration-150 ease-in-out py-2.5"
+                                        x-model="accountType" required>
+                                    <option value="bank">Bank Account</option>
+                                    <option value="jazzcash">JazzCash</option>
+                                    <option value="easypaisa">Easypaisa</option>
+                                    <option value="nayapay">Nayapay</option>
+                                    <option value="upaisa">Upaisa</option>
+                                </select>
+                                <p class="mt-1.5 text-xs text-red-600" id="error_account_type"></p>
+                            </div>
+
+                            <div>
+                                <label for="id_account_title" class="block text-sm font-medium leading-6 text-gray-700 mb-1.5">Account Title (Full Name)</label>
+                                <input type="text" name="account_title" id="id_account_title"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-[#091e65] sm:text-sm transition duration-150 ease-in-out placeholder-gray-400 py-2.5"
+                                       placeholder="e.g., Johnathan Doe" required>
+                                <p class="mt-1.5 text-xs text-red-600" id="error_account_title"></p>
+                            </div>
+
+                            <div>
+                                <label for="id_account_identifier" class="block text-sm font-medium leading-6 text-gray-700 mb-1.5">
+                                    Identifier
+                                    <span class="text-gray-500 font-normal"
+                                          x-text="accountType === 'bank' ? '(IBAN)' : '(Mobile Number)'"></span>
+                                </label>
+                                <input type="text" name="account_identifier" id="id_account_identifier"
+                                       :placeholder="accountType === 'bank' ? 'e.g., PK12ABCD0123456789012345' : 'e.g., 03001234567'"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-[#091e65] sm:text-sm font-mono transition duration-150 ease-in-out placeholder-gray-400 py-2.5"
+                                       required>
+                                <p class="mt-1.5 text-xs text-red-600" id="error_account_identifier"></p>
+                            </div>
+
+                            <div x-show="accountType === 'bank'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                                <label for="id_bank_name" class="block text-sm font-medium leading-6 text-gray-700 mb-1.5">Bank Name</label>
+                                <select name="bank_name" id="id_bank_name" x-ref="bankNameSelect"
+                                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-[#091e65] sm:text-sm transition duration-150 ease-in-out disabled:opacity-60 disabled:bg-gray-100 py-2.5"
+                                        :required="bankNameRequired"
+                                        :disabled="accountType !== 'bank'">
+                                    <option value="">--- Select Bank ---</option>
+                                    <option value="HBL">Habib Bank Limited (HBL)</option>
+                                    <option value="MCB">MCB Bank Limited</option>
+                                    <option value="UBL">United Bank Limited (UBL)</option>
+                                    <option value="ABL">Allied Bank Limited (ABL)</option>
+                                    <option value="NBP">National Bank of Pakistan (NBP)</option>
+                                    <option value="BAHL">Bank Alfalah Limited</option>
+                                    <option value="BAFL">Bank Al Habib Limited</option>
+                                    <option value="MEZAN">Meezan Bank Limited</option>
+                                    <option value="Faysal">Faysal Bank Limited</option>
+                                    <option value="Askari">Askari Bank Limited</option>
+                                    <option value="SCB">Standard Chartered Bank (Pakistan)</option>
+                                    <option value="JS">JS Bank Limited</option>
+                                    <option value="Soneri">Soneri Bank Limited</option>
+                                    <option value="Summit">Summit Bank Limited</option>
+                                    <option value="Silk">Silkbank Limited</option>
+                                    <option value="BOP">The Bank of Punjab</option>
+                                    <option value="BOK">The Bank of Khyber</option>
+                                </select>
+                                <p class="mt-1.5 text-xs text-red-600" id="error_bank_name"></p>
+                            </div>
+
+                            <div class="relative flex items-start pt-1">
+                                <div class="flex h-6 items-center">
+                                    <input type="checkbox" name="is_primary" id="id_is_primary"
+                                           class="h-4 w-4 rounded border-gray-300 text-[#091e65] focus:ring-[#091e65] transition duration-150 ease-in-out cursor-pointer">
+                                </div>
+                                <div class="ml-3 text-sm leading-6">
+                                    <label for="id_is_primary" class="font-medium text-gray-700 cursor-pointer">Set as primary method</label>
+                                    <p class="text-xs text-gray-500">Default for receiving payouts.</p>
+                                </div>
+                                <p class="absolute -bottom-4 left-0 text-xs text-red-600" id="error_is_primary"></p>
+                            </div>
+
+                            <div id="non_field_errors_container" class="pt-1">
+                            </div>
+
+                            <div class="pt-4 flex justify-end border-t border-gray-200 mt-8">
+                                <button type="submit"
+                                        class="inline-flex items-center justify-center gap-x-2 rounded-md bg-[#091e65] px-5 py-2.5 text-sm font-semibold text-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#091e65] focus-visible:ring-offset-2 transition-all duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                                        {% if not can_add_more %}disabled{% endif %}>
+                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                    Add Method
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="rounded-xl border border-amber-300 bg-amber-50 p-6 text-center shadow-md">
+                    <div class="flex justify-center items-center h-12 w-12 rounded-full bg-amber-100 mx-auto mb-4">
+                        <svg class="h-6 w-6 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.25 5.25m.25-5.25l-.25 5.25M11.25 11.25v2.25m0-2.25h.5m-7.5 3l-4.5-4.5m0 0l4.5-4.5m-4.5 4.5h13.5m-13.5 0a9 9 0 1118 0 9 9 0 01-18 0z" />
+                        </svg>
+                    </div>
+                    <p class="text-base font-semibold text-amber-800">Payout Method Limit Reached</p>
+                    <p class="mt-1.5 text-sm text-amber-700 max-w-md mx-auto">
+                        You have reached the maximum of 3 payout methods. To add a new one, please remove an existing method first.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="lg:col-span-3">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200/80 overflow-hidden">
+                <div class="px-6 py-5 sm:px-7 border-b border-gray-200/80">
+                    <h3 class="text-lg font-semibold leading-7 text-gray-800 flex items-center gap-2.5">
+                        <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h7.5M8.25 12h7.5m-7.5 5.25h7.5M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                        </svg>
+                        Your Saved Payout Methods
+                    </h3>
+                    <p class="mt-1.5 text-xs text-gray-500">Manage your saved payout destinations below.</p>
+                </div>
+
+                <div class="flow-root">
+                    {% if withdrawal_accounts %}
+                        <ul role="list" class="divide-y divide-gray-200/80">
+                            {% for account in withdrawal_accounts %}
+                                <li class="relative px-6 py-5 sm:px-7 transition-colors duration-150">
+                                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-y-3 gap-x-4">
+                                        <div class="flex items-center space-x-4 min-w-0 flex-grow">
+                                            <div class="flex-shrink-0">
+                                                <span class="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 shadow-sm
+                                                    {% if account.account_type == 'bank' %} bg-[#091e65]/10 text-[#091e65]
+                                                    {% elif account.account_type == 'jazzcash' %} bg-red-100 text-red-600
+                                                    {% elif account.account_type == 'easypaisa' %} bg-emerald-100 text-emerald-600
+                                                    {% elif account.account_type == 'nayapay' %} bg-purple-100 text-purple-600 
+                                                    {% elif account.account_type == 'upaisa' %} bg-orange-100 text-orange-600
+                                                    {% else %} bg-gray-100 text-gray-500 {% endif %}">
+                                                    {% if account.account_type == 'bank' %}
+                                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>
+                                                    {% elif account.account_type == 'jazzcash' or account.account_type == 'easypaisa' or account.account_type == 'upaisa' %}
+                                                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
+                                                    {% elif account.account_type == 'nayapay' %}
+                                                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 3a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 9m18 3V9M3 12V9" /></svg>
+                                                    {% else %}
+                                                         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                            <div class="min-w-0 flex-auto">
+                                                <div class="flex items-center flex-wrap gap-x-2.5 gap-y-1">
+                                                    <h4 class="truncate text-base font-medium leading-6 text-gray-800">{{ account.account_title }}</h4>
+                                                    {% if account.is_primary %}
+                                                        <span class="inline-flex items-center gap-x-1 rounded-full bg-[#091e65]/10 px-2 py-0.5 text-xs font-medium text-[#091e65] ring-1 ring-inset ring-[#091e65]/20">
+                                                            <svg class="h-3 w-3 text-[#091e65]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd" /></svg>
+                                                            Primary
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="mt-1 flex items-center gap-x-2 text-sm leading-5 text-gray-500">
+                                                    <p class="whitespace-nowrap font-mono tracking-tight text-xs">
+                                                        {% if account.account_type == 'bank' %}
+                                                            {{ account.bank_name }} <span class="text-gray-400 mx-1">•</span> ...{{ account.account_identifier|slice:"-6:" }}
+                                                        {% else %}
+                                                            {{ account.get_account_type_display|default:account.account_type|capfirst }} <span class="text-gray-400 mx-1">•</span> ...{{ account.account_identifier|slice:"-4:" }}
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex flex-shrink-0 items-center gap-x-2 sm:gap-x-3">
+                                            {% if not account.is_primary %}
+                                                <form method="POST" action="{% url 'AudioXApp:creator_manage_withdrawal_accounts' %}" class="inline-block"
+                                                      {% with account_details_str=account.get_account_type_display|default:account.account_type|capfirst|add:" ending ..."|add:account.account_identifier|slice:"-4:" %}
+                                                        onsubmit="handleSetPrimary(event, this, '{{ account_details_str|escapejs }}');">
+                                                      {% endwith %}
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="set_primary">
+                                                    <input type="hidden" name="account_id" value="{{ account.account_id }}">
+                                                    <button type="submit" title="Set as Primary"
+                                                            class="inline-flex items-center justify-center gap-x-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-[#091e65] shadow-sm ring-1 ring-inset ring-[#091e65]/20 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#091e65]">
+                                                        <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd" /></svg>
+                                                        <span class="hidden sm:inline">Set Primary</span>
+                                                        <span class="sm:hidden">Primary</span>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            <form method="POST" action="{% url 'AudioXApp:creator_manage_withdrawal_accounts' %}" class="inline-block"
+                                                  {% with account_details_str=account.get_account_type_display|default:account.account_type|capfirst|add:" ending ..."|add:account.account_identifier|slice:"-4:" %}
+                                                    onsubmit="handleDelete(event, this, '{{ account_details_str|escapejs }}');">
+                                                  {% endwith %}
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="delete_account">
+                                                <input type="hidden" name="account_id" value="{{ account.account_id }}">
+                                                <button type="submit" title="Delete Account"
+                                                        class="inline-flex items-center justify-center gap-x-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 shadow-sm ring-1 ring-inset ring-red-200 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
+                                                    <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                                    <span class="hidden sm:inline">Delete</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="px-6 py-20 text-center sm:px-8">
+                             <div class="flex justify-center items-center h-16 w-16 rounded-full bg-gray-100 border border-gray-200 mx-auto mb-5">
+                                 <svg class="h-8 w-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                                 </svg>
+                             </div>
+                             <p class="mt-4 text-base font-semibold text-gray-700">No Payout Methods Added Yet</p>
+                             <p class="mt-1.5 text-sm text-gray-500">Add your first payout method using the form.</p>
+                         </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const swalLightConfig = (iconColorParam) => {
+        let iconColor = iconColorParam || '#6b7280'; // Default gray-500 (slate-500)
+        let confirmBgColor = 'bg-[#091e65]';
+        let confirmRingColor = 'focus-visible:ring-[#091e65]';
+
+        if (iconColor === '#ef4444') { // red-500 for warning/error
+            confirmBgColor = 'bg-red-600'; // red-600 for delete confirm
+            confirmRingColor = 'focus-visible:ring-red-600';
+        } else if (iconColor === '#f59e0b') { // amber for missing info
+             confirmBgColor = 'bg-[#091e65]'; // keep confirm as theme
+        }
+
+
+        return {
+            iconColor: iconColor, 
+            buttonsStyling: false,
+            showClass: { popup: 'animate__animated animate__fadeIn animate__faster' },
+            hideClass: { popup: 'animate__animated animate__fadeOut animate__faster' },
+            background: '#ffffff', 
+            customClass: {
+                 popup: 'bg-white text-gray-700 rounded-xl border border-gray-200 shadow-lg',
+                 title: 'text-gray-900 text-lg font-semibold',
+                 htmlContainer: 'text-gray-600 text-sm',
+                 confirmButton: `${confirmBgColor} text-white rounded-md px-4 py-2.5 text-sm font-medium transition-colors duration-150 ease-in-out shadow-sm ${confirmRingColor}`,
+                 cancelButton: 'bg-white text-gray-700 border border-gray-300 rounded-md px-4 py-2.5 text-sm font-medium transition-colors duration-150 ease-in-out shadow-sm',
+                 actions: 'space-x-3',
+                 icon: 'mt-2 mb-1 scale-95'
+            }
+        };
+    };
+
+    function handleDelete(event, formElement, accountDetails) {
+        event.preventDefault();
+        Swal.fire({
+            ...swalLightConfig('#ef4444'), 
+            title: 'Delete Payout Method?',
+            html: `Are you sure you want to delete the <strong>${accountDetails}</strong>?<br>This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                formElement.submit();
+            }
+        });
+    }
+
+    function handleSetPrimary(event, formElement, accountDetails) {
+        event.preventDefault();
+        Swal.fire({
+            ...swalLightConfig('#091e65'), 
+            title: 'Set as Primary?',
+            html: `Set the <strong>${accountDetails}</strong> as your primary payout method?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, set as primary',
+            cancelButtonText: 'Cancel',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                formElement.submit();
+            }
+        });
+    }
+
+    function handleAddAccount(event, formElement) {
+        event.preventDefault();
+        let isValid = true;
+        formElement.querySelectorAll('.border-red-500').forEach(el => {
+            el.classList.remove('border-red-500', 'ring-red-500', 'ring-2');
+            el.classList.add('border-gray-300'); 
+            el.classList.remove('focus:ring-red-500'); 
+            el.classList.add('focus:ring-[#091e65]', 'focus:border-[#091e65]'); 
+        });
+        formElement.querySelectorAll('p[id^="error_"]').forEach(el => el.textContent = '');
+
+        const requiredInputs = formElement.querySelectorAll('[required]');
+        requiredInputs.forEach(input => {
+            const errorElement = formElement.querySelector(`#error_${input.name}`);
+            if (!input.disabled && input.offsetParent !== null && !input.value.trim()) {
+                isValid = false;
+                input.classList.remove('border-gray-300', 'focus:ring-[#091e65]', 'focus:border-[#091e65]');
+                input.classList.add('border-red-500', 'ring-red-500', 'ring-2'); 
+                input.classList.add('focus:ring-red-500'); 
+                if (errorElement) {
+                    errorElement.textContent = 'This field is required.';
+                }
+            }
+        });
+
+        if (!isValid) {
+             Swal.fire({
+                 ...swalLightConfig('#f59e0b'), 
+                 title: 'Missing Information',
+                 text: 'Please fill out all required fields (marked in red).',
+                 icon: 'warning',
+             });
+             return; 
+        }
+
+        const formData = new FormData(formElement);
+        const accountTypeSelect = formElement.querySelector('select[name="account_type"]');
+        const accountTypeText = accountTypeSelect.options[accountTypeSelect.selectedIndex].text;
+        const accountTitle = formData.get('account_title');
+        const accountIdentifier = formData.get('account_identifier');
+        const bankNameSelect = formElement.querySelector('select[name="bank_name"]');
+        let bankName = null;
+        if (formData.get('account_type') === 'bank' && !bankNameSelect.disabled && bankNameSelect.value) {
+             bankName = bankNameSelect.options[bankNameSelect.selectedIndex].text;
+        }
+        const isPrimary = formElement.querySelector('input[name="is_primary"]').checked;
+
+        let confirmationHtml = `
+            <p class="mb-4 text-center text-sm text-gray-500">Please review the details before adding:</p>
+            <ul class="space-y-2 text-sm text-left border border-gray-200 rounded-lg p-4 bg-gray-50 divide-y divide-gray-200">
+                <li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Type:</strong> <span class="text-gray-800 text-right">${accountTypeText}</span></li>
+                <li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Title:</strong> <span class="text-gray-800 text-right">${accountTitle}</span></li>
+                <li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Identifier:</strong> <span class="text-gray-800 font-mono text-right">${accountIdentifier}</span></li>
+        `;
+        if (bankName) {
+            confirmationHtml += `<li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Bank:</strong> <span class="text-gray-800 text-right">${bankName}</span></li>`;
+        }
+         confirmationHtml += `<li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Set as Primary:</strong> <span class="text-gray-800 text-right">${isPrimary ? 'Yes' : 'No'}</span></li>`;
+        confirmationHtml += `</ul>`;
+
+        Swal.fire({
+            ...swalLightConfig('#091e65'), 
+            title: 'Confirm Payout Details',
+            html: confirmationHtml,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm & Add Method',
+            cancelButtonText: 'Edit Details',
+            customClass: {
+                ...swalLightConfig('#091e65').customClass,
+                htmlContainer: 'text-sm mb-5', 
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                formElement.submit();
+            }
+        });
+    }
+</script>
+{% endblock %}

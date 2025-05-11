@@ -1,0 +1,316 @@
+{% extends 'creator/creator_base.html' %}
+{% load static %}
+{% load humanize %}
+{% load mathfilters %}
+
+{% block title %}Earnings Dashboard - AudioX Creator Platform{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 font-sans">
+
+    <header class="bg-[#091e65] shadow-lg">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center">
+                <i class="fas fa-tachometer-alt text-4xl text-white mr-4"></i>
+                <div>
+                    <h1 class="text-3xl font-bold text-white">Earnings Dashboard</h1>
+                    <p class="text-sm text-white/75">Your central hub for financial insights.</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ mainContentLoading: false, bookListLoadingState: false }">
+
+        <section class="mb-8 bg-white p-5 rounded-xl shadow-lg border border-slate-200/70"
+                 x-data="{
+                     filterOpen: false,
+                     currentPeriod: '{{ request.GET.period|default:'all_time' }}',
+                     currentStartDate: '{{ start_date_str|default:'' }}',
+                     currentEndDate: '{{ end_date_str|default:'' }}',
+                     isCustomRangeActive: '{{ request.GET.period|default:'all_time' }}' === 'custom_range',
+                     get displayPeriod() { if (this.currentPeriod === 'all_time') return 'All Time'; if (this.currentPeriod === 'today') return 'Today'; if (this.currentPeriod === 'last_7_days') return 'Last 7 Days'; if (this.currentPeriod === 'this_month') return 'This Month'; if (this.currentPeriod === 'custom_range') { if (this.currentStartDate && this.currentEndDate) return `${this.formatDate(this.currentStartDate)} to ${this.formatDate(this.currentEndDate)}`; if (this.currentStartDate) return `From ${this.formatDate(this.currentStartDate)}`; if (this.currentEndDate) return `Until ${this.formatDate(this.currentEndDate)}`; return 'Custom Range'; } return 'All Time'; },
+                     formatDate(dateString) { if (!dateString) return ''; const options = { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }; return new Date(dateString).toLocaleDateString(undefined, options); },
+                     selectPeriod(periodValue) { $dispatch('setmainloading', true); this.$refs.periodInput.value = periodValue; if (periodValue !== 'custom_range') { this.$refs.startDateInput.value = ''; this.$refs.endDateInput.value = ''; this.isCustomRangeActive = false; this.$refs.globalFilterForm.submit(); } else { this.isCustomRangeActive = true; $dispatch('setmainloading', false); } },
+                     applyCustomFilter() { $dispatch('setmainloading', true); if (this.isCustomRangeActive) { this.$refs.periodInput.value = 'custom_range'; } if (this.isCustomRangeActive && (!this.$refs.startDateInput.value || !this.$refs.endDateInput.value)) { Swal.fire({icon: 'error', title: 'Missing Dates', text: 'Please select both start and end dates for a custom range.', confirmButtonColor: '#091e65'}); $dispatch('setmainloading', false); return; } if (this.isCustomRangeActive && this.$refs.startDateInput.value > this.$refs.endDateInput.value) { Swal.fire({icon: 'error', title: 'Invalid Date Range', text: 'Start date cannot be after end date.', confirmButtonColor: '#091e65'}); $dispatch('setmainloading', false); return; } this.$refs.globalFilterForm.submit(); },
+                     clearGlobalFilter() { $dispatch('setmainloading', true); window.location.href = '{% url "AudioXApp:creator_my_earnings" %}'; }
+                 }" @setmainloading.window="mainContentLoading = $event.detail" id="globalFilterComponent">
+            <button @click="filterOpen = !filterOpen" class="flex items-center justify-between w-full group">
+                <div class="text-left">
+                    <h2 class="text-lg font-semibold text-slate-800 group-hover:text-[#091e65] transition-colors">Overall Earnings Period</h2>
+                    <p class="text-xs text-slate-500">Currently viewing: <strong class="font-medium text-[#091e65]" x-text="displayPeriod"></strong></p>
+                </div>
+                <i class="fas fa-chevron-down text-base text-slate-500 group-hover:text-[#091e65] transition-transform duration-200" :class="{'rotate-180': filterOpen}"></i>
+            </button>
+            <div x-show="filterOpen" x-collapse x-cloak class="mt-5 pt-4 border-t border-slate-200">
+                <form x-ref="globalFilterForm" method="GET" action="{% url 'AudioXApp:creator_my_earnings' %}" class="space-y-4 text-sm">
+                    <input type="hidden" name="period" x-ref="periodInput" :value="currentPeriod">
+                    {% if request.GET.filtered_book_slug %}<input type="hidden" name="filtered_book_slug" value="{{ request.GET.filtered_book_slug }}">{% endif %}
+                    {% if request.GET.ab_period %}<input type="hidden" name="ab_period" value="{{ request.GET.ab_period }}">{% endif %}
+                    {% if request.GET.ab_start_date %}<input type="hidden" name="ab_start_date" value="{{ request.GET.ab_start_date }}">{% endif %}
+                    {% if request.GET.ab_end_date %}<input type="hidden" name="ab_end_date" value="{{ request.GET.ab_end_date }}">{% endif %}
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <button type="button" @click="selectPeriod('all_time')" :class="currentPeriod === 'all_time' && !isCustomRangeActive ? 'bg-[#091e65] text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'" class="w-full py-2.5 rounded-md transition-colors text-xs font-medium">All Time</button>
+                        <button type="button" @click="selectPeriod('today')" :class="currentPeriod === 'today' && !isCustomRangeActive ? 'bg-[#091e65] text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'" class="w-full py-2.5 rounded-md transition-colors text-xs font-medium">Today</button>
+                        <button type="button" @click="selectPeriod('last_7_days')" :class="currentPeriod === 'last_7_days' && !isCustomRangeActive ? 'bg-[#091e65] text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'" class="w-full py-2.5 rounded-md transition-colors text-xs font-medium">Last 7 Days</button>
+                        <button type="button" @click="selectPeriod('this_month')" :class="currentPeriod === 'this_month' && !isCustomRangeActive ? 'bg-[#091e65] text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'" class="w-full py-2.5 rounded-md transition-colors text-xs font-medium">This Month</button>
+                    </div>
+                    <button type="button" @click="isCustomRangeActive = !isCustomRangeActive; if(isCustomRangeActive) currentPeriod = 'custom_range';" class="text-slate-600 hover:text-[#091e65] w-full text-left flex justify-between items-center py-2.5 border-t border-b border-slate-200/80 mt-3.5 mb-2.5">
+                        <span class="text-xs font-medium">Custom Date Range</span>
+                        <i class="fas fa-calendar-edit text-sm" :class="{'text-[#091e65]': isCustomRangeActive}"></i>
+                    </button>
+                    <div x-show="isCustomRangeActive" x-collapse class="space-y-3 pt-2">
+                        <input type="date" name="start_date" x-ref="startDateInput" x-model="currentStartDate" @change="currentPeriod = 'custom_range'" class="w-full border-slate-300 rounded-lg shadow-sm py-2 px-3 text-xs focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65]">
+                        <input type="date" name="end_date" x-ref="endDateInput" x-model="currentEndDate" @change="currentPeriod = 'custom_range'" class="w-full border-slate-300 rounded-lg shadow-sm py-2 px-3 text-xs focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65]">
+                    </div>
+                    <div class="flex items-center justify-end gap-x-3 pt-3.5 border-t border-slate-200 mt-3.5">
+                        <button type="button" @click="clearGlobalFilter()" class="text-slate-500 hover:text-[#091e65] hover:underline text-xs font-medium px-3 py-1">Clear</button>
+                        <button type="button" @click="applyCustomFilter()" class="px-5 py-2 bg-[#091e65] text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-[#071852] transition-colors focus:outline-none focus:ring-2 focus:ring-[#091e65]/50 focus:ring-offset-1">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="mb-10 relative">
+            <div x-show="mainContentLoading" x-transition class="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg" x-cloak>
+                <i class="fas fa-circle-notch fa-spin text-[#091e65] text-5xl"></i>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div class="lg:col-span-1 bg-[#091e65] text-white p-6 rounded-xl shadow-xl flex flex-col justify-between hover:shadow-2xl transition-shadow duration-300">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-base font-semibold tracking-wide opacity-90">AVAILABLE BALANCE</h3>
+                            <i class="fas fa-wallet text-3xl opacity-60"></i>
+                        </div>
+                        <p class="text-5xl font-extrabold mt-2">Rs. {{ creator.available_balance|floatformat:2|intcomma }}</p>
+                    </div>
+                    <p class="text-xs opacity-75 mt-4">This amount is ready for withdrawal.</p>
+                </div>
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-xl border border-slate-200/80 flex flex-col justify-between hover:shadow-2xl transition-shadow duration-300">
+                     <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-base font-semibold tracking-wide text-slate-600">TOTAL NET EARNINGS</h3>
+                            <i class="fas fa-chart-pie text-4xl text-[#091e65]/50"></i>
+                        </div>
+                        <p class="text-5xl font-extrabold text-[#091e65] mt-2">Rs. {{ overall_total_net_earnings|floatformat:2|intcomma }}</p>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4">Represents your earnings after all deductions for the <strong class="font-medium text-[#091e65]" x-text="document.getElementById('globalFilterComponent') && document.getElementById('globalFilterComponent').__x ? document.getElementById('globalFilterComponent').__x.$data.displayPeriod.toLowerCase() : 'selected period'"></strong>.</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200/70 hover:shadow-xl transition-shadow duration-300">
+                    <div class="flex items-center text-slate-600 mb-2.5">
+                        <i class="fas fa-shopping-cart text-2xl mr-3 text-[#091e65]/70"></i>
+                        <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Sales Earnings (Net)</h4>
+                    </div>
+                    <p class="text-3xl font-bold text-slate-800">Rs. {{ net_earnings_from_paid_sales|floatformat:2|intcomma }}</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200/70 hover:shadow-xl transition-shadow duration-300">
+                    <div class="flex items-center text-slate-600 mb-2.5">
+                        <i class="fas fa-headphones-alt text-2xl mr-3 text-[#091e65]/70"></i>
+                        <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Views Earnings</h4>
+                    </div>
+                    <p class="text-3xl font-bold text-slate-800">Rs. {{ earnings_from_views_for_selected_period|floatformat:2|intcomma }}</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200/70 hover:shadow-xl transition-shadow duration-300">
+                   <div class="flex items-center text-slate-600 mb-2.5">
+                        <i class="fas fa-file-invoice text-2xl mr-3 text-[#091e65]/70"></i>
+                        <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Gross Earnings</h4>
+                    </div>
+                    <p class="text-3xl font-bold text-slate-800">Rs. {{ overall_total_gross_earnings|floatformat:2|intcomma }}</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-slate-200/70 hover:shadow-xl transition-shadow duration-300">
+                    <div class="flex items-center text-slate-600 mb-2.5">
+                        <i class="fas fa-percentage text-2xl mr-3 text-slate-400"></i>
+                        <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Platform Fee Paid</h4>
+                    </div>
+                    <p class="text-3xl font-bold text-slate-600">Rs. {{ overall_platform_commission|floatformat:2|intcomma }}</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-5 rounded-xl shadow-lg border border-slate-200/70" @setbooklistloading.window="bookListLoadingState = $event.detail">
+            <div class="mb-5 pb-4 border-b border-slate-200">
+                <h2 class="text-xl font-semibold text-slate-800">Audiobook Performance Breakdown</h2>
+                <p class="text-xs text-slate-500">Expand an audiobook to filter its individual performance data.</p>
+            </div>
+
+            <div class="relative">
+                <div x-show="bookListLoadingState" x-transition class="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg min-h-[200px]" x-cloak>
+                    <i class="fas fa-circle-notch fa-spin text-[#091e65] text-5xl"></i>
+                </div>
+
+                {% if earnings_list %}
+                <div class="space-y-4" x-data="{ openBookId: '{{ request.GET.filtered_book_slug|default:'' }}' }">
+                    {% for item in earnings_list %}
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200/80 overflow-hidden transition-all duration-300 ease-in-out group"
+                         :class="{ 'ring-2 ring-[#091e65]/70 shadow-xl': openBookId === '{{ item.slug }}' }"
+                         x-data="{
+                             itemFilterPanelOpen: '{{ request.GET.filtered_book_slug|default_if_none:'' }}' === '{{ item.slug }}',
+                             itemIsLoading: false,
+                             itemCurrentPeriod: ('{{ request.GET.filtered_book_slug|default_if_none:'' }}' === '{{ item.slug }}') ? ('{{ request.GET.ab_period|default_if_none:'all_time' }}') : 'all_time',
+                             itemCurrentStartDate: ('{{ request.GET.filtered_book_slug|default_if_none:'' }}' === '{{ item.slug }}') ? ('{{ request.GET.ab_start_date|default_if_none:'' }}') : '',
+                             itemCurrentEndDate: ('{{ request.GET.filtered_book_slug|default_if_none:'' }}' === '{{ item.slug }}') ? ('{{ request.GET.ab_end_date|default_if_none:'' }}') : '',
+                             itemIsCustomRangeActive: ('{{ request.GET.filtered_book_slug|default_if_none:'' }}' === '{{ item.slug }}' && '{{ request.GET.ab_period|default_if_none:'' }}' === 'custom_range'),
+
+                             formatItemDate(dateString) { if (!dateString) return ''; const options = { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }; return new Date(dateString).toLocaleDateString(undefined, options); },
+                             get displayItemPeriod() { if (this.itemCurrentPeriod === 'all_time') return 'All Time'; if (this.itemCurrentPeriod === 'today') return 'Today'; if (this.itemCurrentPeriod === 'last_7_days') return 'Last 7 Days'; if (this.itemCurrentPeriod === 'this_month') return 'This Month'; if (this.itemCurrentPeriod === 'custom_range') { if (this.itemCurrentStartDate && this.itemCurrentEndDate) return `${this.formatItemDate(this.itemCurrentStartDate)} to ${this.formatItemDate(this.itemCurrentEndDate)}`; if (this.itemCurrentStartDate) return `From ${this.formatItemDate(this.itemCurrentStartDate)}`; if (this.itemCurrentEndDate) return `Until ${this.formatItemDate(this.itemCurrentEndDate)}`; return 'Custom Range'; } return 'All Time'; },
+                             selectItemPeriod(periodValue) { this.itemIsLoading = true; $dispatch('setbooklistloading', true); this.$refs.itemPeriodInput.value = periodValue; if (periodValue !== 'custom_range') { this.$refs.itemStartDateInput.value = ''; this.$refs.itemEndDateInput.value = ''; this.itemIsCustomRangeActive = false; this.$refs.itemFilterForm.submit(); } else { this.itemIsCustomRangeActive = true; this.itemIsLoading = false; $dispatch('setbooklistloading', false); } },
+                             applyItemCustomFilter() { this.itemIsLoading = true; $dispatch('setbooklistloading', true); if (this.itemIsCustomRangeActive) { this.$refs.itemPeriodInput.value = 'custom_range'; } if (this.itemIsCustomRangeActive && (!this.$refs.itemStartDateInput.value || !this.$refs.itemEndDateInput.value)) { Swal.fire({icon: 'error', title: 'Missing Dates', text: 'Please select both start and end dates.', confirmButtonColor: '#091e65'}); this.itemIsLoading = false; $dispatch('setbooklistloading', false); return; } if (this.itemIsCustomRangeActive && this.$refs.itemStartDateInput.value > this.$refs.itemEndDateInput.value) { Swal.fire({icon: 'error', title: 'Invalid Date Range', text: 'Start date cannot be after end date.', confirmButtonColor: '#091e65'}); this.itemIsLoading = false; $dispatch('setbooklistloading', false); return; } this.$refs.itemFilterForm.submit(); },
+                             clearItemFilter() { this.itemIsLoading = true; $dispatch('setbooklistloading', true); const url = new URL(window.location.href); url.searchParams.delete('filtered_book_slug'); url.searchParams.delete('ab_period'); url.searchParams.delete('ab_start_date'); url.searchParams.delete('ab_end_date'); window.location.href = url.toString(); }
+                         }">
+                        <div @click="openBookId = (openBookId === '{{ item.slug }}' ? null : '{{ item.slug }}'); itemFilterPanelOpen = (openBookId === '{{ item.slug }}')"
+                             class="p-4 sm:p-5 flex items-center gap-x-4 sm:gap-x-5 cursor-pointer hover:bg-slate-50/80 transition-colors"
+                             role="button" :aria-expanded="openBookId === '{{ item.slug }}'">
+                            
+                            <img src="{{ item.cover_image_url|default:'https://placehold.co/96x134/e2e8f0/94a3b8?text=N/A' }}" 
+                                 alt="{{ item.title }} Cover" 
+                                 class="w-20 h-28 sm:w-24 sm:h-34 object-cover rounded-lg shadow-md flex-shrink-0 bg-slate-200 border border-slate-300 group-hover:shadow-lg transition-shadow"
+                                 onerror="this.onerror=null; this.src='https://placehold.co/96x134/fecaca/b91c1c?text=Error';">
+
+                            <div class="flex-grow min-w-0">
+                                <h3 class="text-base sm:text-lg font-semibold text-slate-800 group-hover:text-[#091e65] transition-colors truncate">{{ item.title }}</h3>
+                                
+                                <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 mt-1.5 text-xs">
+                                    {% if item.status_display == "Published" %}
+                                        <span class="px-2.5 py-1 bg-sky-100 text-sky-700 rounded-full font-medium inline-flex items-center"><i class="fas fa-check-circle mr-1.5"></i>{{ item.status_display }}</span>
+                                    {% elif item.status_display == "Draft" %}
+                                        <span class="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-full font-medium inline-flex items-center"><i class="fas fa-pencil-alt mr-1.5"></i>{{ item.status_display }}</span>
+                                    {% elif item.status_display == "Processing" %}
+                                        <span class="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full font-medium inline-flex items-center"><i class="fas fa-spinner fa-spin mr-1.5"></i>{{ item.status_display }}</span>
+                                    {% elif item.status_display == "Rejected" %}
+                                        <span class="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-full font-medium inline-flex items-center"><i class="fas fa-exclamation-circle mr-1.5"></i>{{ item.status_display }}</span>
+                                    {% elif not item.is_active or item.status_display == "Inactive" %}
+                                        <span class="px-2.5 py-1 bg-slate-200 text-slate-600 rounded-full font-medium inline-flex items-center"><i class="fas fa-ban mr-1.5"></i>Inactive</span>
+                                    {% else %}
+                                        <span class="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full font-medium">{{ item.status_display|default:"N/A" }}</span>
+                                    {% endif %}
+
+                                    {% if item.is_paid %}
+                                        <span class="px-2.5 py-1 bg-[#091e65] text-white rounded-full font-medium inline-flex items-center"><i class="fas fa-dollar-sign mr-1.5"></i>Paid</span>
+                                    {% else %}
+                                        <span class="px-2.5 py-1 bg-sky-600 text-white rounded-full font-medium inline-flex items-center"><i class="fas fa-gift mr-1.5"></i>Free</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="ml-auto shrink-0 self-center p-2">
+                                <i class="fas fa-chevron-down text-sm text-slate-400 group-hover:text-[#091e65] transition-transform duration-300" :class="{ 'rotate-180 text-[#091e65]': openBookId === '{{ item.slug }}' }"></i>
+                            </div>
+                        </div>
+
+                        <div x-show="openBookId === '{{ item.slug }}'" x-collapse x-cloak>
+                            <div class="bg-slate-50 border-t border-slate-200/80 p-4">
+                                <div x-show="itemIsLoading" class="py-8 text-center">
+                                    <i class="fas fa-circle-notch fa-spin text-[#091e65] text-3xl"></i>
+                                </div>
+                                <div x-show="!itemIsLoading">
+                                    <div class="mb-4 pb-4 border-b border-slate-200">
+                                        <h4 class="text-sm font-semibold text-slate-700 mb-1">Filter data for "<span class="text-[#091e65]">{{item.title}}</span>"</h4>
+                                        <p class="text-xs text-slate-500">Currently: <strong class="font-medium text-[#091e65]" x-text="displayItemPeriod"></strong></p>
+                                        <form x-ref="itemFilterForm" method="GET" action="{% url 'AudioXApp:creator_my_earnings' %}" class="space-y-3 text-xs mt-2">
+                                            {% if request.GET.period %}<input type="hidden" name="period" value="{{ request.GET.period }}">{% endif %}
+                                            {% if request.GET.start_date %}<input type="hidden" name="start_date" value="{{ request.GET.start_date }}">{% endif %}
+                                            {% if request.GET.end_date %}<input type="hidden" name="end_date" value="{{ request.GET.end_date }}">{% endif %}
+                                            <input type="hidden" name="filtered_book_slug" value="{{ item.slug }}">
+                                            <input type="hidden" name="ab_period" x-ref="itemPeriodInput" :value="itemCurrentPeriod">
+                                            
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                <button type="button" @click="selectItemPeriod('all_time')" :class="itemCurrentPeriod === 'all_time' && !itemIsCustomRangeActive ? 'bg-[#091e65] text-white shadow-sm' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'" class="w-full py-2 rounded-md transition-colors text-xs font-medium">All Time</button>
+                                                <button type="button" @click="selectItemPeriod('today')" :class="itemCurrentPeriod === 'today' && !itemIsCustomRangeActive ? 'bg-[#091e65] text-white shadow-sm' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'" class="w-full py-2 rounded-md transition-colors text-xs font-medium">Today</button>
+                                                <button type="button" @click="selectItemPeriod('last_7_days')" :class="itemCurrentPeriod === 'last_7_days' && !itemIsCustomRangeActive ? 'bg-[#091e65] text-white shadow-sm' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'" class="w-full py-2 rounded-md transition-colors text-xs font-medium">Last 7 Days</button>
+                                                <button type="button" @click="selectItemPeriod('this_month')" :class="itemCurrentPeriod === 'this_month' && !itemIsCustomRangeActive ? 'bg-[#091e65] text-white shadow-sm' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'" class="w-full py-2 rounded-md transition-colors text-xs font-medium">This Month</button>
+                                            </div>
+                                            <button type="button" @click="itemIsCustomRangeActive = !itemIsCustomRangeActive; if(itemIsCustomRangeActive) itemCurrentPeriod = 'custom_range';" class="text-slate-600 hover:text-[#091e65] w-full text-left flex justify-between items-center py-2 border-t border-b border-slate-200/80 mt-3 mb-2">
+                                                <span class="text-xs font-medium">Custom Date Range</span>
+                                                <i class="fas fa-calendar-alt text-xs" :class="{'text-[#091e65]': itemIsCustomRangeActive}"></i>
+                                            </button>
+                                            <div x-show="itemIsCustomRangeActive" x-collapse class="space-y-2 pt-1">
+                                                <input type="date" name="ab_start_date" x-ref="itemStartDateInput" x-model="itemCurrentStartDate" @change="itemCurrentPeriod = 'custom_range'" class="w-full border-slate-300 rounded-lg shadow-sm py-1.5 px-2 text-xs focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65]">
+                                                <input type="date" name="ab_end_date" x-ref="itemEndDateInput" x-model="itemCurrentEndDate" @change="itemCurrentPeriod = 'custom_range'" class="w-full border-slate-300 rounded-lg shadow-sm py-1.5 px-2 text-xs focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65]">
+                                            </div>
+                                            <div class="flex items-center justify-end gap-x-2 pt-2.5 border-t border-slate-200 mt-2.5">
+                                                <button type="button" @click="clearItemFilter()" class="text-slate-500 hover:text-[#091e65] hover:underline text-xs font-medium px-2 py-1">Clear Item Filter</button>
+                                                <button type="button" @click="applyItemCustomFilter()" class="px-4 py-1.5 bg-[#091e65] text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-[#071852] transition-colors focus:outline-none focus:ring-2 focus:ring-[#091e65]/50 focus:ring-offset-1">Apply to Item</button>
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                    {% if request.GET.filtered_book_slug == item.slug %}
+                                        {% if item.is_paid %}
+                                        <div>
+                                            <h5 class="text-sm font-semibold text-slate-700 mb-2 flex items-center"><i class="fas fa-receipt mr-2 text-[#091e65]/80"></i>Sales Details <span class="text-xs font-normal text-slate-500 ml-1.5">(Filtered Period)</span></h5>
+                                            {% if item.paid_details.sales > 0 %}
+                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 p-3 bg-white rounded-lg shadow-inner border border-slate-200">
+                                                <div><p class="text-xs text-slate-500 uppercase tracking-tight">Sales</p><p class="font-medium text-slate-700 text-sm">{{ item.paid_details.sales|intcomma }}</p></div>
+                                                <div><p class="text-xs text-slate-500 uppercase tracking-tight">Gross</p><p class="font-medium text-slate-700 text-sm">Rs. {{ item.paid_details.gross|floatformat:2|intcomma }}</p></div>
+                                                <div><p class="text-xs text-slate-500 uppercase tracking-tight">Fee ({{ PLATFORM_COMMISSION_RATE_DISPLAY|floatformat:0 }}%)</p><p class="font-medium text-slate-500 text-sm">Rs. {{ item.paid_details.commission|floatformat:2|intcomma }}</p></div>
+                                                <div><p class="text-xs text-slate-500 uppercase tracking-tight">Net</p><p class="font-semibold text-slate-800 text-sm">Rs. {{ item.paid_details.net|floatformat:2|intcomma }}</p></div>
+                                            </div>
+                                            {% else %}<p class="text-xs text-slate-500 italic mt-1 p-3 bg-white rounded-lg shadow-inner border border-slate-200">No sales recorded for this audiobook in the filtered period.</p>{% endif %}
+                                        </div>
+                                        {% else %}
+                                        <div>
+                                            <h5 class="text-sm font-semibold text-slate-700 mb-2 flex items-center"><i class="fas fa-headphones-alt mr-2 text-[#091e65]/80"></i>View Details <span class="text-xs font-normal text-slate-500 ml-1.5">(Filtered Period)</span></h5>
+                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 p-3 bg-white rounded-lg shadow-inner border border-slate-200">
+                                                <div><p class="text-xs text-slate-500 uppercase tracking-tight">Total Views</p><p class="font-medium text-slate-700 text-sm">{{ item.free_details.views|intcomma }}</p></div>
+                                                <div><p class="text-xs text-slate-500 uppercase tracking-tight">Earning/View</p><p class="font-medium text-slate-700 text-sm">Rs. {{ EARNING_PER_VIEW|floatformat:2 }}</p></div>
+                                                <div class="md:col-span-2"><p class="text-xs text-slate-500 uppercase tracking-tight">Total Earnings</p><p class="font-semibold text-slate-800 text-sm">Rs. {{ item.free_details.earnings|floatformat:2|intcomma }}</p></div>
+                                            </div>
+                                            {% if item.free_details.views == 0 %}<p class="mt-2 text-xs text-slate-400 italic">No views were logged for this audiobook in the filtered period.</p>{% endif %}
+                                        </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <p class="text-xs text-slate-500 italic p-3">Apply a filter above to see detailed performance for this audiobook.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-16 px-6">
+                    <i class="fas fa-book-reader text-6xl text-slate-300 mb-5"></i>
+                    <p class="text-slate-700 text-xl font-semibold mb-2">No Audiobooks Found</p>
+                    <p class="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+                        It seems there are no audiobooks matching the current filter, or you haven't published any yet.
+                    </p>
+                    <a href="{% url 'AudioXApp:creator_my_audiobooks' %}" class="mt-6 inline-block px-7 py-3 bg-[#091e65] text-white text-sm font-medium rounded-lg hover:bg-[#071852] transition-colors shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#091e65]/50 focus:ring-offset-2">
+                        Manage My Audiobooks
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener('setmainloading', (event) => {
+        const mainContentAlpine = document.querySelector('[x-data*="mainContentLoading"]');
+        if (mainContentAlpine && mainContentAlpine.__x) {
+            mainContentAlpine.__x.$data.mainContentLoading = event.detail;
+        }
+    });
+    window.addEventListener('setbooklistloading', (event) => {
+        const mainContentAlpine = document.querySelector('[x-data*="mainContentLoading"]'); 
+        if (mainContentAlpine && mainContentAlpine.__x) {
+            mainContentAlpine.__x.$data.bookListLoadingState = event.detail;
+        }
+    });
+});
+</script>
+{% endblock %}

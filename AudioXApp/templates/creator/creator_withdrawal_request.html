@@ -1,0 +1,525 @@
+{% extends "creator/creator_base.html" %}
+{% load static %}
+{% load humanize %}
+{% load mathfilters %}
+
+{% block title %}Withdraw Funds - AudioX Creator{% endblock %}
+
+{% block page_title %}
+<div class="pt-6 md:pt-8">
+    <h1 class="text-3xl font-bold tracking-tight text-slate-100 sm:text-4xl">Withdraw Funds</h1>
+</div>
+{% endblock %}
+
+{% block page_subtitle %}
+<div>
+    <p class="mt-2 text-lg leading-8 text-slate-300">Request withdrawals from your available balance and track your past requests.</p>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endblock %}
+
+{% block content %}
+<div class="space-y-10 py-8 sm:py-12">
+
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl">
+        <div class="flex flex-col sm:flex-row justify-between items-start">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-600">Available Balance</h2>
+                <p class="font-extrabold text-4xl sm:text-5xl mt-1 text-[#091e65]">Rs. {{ available_balance|default:0|floatformat:2|intcomma }}</p>
+            </div>
+            <div class="mt-4 sm:mt-0 sm:ml-6 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-[#091e65] opacity-80">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+            </div>
+        </div>
+        <p class="text-sm text-slate-500 mt-4 pt-4 border-t border-slate-200">
+            Minimum withdrawal: <strong class="font-medium text-slate-600">Rs. {{ min_withdrawal_amount|default:50|floatformat:2|intcomma }}</strong>.
+            Withdrawal requests can be made once every 15 days.
+        </p>
+    </div>
+
+    <div class="bg-white shadow-2xl rounded-xl overflow-hidden">
+        <div class="px-6 py-5 sm:px-8 sm:py-6 border-b border-slate-200">
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-800 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 mr-3 text-[#091e65]">
+                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clip-rule="evenodd" />
+                </svg>
+                Request New Withdrawal
+            </h3>
+        </div>
+        <div class="p-6 sm:p-8">
+            {% if not withdrawal_accounts.exists %}
+                <div class="p-4 mb-6 text-sm text-amber-700 rounded-lg bg-amber-50 border border-amber-300 flex items-start" role="alert">
+                    <svg class="flex-shrink-0 inline w-5 h-5 mr-3 mt-0.5 text-amber-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                    </svg>
+                    <div>
+                        <span class="font-semibold">No Payout Methods Added!</span> You need to add a payout method before requesting a withdrawal.
+                        <a href="{% url 'AudioXApp:creator_manage_withdrawal_accounts' %}?next={{ request.path|urlencode }}" class="font-semibold underline hover:text-amber-800 ml-1">Add Payout Method</a>.
+                    </div>
+                </div>
+            {% elif not can_request_withdrawal and not has_active_request %}
+                <div class="p-4 mb-6 text-sm rounded-lg border flex items-start text-red-700 bg-red-50 border-red-300" role="alert">
+                    <svg class="flex-shrink-0 inline w-5 h-5 mr-3 mt-0.5 text-red-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                    </svg>
+                    <div>
+                        <span class="font-semibold">Withdrawal Not Available:</span>
+                        {{ reason_cant_request }}
+                        {% if next_withdrawal_date and "after" in reason_cant_request|lower %}
+                            Your next request can be made after <strong class="font-semibold">{{ next_withdrawal_date|date:"F d, Y" }}</strong>.
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <form method="POST" action="{% url 'AudioXApp:creator_request_withdrawal_list' %}" class="space-y-0" id="requestWithdrawalForm"> 
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="request_withdrawal">
+
+                    <div class="mb-7">
+                        <label for="amount" class="block text-[0.9rem] font-semibold text-slate-700 mb-[0.6rem] transition-all duration-300 ease-in-out">Withdrawal Amount (PKR)</label>
+                        <div class="relative">
+                            <span class="absolute top-1/2 left-5 transform -translate-y-1/2 text-slate-500 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                    <path d="M3.505 4.344A5.022 5.022 0 0 1 8.353 2.5h3.294A5.022 5.022 0 0 1 16.5 4.343L16.5 4.5h-13v-.157Z" />
+                                    <path d="M2 5.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H2Zm2.5 2.5a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1-.75-.75Z" />
+                                </svg>
+                            </span>
+                            <input type="number" name="amount" id="amount" step="0.01" 
+                                   min="{{ min_withdrawal_amount|default:50|floatformat:2 }}" 
+                                   max="{{ available_balance|default:0|floatformat:2 }}"
+                                   class="pl-14 block w-full py-[0.85rem] px-5 text-base font-medium leading-normal text-slate-800 bg-slate-50 border-2 border-slate-300 appearance-none rounded-xl shadow-sm transition-colors duration-150 ease-in-out focus:text-slate-900 focus:bg-white focus:border-[#091e65] focus:outline-none focus:ring-2 focus:ring-[#091e65]/40 placeholder-slate-400"
+                                   placeholder="e.g., {{ min_withdrawal_amount|default:50|floatformat:0 }}" required>
+                        </div>
+                        <div id="amountError" class="hidden mt-2 p-3 bg-red-100 border border-red-200 border-l-4 border-l-red-500 rounded-md text-red-700 text-sm font-medium"></div>
+                        <p class="mt-2 text-xs text-slate-500">Must be between Rs. {{ min_withdrawal_amount|default:50|floatformat:2|intcomma }} and Rs. {{ available_balance|default:0|floatformat:2|intcomma }}.</p>
+                    </div>
+
+                    <div class="mb-7">
+                        <label for="withdrawal_account_id" class="block text-[0.9rem] font-semibold text-slate-700 mb-[0.6rem] transition-all duration-300 ease-in-out">Payout To</label>
+                        <div class="relative">
+                             <span class="absolute top-1/2 left-5 transform -translate-y-1/2 text-[#091e65] pointer-events-none opacity-70">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                    <path fill-rule="evenodd" d="M1 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.25a.75.75 0 0 1-1.5 0V5H2v1.25a.75.75 0 0 1-1.5 0V4Zm18 8.25a.75.75 0 0 1-1.5 0V11H2v1.25a.75.75 0 0 1-1.5 0V10a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.25ZM2 15.25a.75.75 0 0 1-1.5 0V14a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v1.25a.75.75 0 0 1-1.5 0V15H2v.25Z" clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                            <select name="withdrawal_account_id" id="withdrawal_account_id" required
+                                    class="pl-14 block w-full py-[0.85rem] px-5 text-base font-medium leading-normal text-slate-800 bg-slate-50 border-2 border-slate-300 appearance-none rounded-xl shadow-sm transition-colors duration-150 ease-in-out focus:text-slate-900 focus:bg-white focus:border-[#091e65] focus:outline-none focus:ring-2 focus:ring-[#091e65]/40">
+                                <option value="">-- Select Payout Account --</option>
+                                {% for acc in withdrawal_accounts %}
+                                    <option value="{{ acc.account_id }}" {% if acc.is_primary %}selected{% endif %}>
+                                        {{ acc.get_account_type_display }} - {{ acc.account_title }} (...{{ acc.account_identifier|slice:"-4:" }}) {% if acc.is_primary %}(Primary){% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#091e65]">
+                                <svg class="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                            </div>
+                        </div>
+                        <div id="accountError" class="hidden mt-2 p-3 bg-red-100 border border-red-200 border-l-4 border-l-red-500 rounded-md text-red-700 text-sm font-medium"></div>
+                    </div>
+                    
+                    <div class="flex justify-end pt-5 border-t border-slate-200 mt-8">
+                        <button type="submit" id="submitWithdrawalBtn"
+                                class="inline-flex items-center justify-center gap-x-2 rounded-lg bg-[#091e65] px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-[#071852] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#091e65] focus-visible:ring-offset-2 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed transform hover:scale-105">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
+                            Submit Request
+                        </button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white shadow-2xl rounded-xl overflow-hidden">
+        <div class="px-6 py-5 sm:px-8 sm:py-6 border-b border-slate-200">
+            <h3 class="text-xl sm:text-2xl font-semibold text-slate-800 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 mr-3 text-[#091e65] opacity-75">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                </svg>
+                Withdrawal History
+            </h3>
+        </div>
+        <div class="p-0"> 
+            {% if past_requests.exists %}
+            <div class="flow-root">
+                <div class="overflow-x-auto">
+                    <div class="inline-block min-w-full align-middle">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider sm:pl-6 lg:pl-8">Date</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount (PKR)</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Account</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Processed On</th>
+                                    <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8 text-xs font-semibold text-slate-500 uppercase tracking-wider"><span class="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 bg-white">
+                                {% for req in past_requests %}
+                                <tr class="withdrawal-request-row" data-request-id="{{ req.request_id }}" data-request-date="{{ req.request_date.isoformat }}" data-status="{{ req.status }}">
+                                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-slate-700 sm:pl-6 lg:pl-8">{{ req.request_date|date:"M d, Y, P" }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-900 font-medium">{{ req.amount|floatformat:2|intcomma }}</td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-600">
+                                        {% if req.withdrawal_account %}
+                                            {{ req.withdrawal_account.get_account_type_display }} (...{{ req.withdrawal_account.account_identifier|slice:"-4:" }})
+                                        {% else %}
+                                            <span class="text-xs italic text-slate-400">Account Deleted</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                        <span class="py-1 px-2.5 rounded-full text-xs font-medium inline-flex items-center capitalize border
+                                            {% if req.status == 'pending' %} bg-amber-100 text-amber-800 border-amber-300
+                                            {% elif req.status == 'approved' %} bg-blue-100 text-blue-800 border-blue-300
+                                            {% elif req.status == 'processing' %} bg-indigo-100 text-indigo-800 border-indigo-300
+                                            {% elif req.status == 'completed' %} bg-green-100 text-green-800 border-green-300
+                                            {% elif req.status == 'rejected' %} bg-red-100 text-red-800 border-red-300
+                                            {% elif req.status == 'failed' %} bg-pink-100 text-pink-800 border-pink-300
+                                            {% elif req.status == 'cancelled' %} bg-slate-100 text-slate-600 border-slate-300
+                                            {% else %} bg-slate-100 text-slate-800 border-slate-300 {% endif %}">
+                                            {{ req.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-600">
+                                        {% if req.processed_date %}{{ req.processed_date|date:"M d, Y, P" }}{% else %}-{% endif %}
+                                    </td>
+                                    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
+                                        <div class="flex items-center justify-end" id="action-cell-{{ req.request_id }}">
+                                            {% if req.status == 'pending' %}
+                                                <span class="countdown-timer mr-2 text-xs text-slate-600 font-medium" id="countdown-{{ req.request_id }}"></span>
+                                                <form method="POST" action="{% url 'AudioXApp:creator_request_withdrawal_list' %}" class="inline-block cancel-form" 
+                                                      data-request-id="{{ req.request_id }}" data-amount="{{ req.amount|floatformat:2|intcomma }}"
+                                                      style="display: none;" 
+                                                      onsubmit="handleCancelSubmit(event, this.dataset.amount, this); return false;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="cancel_withdrawal">
+                                                    <input type="hidden" name="request_id" value="{{ req.request_id }}">
+                                                    <button type="submit" class="cancel-button text-xs text-red-600 hover:text-red-700 font-medium rounded-md px-2.5 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 transition-colors duration-150">
+                                                        Cancel
+                                                    </button>
+                                                </form>
+                                            {% elif req.admin_notes %}
+                                            <div class="relative group flex justify-end">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 cursor-help">
+                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0ZM8.94 6.94a.75.75 0 1 1-1.06-1.061A6.5 6.5 0 0 1 10 3.5a6.5 6.5 0 0 1 4.95 11.05a.75.75 0 0 1-1.06-1.06A5 5 0 0 0 10 5.051A5.007 5.007 0 0 0 8.94 6.94ZM10 15a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm0-3.75a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75v-.008a.75.75 0 0 0-.75-.75H10Z" clip-rule="evenodd" />
+                                                </svg>
+                                                <span class="absolute bottom-full right-0 transform translate-y-[-0.5rem] mb-2 w-max max-w-[250px] bg-slate-700 text-white text-xs rounded-md py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out pointer-events-none z-20 shadow-lg text-left normal-case font-normal">
+                                                    {{ req.admin_notes|linebreaksbr|escape }}
+                                                    <span class="absolute top-full right-3 transform -translate-x-1/2 border-4 border-transparent border-t-slate-700"></span>
+                                                </span>
+                                            </div>
+                                            {% else %}
+                                            <span class="text-slate-400 text-xs">-</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-16 px-6">
+                <svg class="mx-auto h-16 w-16 text-slate-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a.75.75 0 0 0 .75-.75V6.038a.75.75 0 0 0-.75-.75S11.25 5.25 11.25 9V18a.75.75 0 0 0 .75.75Zm0 0A8.207 8.207 0 0 0 18.75 12 8.207 8.207 0 0 0 12 5.25 8.207 8.207 0 0 0 5.25 12a8.207 8.207 0 0 0 6.75 6.75Z" />
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a.75.75 0 0 0 .75-.75V6.038a.75.75 0 0 0-.75-.75S11.25 5.25 11.25 9V18a.75.75 0 0 0 .75.75Z" />
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.75.75 0 0 1-.75-.75V9.375a.75.75 0 0 1 .75-.75S9.375 8.25 9.375 12v-.75M15.375 12a.75.75 0 0 0 .75-.75V9.375a.75.75 0 0 0-.75-.75S14.625 8.25 14.625 12v-.75" />
+                </svg>
+                <h3 class="mt-4 text-md font-semibold text-slate-700">No Withdrawal History</h3>
+                <p class="mt-1 text-sm text-slate-500">You haven't made any withdrawal requests yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<div id="customModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out">
+    <div class="bg-white rounded-2xl shadow-2xl w-[90%] max-w-md overflow-hidden transform scale-95 transition-transform duration-300 ease-in-out">
+        <div class="bg-[#091e65] text-white px-6 py-5 flex justify-between items-center border-b border-[#071852]">
+            <div class="flex items-center">
+                <span id="modalIconContainer" class="mr-3 text-2xl"></span> 
+                <h3 id="modalTitle" class="text-xl font-semibold">Modal Title</h3>
+            </div>
+            <button id="modalCloseBtn" class="text-indigo-200 hover:text-white text-2xl leading-none p-1 transition-colors duration-200">&times;</button>
+        </div>
+        <div class="p-6 sm:p-7 text-base text-slate-700 leading-relaxed" id="modalBody">
+            <p>Modal content goes here.</p>
+        </div>
+        <div class="px-6 py-4 bg-slate-100 border-t border-slate-200 flex justify-end space-x-3" id="modalFooter">
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('customModal');
+    const modalTitleEl = document.getElementById('modalTitle');
+    const modalBodyEl = document.getElementById('modalBody');
+    const modalIconContainerEl = document.getElementById('modalIconContainer');
+    const modalFooterEl = document.getElementById('modalFooter');
+    const modalCloseBtnEl = document.getElementById('modalCloseBtn');
+
+    window.showModal = function(title, htmlContent, type = 'info', buttons = []) {
+        if (!modal || !modalTitleEl || !modalBodyEl || !modalIconContainerEl || !modalFooterEl) {
+            alert(title + "\n" + htmlContent.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, ""));
+            return;
+        }
+        modalTitleEl.textContent = title;
+        modalBodyEl.innerHTML = htmlContent; 
+        
+        modalIconContainerEl.innerHTML = ''; 
+        let iconClass = '';
+        let iconColor = 'text-slate-500'; 
+
+        if (type === 'success') { iconClass = 'fas fa-check-circle'; iconColor = 'text-green-500'; }
+        else if (type === 'error') { iconClass = 'fas fa-times-circle'; iconColor = 'text-red-500'; }
+        else if (type === 'warning') { iconClass = 'fas fa-exclamation-triangle'; iconColor = 'text-amber-500'; }
+        else if (type === 'question') { iconClass = 'fas fa-question-circle'; iconColor = 'text-blue-500'; }
+        
+        if (iconClass) {
+            const i = document.createElement('i');
+            i.className = `${iconClass} ${iconColor}`;
+            modalIconContainerEl.appendChild(i);
+        }
+
+        modalFooterEl.innerHTML = ''; 
+        buttons.forEach(btnConfig => {
+            const button = document.createElement('button');
+            button.textContent = btnConfig.text;
+            button.className = 'px-5 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
+            
+            if (btnConfig.class === 'confirm') {
+                button.classList.add('bg-[#091e65]', 'text-white', 'hover:bg-[#071852]', 'focus-visible:ring-[#091e65]');
+            } else if (btnConfig.class === 'danger') {
+                button.classList.add('bg-red-600', 'text-white', 'hover:bg-red-700', 'focus-visible:ring-red-600');
+            } else { // Default to cancel style
+                button.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300', 'focus-visible:ring-slate-400');
+            }
+            
+            button.addEventListener('click', () => {
+                if (btnConfig.onClick) btnConfig.onClick();
+                closeModal();
+            });
+            modalFooterEl.appendChild(button);
+        });
+        
+        modal.classList.remove('opacity-0', 'invisible');
+        modal.classList.add('opacity-100', 'visible');
+        modal.querySelector('.modal-box').classList.remove('scale-95');
+        modal.querySelector('.modal-box').classList.add('scale-100');
+    }
+
+    window.closeModal = function() {
+        if (modal) {
+            modal.classList.add('opacity-0');
+            modal.querySelector('.modal-box').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('invisible');
+                modal.classList.remove('opacity-100', 'visible');
+                modal.querySelector('.modal-box').classList.remove('scale-100');
+            }, 300);
+        }
+    }
+    
+    if (modalCloseBtnEl) modalCloseBtnEl.addEventListener('click', closeModal);
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    }
+
+    const withdrawalForm = document.getElementById('requestWithdrawalForm');
+    const amountErrorDiv = document.getElementById('amountError');
+    const accountErrorDiv = document.getElementById('accountError');
+
+    const jsHasActiveRequest = ("{{ has_active_request|yesno:'true,false'|lower }}" === "true");
+    const jsReasonForActiveRequestMessage = "{{ reason_cant_request|escapejs }}";
+
+    function showInlineError(element, messages) {
+        if (!element) return;
+        if (messages && messages.length > 0) {
+            element.innerHTML = '<ul class="list-none p-0 m-0">' + messages.map(msg => `<li class="mb-1 last:mb-0">${msg}</li>`).join('') + '</ul>';
+            element.classList.remove('hidden');
+        } else {
+            element.innerHTML = '';
+            element.classList.add('hidden');
+        }
+    }
+
+    if (withdrawalForm) {
+        withdrawalForm.addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            const amountInput = document.getElementById('amount');
+            const accountSelect = document.getElementById('withdrawal_account_id');
+            const submitButton = document.getElementById('submitWithdrawalBtn');
+
+            let isValid = true;
+            let amountErrorMessages = [];
+            let accountErrorMessages = [];
+
+            showInlineError(amountErrorDiv, []);
+            showInlineError(accountErrorDiv, []);
+
+            if (jsHasActiveRequest) {
+                let messageForPopup = "You already have a withdrawal request that is being processed or is pending.";
+                if (jsReasonForActiveRequestMessage && jsReasonForActiveRequestMessage.toLowerCase().includes("already have a withdrawal request")) {
+                    messageForPopup = jsReasonForActiveRequestMessage;
+                }
+                showModal(
+                    'Withdrawal Not Available',
+                    messageForPopup,
+                    'warning', 
+                    [{ text: 'OK', class: 'cancel' }]
+                );
+                return; 
+            }
+
+            const amountValue = parseFloat(amountInput.value);
+            const minAmount = parseFloat(amountInput.min || '{{ min_withdrawal_amount|default:50|floatformat:"2" }}');
+            const maxAmount = parseFloat(amountInput.max || '{{ available_balance|default:0|floatformat:"2" }}');
+
+            if (!amountInput.value || isNaN(amountValue) || amountValue <= 0) {
+                amountErrorMessages.push("Please enter a valid withdrawal amount.");
+                isValid = false;
+            } else {
+                if (minAmount > 0 && amountValue < minAmount) {
+                    amountErrorMessages.push(`Withdrawal amount must be at least Rs. ${minAmount.toFixed(2)}.`);
+                    isValid = false;
+                }
+                if (maxAmount > 0 && amountValue > maxAmount) { 
+                    amountErrorMessages.push(`Withdrawal amount cannot exceed your available balance of Rs. ${maxAmount.toFixed(2)}.`);
+                    isValid = false;
+                }
+            }
+            
+            if (!accountSelect.value) {
+                accountErrorMessages.push("Please select a payout account.");
+                isValid = false;
+            }
+
+            if (!isValid) {
+                showInlineError(amountErrorDiv, amountErrorMessages);
+                showInlineError(accountErrorDiv, accountErrorMessages);
+                if (amountErrorMessages.length > 0 && amountInput) amountInput.focus();
+                else if (accountErrorMessages.length > 0 && accountSelect) accountSelect.focus();
+                return;
+            }
+            
+            const amount = parseFloat(amountInput.value).toFixed(2);
+            const accountText = accountSelect.options[accountSelect.selectedIndex].text;
+            
+            showModal(
+                'Confirm Withdrawal',
+                `Request withdrawal of <strong class="text-[#091e65]">Rs. ${amount}</strong> to:<br/>${accountText}?`,
+                'question',
+                [
+                    { 
+                        text: 'Yes, Request Withdrawal!', 
+                        class: 'confirm', 
+                        onClick: () => {
+                            if(submitButton) {
+                                submitButton.disabled = true; 
+                                submitButton.innerHTML = `
+                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Processing...`;
+                            }
+                            withdrawalForm.submit(); 
+                        }
+                    },
+                    { text: 'Cancel', class: 'cancel' }
+                ]
+            );
+        });
+    }
+
+    const CANCELLATION_WINDOW_MS = 30 * 60 * 1000; 
+
+    function formatTime(milliseconds) {
+        if (milliseconds < 0) milliseconds = 0;
+        let totalSeconds = Math.floor(milliseconds / 1000);
+        let minutes = Math.floor(totalSeconds / 60);
+        let seconds = totalSeconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function initializeCountdownTimers() {
+        const requestRows = document.querySelectorAll('.withdrawal-request-row');
+        requestRows.forEach(row => {
+            const requestDateStr = row.dataset.requestDate;
+            const requestId = row.dataset.requestId;
+            const status = row.dataset.status;
+            
+            if (status !== 'pending' || !requestDateStr) return; 
+
+            const requestDate = new Date(requestDateStr);
+            const expirationTime = requestDate.getTime() + CANCELLATION_WINDOW_MS;
+            
+            const countdownElement = document.getElementById(`countdown-${requestId}`);
+            const cancelForm = row.querySelector(`.cancel-form[data-request-id="${requestId}"]`);
+
+            if (!countdownElement || !cancelForm) return;
+
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const timeRemaining = expirationTime - now;
+
+                if (timeRemaining > 0) {
+                    countdownElement.textContent = `Cancellable for: ${formatTime(timeRemaining)}`;
+                    cancelForm.style.display = 'inline-block'; 
+                } else {
+                    countdownElement.textContent = 'Cancellation window expired';
+                    countdownElement.classList.remove('text-slate-600');
+                    countdownElement.classList.add('text-slate-400', 'italic');
+                    cancelForm.style.display = 'none'; 
+                    clearInterval(intervalId); 
+                }
+            }
+            const intervalId = setInterval(updateCountdown, 1000);
+            updateCountdown(); 
+        });
+    }
+    initializeCountdownTimers(); 
+}); 
+
+window.handleCancelSubmit = function(event, amount, formElement) {
+    event.preventDefault(); 
+    showModal( 
+        'Cancel Withdrawal Request?',
+        `Are you sure you want to cancel the withdrawal request for <strong class="text-red-600">Rs. ${amount}</strong>? This action cannot be undone.`,
+        'warning', 
+        [
+            {
+                text: 'Yes, Cancel It',
+                class: 'danger', 
+                onClick: () => {
+                    const cancelButtonInForm = formElement.querySelector('button[type="submit"]'); 
+                    if(cancelButtonInForm) { 
+                        cancelButtonInForm.disabled = true;
+                        cancelButtonInForm.innerHTML = 'Cancelling...'; 
+                    }
+                    formElement.submit(); 
+                }
+            },
+            { text: 'No, Keep It', class: 'cancel' }
+        ]
+    );
+};
+</script>
+{% endblock %}

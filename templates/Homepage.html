@@ -1,654 +1,1197 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AudioX - Made in Pakistan{% endblock %}</title>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <link rel="stylesheet" href="{% static 'css/ourteamstyle.css' %}">
-    <link rel="stylesheet" href="{% static 'css/paymentpolicystyle.css' %}">
-    <link rel="stylesheet" href="{% static 'css/privacypolicy.css' %}">
-    <link rel="stylesheet" href="{% static 'css/piracypolicy.css' %}">
-    <link rel="stylesheet" href="{% static 'css/termsandconditions.css' %}">
-    <link rel="stylesheet" href="{% static 'css/aboutus.css' %}">
-
+    <link rel="icon" href="{% static 'img/audiox-favicon.png' %}" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    {# --- Add CSRF token meta tag for JavaScript --- #}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    {# --- Pass JSON-serialized context from view --- #}
+    {# Ensure 'creator_js_context' is passed from your view #}
+    {{ creator_js_context|json_script:"django-context-data" }}
 
     <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            'theme-primary': '#091e65',      // Main theme color
-            'theme-primary-hover': '#071852',  // Darker shade for hover
-            'theme-primary-light': '#eef2ff',  // Light shade (Indigo 50)
-            'theme-primary-lighter': '#f0f3ff', // Even lighter shade
-            'theme-secondary': '#facc15',      // Secondary color (yellow - kept for logo dot)
-            'theme-secondary-hover': '#eab308', // Darker yellow
-            'theme-text-primary': '#1f2937',    // Dark gray (gray-800)
-            'theme-text-secondary': '#4b5563', // Medium gray (gray-600)
-            'theme-text-light': '#6b7280',     // Lighter gray (gray-500)
-          }
+        // Tailwind Configuration - Define theme colors and fonts here
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'], // Set Inter as the default
+                    },
+                    colors: {
+                        // Core Theme Colors
+                        'theme-primary': '#091e65',       // Deep Blue (Your Primary)
+                        'theme-primary-hover': '#1e3a8a', // Slightly Lighter Blue (Indigo 700)
+                        'theme-primary-light': '#e0e7ff', // Light Blue bg (Indigo 100)
+                        'theme-primary-lighter': '#eef2ff',// Even Lighter Blue bg (Indigo 50)
+                        'theme-secondary': '#f59e0b',     // Accent Orange (Amber 500)
+                        'theme-secondary-hover': '#d97706',// Darker Orange (Amber 600)
+                        'theme-secondary-light': '#fffbeb', // Lighter orange bg (Amber 50)
+
+                        // Text Colors
+                        'theme-text-primary': '#1f2937',   // Dark Gray (Gray 800)
+                        'theme-text-secondary': '#4b5563', // Medium Gray (Gray 600)
+                        'theme-text-light': '#6b7280',     // Lighter Gray (Gray 500)
+                        'theme-text-inverted': '#ffffff',  // White
+                        'theme-text-inverted-muted': '#e5e7eb', // Light Gray for dark bg (Gray 200)
+                        'theme-text-inverted-subtle': '#9ca3af', // Subtler Gray for dark bg (Gray 400)
+
+                        // Status & Feedback Colors
+                        'theme-success': '#10b981',       // Emerald 500
+                        'theme-green': '#16a34a',         // Green 600
+                        'theme-green-hover': '#15803d',   // Green 700
+                        'theme-green-light': '#d1fae5',   // Green 100
+                        'theme-green-lighter': '#f0fdf4', // Green 50
+                        'theme-error': '#ef4444',         // Red 500
+                        'theme-error-hover': '#dc2626',   // Red 600 (Darker Red for hover)
+                        'theme-error-light': '#fee2e2',   // Red 100
+                        'theme-warning': '#f97316',       // Orange 500
+                        'theme-warning-light': '#ffedd5', // Orange 100
+
+                        // Borders and Backgrounds
+                        'theme-border': '#e5e7eb',         // Default Border (Gray 200)
+                        'theme-border-dark': '#374151',    // Dark Border (Gray 700) - For dark menus
+                        'theme-border-subtle': '#4b5563',  // Subtler Dark Border (Gray 600)
+                        'theme-bg-subtle': '#f9fafb',      // Very Light Gray BG (Gray 50)
+                        'theme-bg-dark-menu': '#081a56',   // Slightly darker than primary for depth
+                        'theme-bg-dark-hover': 'rgba(255, 255, 255, 0.1)', // Subtle white overlay for hover
+                        'theme-bg-dark-active': 'rgba(255, 255, 255, 0.15)', // Slightly stronger overlay for active
+                    },
+                    boxShadow: {
+                        'card': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                        'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+                        'xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+                        'focus-ring': '0 0 0 3px rgba(9, 30, 101, 0.3)', // Focus ring using theme-primary
+                        'focus-ring-light': '0 0 0 3px rgba(245, 158, 11, 0.4)', // Focus ring using theme-secondary
+                        'focus-ring-inverted': '0 0 0 3px rgba(255, 255, 255, 0.3)', // Focus ring for dark bg
+                        'inner-dark': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.2)',
+                        'dropdown': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)', // Custom dropdown shadow
+                    },
+                    transitionProperty: {
+                        'height': 'height',
+                        'spacing': 'margin, padding',
+                        'max-height': 'max-height',
+                        'bg-color': 'background-color',
+                        'text-color': 'color',
+                        'border-color': 'border-color',
+                        'opacity': 'opacity',
+                        'transform': 'transform',
+                    },
+                    keyframes: {
+                        pulse: {
+                          '0%, 100%': { transform: 'scale(1)', opacity: '0.7' },
+                          '50%': { transform: 'scale(1.1)', opacity: '1' },
+                        }
+                    },
+                    animation: {
+                        pulse: 'pulse 1.5s infinite ease-in-out',
+                    }
+                }
+            },
         }
-      }
-    }
     </script>
 
-    <style>
-        /* --- Custom Styles --- */
-
-        /* Logo Dot Style (Used in Header and Footer) */
-        .audiotype-logo .logo-dot {
-            width: 0.5rem; height: 0.5rem; margin-left: 0.1rem;
-            background-color: theme('colors.theme-secondary'); /* Keep yellow for logo dot */
-            border-radius: 9999px;
-        }
-
-        /* Header Profile Picture */
-        .header-profile-picture {
-            width: 36px; height: 36px;
-            border-radius: 50%; object-fit: cover;
-            border: 2px solid transparent; transition: border-color 0.2s ease;
-        }
-         #profile-dropdown-toggle:hover .header-profile-picture,
-         #profile-dropdown-toggle:focus .header-profile-picture {
-             border-color: theme('colors.theme-primary');
-         }
-
-        /* Default Profile Icon in Header */
-        .default-profile-icon-header {
-            font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-            background-color: #e5e7eb; color: theme('colors.theme-text-secondary');
-            border-radius: 50%; border: 2px solid transparent;
-            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-        }
-         #profile-dropdown-toggle:hover .default-profile-icon-header,
-         #profile-dropdown-toggle:focus .default-profile-icon-header {
-             background-color: theme('colors.theme-primary-light');
-             color: theme('colors.theme-primary');
-             border-color: theme('colors.theme-primary');
-         }
-
-        /* --- Sidemenu Styles --- */
-        #slide-menu {
-            transition: transform 0.3s ease-in-out;
-            transform: translateX(-100%); /* Start off-screen */
-        }
-        #slide-menu.open {
-            transform: translateX(0);
-        }
-        /* Custom scrollbar */
-        #slide-menu .menu-content::-webkit-scrollbar { width: 6px; }
-        #slide-menu .menu-content::-webkit-scrollbar-track { background: transparent; }
-        #slide-menu .menu-content::-webkit-scrollbar-thumb { background-color: theme('colors.gray.300'); border-radius: 3px; border: 1px solid transparent; background-clip: content-box; }
-        #slide-menu .menu-content::-webkit-scrollbar-thumb:hover { background-color: theme('colors.theme-primary'); }
-
-         /* Submenu transition */
-         .submenu {
-             max-height: 0; overflow: hidden;
-             transition: max-height 0.3s ease-out, opacity 0.2s ease-out, padding 0.3s ease-out;
-             opacity: 0; padding-top: 0; padding-bottom: 0;
-         }
-         .submenu-open .submenu {
-             max-height: 500px; /* Adjust as needed */
-             opacity: 1; padding-top: 0.25rem; padding-bottom: 0.25rem; /* Add padding when open */
-         }
-        /* --- End Sidemenu Styles --- */
-
-        /* Dropdown Transition */
-        #profile-dropdown { transition: opacity 0.2s ease-out, transform 0.2s ease-out; }
-        #profile-dropdown.hidden { opacity: 0; transform: translateY(-10px); pointer-events: none; }
-
-        /* Voice Search Button Icon Styling */
-        #voice-search-btn img, #voice-search-btn-mobile img { height: 1.25rem; width: 1.25rem; filter: grayscale(50%); transition: filter 0.2s ease; }
-        #voice-search-btn:hover img, #voice-search-btn-mobile:hover img { filter: grayscale(0%); }
-        #voice-search-btn.recording, #voice-search-btn-mobile.recording { background-color: #fee2e2; /* red-100 */ }
-        #voice-search-btn.recording img, #voice-search-btn-mobile.recording img { filter: none; animation: pulse 1.5s infinite ease-in-out; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-
-        /* Ensure dropdown items have proper contrast on hover */
-        #profile-dropdown a:hover { background-color: theme('colors.theme-primary-lighter'); color: theme('colors.theme-primary'); }
-        #profile-dropdown a:hover i { color: theme('colors.theme-primary'); }
-
-    </style>
 </head>
 
-<body style="display: flex; flex-direction: column; min-height: 100vh;" class="bg-white font-sans"> 
+<body class="font-sans bg-theme-bg-subtle text-theme-text-primary flex flex-col min-h-screen"> {# Use subtle background #}
 
     {% block header %}
+    {# Header remains largely unchanged structurally, ensuring styles don't conflict #}
     <header class="bg-white shadow-md sticky top-0 z-50 border-b-2 border-theme-primary">
         <div class="container mx-auto flex items-center justify-between px-4 h-16">
-            <div class="flex items-center space-x-4">
-                <button id="menu-toggle" class="text-theme-text-secondary hover:text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 rounded-md p-2 transition duration-150 ease-in-out">
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                {# Menu Toggle Button - Styled with Tailwind #}
+                <button id="menu-toggle" class="text-theme-text-secondary hover:text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 rounded-md p-2 -ml-2 transition duration-150 ease-in-out">
                     <i class="fas fa-bars text-xl"></i>
                     <span class="sr-only">Open Menu</span>
                 </button>
-                <a href="/Home" class="flex items-center shrink-0">
-                    <div class="flex items-center audiotype-logo">
-                        <span class="text-2xl font-extrabold text-theme-primary tracking-tighter">AUDIO</span>
-                        <span class="text-2xl font-extrabold text-red-600 tracking-tighter">X</span>
-                        <div class="w-2 h-2 bg-theme-secondary rounded-full ml-1 logo-dot"></div>
-                    </div>
+                {# Logo - Styled with Tailwind #}
+                <a href="{% url 'AudioXApp:home' %}" class="flex items-center shrink-0 group">
+                    <span class="text-2xl font-extrabold text-theme-primary tracking-tighter group-hover:text-theme-primary-hover transition-colors">AUDIO</span>
+                    <span class="text-2xl font-extrabold text-red-600 tracking-tighter">X</span>
+                    <div class="w-2 h-2 bg-theme-secondary rounded-full ml-1 group-hover:bg-theme-secondary-hover transition-colors"></div>
                 </a>
             </div>
+
+            {# Desktop Search Bar - Styled with Tailwind #}
             <div class="flex-grow max-w-xl mx-4 hidden md:flex items-center">
                  <div class="relative w-full">
-                     <input type="text" id="search-input" placeholder="Search audiobooks & stories..."
-                            class="w-full pl-12 pr-16 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-500 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out" />
-                     <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-secondary hover:text-theme-primary rounded-l-full focus:outline-none transition duration-150 ease-in-out" id="search-btn" title="Search">
-                         <i class="fas fa-search text-base"></i>
-                     </button>
-                     <button id="voice-search-btn" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-secondary hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out" title="Search by Voice">
-                          <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone">
-                     </button>
+                      <input type="text" id="search-input" placeholder="Search audiobooks & stories..." class="w-full pl-11 pr-12 py-2.5 border border-theme-border rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-400 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
+                      <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-11 text-theme-text-light hover:text-theme-primary focus:outline-none transition duration-150 ease-in-out" id="search-btn" title="Search">
+                          <i class="fas fa-search text-base"></i>
+                      </button>
+                      <button id="voice-search-btn" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-light hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out group" title="Search by Voice">
+                          <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity">
+                      </button>
                  </div>
             </div>
-            <div class="flex items-center space-x-3 sm:space-x-4">
-                <div class="relative">
-                     <select class="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-full text-theme-text-secondary focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none text-sm bg-white shadow-sm hover:border-gray-400 transition duration-150 ease-in-out"
-                             id="language-selector"
-                             onchange="redirectToLanguage()">
+
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                {# Language Selector - Styled with Tailwind #}
+                <div class="relative hidden sm:block">
+                     <select class="appearance-none pl-3 pr-8 py-2 border border-theme-border rounded-full text-theme-text-secondary focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none text-sm bg-white shadow-sm hover:border-gray-400 transition duration-150 ease-in-out cursor-pointer" id="language-selector" onchange="redirectToLanguage()">
                          <option value="English">English</option>
                          <option value="Urdu">اردو</option>
                          <option value="Punjabi">پنجابی</option>
                          <option value="Sindhi">سنڌي</option>
                      </select>
-                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-theme-text-secondary">
-                          <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-theme-text-light">
+                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                      </div>
                 </div>
+
+                {# Coins / Premium Button - Styled with Tailwind #}
                 {% if user.is_authenticated %}
-                <a href="/mywallet" class="bg-theme-primary-light hover:bg-indigo-100 text-theme-primary font-semibold px-4 h-9 rounded-full flex items-center border border-indigo-200 transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-theme-primary">
-                    <i class="fas fa-coins mr-2 text-base text-theme-primary opacity-80"></i>
-                    <span>{{ user.coins|default:0 }}</span> <span class="hidden sm:inline ml-1">Coins</span>
-                </a>
+                     <a href="{% url 'AudioXApp:mywallet' %}" class="bg-theme-primary-lighter hover:bg-theme-primary-light text-theme-primary font-semibold px-3 h-9 rounded-full flex items-center border border-theme-primary/30 transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-theme-primary shadow-sm hover:shadow">
+                         <i class="fas fa-coins mr-1.5 text-base text-theme-primary opacity-80"></i>
+                         <span id="header-coin-balance">{{ user.coins|default:0 }}</span>
+                         <span class="hidden sm:inline ml-1">Coins</span>
+                     </a>
                 {% else %}
-                 <a href="/subscribe" class="bg-theme-primary hover:bg-theme-primary-hover text-white font-semibold px-4 h-9 rounded-full flex items-center shadow-sm transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-theme-primary">
-                     <i class="fas fa-star mr-1.5 text-base"></i>
-                     GET PREMIUM
-                 </a>
+                     <a href="{% url 'AudioXApp:subscribe' %}" class="bg-theme-secondary hover:bg-theme-secondary-hover text-white font-semibold px-3 h-9 rounded-full flex items-center shadow-sm transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-theme-secondary">
+                         <i class="fas fa-star mr-1.5 text-base"></i>
+                         <span class="hidden sm:inline">GET PREMIUM</span>
+                         <span class="sm:hidden">PREMIUM</span>
+                     </a>
                 {% endif %}
+
+                {# --- Profile Dropdown / Login/Signup --- #}
                 {% if user.is_authenticated %}
                 <div class="relative">
-                    <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary" id="profile-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
+                    <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary group" id="profile-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
                         <span class="sr-only">Open user menu</span>
                         {% if user.profile_pic %}
-                        <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="header-profile-picture">
+                            <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="w-9 h-9 rounded-full object-cover border-2 border-transparent group-hover:border-theme-primary transition-colors">
                         {% else %}
-                        <span class="default-profile-icon-header">
-                            <i class="fas fa-user"></i>
-                        </span>
+                            <span class="w-9 h-9 rounded-full bg-gray-200 text-theme-text-light flex items-center justify-center text-lg border-2 border-transparent group-hover:border-theme-primary group-hover:bg-theme-primary-lighter group-hover:text-theme-primary transition-all">
+                                <i class="fas fa-user"></i>
+                            </span>
                         {% endif %}
                     </button>
+
+                    {# --- REDESIGNED PREMIUM PROFILE DROPDOWN --- #}
                     <div id="profile-dropdown"
-                         class="absolute right-0 mt-2 w-64 origin-top-right rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-60"
-                         role="menu" aria-orientation="vertical" aria-labelledby="profile-dropdown-toggle" tabindex="-1">
-                        <div class="px-4 py-3 border-b border-gray-200 bg-theme-primary-lighter">
-                            <div class="flex items-center">
-                                <div class="shrink-0 mr-3">
+                         class="absolute right-0 mt-2 w-72 origin-top-right rounded-xl shadow-dropdown bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-60 overflow-hidden"
+                         role="menu" aria-orientation="vertical" aria-labelledby="profile-dropdown-toggle" tabindex="-1"
+                         data-transition-enter="transition ease-out duration-100"
+                         data-transition-enter-start="opacity-0 scale-95"
+                         data-transition-enter-end="opacity-100 scale-100"
+                         data-transition-leave="transition ease-in duration-75"
+                         data-transition-leave-start="opacity-100 scale-100"
+                         data-transition-leave-end="opacity-0 scale-95">
+
+                        {# Dropdown Header with Theme Color #}
+                        <div class="px-5 py-4 bg-gradient-to-br from-theme-primary to-blue-800 text-white">
+                            <div class="flex items-center space-x-3">
+                                <div class="shrink-0">
                                     {% if user.profile_pic %}
-                                    <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="h-10 w-10 rounded-full object-cover ring-1 ring-offset-1 ring-theme-primary">
+                                        <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="h-11 w-11 rounded-full object-cover ring-2 ring-white/50 shadow-md">
                                     {% else %}
-                                    <span class="h-10 w-10 rounded-full bg-gray-300 text-theme-text-secondary flex items-center justify-center text-xl ring-1 ring-offset-1 ring-gray-400">
-                                        <i class="fas fa-user"></i>
-                                    </span>
+                                        <span class="h-11 w-11 rounded-full bg-white/20 text-indigo-200 flex items-center justify-center text-xl ring-1 ring-white/30 shadow-inner">
+                                            <i class="fas fa-user"></i>
+                                        </span>
                                     {% endif %}
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-semibold text-theme-text-primary truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
+                                    <p class="text-md font-semibold text-white truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
                                     {% if subscription_type == 'FR' %}
-                                    <p class="text-xs text-theme-text-secondary">Free Plan</p>
+                                        <p class="text-xs text-indigo-200">Free Plan</p>
                                     {% elif subscription_type == 'PR' %}
-                                    <p class="text-xs font-medium text-green-600">Premium Plan <i class="fas fa-check-circle text-xs ml-0.5"></i></p>
+                                        <p class="text-xs font-medium text-emerald-300 flex items-center">
+                                            <i class="fas fa-star text-xs mr-1 text-yellow-300"></i> Premium Plan
+                                        </p>
                                     {% else %}
-                                    <p class="text-xs text-theme-text-secondary">No Plan</p>
+                                        <p class="text-xs text-indigo-300">No Plan</p>
                                     {% endif %}
                                 </div>
                             </div>
                             {% if subscription_type == 'FR' %}
-                            <a href="/subscribe" class="block w-full mt-3 py-1.5 px-3 text-center bg-gradient-to-r from-theme-secondary to-amber-500 text-white text-xs font-bold rounded-full hover:from-theme-secondary-hover hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-75 transition duration-150 ease-in-out">
-                                <i class="fas fa-star mr-1"></i> Upgrade to Premium
-                            </a>
+                                <a href="{% url 'AudioXApp:subscribe' %}" class="block w-full mt-4 py-1.5 px-3 text-center bg-theme-secondary hover:bg-theme-secondary-hover text-theme-primary text-xs font-bold rounded-full focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-2 focus:ring-offset-theme-primary transition duration-150 ease-in-out shadow-sm hover:shadow-md">
+                                    <i class="fas fa-arrow-up mr-1"></i> Upgrade to Premium
+                                </a>
                             {% endif %}
                         </div>
-                        <div class="py-1" role="none">
-                            <a href="/myprofile" class="flex items-center px-4 py-2 text-sm text-theme-text-secondary transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
-                                <i class="fas fa-user w-5 mr-3 text-gray-400"></i> My Profile
-                            </a>
-                            {% if subscription_type == 'PR' %}
-                            <a href="/managesubscription" class="flex items-center px-4 py-2 text-sm text-theme-text-secondary transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
-                                <i class="fas fa-cog w-5 mr-3 text-gray-400"></i> Manage Subscription
-                            </a>
-                            {% endif %}
-                            <a href="/buycoins" class="flex items-center px-4 py-2 text-sm text-theme-text-secondary transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
-                                <i class="fas fa-coins w-5 mr-3 text-gray-400"></i> Buy Coins
-                            </a>
-                            <a href="/mywallet" class="flex items-center px-4 py-2 text-sm text-theme-text-secondary transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
-                                <i class="fas fa-wallet w-5 mr-3 text-gray-400"></i> My Wallet
-                            </a>
+
+                        {# Menu Items Section #}
+                        <div class="py-2" role="none">
+                             <a href="{% url 'AudioXApp:myprofile' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                                 <i class="fas fa-user-circle w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Profile
+                             </a>
+                             {% if subscription_type == 'PR' %}
+                                  <a href="{% url 'AudioXApp:managesubscription' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                                      <i class="fas fa-cog w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Manage Subscription
+                                  </a>
+                             {% endif %}
+                             <a href="{% url 'AudioXApp:buycoins' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                                 <i class="fas fa-coins w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Buy Coins
+                             </a>
+                             <a href="{% url 'AudioXApp:mywallet' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                                 <i class="fas fa-wallet w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Wallet
+                             </a>
                         </div>
-                        <div class="border-t border-gray-100"></div>
-                        <div class="py-1" role="none">
-                            <a href="/logout" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition duration-150 ease-in-out" role="menuitem" tabindex="-1">
-                                <i class="fas fa-sign-out-alt w-5 mr-3"></i> Logout
+
+                        {# Logout Section #}
+                        <div class="border-t border-theme-border"></div>
+                        <div class="py-2" role="none">
+                            <a href="{% url 'AudioXApp:logout' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-error hover:bg-theme-error-light hover:text-red-700 transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-error-light focus:text-red-700" role="menuitem" tabindex="-1">
+                                <i class="fas fa-sign-out-alt w-5 mr-3 text-lg group-hover:text-red-600 transition-colors"></i> Logout
                             </a>
                         </div>
                     </div>
+                    {# --- END REDESIGNED DROPDOWN --- #}
                 </div>
                 {% else %}
-                <div class="hidden sm:flex items-center space-x-2">
-                    <a href="/login" class="text-theme-primary hover:text-theme-primary-hover font-semibold px-4 h-9 flex items-center rounded-full text-sm transition duration-150 ease-in-out hover:bg-theme-primary-lighter focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Login</a>
-                    <a href="/signup" class="bg-theme-primary hover:bg-theme-primary-hover text-white font-semibold px-4 h-9 flex items-center rounded-full shadow-sm text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Signup</a>
-                </div>
-                 <div class="flex sm:hidden items-center space-x-1"> <a href="/login" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Login">
-                         <i class="fas fa-sign-in-alt text-lg"></i>
-                     </a>
-                      <a href="/signup" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Signup">
-                           <i class="fas fa-user-plus text-lg"></i>
-                      </a>
-                 </div>
+                    {# Login/Signup Buttons (Desktop) - Styled with Tailwind #}
+                    <div class="hidden sm:flex items-center space-x-2">
+                        <a href="{% url 'AudioXApp:login' %}" class="text-theme-primary hover:text-theme-primary-hover font-semibold px-4 h-9 flex items-center rounded-full text-sm transition duration-150 ease-in-out hover:bg-theme-primary-lighter focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Login</a>
+                        <a href="{% url 'AudioXApp:signup' %}" class="bg-theme-primary hover:bg-theme-primary-hover text-white font-semibold px-4 h-9 flex items-center rounded-full shadow-sm text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Signup</a>
+                    </div>
+                     {# Login/Signup Icons (Mobile) - Styled with Tailwind #}
+                     <div class="flex sm:hidden items-center space-x-1">
+                          <a href="{% url 'AudioXApp:login' %}" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Login"><i class="fas fa-sign-in-alt text-lg"></i></a>
+                          <a href="{% url 'AudioXApp:signup' %}" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Signup"><i class="fas fa-user-plus text-lg"></i></a>
+                     </div>
                 {% endif %}
             </div>
         </div>
-         <div class="container mx-auto px-4 pb-3 md:hidden">
-              <div class="relative w-full">
-                   <input type="text" id="search-input-mobile" placeholder="Search..."
-                          class="w-full pl-10 pr-16 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-500 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out" />
-                   <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-10 text-theme-text-secondary hover:text-theme-primary rounded-l-full focus:outline-none" id="search-btn-mobile" title="Search">
-                        <i class="fas fa-search text-base"></i>
-                   </button>
-                   <button id="voice-search-btn-mobile" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-secondary hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none" title="Search by Voice">
-                        <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5">
-                   </button>
-              </div>
-         </div>
+
+        {# Mobile Search Bar - Styled with Tailwind #}
+        <div class="container mx-auto px-4 pb-3 md:hidden">
+             <div class="relative w-full">
+                  <input type="text" id="search-input-mobile" placeholder="Search..." class="w-full pl-10 pr-12 py-2 border border-theme-border rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-400 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
+                  <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-10 text-theme-text-light hover:text-theme-primary focus:outline-none" id="search-btn-mobile" title="Search">
+                      <i class="fas fa-search text-base"></i>
+                  </button>
+                  <button id="voice-search-btn-mobile" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-light hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none group" title="Search by Voice">
+                      <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity">
+                  </button>
+             </div>
+        </div>
     </header>
     {% endblock %}
 
     {% block slider-menu %}
-        <div id="slide-menu" class="fixed top-0 left-0 w-72 h-full bg-white shadow-xl z-[1000] flex flex-col transform -translate-x-full">
-           <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                <a href="/Home" class="flex items-center shrink-0">
-                    <div class="flex items-center audiotype-logo">
-                        <span class="text-xl font-extrabold text-theme-primary tracking-tighter">AUDIO</span>
-                        <span class="text-xl font-extrabold text-red-600 tracking-tighter">X</span>
-                        <div class="w-1.5 h-1.5 bg-theme-secondary rounded-full ml-1 logo-dot"></div>
-                    </div>
-                </a>
-                <button id="close-menu" class="text-gray-500 hover:text-theme-primary transition duration-150 ease-in-out p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-theme-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    <span class="sr-only">Close Menu</span>
-                </button>
-           </div>
+    {# --- NEW ELEGANT SLIDER MENU (Refined Features) --- #}
+    {# Backdrop - Consistent styling #}
+    <div id="slide-menu-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[990] hidden transition-opacity duration-300 ease-in-out opacity-0"></div>
 
-            <div class="flex-grow overflow-y-auto menu-content pt-4 pb-2">
-                {% if user.is_authenticated %}
-                <div class="px-4 mb-4 text-center"> <div class="flex justify-center items-center space-x-3 mb-3"> <div class="shrink-0">
-                        {% if user.profile_pic %}
-                        <img src="{{ user.profile_pic.url }}" alt="Profile" class="h-14 w-14 rounded-full object-cover ring-2 ring-offset-2 ring-theme-primary"> {% else %}
-                        <span class="h-14 w-14 rounded-full bg-gray-200 text-theme-text-secondary flex items-center justify-center text-2xl ring-1 ring-gray-300"> <i class="fas fa-user"></i>
-                        </span>
-                        {% endif %}
-                    </div>
-                    <div class="min-w-0 flex-1 text-left"> <p class="text-md font-semibold text-theme-text-primary truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
-                        <p class="text-sm text-theme-text-secondary truncate">{{ user.bio|default:""|truncatechars:35 }}</p>
-                    </div>
-                </div>
-                <div class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold shadow-sm
-                    {% if subscription_type == 'FR' %} bg-yellow-100 text-yellow-800 ring-1 ring-inset ring-yellow-300
-                    {% elif subscription_type == 'PR' %} bg-gradient-to-r from-theme-primary to-blue-800 text-white ring-1 ring-inset ring-theme-primary-hover
-                    {% else %} bg-gray-100 text-gray-800 ring-1 ring-inset ring-gray-300 {% endif %}">
-                    {% if subscription_type == 'FR' %}
-                        <i class="fas fa-user mr-1.5 text-yellow-600"></i> Free Account
-                    {% elif subscription_type == 'PR' %}
-                        <i class="fas fa-star mr-1.5 text-yellow-300"></i> Premium Account
-                    {% else %}
-                        <i class="fas fa-question-circle mr-1.5 text-gray-500"></i> No Plan
-                    {% endif %}
-                </div>
-                </div>
-                <hr class="mx-4 border-gray-100 mb-4">
+    {# Menu Container - Solid dark blue #}
+    <div id="slide-menu" class="fixed top-0 left-0 w-80 h-full bg-theme-primary text-theme-text-inverted shadow-2xl z-[1000] flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out">
 
-                {% else %}
-                <div class="px-4 mb-4 text-center">
-                    <p class="text-sm text-theme-text-secondary mb-3">Login or sign up to personalize your experience.</p>
-                    <div class="flex space-x-2">
-                        <a href="/login" class="flex-1 bg-white border border-theme-primary text-theme-primary hover:bg-theme-primary-lighter font-semibold px-4 py-2 rounded-md text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">
-                            Login
-                        </a>
-                        <a href="/signup" class="flex-1 bg-theme-primary hover:bg-theme-primary-hover text-white font-semibold px-4 py-2 rounded-md shadow-sm text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">
-                            Signup
-                        </a>
-                    </div>
-                </div>
-                <hr class="mx-4 border-gray-100 mb-4">
-                {% endif %}
-
-                <nav class="flex-grow px-2 space-y-1">
-                    <a href="/Home" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md bg-theme-primary-light text-theme-primary hover:bg-indigo-100 border border-indigo-200 transition duration-150 ease-in-out mb-2">
-                        <i class="fas fa-file-pdf mr-3 text-base w-5 text-center opacity-80"></i> Generate Audio from PDF
-                    </a>
-                    <a href="/Home" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md bg-theme-primary-light text-theme-primary hover:bg-indigo-100 border border-indigo-200 transition duration-150 ease-in-out mb-3">
-                        <i class="fas fa-users mr-3 text-base w-5 text-center opacity-80"></i> Creator Portal
-                    </a>
-
-                    {% if user.is_authenticated %}
-                    <a href="/browse" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
-                        <i class="fas fa-book-open mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Browse Audiobooks
-                    </a>
-                    <a href="/mylibrary" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
-                        <i class="fas fa-bookmark mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> My Library
-                    </a>
-                    <a href="/downloads" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
-                        <i class="fas fa-download mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Downloaded Audiobooks
-                    </a>
-                    {% else %}
-                     <a href="/Home" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
-                        <i class="fas fa-home mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Home
-                      </a>
-                       <a href="/browse" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
-                        <i class="fas fa-book-open mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Browse Audiobooks
-                       </a>
-                    {% endif %}
-
-
-                    <div class="pt-2 pb-1">
-                        <hr class="border-gray-200">
-                    </div>
-
-                    <div class="has-submenu-container">
-                        <button class="group w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out submenu-toggle">
-                            <span class="inline-flex items-center">
-                                <i class="fas fa-info-circle mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> About
-                            </span>
-                            <i class="fas fa-chevron-down text-xs text-theme-text-light group-hover:text-theme-primary transition-transform duration-200 transform"></i>
-                        </button>
-                        <div class="submenu ml-6 mt-1 space-y-0.5">
-                            <a href="/ourteam" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Our Team</a>
-                            <a href="/aboutus" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">About Us</a>
-                        </div>
-                    </div>
-
-                    <div class="has-submenu-container">
-                        <button class="group w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out submenu-toggle">
-                             <span class="inline-flex items-center">
-                                <i class="fas fa-gavel mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Legal
-                            </span>
-                            <i class="fas fa-chevron-down text-xs text-theme-text-light group-hover:text-theme-primary transition-transform duration-200 transform"></i>
-                        </button>
-                        <div class="submenu ml-6 mt-1 space-y-0.5">
-                            <a href="/privacypolicy" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Privacy Policy</a>
-                            <a href="/paymentpolicy" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Payment Policy</a>
-                            <a href="/piracypolicy" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Piracy Policy</a>
-                            <a href="/termsandconditions" class="group block px-3 py-1.5 text-sm font-normal rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">Terms & Conditions</a>
-                        </div>
-                    </div>
-
-                    <a href="/contactus" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-theme-text-secondary hover:text-theme-primary hover:bg-theme-primary-lighter transition duration-150 ease-in-out">
-                        <i class="fas fa-envelope mr-3 text-base w-5 text-center text-theme-text-light group-hover:text-theme-primary"></i> Contact Support
-                    </a>
-
-                </nav>
-            </div>
-
-            <div class="p-4 mt-auto border-t border-gray-200">
-                {% if user.is_authenticated %}
-                <a href="/logout" class="group w-full flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                </a>
-                {% endif %}
-                <p class="mt-4 text-center text-xs text-gray-500">
-                    Made with <span class="text-red-500">❤️</span> in Pakistan<br>
-                    &copy; {% now "Y" %} AudioX
-                </p>
-            </div>
+        {# Menu Header #}
+        <div class="flex items-center justify-between p-5 border-b border-white/10 h-18 shrink-0">
+            {# Logo in Menu #}
+            <a href="{% url 'AudioXApp:home' %}" class="flex items-center shrink-0 group">
+                <span class="text-2xl font-extrabold text-white tracking-tighter">AUDIO</span>
+                <span class="text-2xl font-extrabold text-red-500 tracking-tighter">X</span>
+                <div class="w-2 h-2 bg-theme-secondary rounded-full ml-1.5 group-hover:bg-theme-secondary-hover transition-colors"></div>
+            </a>
+            {# Close Button #}
+            <button id="close-menu" class="text-theme-text-inverted-muted hover:text-white transition-colors duration-150 ease-in-out p-2 -mr-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                <span class="sr-only">Close Menu</span>
+            </button>
         </div>
+
+        {# Scrollable Menu Content Area #}
+        <div class="flex-grow overflow-y-auto menu-content">
+            {# User Info / Login Section #}
+            <div class="p-6 border-b border-white/10">
+                {% if user.is_authenticated %}
+                    <div class="flex items-center space-x-4">
+                        <div class="shrink-0">
+                            {% if user.profile_pic %}
+                                <img src="{{ user.profile_pic.url }}" alt="Profile" class="h-14 w-14 rounded-full object-cover ring-2 ring-offset-2 ring-offset-theme-primary ring-white/50 shadow-md">
+                            {% else %}
+                                <span class="h-14 w-14 rounded-full bg-white/10 text-theme-text-inverted-muted flex items-center justify-center text-2xl ring-1 ring-white/20 shadow-inner">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between">
+                                <p class="text-md font-semibold text-white truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
+                                {# --- MOVED & RESTYLED PLAN BADGE --- #}
+                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium shadow-sm whitespace-nowrap
+                                    {% if subscription_type == 'FR' %} bg-yellow-500/10 text-yellow-300 ring-1 ring-inset ring-yellow-500/20
+                                    {% elif subscription_type == 'PR' %} bg-gradient-to-r from-green-500/10 via-emerald-600/10 to-teal-600/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/30
+                                    {% else %} bg-gray-500/10 text-gray-400 ring-1 ring-inset ring-gray-500/20 {% endif %}">
+                                    {% if subscription_type == 'FR' %}
+                                        <i class="fas fa-user mr-1 opacity-70 text-xs"></i> Free
+                                    {% elif subscription_type == 'PR' %}
+                                        <i class="fas fa-star mr-1 text-yellow-400 text-xs"></i> Premium
+                                    {% else %}
+                                        No Plan
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <p class="text-sm text-theme-text-inverted-subtle truncate mt-1">{{ user.bio|default:"No bio yet."|truncatechars:35 }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    {# Logged Out State - Consistent styling #}
+                    <div class="text-left py-4">
+                        <p class="text-base font-medium text-white mb-2">Welcome to AudioX</p>
+                        <p class="text-sm text-theme-text-inverted-muted mb-4">Login or sign up to personalize your experience.</p>
+                        <div class="flex flex-col gap-3">
+                            <a href="{% url 'AudioXApp:login' %}" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-md font-semibold bg-white/10 text-white hover:bg-white/20 transition-bg-color duration-150 ease-in-out border border-white/20 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white/50 text-sm">
+                                <i class="fas fa-sign-in-alt mr-2"></i> Login
+                            </a>
+                            <a href="{% url 'AudioXApp:signup' %}" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-md font-semibold bg-theme-secondary text-theme-primary hover:bg-theme-secondary-hover transition-bg-color duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-2 focus:ring-offset-theme-primary text-sm">
+                                <i class="fas fa-user-plus mr-2"></i> Sign Up Free
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# Core Features Section #}
+            <div class="px-4 py-5 space-y-3">
+                <p class="px-3 text-xs font-semibold uppercase text-theme-text-inverted-subtle tracking-wider">Features</p>
+                {# --- RESTYLED CORE FEATURE: Generate Audio from PDF --- #}
+                <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-theme-secondary/10 to-amber-500/5 text-theme-secondary hover:from-theme-secondary/20 hover:to-amber-500/10 hover:text-amber-300 border border-theme-secondary/20 hover:border-theme-secondary/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-1 focus:ring-offset-theme-primary">
+                    <i class="fas fa-file-audio mr-3 text-lg w-5 text-center text-theme-secondary/80 group-hover:text-theme-secondary transition-colors"></i>
+                    <span>Generate Audio from PDF</span>
+                </a>
+
+                {# --- RESTYLED CORE FEATURE: Creator Actions --- #}
+                {% if user.is_authenticated %}
+                    {% if is_banned %}
+                        <button id="sidemenu-view-ban-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-red-600/10 text-red-300 hover:bg-red-600/20 border border-red-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-theme-primary">
+                            <i class="fas fa-microphone-slash mr-3 text-lg w-5 text-center opacity-80"></i>
+                            <span>Creator Profile Blocked</span>
+                        </button>
+                    {% elif is_creator %}
+                        <button id="sidemenu-switch-creator-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-green-600/10 text-green-300 hover:bg-green-600/20 border border-green-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 focus:ring-offset-theme-primary">
+                            <i class="fas fa-sliders-h mr-3 text-lg w-5 text-center opacity-80 group-hover:animate-pulse"></i>
+                            <span>Switch to Creator Mode</span>
+                        </button>
+                    {% elif creator_status == 'pending' %}
+                        <span class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-yellow-600/10 text-yellow-400 border border-yellow-600/30 opacity-70 cursor-not-allowed">
+                            <i class="fas fa-hourglass-half mr-3 text-lg w-5 text-center opacity-80"></i>
+                            <span>Creator Request Pending</span>
+                        </span>
+                    {% elif creator_status == 'rejected' %}
+                        {% if can_reapply %}
+                            <button id="sidemenu-view-rejection-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-orange-600/10 text-orange-300 hover:bg-orange-600/20 border border-orange-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-1 focus:ring-offset-theme-primary">
+                                <i class="fas fa-exclamation-circle mr-3 text-lg w-5 text-center opacity-80"></i>
+                                <span>Application Rejected</span>
+                            </button>
+                        {% else %}
+                            <span class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-gray-600/10 text-gray-500 border border-gray-600/30 opacity-70 cursor-not-allowed">
+                                <i class="fas fa-times-circle mr-3 text-lg w-5 text-center opacity-80"></i>
+                                <span>Application Limit Reached</span>
+                            </span>
+                        {% endif %}
+                    {% else %} {# User has never applied or status is None (and not banned) #}
+                        <a href="{% url 'AudioXApp:creator_apply' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/30 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-500/20 focus:text-blue-200">
+                            <i class="fas fa-feather-alt mr-3 text-lg w-5 text-center opacity-80"></i>
+                            <span>Become a Creator</span>
+                        </a>
+                    {% endif %}
+                {% else %} {# User is logged out #}
+                     <a href="#" id="creator-portal-link-loggedout" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg text-theme-text-inverted-subtle hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all duration-150 ease-in-out focus:outline-none focus:bg-white/10 focus:text-white">
+                         <i class="fas fa-users mr-3 text-lg w-5 text-center opacity-80"></i>
+                         <span>Creator Portal</span>
+                     </a>
+                {% endif %}
+            </div>
+
+            {# Main Navigation Section #}
+            <nav class="flex-grow px-4 pb-4 space-y-1">
+                <p class="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-theme-text-inverted-subtle tracking-wider">Navigation</p>
+                {# Standard Links - Consistent styling #}
+                {% if user.is_authenticated %}
+                    <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
+                        <i class="fas fa-book-open mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Browse Audiobooks
+                    </a>
+                    <a href="/mylibrary" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
+                        <i class="fas fa-bookmark mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> My Library
+                    </a>
+                    <a href="/downloads" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
+                        <i class="fas fa-download mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Downloaded Audiobooks
+                    </a>
+                {% else %}
+                     <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
+                         <i class="fas fa-home mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Home
+                     </a>
+                     <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
+                         <i class="fas fa-book-open mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Browse Audiobooks
+                     </a>
+                {% endif %}
+
+                {# Accordion Menus - Consistent styling #}
+                <div class="has-submenu-container pt-2">
+                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
+                        <span class="inline-flex items-center">
+                            <i class="fas fa-info-circle mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> About
+                        </span>
+                        <i class="fas fa-chevron-down text-xs text-theme-text-inverted-subtle group-hover:text-white transition-transform duration-200 transform submenu-icon"></i>
+                    </button>
+                    <div class="submenu ml-5 mt-1 space-y-0.5 overflow-hidden max-h-0 opacity-0 transition-all duration-300 ease-out border-l border-white/20 pl-4">
+                        <a href="/ourteam" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Our Team</a>
+                        <a href="/aboutus" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">About Us</a>
+                    </div>
+                </div>
+                <div class="has-submenu-container">
+                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
+                        <span class="inline-flex items-center">
+                            <i class="fas fa-gavel mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Legal
+                        </span>
+                        <i class="fas fa-chevron-down text-xs text-theme-text-inverted-subtle group-hover:text-white transition-transform duration-200 transform submenu-icon"></i>
+                    </button>
+                    <div class="submenu ml-5 mt-1 space-y-0.5 overflow-hidden max-h-0 opacity-0 transition-all duration-300 ease-out border-l border-white/20 pl-4">
+                        <a href="/privacypolicy" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Privacy Policy</a>
+                        <a href="/paymentpolicy" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Payment Policy</a>
+                        <a href="/piracypolicy" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Piracy Policy</a>
+                        <a href="/termsandconditions" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Terms & Conditions</a>
+                    </div>
+                </div>
+
+                {# --- SEPARATED CONTACT SUPPORT LINK --- #}
+                <div class="pt-4">
+                    <a href="/contactus" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white border border-white/10 hover:border-white/20">
+                        <i class="fas fa-headset mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Contact Support
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        {# Menu Footer - Logout button with solid red background #}
+        <div class="p-5 mt-auto border-t border-white/10 shrink-0">
+            {% if user.is_authenticated %}
+                 {# --- LOGOUT BUTTON WITH SOLID RED BACKGROUND --- #}
+                 <a href="{% url 'AudioXApp:logout' %}" class="group w-full flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-lg text-white bg-theme-error hover:bg-theme-error-hover transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-theme-primary shadow-md hover:shadow-lg">
+                     <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                 </a>
+            {% endif %}
+            <p class="mt-4 text-center text-xs text-theme-text-inverted-subtle">
+                Made with <span class="text-red-500">❤️</span> in Pakistan<br>&copy; {% now "Y" %} AudioX
+            </p>
+        </div>
+    </div>
     {% endblock %}
 
-    <main style="flex-grow: 1;">
+    <main class="flex-grow">
         {% block content %}
-        <div class="container mx-auto p-8">
-            <h1 class="text-3xl font-bold text-theme-text-primary">Main Content Area</h1>
-            <p class="mt-4 text-theme-text-secondary">Your page content goes here...</p>
-             <div class="mt-8 space-y-4">
-                 <button class="bg-theme-primary text-white px-4 py-2 rounded hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2">Primary Button</button>
-                 <button class="bg-theme-secondary text-theme-primary px-4 py-2 rounded hover:bg-theme-secondary-hover focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-2">Secondary Button</button>
-                 <input type="text" placeholder="Input field" class="border border-gray-300 rounded px-3 py-2 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary focus:outline-none">
-             </div>
+        <div class="container mx-auto p-4 sm:p-8">
+             {# Display Django messages if any - Styled with Tailwind #}
+             {% if messages %}
+                  <div class="mb-4 space-y-3">
+                  {% for message in messages %}
+                       <div class="p-4 rounded-md border {% if message.tags == 'success' %} bg-green-50 border-green-300 text-green-800 {% elif message.tags == 'warning' %} bg-yellow-50 border-yellow-300 text-yellow-800 {% elif message.tags == 'error' %} bg-red-50 border-red-400 text-red-700 {% else %} bg-blue-50 border-blue-300 text-blue-800 {% endif %}" role="alert">
+                           {{ message }}
+                       </div>
+                  {% endfor %}
+                  </div>
+             {% endif %}
+
+             {# Error Message Display - Styled with Tailwind #}
+             {% if error_message %}
+                  <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                      <strong class="font-bold">Error!</strong>
+                      <span class="block sm:inline">{{ error_message }}</span>
+                  </div>
+             {% endif %}
+
+             <h1 class="text-3xl font-bold text-theme-text-primary mb-6">Featured Audiobooks</h1>
+             {% if audiobooks %}
+                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {% for book in audiobooks %}
+                           <a href="{% url 'AudioXApp:audiobook_detail' book.slug %}" class="group block bg-white rounded-lg shadow-card hover:shadow-lg overflow-hidden transition duration-150 ease-in-out border border-transparent hover:border-theme-primary/50">
+                               <div class="aspect-w-3 aspect-h-4 bg-gray-100"> {# Placeholder background #}
+                                   <img
+                                       src="{{ book.cover_image.url|default:'https://placehold.co/300x400/e2e8f0/94a3b8?text=No+Cover' }}" {# Use .url for ImageField #}
+                                       alt="{{ book.title }} Cover"
+                                       class="object-cover w-full h-full group-hover:opacity-90 transition-opacity"
+                                       onerror="this.onerror=null; this.src='https://placehold.co/300x400/e2e8f0/94a3b8?text=Load+Error';" {# Fallback for broken image links #}
+                                   >
+                               </div>
+                               <div class="p-4">
+                                   <h3 class="text-md font-semibold text-theme-text-primary truncate group-hover:text-theme-primary transition-colors" title="{{ book.title }}">{{ book.title }}</h3>
+                                   {# Example: Author - Uncomment and use if available #}
+                                   {# <p class="text-sm text-theme-text-secondary truncate">{{ book.author.name|default:"" }}</p> #}
+                               </div>
+                           </a>
+                      {% endfor %}
+                  </div>
+             {% else %}
+                  <p class="text-theme-text-secondary">No audiobooks available at the moment.</p>
+             {% endif %}
         </div>
         {% endblock %}
     </main>
 
     {% block footer %}
-    <footer class="bg-theme-primary text-gray-300 py-10">
+    {# Footer remains unchanged structurally #}
+    <footer class="bg-gradient-to-r from-theme-primary to-blue-900 text-indigo-100 py-12 mt-10">
         <div class="container mx-auto px-4">
-             <div class="flex flex-wrap justify-between gap-8">
-                 <div class="w-full lg:w-1/3 mb-6 lg:mb-0">
-                     <a href="/Home" class="flex items-center audiotype-logo mb-4">
-                         <span class="text-3xl font-extrabold tracking-tighter text-white">AUDIO</span>
-                         <span class="text-3xl font-extrabold text-red-500 tracking-tighter">X</span>
-                         <div class="w-3 h-3 bg-theme-secondary rounded-full ml-1.5 logo-dot"></div>
-                     </a>
-                     <p class="mb-4 text-sm leading-relaxed opacity-90">
-                         AudioX: Your gateway to audiobooks in English, Urdu, Punjabi, Sindhi, and more. Making literature accessible across Pakistan and beyond.
-                     </p>
-                     <hr class="border-t border-gray-700 my-4">
-                     <h3 class="font-semibold text-white text-sm uppercase tracking-wider mb-2">Follow Us</h3>
-                     <div class="mt-2 space-x-4">
-                         <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition duration-150 ease-in-out" title="Facebook"><i class="fab fa-facebook-f text-lg"></i></a>
-                         <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition duration-150 ease-in-out" title="Instagram"><i class="fab fa-instagram text-lg"></i></a>
-                         <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition duration-150 ease-in-out" title="Twitter"><i class="fab fa-twitter text-lg"></i></a>
-                         <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition duration-150 ease-in-out" title="LinkedIn"><i class="fab fa-linkedin-in text-lg"></i></a>
-                     </div>
-                 </div>
-                 <div class="w-full lg:w-2/3 flex flex-wrap justify-between lg:pl-10 gap-8">
-                     <div class="w-1/2 sm:w-1/3 md:w-1/4">
-                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Company</h3>
-                         <ul class="space-y-2">
-                             <li><a href="/aboutus" class="text-sm hover:text-white transition duration-150 ease-in-out">About Us</a></li>
-                             <li><a href="/ourteam" class="text-sm hover:text-white transition duration-150 ease-in-out">Our Team</a></li>
-                             <li><a href="/careers" class="text-sm hover:text-white transition duration-150 ease-in-out">Careers</a></li>
-                         </ul>
-                     </div>
-                     <div class="w-1/2 sm:w-1/3 md:w-1/4">
-                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">General</h3>
-                         <ul class="space-y-2">
-                              <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out">Browse</a></li>
-                              <li><a href="/Home" class="text-sm hover:text-white transition duration-150 ease-in-out">Creator Portal</a></li>
-                              <li><a href="/contactus" class="text-sm hover:text-white transition duration-150 ease-in-out">Contact Us</a></li>
-                              <li><a href="/faq" class="text-sm hover:text-white transition duration-150 ease-in-out">FAQ</a></li>
-                         </ul>
-                     </div>
-                     <div class="w-1/2 sm:w-1/3 md:w-1/4">
-                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Legal</h3>
-                         <ul class="space-y-2">
-                             <li><a href="/paymentpolicy" class="text-sm hover:text-white transition duration-150 ease-in-out">Payment Policy</a></li>
-                             <li><a href="/piracypolicy" class="text-sm hover:text-white transition duration-150 ease-in-out">Piracy Policy</a></li>
-                             <li><a href="/termsandconditions" class="text-sm hover:text-white transition duration-150 ease-in-out">Terms & Conditions</a></li>
-                             <li><a href="/privacypolicy" class="text-sm hover:text-white transition duration-150 ease-in-out">Privacy Policy</a></li>
-                         </ul>
-                     </div>
-                     <div class="w-1/2 sm:w-1/3 md:w-1/4">
-                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Genres</h3>
-                         <ul class="space-y-2">
-                             <li><a href="/genrefiction" class="text-sm hover:text-white transition duration-150 ease-in-out">Fiction</a></li>
-                             <li><a href="/genremystery" class="text-sm hover:text-white transition duration-150 ease-in-out">Mystery</a></li>
-                             <li><a href="/genrethriller" class="text-sm hover:text-white transition duration-150 ease-in-out">Thriller</a></li>
-                              <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out font-medium">More...</a></li>
-                         </ul>
-                     </div>
-                 </div>
+             <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                  <div class="md:col-span-4 lg:col-span-4">
+                      {# Footer Logo - Styled with Tailwind #}
+                      <a href="{% url 'AudioXApp:home' %}" class="flex items-center audiotype-logo mb-4 group">
+                          <span class="text-3xl font-extrabold tracking-tighter text-white">AUDIO</span>
+                          <span class="text-3xl font-extrabold text-red-500 tracking-tighter">X</span>
+                          <div class="w-3 h-3 bg-theme-secondary rounded-full ml-1.5 group-hover:bg-theme-secondary-hover transition-colors"></div>
+                      </a>
+                      <p class="mb-5 text-sm leading-relaxed opacity-90">
+                           AudioX: Your gateway to audiobooks in English, Urdu, Punjabi, Sindhi, and more. Making literature accessible across Pakistan and beyond.
+                      </p>
+                      <hr class="border-t border-blue-700 my-4 opacity-50">
+                      <h3 class="font-semibold text-white text-xs uppercase tracking-wider mb-3">Follow Us</h3>
+                      {# Social Links - Styled with Tailwind #}
+                      <div class="flex space-x-4">
+                          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Facebook"><i class="fab fa-facebook-f text-lg"></i></a>
+                          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Instagram"><i class="fab fa-instagram text-lg"></i></a>
+                          <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Twitter"><i class="fab fa-twitter text-lg"></i></a>
+                          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="LinkedIn"><i class="fab fa-linkedin-in text-lg"></i></a>
+                      </div>
+                  </div>
+
+                  <div class="md:col-span-8 lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8 md:pl-8">
+                      {# Footer Links - Styled with Tailwind #}
+                      <div>
+                          <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Company</h3>
+                          <ul class="space-y-2">
+                              <li><a href="{% url 'AudioXApp:aboutus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">About Us</a></li>
+                              <li><a href="{% url 'AudioXApp:ourteam' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Our Team</a></li>
+                              <li><a href="/careers" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Careers</a></li>
+                          </ul>
+                      </div>
+                      <div>
+                          <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">General</h3>
+                          <ul class="space-y-2">
+                              <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Browse</a></li>
+                              {# Footer Creator Link Logic - Styled with Tailwind #}
+                              {% if user.is_authenticated %}
+                                  {% if is_banned %}
+                                      <li><span class="text-sm text-red-300 cursor-not-allowed opacity-70">Creator Portal</span></li>
+                                  {% elif is_creator %}
+                                      <li><a href="{% url 'AudioXApp:creator_dashboard' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Dashboard</a></li>
+                                  {% else %} {# Covers pending, rejected, or None (and not banned) #}
+                                      <li><a href="{% url 'AudioXApp:creator_apply' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Become a Creator</a></li>
+                                  {% endif %}
+                              {% else %} {# Logged out #}
+                                  <li><a href="#" id="creator-portal-link-footer-loggedout" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Portal</a></li>
+                              {% endif %}
+                              <li><a href="{% url 'AudioXApp:contactus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Contact Us</a></li>
+                              <li><a href="/faq" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">FAQ</a></li>
+                          </ul>
+                      </div>
+                      <div>
+                          <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Legal</h3>
+                          <ul class="space-y-2">
+                              <li><a href="{% url 'AudioXApp:paymentpolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Payment Policy</a></li>
+                              <li><a href="{% url 'AudioXApp:piracypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Piracy Policy</a></li>
+                              <li><a href="{% url 'AudioXApp:termsandconditions' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Terms & Conditions</a></li>
+                              <li><a href="{% url 'AudioXApp:privacypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Privacy Policy</a></li>
+                          </ul>
+                      </div>
+                      <div>
+                          <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Genres</h3>
+                          <ul class="space-y-2">
+                              <li><a href="/genrefiction" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fiction</a></li>
+                              <li><a href="/genremystery" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Mystery</a></li>
+                              <li><a href="/genrethriller" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Thriller</a></li>
+                              <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out font-medium opacity-90 hover:opacity-100">More...</a></li>
+                          </ul>
+                      </div>
+                  </div>
              </div>
-             <div class="text-center mt-10 pt-8 border-t border-gray-700">
-                 <p class="text-sm opacity-80">&copy; {% now "Y" %} AudioX. All Rights Reserved. Made with <span class="text-red-500">❤️</span> in Pakistan.</p>
+             <div class="text-center mt-10 pt-8 border-t border-blue-700 border-opacity-50">
+                  <p class="text-sm opacity-80">&copy; {% now "Y" %} AudioX. All Rights Reserved. Made with <span class="text-red-400">❤️</span> in Pakistan.</p>
              </div>
         </div>
-      </footer>
+    </footer>
     {% endblock %}
 
+    {# --- Modals (Creator Portal Access - Logged Out) --- #}
+    {# Backdrop - Styled with Tailwind #}
+    <div id="creator-modal-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1040] hidden opacity-0 transition-opacity duration-300 ease-in-out pointer-events-none"></div>
+    {# Modal - Consistent dark theme styling #}
+    <div id="creator-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-95 bg-theme-primary text-theme-text-inverted rounded-xl shadow-2xl w-[90%] max-w-md z-[1050] opacity-0 transition-all duration-300 ease-in-out pointer-events-none overflow-hidden border border-white/10" role="dialog" aria-modal="true" aria-labelledby="creator-modal-title">
+        <div class="p-6 sm:p-8 text-center relative">
+             <button type="button" class="modal-close-btn absolute top-4 right-4 text-theme-text-inverted-muted hover:text-white transition-colors duration-150 p-1 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50" aria-label="Close modal">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                 </svg>
+             </button>
+             <div class="text-5xl text-theme-secondary mb-5"><i class="fas fa-lock"></i></div>
+             <h2 id="creator-modal-title" class="text-xl font-bold text-white mb-4">Creator Portal Access</h2>
+             <p class="text-sm leading-relaxed text-theme-text-inverted-muted mb-6">
+                  To access the creator portal, you must first sign up or log in to AudioX, and then apply through your account to enjoy all the perks.
+             </p>
+             <div class="flex flex-col sm:flex-row justify-center gap-3">
+                  <a href="{% url 'AudioXApp:signup' %}" class="modal-btn inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold bg-theme-secondary text-theme-primary hover:bg-theme-secondary-hover transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-2 focus:ring-offset-theme-primary">
+                      <i class="fas fa-user-plus mr-2"></i> Sign Up Now
+                  </a>
+                  <a href="{% url 'AudioXApp:login' %}" class="modal-btn inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold bg-white/10 text-white hover:bg-white/20 transition duration-150 ease-in-out border border-white/20 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white/50">
+                      <i class="fas fa-sign-in-alt mr-2"></i> Login
+                  </a>
+             </div>
+        </div>
+    </div>
+
+
+    {# --- JavaScript (Added Loader Logic) --- #}
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const menuToggle = document.getElementById('menu-toggle');
-            const slideMenu = document.getElementById('slide-menu');
-            const closeMenu = document.getElementById('close-menu');
-            const profileDropdownToggle = document.getElementById('profile-dropdown-toggle');
-            const profileDropdown = document.getElementById('profile-dropdown');
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- Get context data passed via json_script ---
+        const contextDataElement = document.getElementById('django-context-data');
+        const djangoContext = contextDataElement ? JSON.parse(contextDataElement.textContent || '{}') : {};
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-            if (menuToggle && slideMenu && closeMenu) {
-                menuToggle.addEventListener('click', () => slideMenu.classList.add('open'));
-                closeMenu.addEventListener('click', () => slideMenu.classList.remove('open'));
-                 document.addEventListener('keydown', (event) => {
-                     if (event.key === 'Escape' && slideMenu.classList.contains('open')) {
-                         slideMenu.classList.remove('open');
-                     }
-                 });
+        // --- Slide Menu ---
+        const menuToggle = document.getElementById('menu-toggle');
+        const slideMenu = document.getElementById('slide-menu');
+        const closeMenu = document.getElementById('close-menu');
+        const menuBackdrop = document.getElementById('slide-menu-backdrop');
+
+        function openSlideMenu() {
+            if (!slideMenu || !menuBackdrop) {
+                console.error("Slide menu or backdrop element not found.");
+                return;
             }
+            menuBackdrop.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scroll BEFORE animation
+            requestAnimationFrame(() => { // Ensure hidden is removed before transition starts
+                slideMenu.classList.remove('-translate-x-full');
+                menuBackdrop.classList.remove('opacity-0');
+                menuBackdrop.classList.add('opacity-100'); // Ensure backdrop becomes fully opaque
+            });
+        }
 
-            if (profileDropdownToggle && profileDropdown) {
-                profileDropdownToggle.addEventListener('click', (event) => {
-                    event.stopPropagation();
-                    const isHidden = profileDropdown.classList.contains('hidden');
-                    profileDropdown.classList.toggle('hidden', !isHidden);
-                    profileDropdownToggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-                     if (isHidden) {
-                         const firstItem = profileDropdown.querySelector('[role="menuitem"]');
-                         if (firstItem) setTimeout(() => firstItem.focus(), 0);
-                     }
-                });
-                document.addEventListener('click', (event) => {
-                    if (!profileDropdown.contains(event.target) && !profileDropdownToggle.contains(event.target) && !profileDropdown.classList.contains('hidden')) {
-                        profileDropdown.classList.add('hidden');
-                         profileDropdownToggle.setAttribute('aria-expanded', 'false');
+        function closeSlideMenu() {
+            if (!slideMenu || !menuBackdrop) {
+                console.error("Slide menu or backdrop element not found.");
+                return;
+            }
+            slideMenu.classList.add('-translate-x-full');
+            menuBackdrop.classList.remove('opacity-100'); // Start fading out backdrop
+            menuBackdrop.classList.add('opacity-0');
+            // Wait for transition to finish before hiding backdrop and restoring scroll
+            setTimeout(() => {
+                menuBackdrop.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300); // Match transition duration (duration-300)
+        }
+
+        if (menuToggle && slideMenu && closeMenu && menuBackdrop) {
+            menuToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openSlideMenu();
+            });
+            closeMenu.addEventListener('click', closeSlideMenu);
+            menuBackdrop.addEventListener('click', closeSlideMenu);
+
+            // Close menu on Escape key
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !slideMenu.classList.contains('-translate-x-full')) {
+                    closeSlideMenu();
+                }
+            });
+        } else {
+            console.error("Slide menu elements not found. Check IDs: menu-toggle, slide-menu, close-menu, slide-menu-backdrop");
+        }
+
+        // --- Profile Dropdown ---
+        const profileDropdownToggle = document.getElementById('profile-dropdown-toggle');
+        const profileDropdown = document.getElementById('profile-dropdown');
+
+        function showProfileDropdown() {
+            if (!profileDropdown || !profileDropdownToggle) {
+                 console.warn("Profile dropdown or toggle element not found.");
+                 return;
+            }
+            profileDropdown.classList.remove('hidden');
+            profileDropdownToggle.setAttribute('aria-expanded', 'true');
+            requestAnimationFrame(() => {
+                profileDropdown.classList.remove('opacity-0', 'scale-95');
+                profileDropdown.classList.add('opacity-100', 'scale-100');
+            });
+        }
+
+        function hideProfileDropdown() {
+             if (!profileDropdown || !profileDropdownToggle) {
+                 console.warn("Profile dropdown or toggle element not found.");
+                 return;
+            }
+            profileDropdown.classList.remove('opacity-100', 'scale-100');
+            profileDropdown.classList.add('opacity-0', 'scale-95');
+            profileDropdownToggle.setAttribute('aria-expanded', 'false');
+            setTimeout(() => {
+                 profileDropdown.classList.add('hidden');
+            }, 100); // Match leave transition duration (duration-75 -> 100ms for safety)
+        }
+
+        if (profileDropdownToggle && profileDropdown) {
+            profileDropdownToggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const isExpanded = profileDropdownToggle.getAttribute('aria-expanded') === 'true';
+                if (isExpanded) {
+                    hideProfileDropdown();
+                } else {
+                    // Close slide menu if open before showing dropdown
+                    if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) {
+                        closeSlideMenu();
                     }
-                });
-                 document.addEventListener('keydown', (event) => {
-                     if (event.key === 'Escape' && !profileDropdown.classList.contains('hidden')) {
-                         profileDropdown.classList.add('hidden');
-                         profileDropdownToggle.setAttribute('aria-expanded', 'false');
-                         profileDropdownToggle.focus();
-                     }
-                 });
+                    showProfileDropdown();
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (event) => {
+                // Ensure dropdown exists and is visible before trying to hide
+                if (profileDropdown && !profileDropdown.classList.contains('hidden') &&
+                    !profileDropdown.contains(event.target) &&
+                    profileDropdownToggle && !profileDropdownToggle.contains(event.target)) {
+                    hideProfileDropdown();
+                }
+            });
+
+            // Close dropdown on Escape key
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && profileDropdown && !profileDropdown.classList.contains('hidden')) {
+                    hideProfileDropdown();
+                    if(profileDropdownToggle) profileDropdownToggle.focus(); // Return focus
+                }
+            });
+        } else {
+             console.warn("Profile dropdown elements not found. Check IDs: profile-dropdown-toggle, profile-dropdown");
+        }
+
+        // --- Voice Search Button ---
+        const setupVoiceSearch = (buttonId, inputId) => {
+            const btn = document.getElementById(buttonId);
+            const input = document.getElementById(inputId);
+            if (!btn || !input) {
+                // console.warn(`Voice search elements not found for: ${buttonId}, ${inputId}`);
+                return;
             }
+            btn.addEventListener('click', () => {
+                console.log(`Voice search clicked for ${inputId}`);
+                // Placeholder: Add Web Speech API logic here
+                alert('Voice search functionality not implemented yet.');
+            });
+        };
+        setupVoiceSearch('voice-search-btn', 'search-input');
+        setupVoiceSearch('voice-search-btn-mobile', 'search-input-mobile');
 
-            const setupVoiceSearch = (buttonId, inputId) => {
-                const voiceSearchBtn = document.getElementById(buttonId);
-                const searchInput = document.getElementById(inputId);
-                if (!voiceSearchBtn || !searchInput) return;
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (!SpeechRecognition) {
-                     console.warn("Speech recognition not supported.");
-                     voiceSearchBtn.disabled = true;
-                     voiceSearchBtn.title = "Voice search not supported";
-                     return;
-                 }
-                 const recognition = new SpeechRecognition();
-                 recognition.lang = document.documentElement.lang || 'en-US';
-                 recognition.interimResults = false;
-                 recognition.maxAlternatives = 1;
-                 let isRecording = false;
-
-                 voiceSearchBtn.addEventListener('click', () => {
-                     if (isRecording) { recognition.stop(); return; }
-                     try { recognition.start(); } catch (error) { console.error("Speech recognition start error:", error); }
-                 });
-                 recognition.onstart = () => { isRecording = true; voiceSearchBtn.classList.add('recording'); voiceSearchBtn.title = "Stop recording"; };
-                 recognition.onend = () => { isRecording = false; voiceSearchBtn.classList.remove('recording'); voiceSearchBtn.title = "Search by Voice"; };
-                 recognition.onresult = (event) => { searchInput.value = event.results[0][0].transcript; };
-                 recognition.onerror = (event) => { console.error("Speech recognition error:", event.error); };
-            };
-            setupVoiceSearch('voice-search-btn', 'search-input');
-            setupVoiceSearch('voice-search-btn-mobile', 'search-input-mobile');
-
-            const langSelector = document.getElementById('language-selector');
-            if (langSelector) {
-                const path = window.location.pathname;
-                if (path.match(/^\/Urdu(\/|$)/)) langSelector.value = 'Urdu';
-                else if (path.match(/^\/Punjabi(\/|$)/)) langSelector.value = 'Punjabi';
-                else if (path.match(/^\/Sindhi(\/|$)/)) langSelector.value = 'Sindhi';
-                else langSelector.value = 'English';
+        // --- Search Button ---
+        const setupSearchButton = (buttonId, inputId) => {
+            const btn = document.getElementById(buttonId);
+            const input = document.getElementById(inputId);
+             if (!btn || !input) {
+                // console.warn(`Search elements not found for: ${buttonId}, ${inputId}`);
+                return;
             }
-
-            const setupSearchButton = (buttonId, inputId) => {
-                const searchBtn = document.getElementById(buttonId);
-                const searchInput = document.getElementById(inputId);
-                if (searchBtn && searchInput) {
-                    const performSearch = () => {
-                        const query = searchInput.value.trim();
-                        if (query) {
-                            console.log(`Searching for: ${query}`);
-                            // window.location.href = `/search?q=${encodeURIComponent(query)}`;
-                        }
-                    };
-                    searchBtn.addEventListener('click', performSearch);
-                    searchInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') performSearch(); });
+            const performSearch = () => {
+                const query = input.value.trim();
+                if (query) {
+                    console.log(`Searching for: ${query}`);
+                    // Example Redirect: Update this URL as needed
+                    window.location.href = `/search?q=${encodeURIComponent(query)}`;
+                } else {
+                    input.focus(); // Focus input if empty
                 }
             };
-            setupSearchButton('search-btn', 'search-input');
-            setupSearchButton('search-btn-mobile', 'search-input-mobile');
+            btn.addEventListener('click', performSearch);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        };
+        setupSearchButton('search-btn', 'search-input');
+        setupSearchButton('search-btn-mobile', 'search-input-mobile');
 
-            const submenuToggles = document.querySelectorAll('.submenu-toggle');
-            submenuToggles.forEach(toggle => {
-                toggle.addEventListener('click', () => {
-                    const submenu = toggle.nextElementSibling;
-                    const parentContainer = toggle.closest('.has-submenu-container');
-                    const icon = toggle.querySelector('.fa-chevron-down');
+        // --- Sidemenu Accordion ---
+        const submenuToggles = document.querySelectorAll('#slide-menu .submenu-toggle'); // Scope to slide menu
+        submenuToggles.forEach(toggle => {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent default button behavior if any
+                const parentContainer = this.closest('.has-submenu-container');
+                if (!parentContainer) return;
 
-                    if (submenu && parentContainer) {
-                        parentContainer.classList.toggle('submenu-open');
-                        if (icon) {
-                           icon.classList.toggle('rotate-180');
+                const submenu = parentContainer.querySelector('.submenu');
+                const icon = this.querySelector('.submenu-icon');
+                if (!submenu || !icon) {
+                    console.warn("Submenu or icon not found within container.");
+                    return;
+                }
+
+                const isOpen = parentContainer.classList.contains('submenu-open');
+
+                // Close all other open submenus within the slide menu first
+                document.querySelectorAll('#slide-menu .has-submenu-container.submenu-open').forEach(openContainer => {
+                    if (openContainer !== parentContainer) {
+                        openContainer.classList.remove('submenu-open');
+                        const otherSubmenu = openContainer.querySelector('.submenu');
+                        const otherIcon = openContainer.querySelector('.submenu-icon');
+                        if(otherSubmenu) {
+                            otherSubmenu.style.maxHeight = null;
+                            otherSubmenu.classList.add('opacity-0');
                         }
+                        if(otherIcon) otherIcon.classList.remove('rotate-180');
+                    }
+                });
+
+                // Toggle the clicked one
+                if (isOpen) {
+                    parentContainer.classList.remove('submenu-open');
+                    submenu.style.maxHeight = null; // Collapse
+                    submenu.classList.add('opacity-0');
+                    icon.classList.remove('rotate-180');
+                } else {
+                    parentContainer.classList.add('submenu-open');
+                    submenu.style.maxHeight = submenu.scrollHeight + "px"; // Expand
+                    submenu.classList.remove('opacity-0');
+                    icon.classList.add('rotate-180');
+                }
+            });
+        });
+
+        // --- Creator Portal Modal (Logged Out Users) ---
+        const creatorPortalLinkLoggedOut = document.getElementById('creator-portal-link-loggedout');
+        const creatorPortalLinkFooterLoggedOut = document.getElementById('creator-portal-link-footer-loggedout');
+        const creatorModal = document.getElementById('creator-modal');
+        const creatorModalBackdrop = document.getElementById('creator-modal-backdrop');
+        const modalCloseBtns = creatorModal ? creatorModal.querySelectorAll('.modal-close-btn') : []; // Can have multiple close triggers
+
+        function showCreatorModal() {
+            if (!creatorModal || !creatorModalBackdrop) {
+                 console.error("Creator modal or backdrop element not found.");
+                 return;
+            }
+            // Close slide menu if open
+            if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) {
+                closeSlideMenu();
+            }
+            creatorModalBackdrop.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
+            requestAnimationFrame(() => {
+                creatorModalBackdrop.classList.remove('opacity-0');
+                creatorModalBackdrop.classList.add('opacity-100');
+                creatorModal.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+                creatorModal.classList.add('opacity-100', 'scale-100');
+            });
+        }
+        function hideCreatorModal() {
+            if (!creatorModal || !creatorModalBackdrop) {
+                 console.error("Creator modal or backdrop element not found.");
+                 return;
+            }
+            creatorModal.classList.remove('opacity-100', 'scale-100');
+            creatorModal.classList.add('opacity-0', 'scale-95');
+            creatorModalBackdrop.classList.remove('opacity-100');
+            creatorModalBackdrop.classList.add('opacity-0');
+            setTimeout(() => {
+                creatorModalBackdrop.classList.add('hidden');
+                creatorModal.classList.add('pointer-events-none');
+                document.body.style.overflow = ''; // Restore scroll
+            }, 300); // Match transition duration
+        }
+
+        const setupCreatorLink = (link) => {
+            if (link) {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showCreatorModal();
+                });
+            } else {
+                // This warning is expected if the user is logged in, so comment out for production
+                // console.warn("Creator portal link element not found (this is normal if user is logged in).");
+            }
+        };
+        setupCreatorLink(creatorPortalLinkLoggedOut);
+        setupCreatorLink(creatorPortalLinkFooterLoggedOut);
+
+        modalCloseBtns.forEach(btn => btn.addEventListener('click', hideCreatorModal));
+        if (creatorModalBackdrop) {
+            creatorModalBackdrop.addEventListener('click', hideCreatorModal);
+        } else {
+             console.error("Creator modal backdrop not found. Check ID: creator-modal-backdrop");
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && creatorModal && !creatorModal.classList.contains('opacity-0')) {
+                hideCreatorModal();
+            }
+        });
+
+        // --- SweetAlert Popups (Rejection, Ban, Welcome, Loader) ---
+        // Function to configure SweetAlert defaults with Tailwind classes
+        const SwalStyled = Swal.mixin({
+            customClass: {
+                popup: 'rounded-xl shadow-lg font-sans border border-gray-100 bg-white', // Base popup style
+                title: 'text-xl sm:text-2xl font-bold text-theme-primary pt-6 px-6 pb-2 text-left', // Adjusted padding/alignment
+                htmlContainer: 'text-base text-theme-text-secondary text-left px-6 pb-6 leading-relaxed', // Adjusted padding
+                icon: 'mt-6 mx-auto', // Adjust icon margin if needed
+                confirmButton: 'inline-flex items-center justify-center gap-2 rounded-lg bg-theme-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
+                cancelButton: 'inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
+                actions: 'flex justify-end px-6 pb-2', // Align buttons right
+                loader: 'border-theme-primary', // Style the loader border color
+            },
+            buttonsStyling: false, // Use custom classes above
+        });
+
+        // --- Sidemenu Creator Switch Button (with Loader) ---
+        const sidemenuSwitchBtn = document.getElementById('sidemenu-switch-creator-btn');
+        if (sidemenuSwitchBtn) {
+            sidemenuSwitchBtn.addEventListener('click', function(event) {
+                event.preventDefault(); // Prevent immediate navigation
+                const dashboardUrl = "{% url 'AudioXApp:creator_dashboard' %}"; // Get the target URL
+
+                // Show loader using SweetAlert
+                SwalStyled.fire({
+                    title: 'Switching Modes',
+                    html: 'Redirecting to Creator Dashboard...',
+                    timer: 3000, // 3 seconds
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading(); // Show the spinner
+                    },
+                    willClose: () => {
+                        // Optional: any cleanup before redirection if needed
+                    },
+                    timerProgressBar: true, // Show progress bar
+                    customClass: { // Override title style for loader
+                         title: 'text-xl sm:text-2xl font-semibold text-theme-primary pt-6 px-6 pb-2 text-center',
+                         htmlContainer: 'text-base text-theme-text-secondary text-center px-6 pb-6 leading-relaxed',
+                    }
+                }).then((result) => {
+                    // Redirect after timer is up (or if closed early, though allowOutsideClick: false prevents that)
+                    window.location.href = dashboardUrl;
+                });
+            });
+        } // No warning needed if not present, it depends on user state
+
+
+        // --- Sidemenu View Rejection Reason Button Logic ---
+        const viewRejectionBtn = document.getElementById('sidemenu-view-rejection-reason-btn');
+        if (viewRejectionBtn && djangoContext && djangoContext.creator_status === 'rejected') {
+            viewRejectionBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                closeSlideMenu(); // Close menu before showing popup
+
+                const reason = djangoContext.rejectionReason || 'No specific reason provided.';
+                const attemptsMade = djangoContext.applicationAttemptsCurrentMonth || 0;
+                const maxAttempts = 3; // Assume max 3 attempts
+                const remainingAttempts = Math.max(0, maxAttempts - attemptsMade);
+                const canApplyAgain = djangoContext.can_reapply ?? false;
+
+                let attemptsText = '';
+                if (remainingAttempts > 0 && canApplyAgain) {
+                    attemptsText = `<i class="fas fa-redo mr-1.5 text-sm text-gray-500"></i> You have ${remainingAttempts} application attempt${remainingAttempts !== 1 ? 's' : ''} remaining this month.`;
+                } else {
+                    attemptsText = '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
+                }
+
+                const popupHtml = `
+                <div class="space-y-4">
+                    <p class="text-theme-text-secondary">
+                        <i class="fas fa-info-circle mr-1.5 text-theme-primary"></i>Your previous application requires attention for the following reason:
+                    </p>
+                    <div class="bg-theme-warning-light border-l-4 border-theme-warning text-orange-800 p-4 rounded-md shadow-sm" role="alert">
+                        <p class="font-medium">${reason}</p>
+                    </div>
+                    <p class="text-sm text-theme-text-light">${attemptsText}</p>
+                </div>`;
+
+                // Use the configured Swal instance
+                SwalStyled.fire({
+                    title: 'Application Status',
+                    html: popupHtml,
+                    icon: 'warning',
+                    iconColor: tailwind.config.theme.extend.colors['theme-warning'], // Use configured color
+                    showConfirmButton: canApplyAgain, // Only show if they can reapply
+                    confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i>Apply Again',
+                    showCancelButton: true,
+                    cancelButtonText: 'Close',
+                    width: '450px', // Adjust width as needed
+                }).then((result) => {
+                    if (result.isConfirmed && canApplyAgain) {
+                         // Ensure the URL is correctly generated by Django template tag
+                         window.location.href = "{% url 'AudioXApp:creator_apply' %}";
                     }
                 });
             });
+        } // No warning needed if button not present
 
-        }); // End DOMContentLoaded
+        // --- Sidemenu View Ban Reason Button Logic ---
+        const viewBanReasonBtn = document.getElementById('sidemenu-view-ban-reason-btn');
+        if (viewBanReasonBtn && djangoContext && djangoContext.isBanned) {
+            viewBanReasonBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                closeSlideMenu(); // Close menu before showing popup
 
-        function redirectToLanguage() {
-            const selector = document.getElementById('language-selector');
-            const selectedLang = selector.value;
-            const currentPath = window.location.pathname;
-            let basePath = '/';
-            const langRegex = /^\/(Urdu|Punjabi|Sindhi)(\/.*)?$/;
-            const match = currentPath.match(langRegex);
+                const reason = djangoContext.banReason || 'No specific reason provided by the administrator.';
 
-            if (match) {
-                basePath = match[2] || '/';
-            } else if (currentPath !== '/') {
-                 basePath = currentPath;
+                const banPopupHtml = `
+                <div class="space-y-4">
+                    <p class="text-theme-text-secondary">
+                        <i class="fas fa-exclamation-triangle mr-1.5 text-theme-error"></i> Your Creator Profile is currently blocked for the following reason:
+                    </p>
+                    <div class="bg-theme-error-light border-l-4 border-theme-error text-red-800 p-4 rounded-md shadow-sm" role="alert">
+                        <p class="font-medium">${reason}</p>
+                    </div>
+                    <p class="text-sm text-theme-text-light">
+                        If you believe this is an error or wish to appeal this decision, please contact our support team.
+                    </p>
+                </div>`;
+
+                // Use the configured Swal instance
+                SwalStyled.fire({
+                    title: 'Creator Profile Blocked',
+                    html: banPopupHtml,
+                    icon: 'error',
+                    iconColor: tailwind.config.theme.extend.colors['theme-error'], // Use configured color
+                    showConfirmButton: true,
+                    confirmButtonText: '<i class="fas fa-headset mr-2"></i> Contact Support',
+                    showCancelButton: true,
+                    cancelButtonText: 'Close',
+                    width: '480px', // Adjust width as needed
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Ensure the URL is correctly generated by Django template tag
+                        window.location.href = "{% url 'AudioXApp:contactus' %}";
+                    }
+                });
+            });
+        } // No warning needed if button not present
+
+        // --- Helper function for API calls (Mark Popups Shown) ---
+        async function markPopupShown(apiUrl) {
+            if (!apiUrl || !csrfToken) {
+                console.error('API URL or CSRF Token is missing for markPopupShown.');
+                return;
             }
-             if (!basePath.startsWith('/')) {
-                 basePath = '/' + basePath;
-             }
-
-            let newUrl = '/';
-            if (selectedLang === 'English') {
-                newUrl = basePath;
-            } else {
-                newUrl = `/${selectedLang}${basePath === '/' ? '' : basePath}`;
-            }
-
-            newUrl = newUrl.replace(/\/+/g, '/');
-            if (newUrl === '') newUrl = '/';
-
-            console.log(`Attempting redirect: From ${currentPath} To ${newUrl}`);
-            if (newUrl !== currentPath) {
-                window.location.href = newUrl;
-            } else {
-                console.log("Already on the correct language page.");
+            console.log(`Attempting to mark popup shown via POST to: ${apiUrl}`); // Debug log
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest' // Important for Django request.is_ajax()
+                    },
+                    body: JSON.stringify({}) // Send empty JSON body
+                });
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    console.error(`Failed to mark popup shown at ${apiUrl}. Status: ${response.status}. Response: ${errorData}`);
+                } else {
+                    const data = await response.json();
+                    console.log(`Mark popup response for ${apiUrl}:`, data);
+                }
+            } catch (error) {
+                console.error(`Error calling API ${apiUrl}:`, error);
             }
         }
+
+        // --- Welcome Popup ---
+        if (djangoContext && djangoContext.showWelcomePopup) {
+            console.log("Showing Enhanced Welcome Popup (One Time)...");
+            const welcomeHtml = `
+            <div class="text-center">
+                <div class="text-6xl mb-4 text-theme-primary animate-bounce">🎉</div>
+                <h2 class="text-2xl font-bold text-theme-primary mb-3">Welcome Aboard!</h2>
+                <p class="text-theme-text-secondary mb-6 px-4">
+                    Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.
+                </p>
+                <p class="text-theme-text-secondary px-4">
+                    You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.
+                </p>
+            </div>`;
+
+            // Use the configured Swal instance
+            SwalStyled.fire({
+                html: welcomeHtml,
+                showConfirmButton: true,
+                confirmButtonText: '<i class="fas fa-tachometer-alt mr-2"></i> Go to Dashboard',
+                showCancelButton: true,
+                cancelButtonText: 'Maybe Later',
+                showCloseButton: true, // Add a close button
+                width: '480px',
+                // No icon needed as we have the emoji in HTML
+                didOpen: () => {
+                    // Focus the confirm button for better accessibility
+                    const confirmButton = Swal.getConfirmButton();
+                    if (confirmButton) confirmButton.focus();
+                },
+                didClose: () => {
+                    console.log("Welcome popup closed, marking as shown...");
+                    if (djangoContext.markWelcomeUrl) {
+                        markPopupShown(djangoContext.markWelcomeUrl);
+                    } else {
+                        console.warn("markWelcomeUrl not found in djangoContext");
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Ensure the URL is correctly generated by Django template tag
+                    window.location.href = "{% url 'AudioXApp:creator_dashboard' %}";
+                }
+            });
+        }
+
+        // --- Rejection Popup (Initial View) ---
+        if (djangoContext && djangoContext.showRejectionPopup) {
+            console.log("Showing Initial Rejection Popup (One Time)...");
+             // Use the configured Swal instance
+             SwalStyled.fire({
+                 title: 'Creator Application Update',
+                 html: `<div class="space-y-3">
+                             <p>Unfortunately, your recent creator application was not approved for the following reason:</p>
+                             <p class="font-semibold p-3 bg-red-50 border border-red-200 rounded text-red-800">${djangoContext.rejectionReason || 'No specific reason provided.'}</p>
+                             <p class="text-sm text-gray-600">Please review the requirements. You may be able to re-apply later or contact support if you have questions.</p>
+                         </div>`,
+                 icon: 'error',
+                 iconColor: tailwind.config.theme.extend.colors['theme-error'],
+                 confirmButtonText: 'Okay',
+                 showCloseButton: true,
+                 width: '450px',
+                 didClose: () => {
+                     console.log("Rejection popup closed, marking as shown...");
+                     if (djangoContext.markRejectionUrl) {
+                         markPopupShown(djangoContext.markRejectionUrl);
+                     } else {
+                         console.warn("markRejectionUrl not found in djangoContext");
+                     }
+                 }
+            });
+        }
+
+    }); // End DOMContentLoaded
+
+    // --- Language Redirect Function (Global Scope) ---
+    function redirectToLanguage() {
+        const selector = document.getElementById('language-selector');
+        if (selector) {
+            const selectedLanguage = selector.value;
+            console.log(`Language selected: ${selectedLanguage}`);
+            // TODO: Implement actual language switching logic here
+            // (e.g., set cookie, reload page, redirect to language-specific URL)
+            alert(`Language switching to ${selectedLanguage} not implemented yet.`);
+        } else {
+            console.error("Language selector element not found.");
+        }
+    }
     </script>
 
-    {% block javascript %}{% endblock %}
+    {% block javascript %}{% endblock %} {# Allow specific pages to add more JS #}
 </body>
-
 </html>

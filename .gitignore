@@ -1,0 +1,26 @@
+# Environment variables
+.env
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Django collected static files and media
+staticfiles_collected/
+media/
+
+# Log files
+*.log
+
+# IDE files (example for VSCode)
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,297 @@
+{% extends 'admin/admin_base.html' %} {# Assumes admin_base.html is in templates/admin/ #}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Manage Creators - Admin Dashboard (AudioX){% endblock %}
+
+{% block header_title %}Manage Creators{% endblock %}
+
+{% block extra_head %}
+{# Add Chart.js library if not already included in admin_base.html's head #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+{# Main content for the Manage Creators page #}
+
+{% if messages %}
+    <div class="mb-6 space-y-3">
+        {% for message in messages %}
+            <div class="p-4 rounded-xl border {% if message.tags == 'success' %} bg-brand-success-light text-brand-success-dark border-brand-success {% elif message.tags == 'error' %} bg-brand-danger-light text-brand-danger-dark border-brand-danger {% elif message.tags == 'warning' %} bg-brand-warning-light text-brand-warning-dark border-brand-warning {% else %} bg-brand-info-light text-brand-info-dark border-brand-info {% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="mb-8 bg-brand-surface rounded-2xl border border-brand-border shadow-card overflow-hidden bg-gradient-chart-bg">
+    <div class="px-6 py-5 border-b border-brand-border bg-transparent">
+        <h3 class="text-lg font-semibold text-brand-text-primary">Creator Approval Statistics (Last 7 Days)</h3>
+    </div>
+    <div class="p-6">
+        <div class="h-72 rounded-xl p-4">
+            <canvas id="creatorStatsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
+    <a href="{% url 'AudioXApp:admin_all_creators_list' %}" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-purple shadow-purple-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-purple-glow hover:shadow-card-lg cursor-pointer">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Total Creators</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">View list of all creator profiles.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ total_creator_count|default:"0"|intcomma }}</div>
+    </a>
+
+    <a href="#" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-teal shadow-teal-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-teal-glow hover:shadow-card-lg cursor-pointer">
+         <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Creator Uploads</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">View and manage audiobooks.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ total_creator_audiobooks|default:"0"|intcomma }}</div>
+    </a>
+
+    <a href="{% url 'AudioXApp:admin_creator_application_history' %}" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-info shadow-info-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-info-glow hover:shadow-card-lg cursor-pointer">
+         <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Total Applications</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">View full history of applications.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ total_applications_count|default:"0"|intcomma }}</div>
+    </a>
+
+    <a href="{% url 'AudioXApp:admin_approved_creator_applications' %}" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-success shadow-success-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-success-glow hover:shadow-card-lg cursor-pointer">
+         <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Approved Applications</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">List of all currently approved creators.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ approved_creator_count|default:"0"|intcomma }}</div>
+    </a>
+
+    <a href="{% url 'AudioXApp:admin_pending_creator_applications' %}" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-primary bg-gradient-warning shadow-warning-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-warning-glow hover:shadow-card-lg cursor-pointer">
+         <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/30 text-brand-text-primary backdrop-blur-sm">
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-primary mb-1">Pending Applications</h3>
+                <p class="text-sm text-brand-text-primary opacity-85 leading-snug">Review and process new requests.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-primary mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ pending_applications_count|default:"0"|intcomma }}</div>
+    </a>
+
+    <a href="{% url 'AudioXApp:admin_rejected_creator_applications' %}" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-danger shadow-danger-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-danger-glow hover:shadow-card-lg cursor-pointer">
+         <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Rejected Applications</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">View creators whose applications were rejected.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ rejected_creator_count|default:"0"|intcomma }}</div>
+    </a>
+
+    <a href="{% url 'AudioXApp:admin_banned_creators_list' %}" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-gray shadow-gray-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-gray-glow hover:shadow-card-lg cursor-pointer">
+         <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Banned Creators</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">Manage creators who have been banned.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ banned_creator_count|default:"0"|intcomma }}</div>
+    </a>
+
+    <a href="#" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-pink shadow-pink-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-pink-glow hover:shadow-card-lg cursor-pointer">
+         <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125 1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" /></svg>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Withdrawal Requests</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">Manage pending creator withdrawals.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ pending_creator_withdrawals|default:"0"|intcomma }}</div>
+    </a>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Function to safely parse JSON data from Django template context
+    function parseJsonData(jsonDataString, defaultVal = []) {
+        try {
+            if (jsonDataString && jsonDataString.trim() !== '') {
+                // Decode HTML entities that might be escaped in the JSON string
+                const decodedString = jsonDataString.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+                return JSON.parse(decodedString);
+            }
+        } catch (e) {
+            console.error("Failed to parse JSON data:", e);
+            console.error("Data string was:", jsonDataString); // Log the problematic string
+        }
+        return defaultVal; // Return default value if parsing fails or string is empty
+    }
+
+    // Get JSON data passed from the Django view context
+    const labelsJsonString = `{{ daily_chart_labels_json|safe|default:'[]' }}`;
+    const approvalsJsonString = `{{ daily_approvals_data_json|safe|default:'[]' }}`;
+    const rejectionsJsonString = `{{ daily_rejections_data_json|safe|default:'[]' }}`;
+    const pendingJsonString = `{{ daily_pending_data_json|safe|default:'[]' }}`;
+
+    // Parse the JSON data safely
+    const dailyLabels = parseJsonData(labelsJsonString, ["Err", "Err", "Err", "Err", "Err", "Err", "Err"]);
+    const dailyApprovals = parseJsonData(approvalsJsonString, [0, 0, 0, 0, 0, 0, 0]);
+    const dailyRejections = parseJsonData(rejectionsJsonString, [0, 0, 0, 0, 0, 0, 0]);
+    const dailyPending = parseJsonData(pendingJsonString, [0, 0, 0, 0, 0, 0, 0]);
+
+    // Function to get Tailwind color values (with fallbacks)
+    function getTailwindColor(colorName) {
+        const colorPath = colorName.split('-');
+        let colorValue = tailwind.config.theme.extend.colors;
+        try {
+            colorPath.forEach(part => { colorValue = colorValue[part]; });
+            if (typeof colorValue === 'string') { return colorValue; }
+        } catch (e) {}
+        // Fallback colors if Tailwind config isn't fully resolved or color is missing
+        const fallbacks = {
+            'brand-success': '#10b981', 'brand-success-dark': '#047857',
+            'brand-danger': '#ef4444', 'brand-danger-dark': '#b91c1c',
+            'brand-warning': '#f59e0b', 'brand-warning-dark': '#d97706',
+            'brand-text-secondary': '#4b5563', 'brand-border-light': '#d8dde9',
+            'brand-border': '#e8edf5'
+        };
+        console.warn(`Tailwind color '${colorName}' not found. Using fallback.`);
+        return fallbacks[colorName] || '#000000'; // Default fallback
+    }
+
+    // Function to convert hex color to rgba
+    function hexToRgba(hex, alpha = 1) {
+        if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) { hex = '#000000'; } // Default to black if invalid hex
+        try {
+            const bigint = parseInt(hex.slice(1), 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        } catch (e) {
+            return `rgba(0, 0, 0, ${alpha})`; // Fallback rgba
+        }
+    }
+
+    // Chart.js data configuration
+    const creatorStatsData = {
+        labels: dailyLabels,
+        datasets: [
+            {
+                label: 'Approved', data: dailyApprovals,
+                borderColor: getTailwindColor('brand-success-dark'),
+                backgroundColor: hexToRgba(getTailwindColor('brand-success'), 0.1),
+                fill: true, tension: 0.3, pointBackgroundColor: getTailwindColor('brand-success'),
+                pointRadius: 4, pointHoverRadius: 6, borderWidth: 2,
+            },
+            {
+                label: 'Rejected', data: dailyRejections,
+                borderColor: getTailwindColor('brand-danger-dark'),
+                backgroundColor: hexToRgba(getTailwindColor('brand-danger'), 0.1),
+                fill: true, tension: 0.3, pointBackgroundColor: getTailwindColor('brand-danger'),
+                pointRadius: 4, pointHoverRadius: 6, borderWidth: 2,
+            },
+            {
+                label: 'Pending', data: dailyPending,
+                borderColor: getTailwindColor('brand-warning-dark'),
+                backgroundColor: hexToRgba(getTailwindColor('brand-warning'), 0.1),
+                fill: true, tension: 0.3, pointBackgroundColor: getTailwindColor('brand-warning'),
+                pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, hidden: true // Initially hidden
+            }
+        ]
+    };
+
+    // Chart.js options configuration
+    const creatorStatsConfig = {
+        type: 'line',
+        data: creatorStatsData,
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false, },
+            plugins: {
+                legend: {
+                    position: 'top', align: 'end',
+                    labels: { boxWidth: 12, padding: 20, color: getTailwindColor('brand-text-secondary'), font: { size: 12, family: 'Inter' } }
+                },
+                title: { display: false }, // No main title for the chart itself
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleFont: { size: 14, weight: 'bold', family: 'Inter' },
+                    bodyFont: { size: 12, family: 'Inter' },
+                    padding: 12, cornerRadius: 6, displayColors: true, boxPadding: 4,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) { label += ': '; }
+                            if (context.parsed.y !== null) { label += context.parsed.y; }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: getTailwindColor('brand-border'), drawBorder: false, },
+                    ticks: { color: getTailwindColor('brand-text-secondary'), padding: 10, precision: 0, font: { family: 'Inter' } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: getTailwindColor('brand-text-secondary'), padding: 10, maxRotation: 0, minRotation: 0, font: { family: 'Inter' } }
+                }
+            }
+        }
+    };
+
+    // Initialize the chart when the DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('creatorStatsChart');
+        if (ctx) {
+            if (typeof Chart !== 'undefined') {
+                new Chart(ctx, creatorStatsConfig);
+            } else {
+                console.error("Chart.js library not loaded.");
+                // Display error message in the chart container
+                ctx.parentElement.innerHTML = '<p class="text-center text-brand-text-muted">Error loading chart.</p>';
+            }
+        } else {
+            console.error("Canvas element 'creatorStatsChart' not found.");
+        }
+    });
+</script>
+{% endblock %}

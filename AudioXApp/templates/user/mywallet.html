@@ -1,0 +1,625 @@
+{% extends 'Homepage.html' %}
+{% load static %}
+{% load tz %} {# Required for formatting timezone-aware datetimes #}
+
+{% block title %}AudioX - My Wallet{% endblock %}
+
+{% block content %}
+{# Tailwind CSS, JS libraries, and config are inherited from Homepage.html #}
+
+{# Main content wrapper - Wider container, gradient background #}
+<div class="min-h-screen bg-gradient-to-b from-gray-50 via-blue-50 to-indigo-100 py-12 md:py-20">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-screen-xl"> {# Wider container #}
+
+        <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-center text-theme-primary mb-12 md:mb-16 drop-shadow-sm">
+            My Wallet Dashboard
+        </h1>
+
+        {# Layout: Balance & Gift side-by-side, History below #}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 mb-8 md:mb-12">
+
+            <div class="lg:col-span-5 bg-gradient-to-br from-theme-primary via-blue-800 to-indigo-900 text-white p-6 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[280px] ring-1 ring-black/5">
+                <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 15px 15px;"></div>
+                <div class="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-white/5 rounded-full opacity-50 blur-3xl"></div>
+                <div class="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-white/10 rounded-full opacity-60 blur-3xl"></div>
+
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-3 opacity-90">
+                        <h2 class="text-lg font-semibold tracking-wide text-indigo-200">Available Balance</h2>
+                        <i class="fas fa-wallet text-3xl text-indigo-300 opacity-60"></i>
+                    </div>
+                    <div class="my-5">
+                        <span id="coin-balance" class="text-6xl md:text-7xl font-bold block leading-none tracking-tight text-white drop-shadow-lg">{{ user.coins|default:"0" }}</span>
+                        <span class="text-sm font-semibold opacity-80 tracking-wider mt-2.5 inline-block text-indigo-200">AUDIOX COINS</span>
+                    </div>
+                </div>
+                <div class="relative z-10 mt-auto">
+                    <a href="{% url 'AudioXApp:buycoins' %}" class="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-white px-6 py-3.5 text-base font-semibold text-theme-primary shadow-lg hover:bg-indigo-50 focus:outline-none focus:ring-4 focus:ring-indigo-300/70 focus:ring-offset-2 focus:ring-offset-theme-primary transition duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-xl">
+                        <i class="fas fa-plus-circle text-lg"></i> Add More Coins
+                    </a>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7 bg-white p-6 md:p-8 rounded-3xl shadow-2xl border border-gray-100/50 flex flex-col justify-between min-h-[280px] ring-1 ring-black/5">
+                <div>
+                    <h2 class="text-2xl font-semibold text-theme-primary mb-2 flex items-center">
+                        <i class="fas fa-gift mr-3 text-theme-secondary opacity-90 text-3xl"></i> Send an AudioX Gift
+                    </h2>
+                    <p class="text-sm text-gray-600 mb-6 pl-11">
+                        Enter the username or email of a registered AudioX user and the amount of coins you wish to send them.
+                    </p>
+                    <form id="gift-form" method="post" action="{% url 'AudioXApp:gift_coins' %}">
+                        {% csrf_token %}
+                        <div class="space-y-5">
+                            <div>
+                                <label for="recipient" class="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Recipient</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i class="fas fa-at text-gray-400"></i>
+                                    </div>
+                                    <input type="text" id="recipient" name="recipient" class="block w-full rounded-xl border border-gray-300 bg-gray-50/80 p-3.5 pl-11 text-sm text-gray-900 focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:bg-white transition duration-150 ease-in-out placeholder-gray-500 shadow-sm focus:shadow-focus-ring" placeholder="Recipient's Username or Email" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Amount</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i class="fas fa-coins text-gray-400"></i>
+                                    </div>
+                                    <input type="number" id="amount" name="amount" class="block w-full rounded-xl border border-gray-300 bg-gray-50/80 p-3.5 pl-11 text-sm text-gray-900 focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:bg-white transition duration-150 ease-in-out placeholder-gray-500 shadow-sm focus:shadow-focus-ring [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" placeholder="Number of Coins to Gift" min="1" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="gift-message" class="mt-4 text-center h-5 text-sm"></div> {# Placeholder for JS messages #}
+                    </form>
+                </div>
+                <div class="mt-6">
+                    <button type="button" id="send-gift-btn" class="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-theme-primary px-6 py-3.5 text-base font-semibold text-white shadow-lg hover:bg-theme-primary-hover focus:outline-none focus:ring-4 focus:ring-theme-primary/50 focus:ring-offset-2 transition duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-xl">
+                        <i class="fas fa-paper-plane text-lg"></i> Send Gift Now
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-2xl border border-gray-100/50 overflow-hidden ring-1 ring-black/5">
+            <div class="p-6 md:p-8 border-b border-gray-200">
+                <h2 class="text-2xl font-semibold text-theme-primary">Transaction History</h2>
+            </div>
+
+            <div class="px-6 md:px-8 py-4 border-b border-gray-200 bg-gray-50/70">
+                <ul class="flex flex-wrap gap-2 sm:gap-3" role="tablist" id="historyTabs-v3">
+                    <li role="presentation">
+                        <button class="px-4 py-2 text-sm font-medium rounded-full transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary aria-selected:bg-theme-primary aria-selected:text-white aria-selected:shadow-lg text-theme-text-secondary hover:bg-gray-200/70 hover:text-theme-text-primary" id="all-tab" data-tabs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">All Transactions</button>
+                    </li>
+                    <li role="presentation">
+                        <button class="px-4 py-2 text-sm font-medium rounded-full transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary aria-selected:bg-theme-primary aria-selected:text-white aria-selected:shadow-lg text-theme-text-secondary hover:bg-gray-200/70 hover:text-theme-text-primary" id="purchased-tab" data-tabs-target="#purchased" type="button" role="tab" aria-controls="purchased" aria-selected="false">Purchases</button>
+                    </li>
+                    <li role="presentation">
+                        <button class="px-4 py-2 text-sm font-medium rounded-full transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary aria-selected:bg-theme-primary aria-selected:text-white aria-selected:shadow-lg text-theme-text-secondary hover:bg-gray-200/70 hover:text-theme-text-primary" id="received-tab" data-tabs-target="#received" type="button" role="tab" aria-controls="received" aria-selected="false">Gifts Received</button>
+                    </li>
+                    <li role="presentation">
+                        <button class="px-4 py-2 text-sm font-medium rounded-full transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary aria-selected:bg-theme-primary aria-selected:text-white aria-selected:shadow-lg text-theme-text-secondary hover:bg-gray-200/70 hover:text-theme-text-primary" id="sent-tab" data-tabs-target="#sent" type="button" role="tab" aria-controls="sent" aria-selected="false">Gifts Sent</button>
+                    </li>
+                </ul>
+            </div>
+
+            <div id="historyTabContent" class="p-6 md:p-8 min-h-[350px]">
+                <div id="all" role="tabpanel" aria-labelledby="all-tab">
+                    <ul class="history-list divide-y divide-gray-100">
+                        {% for transaction in gift_history %}
+                            <li class="transaction-item-v3 flex items-center py-4 px-1 sm:px-2 hover:bg-gray-50/70 transition duration-150 ease-in-out -mx-1 sm:-mx-2 px-1 sm:px-2 rounded-lg">
+                                <div class="transaction-icon-v3 flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center mr-4 text-lg shadow-sm border border-black/5
+                                    {% if transaction.transaction_type == 'purchase' %} bg-theme-primary-lighter text-theme-primary
+                                    {% elif transaction.transaction_type == 'gift_sent' %} bg-theme-error-light text-theme-error
+                                    {% elif transaction.transaction_type == 'gift_received' %} bg-theme-green-lighter text-theme-green
+                                    {% elif transaction.transaction_type == 'reward' %} bg-theme-warning-light text-theme-warning
+                                    {% elif transaction.transaction_type == 'spent' %} bg-theme-error-light text-theme-error
+                                    {% elif transaction.transaction_type == 'refund' %} bg-gray-100 text-gray-500
+                                    {% else %} bg-gray-100 text-gray-500 {% endif %}">
+                                    <i class="fas fa-fw
+                                        {% if transaction.transaction_type == 'purchase' %} fa-shopping-cart
+                                        {% elif transaction.transaction_type == 'gift_sent' %} fa-paper-plane
+                                        {% elif transaction.transaction_type == 'gift_received' %} fa-gift
+                                        {% elif transaction.transaction_type == 'reward' %} fa-star
+                                        {% elif transaction.transaction_type == 'spent' %} fa-arrow-down
+                                        {% elif transaction.transaction_type == 'refund' %} fa-undo
+                                        {% else %} fa-info-circle {% endif %}"></i>
+                                </div>
+                                <div class="transaction-details-v3 flex-grow min-w-0 text-sm">
+                                    <p class="description font-semibold text-gray-800 truncate mb-0.5" title="{% if transaction.transaction_type == 'purchase' %}{{ transaction.pack_name|default:'Coin Purchase' }}{% elif transaction.transaction_type == 'gift_sent' %}Sent to: {{ transaction.recipient.username|default:'N/A' }}{% elif transaction.transaction_type == 'gift_received' %}Received from: {{ transaction.sender.username|default:'N/A' }}{% else %}{{ transaction.get_transaction_type_display }}{% endif %}">
+                                        {% if transaction.transaction_type == 'purchase' %}{{ transaction.pack_name|default:'Coin Purchase' }}{% elif transaction.transaction_type == 'gift_sent' %}Sent to: {{ transaction.recipient.username|default:'N/A' }}{% elif transaction.transaction_type == 'gift_received' %}Received from: {{ transaction.sender.username|default:'N/A' }}{% else %}{{ transaction.get_transaction_type_display }}{% endif %}
+                                    </p>
+                                    <p class="date text-xs text-gray-500">
+                                        {% timezone "Asia/Karachi" %}{{ transaction.transaction_date|date:"M d, Y, P" }}{% endtimezone %}
+                                    </p>
+                                </div>
+                                <div class="transaction-amount-v3 flex-shrink-0 ml-4 text-right">
+                                    <span class="amount-value block text-base font-semibold
+                                        {% if transaction.transaction_type == 'gift_sent' or transaction.transaction_type == 'spent' %} text-theme-error
+                                        {% elif transaction.transaction_type == 'gift_received' or transaction.transaction_type == 'purchase' or transaction.transaction_type == 'reward' or transaction.transaction_type == 'refund' %} text-theme-green
+                                        {% else %} text-gray-700 {% endif %}">
+                                        {% if transaction.transaction_type == 'gift_sent' or transaction.transaction_type == 'spent' %}- {{ transaction.amount|default:"0" }}
+                                        {% elif transaction.transaction_type == 'gift_received' or transaction.transaction_type == 'purchase' or transaction.transaction_type == 'reward' or transaction.transaction_type == 'refund' %}+ {{ transaction.amount|default:"0" }}
+                                        {% else %}{{ transaction.amount|default:"0" }}{% endif %}
+                                    </span>
+                                    {% if transaction.transaction_type == 'purchase' and transaction.price %}
+                                        <span class="amount-currency block text-xs font-normal text-gray-500 mt-0.5">PKR {{ transaction.price|floatformat:2 }}</span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% empty %}
+                            <li class="no-activity-message-v3 text-center py-20 px-4 text-gray-500">
+                                <div class="inline-block bg-gray-100 p-5 rounded-full mb-5 shadow-inner">
+                                    <i class="fas fa-receipt text-5xl text-gray-400"></i>
+                                </div>
+                                <p class="text-lg font-semibold text-gray-700">No transactions yet</p>
+                                <p class="text-sm text-gray-500 mt-1">Your transaction history will appear here once you buy coins or send/receive gifts.</p>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="hidden" id="purchased" role="tabpanel" aria-labelledby="purchased-tab">
+                     <ul class="history-list divide-y divide-gray-100">
+                        {% for transaction in gift_history %}
+                            {% if transaction.transaction_type == 'purchase' %}
+                                {# Transaction Item HTML #}
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="hidden" id="received" role="tabpanel" aria-labelledby="received-tab">
+                     <ul class="history-list divide-y divide-gray-100">
+                        {% for transaction in gift_history %}
+                             {% if transaction.transaction_type == 'gift_received' %}
+                                {# Transaction Item HTML #}
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="hidden" id="sent" role="tabpanel" aria-labelledby="sent-tab">
+                     <ul class="history-list divide-y divide-gray-100">
+                        {% for transaction in gift_history %}
+                            {% if transaction.transaction_type == 'gift_sent' %}
+                                {# Transaction Item HTML #}
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="confirmation-modal" class="fixed inset-0 bg-gradient-to-br from-black/40 via-black/60 to-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity duration-300 ease-out opacity-0" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 ease-out scale-95 opacity-0 overflow-hidden ring-1 ring-black/10" id="modal-content-el">
+        <div class="p-6 sm:p-8">
+            <div class="text-center">
+                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-theme-primary-lighter to-indigo-100 mb-5 border-2 border-white shadow-inner">
+                    <i class="fas fa-paper-plane text-3xl text-theme-primary"></i>
+                </div>
+                <h2 id="modal-title" class="text-xl font-semibold text-gray-900 mb-2">Confirm Gift Transfer</h2>
+                <p class="text-gray-500 text-sm mb-6">Please double-check the details below.</p>
+            </div>
+
+            <div class="mb-8 space-y-4 bg-slate-50 p-5 rounded-lg border border-slate-200 text-sm">
+                <div class="flex justify-between items-center pb-2 border-b border-slate-200">
+                    <span class="text-slate-500">From:</span>
+                    <span id="confirm-from" class="font-medium text-slate-700">{{ user.username }}</span>
+                </div>
+                <div class="flex justify-between items-start pb-2 border-b border-slate-200">
+                    <span class="text-slate-500 pt-0.5">To:</span>
+                    <span id="confirm-to" class="font-medium text-slate-700 break-all text-right max-w-[70%]"></span>
+                </div>
+                <div class="flex justify-between items-center pt-2">
+                    <span class="text-slate-500">Amount:</span>
+                    <div class="text-right">
+                        <span id="confirm-amount" class="font-bold text-xl text-theme-primary"></span>
+                        <span class="text-slate-600 text-xs ml-1">Coins</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-end gap-3">
+                <button id="cancel-send" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out order-2 sm:order-1">
+                    Cancel
+                </button>
+                <button id="confirm-send" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg bg-theme-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition duration-150 ease-in-out disabled:opacity-70 disabled:cursor-not-allowed order-1 sm:order-2">
+                    <i class="fas fa-check mr-1"></i> Confirm & Send
+                </button>
+            </div>
+        </div>
+         <button type="button" id="close-modal-btn" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 focus:outline-none p-2 rounded-full hover:bg-gray-100 transition-colors hidden">
+            <i class="fas fa-times text-lg"></i><span class="sr-only">Close modal</span>
+        </button>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Element Selectors ---
+    const giftForm = document.getElementById('gift-form');
+    const sendGiftBtn = document.getElementById('send-gift-btn');
+    const confirmationModal = document.getElementById('confirmation-modal');
+    const modalContentEl = document.getElementById('modal-content-el');
+    const confirmTo = document.getElementById('confirm-to');
+    const confirmAmount = document.getElementById('confirm-amount');
+    const confirmSendBtn = document.getElementById('confirm-send');
+    const cancelSendBtn = document.getElementById('cancel-send');
+    const closeModalBtn = document.getElementById('close-modal-btn'); // Keep reference if needed, though hidden
+    const coinBalanceElement = document.getElementById('coin-balance');
+    const historyTabs = document.querySelectorAll('#historyTabs-v3 button[role="tab"]');
+    const headerCoinBalance = document.getElementById('header-coin-balance');
+
+    let giftData = {};
+
+    // --- Modal Handling ---
+    function showModal() {
+        if(confirmationModal && modalContentEl) {
+            confirmationModal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                confirmationModal.classList.remove('opacity-0');
+                modalContentEl.classList.remove('opacity-0', 'scale-95');
+                modalContentEl.classList.add('opacity-100', 'scale-100');
+            });
+        }
+    }
+
+    function hideModal() {
+        if(confirmationModal && modalContentEl) {
+             modalContentEl.classList.remove('opacity-100', 'scale-100');
+             modalContentEl.classList.add('opacity-0', 'scale-95');
+             confirmationModal.classList.add('opacity-0');
+             setTimeout(() => {
+                 confirmationModal.classList.add('hidden');
+             }, 300);
+        }
+        giftData = {};
+    }
+
+    // --- Notifications (Uses SwalStyled from Homepage.html with premium overrides) ---
+    function showGiftMessage(message, type = 'info') {
+        // Use the base styled Swal from Homepage.html if available
+        const BaseSwal = typeof SwalStyled !== 'undefined' ? SwalStyled : Swal;
+        const icon = type === 'success' ? 'success' : (type === 'error' ? 'error' : 'info');
+
+        // Apply further premium customizations specifically for wallet messages
+        const WalletSwal = BaseSwal.mixin({
+            customClass: {
+                popup: 'rounded-xl shadow-xl border border-slate-100 p-6 max-w-sm', // Slightly smaller max width
+                title: `text-xl font-semibold mb-3 ${icon === 'success' ? 'text-theme-green' : icon === 'error' ? 'text-theme-error' : 'text-theme-primary'}`,
+                htmlContainer: 'text-sm text-slate-600 leading-relaxed mb-5', // Margin bottom for spacing
+                confirmButton: 'inline-flex items-center justify-center gap-2 rounded-lg bg-theme-primary px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition duration-150 ease-in-out',
+                icon: `w-14 h-14 text-2xl border-4 mb-4 ${icon === 'success' ? 'border-theme-green-light text-theme-green' : icon === 'error' ? 'border-theme-error-light text-theme-error' : 'border-theme-primary-lighter text-theme-primary'}`, // Larger icon, colored border
+            },
+            buttonsStyling: false,
+            showClass: { popup: 'animate__animated animate__fadeInDown animate__faster' }, // Requires Animate.css
+            hideClass: { popup: 'animate__animated animate__fadeOutUp animate__faster' }
+        });
+
+        WalletSwal.fire({
+            // title: type.charAt(0).toUpperCase() + type.slice(1), // Title can be optional if icon is prominent
+            html: `<strong class="text-lg block mb-1">${type.charAt(0).toUpperCase() + type.slice(1)}</strong> ${message}`, // Use HTML for better control
+            icon: icon,
+            timer: type === 'success' ? 3500 : null,
+            timerProgressBar: type === 'success',
+        });
+    }
+
+
+    // --- CSRF Token Helper ---
+    function getCookie(name) {
+        let cookieValue = null; if (document.cookie && document.cookie !== '') { const cookies = document.cookie.split(';'); for (let i = 0; i < cookies.length; i++) { const cookie = cookies[i].trim(); if (cookie.substring(0, name.length + 1) === (name + '=')) { cookieValue = decodeURIComponent(cookie.substring(name.length + 1)); break; } } } return cookieValue;
+    }
+
+    // --- Animate Balance Update ---
+    function animateValue(element, start, end, duration) {
+        if (!element) return;
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const easedProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+            const currentValue = Math.floor(easedProgress * (end - start) + start);
+            element.textContent = new Intl.NumberFormat('en-US').format(currentValue);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                element.textContent = new Intl.NumberFormat('en-US').format(end);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+
+    // --- Gift Form Logic ---
+    if (sendGiftBtn && giftForm && coinBalanceElement) {
+         sendGiftBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            const recipientInput = giftForm.querySelector('#recipient');
+            const amountInput = giftForm.querySelector('#amount');
+            const recipient = recipientInput.value.trim();
+            const amount = parseInt(amountInput.value, 10);
+
+            if (!recipient) {
+                showGiftMessage("Please enter the recipient's username or email.", 'error');
+                recipientInput.focus(); return;
+            }
+            if (isNaN(amount) || amount <= 0) {
+                showGiftMessage("Please enter a valid, positive amount of coins.", 'error');
+                amountInput.focus(); return;
+            }
+
+            const currentBalanceText = coinBalanceElement.textContent?.replace(/,/g, '') || '0';
+            const currentBalance = parseInt(currentBalanceText, 10);
+            if (isNaN(currentBalance) || amount > currentBalance) {
+                showGiftMessage("Insufficient balance for this gift amount.", 'error');
+                amountInput.focus(); return;
+            }
+
+            giftData = { recipient, amount };
+            if (confirmTo) confirmTo.textContent = recipient;
+            if (confirmAmount) confirmAmount.textContent = amount.toLocaleString('en-US');
+            showModal(); // Show the custom confirmation modal
+        });
+     }
+
+    // --- Modal Event Listeners ---
+    if (cancelSendBtn) cancelSendBtn.addEventListener('click', hideModal);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', hideModal); // Listener for 'x' if it were visible
+    if (confirmationModal) {
+        confirmationModal.addEventListener('click', (event) => {
+            if (event.target === confirmationModal) hideModal(); // Click outside closes
+        });
+     }
+
+    // --- Confirm Send Logic (AJAX) ---
+    if (confirmSendBtn && cancelSendBtn) {
+         confirmSendBtn.addEventListener('click', function() {
+            confirmSendBtn.disabled = true;
+            cancelSendBtn.disabled = true;
+            confirmSendBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
+
+            fetch("{% url 'AudioXApp:gift_coins' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(giftData)
+            })
+            .then(async response => {
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const responseData = isJson ? await response.json() : null;
+                if (!response.ok) throw new Error(responseData?.message || `Server error: ${response.status}`);
+                if (responseData?.status !== 'success') throw new Error(responseData?.message || 'Gift transfer failed.');
+                return responseData;
+            })
+            .then(data => {
+                hideModal(); // Hide confirmation modal first
+                showGiftMessage(data.message || 'Gift sent successfully!', 'success'); // Show styled success message
+
+                // Update balance display on wallet page
+                if (coinBalanceElement && typeof data.new_balance !== 'undefined') {
+                    const startBalance = parseInt(coinBalanceElement.textContent.replace(/,/g, ''), 10) || 0;
+                    animateValue(coinBalanceElement, startBalance, data.new_balance, 800);
+                }
+                // *** ALSO Update balance display in header ***
+                if (headerCoinBalance && typeof data.new_balance !== 'undefined') {
+                    const startHeaderBalance = parseInt(headerCoinBalance.textContent.replace(/,/g, ''), 10) || 0;
+                    animateValue(headerCoinBalance, startHeaderBalance, data.new_balance, 800);
+                }
+
+                if (giftForm) giftForm.reset();
+
+                const transaction = data.transaction || {
+                    transaction_date: new Date().toISOString(),
+                    amount: giftData.amount,
+                    recipient: { username: giftData.recipient },
+                    sender: null,
+                    transaction_type: 'gift_sent',
+                    pack_name: null,
+                    price: null,
+                    get_transaction_type_display: 'Gift Sent' // Fallback display name
+                };
+                addTransactionToHistory(transaction, 'sent');
+                addTransactionToHistory(transaction, 'all');
+            })
+            .catch(error => {
+                console.error('Error sending gift:', error);
+                hideModal(); // Hide confirmation modal
+                showGiftMessage(error.message || 'An error occurred. Please try again.', 'error'); // Show styled error message
+            })
+            .finally(() => {
+                confirmSendBtn.disabled = false;
+                cancelSendBtn.disabled = false;
+                confirmSendBtn.innerHTML = '<i class="fas fa-check mr-1"></i> Confirm & Send'; // Restore button text
+            });
+        });
+     }
+
+    // --- Tab Switching Logic ---
+    function activateTab(selectedTab) {
+         historyTabs.forEach(tab => {
+            const targetId = tab.dataset.tabsTarget;
+            const targetContent = document.querySelector(targetId);
+            if (!targetContent) return;
+
+            if (tab === selectedTab) {
+                tab.setAttribute('aria-selected', 'true');
+                targetContent.classList.remove('hidden');
+            } else {
+                tab.setAttribute('aria-selected', 'false');
+                targetContent.classList.add('hidden');
+            }
+        });
+        const activeContentId = selectedTab.dataset.tabsTarget;
+        const activeContentList = document.querySelector(activeContentId + ' .history-list');
+        checkAndDisplayNoActivity(activeContentList); // Check after switching
+     }
+    historyTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            activateTab(e.currentTarget);
+        });
+     });
+
+    // --- Initial State Setup ---
+    const initialTab = document.getElementById('all-tab');
+    if(initialTab) {
+        activateTab(initialTab);
+    } else if (historyTabs.length > 0) {
+        activateTab(historyTabs[0]);
+    }
+
+    // --- Dynamic Transaction History Update ---
+    function createTransactionHtml(transaction) {
+        let iconClass = 'fa-info-circle';
+        let iconBgClass = 'bg-gray-100 text-gray-500';
+        let amountTextClass = 'text-gray-700';
+        let amountPrefix = '';
+        let mainText = transaction.get_transaction_type_display || transaction.transaction_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown Transaction';
+        let priceHtml = '';
+
+        let formattedAmount = 'N/A';
+        if (typeof transaction.amount === 'number' && !isNaN(transaction.amount)) {
+            formattedAmount = Math.abs(transaction.amount).toLocaleString('en-US');
+        }
+
+        let dateText = 'Invalid Date';
+        try {
+            const date = new Date(transaction.transaction_date);
+            if (!isNaN(date)) {
+                dateText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+            }
+        } catch (e) { console.error("Error formatting date:", e); }
+
+        switch (transaction.transaction_type) {
+            case 'gift_sent':
+                iconClass = 'fa-paper-plane'; iconBgClass = 'bg-theme-error-light text-theme-error';
+                mainText = `Sent to: ${transaction.recipient?.username || 'N/A'}`;
+                amountTextClass = 'text-theme-error'; amountPrefix = '- ';
+                break;
+            case 'gift_received':
+                iconClass = 'fa-gift'; iconBgClass = 'bg-theme-green-lighter text-theme-green';
+                mainText = `Received from: ${transaction.sender?.username || 'N/A'}`;
+                amountTextClass = 'text-theme-green'; amountPrefix = '+ ';
+                break;
+            case 'purchase':
+                iconClass = 'fa-shopping-cart'; iconBgClass = 'bg-theme-primary-lighter text-theme-primary';
+                mainText = transaction.pack_name || 'Coin Purchase';
+                amountTextClass = 'text-theme-green'; amountPrefix = '+ ';
+                if (transaction.price && !isNaN(parseFloat(transaction.price))) {
+                    priceHtml = `<span class="amount-currency block text-xs font-normal text-gray-500 mt-0.5">PKR ${parseFloat(transaction.price).toFixed(2)}</span>`;
+                }
+                break;
+            case 'reward':
+                iconClass = 'fa-star'; iconBgClass = 'bg-theme-warning-light text-theme-warning';
+                mainText = transaction.get_transaction_type_display || 'Reward Received';
+                amountTextClass = 'text-theme-green'; amountPrefix = '+ ';
+                break;
+            case 'spent':
+                iconClass = 'fa-arrow-down'; iconBgClass = 'bg-theme-error-light text-theme-error';
+                mainText = transaction.get_transaction_type_display || 'Coins Spent';
+                amountTextClass = 'text-theme-error'; amountPrefix = '- ';
+                break;
+            case 'refund':
+                iconClass = 'fa-undo'; iconBgClass = 'bg-gray-100 text-gray-500';
+                mainText = transaction.get_transaction_type_display || 'Refund Processed';
+                amountTextClass = 'text-theme-green'; amountPrefix = '+ ';
+                break;
+        }
+
+        // Construct the HTML string using updated Tailwind classes
+        return `
+            <li class="transaction-item-v3 flex items-center py-4 px-1 sm:px-2 hover:bg-gray-50/70 transition duration-150 ease-in-out -mx-1 sm:-mx-2 px-1 sm:px-2 rounded-lg">
+                <div class="transaction-icon-v3 flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center mr-4 text-lg shadow-sm border border-black/5 ${iconBgClass}">
+                    <i class="fas fa-fw ${iconClass}"></i>
+                </div>
+                <div class="transaction-details-v3 flex-grow min-w-0 text-sm">
+                    <p class="description font-semibold text-gray-800 truncate mb-0.5" title="${mainText}">${mainText}</p>
+                    <p class="date text-xs text-gray-500">${dateText}</p>
+                </div>
+                <div class="transaction-amount-v3 flex-shrink-0 ml-4 text-right">
+                    <span class="amount-value block text-base font-semibold ${amountTextClass}">${amountPrefix}${formattedAmount}</span>
+                    ${priceHtml}
+                </div>
+            </li>
+        `;
+    }
+
+    // Function to add transaction (no changes needed in logic)
+    function addTransactionToHistory(transaction, type) {
+        const listSelector = `#${type} .history-list`;
+        const listContainer = document.querySelector(listSelector);
+        if (!listContainer) return;
+
+        const noActivityMessage = listContainer.querySelector('.no-activity-message-v3');
+        if (noActivityMessage) {
+            noActivityMessage.remove();
+        }
+
+        const transactionHtml = createTransactionHtml(transaction);
+        listContainer.insertAdjacentHTML('afterbegin', transactionHtml);
+     }
+
+    // --- Check for Empty Lists and Show Message (Updated HTML Structure) ---
+    function checkAndDisplayNoActivity(listContainer) {
+        if (!listContainer) return;
+
+        requestAnimationFrame(() => {
+            const hasItems = listContainer.querySelector('.transaction-item-v3');
+            let noActivityLi = listContainer.querySelector('.no-activity-message-v3');
+            const shouldBeEmpty = !hasItems;
+
+            if (shouldBeEmpty && !noActivityLi) {
+                let messageText = "No transactions in this category yet.";
+                let iconClass = "fa-receipt";
+                let subText = "Your transaction history will appear here.";
+                const listId = listContainer.closest('[role="tabpanel"]')?.id;
+
+                switch(listId) {
+                    case 'purchased': messageText = "No purchases recorded yet."; iconClass="fa-shopping-cart"; subText="Coins you buy will show up here."; break;
+                    case 'received': messageText = "No received gifts yet."; iconClass="fa-gift"; subText="Gifts from other users will appear here."; break;
+                    case 'sent': messageText = "No sent gifts yet."; iconClass="fa-paper-plane"; subText="Gifts you send will be recorded here."; break;
+                    case 'all': messageText = "No transactions recorded yet."; iconClass="fa-receipt"; subText="Your transaction history will appear here once you buy coins or send/receive gifts."; break;
+                }
+
+                const noActivityHtml = `
+                    <li class="no-activity-message-v3 text-center py-20 px-4 text-gray-500">
+                         <div class="inline-block bg-gray-100 p-5 rounded-full mb-5 shadow-inner">
+                             <i class="fas ${iconClass} text-5xl text-gray-400"></i>
+                         </div>
+                         <p class="text-lg font-semibold text-gray-700">${messageText}</p>
+                         <p class="text-sm text-gray-500 mt-1">${subText}</p>
+                    </li>`;
+                listContainer.innerHTML = noActivityHtml;
+            } else if (!shouldBeEmpty && noActivityLi) {
+                noActivityLi.remove();
+            }
+        });
+    }
+
+    // Initial check for all lists on page load
+    document.querySelectorAll('.history-list').forEach(checkAndDisplayNoActivity);
+
+    // --- Initial Balance Animation ---
+    if (coinBalanceElement) {
+        const endValueText = coinBalanceElement.textContent.trim();
+        const endValue = parseInt(endValueText.replace(/,/g, ''), 10);
+
+        if (!isNaN(endValue) && endValue >= 0) {
+            coinBalanceElement.textContent = '0';
+            setTimeout(() => {
+                animateValue(coinBalanceElement, 0, endValue, 1200);
+            }, 100);
+        } else {
+            coinBalanceElement.textContent = '0';
+        }
+     }
+
+});
+</script>
+
+{% endblock %}

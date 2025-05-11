@@ -1,0 +1,323 @@
+{% load static %}
+{% load humanize %}
+
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AudioX Creator Area{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+
+    <script>
+        // Tailwind configuration
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'theme-primary': '#091e65',
+                        'theme-primary-hover': '#071852',
+                        'theme-primary-light': '#eef2ff',
+                        'theme-primary-lighter': '#f0f5ff',
+                        'theme-primary-lightest': '#f9fafb',
+                        'theme-secondary': '#f97316',
+                        'theme-secondary-hover': '#ea580c',
+                        'theme-text-primary': '#1f2937',
+                        'theme-text-secondary': '#4b5563',
+                        'theme-text-light': '#6b7280',
+                        'theme-text-inverted': '#ffffff',
+                        'theme-text-nav-dark-bg': '#cbd5e1',
+                        'theme-text-nav-dark-bg-hover': '#ffffff',
+                        'theme-text-nav-dark-bg-active': '#ffffff',
+                        'theme-bg-nav-dark-bg-active': 'rgba(255, 255, 255, 0.1)',
+                        'theme-bg-nav-dark-bg-hover': 'rgba(255, 255, 255, 0.05)',
+                        'theme-border': '#e5e7eb',
+                        'theme-border-light': '#f3f4f6',
+                        'theme-border-dark-nav': '#1e3a8a',
+                        'theme-input-bg': '#ffffff',
+                        'theme-input-bg-focus': '#ffffff',
+                        'theme-error': '#ef4444',
+                        'theme-error-hover': '#dc2626', 
+                        'theme-bg-error-light': '#fee2e2', 
+                        'theme-success': '#10b981',
+                        'theme-bg-page': '#f8fafc',
+                        'theme-bg-card': '#ffffff',
+                        'theme-bg-header': '#091e65',
+                        'theme-bg-icon-yellow': '#fefce8',
+                        'theme-text-icon-yellow': '#b45309',
+                        'theme-bg-icon-green': '#f0fdf4',
+                        'theme-text-icon-green': '#15803d',
+                        'theme-bg-icon-blue': '#eff6ff',
+                        'theme-text-icon-blue': '#1d4ed8',
+                        'theme-bg-icon-purple': '#faf5ff',
+                        'theme-text-icon-purple': '#7e22ce',
+                        'theme-bg-icon-red': '#fef2f2',
+                        'theme-text-icon-red': '#b91c1c',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
+                        'card-lg': '0 4px 8px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.06)',
+                        'header': '0 2px 4px 0 rgba(0, 0, 0, 0.1)',
+                        'dropdown-dark': '0 10px 20px -5px rgba(0, 0, 0, 0.25), 0 4px 6px -4px rgba(0, 0, 0, 0.15)',
+                    },
+                    transitionProperty: {
+                        'opacity-transform': 'opacity, transform',
+                        'colors-transform': 'background-color, border-color, color, fill, stroke, opacity, transform',
+                    },
+                    borderRadius: {
+                        'xl': '0.75rem', 
+                        '2xl': '1rem',
+                        'dropdown': '0.875rem',
+                    }
+                }
+            }
+        }
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full font-sans antialiased">
+
+    <div class="min-h-screen bg-theme-bg-page">
+        <nav class="bg-theme-bg-header shadow-header sticky top-0 z-40" x-data="{ mobileMenuOpen: false, profileMenuOpen: false }">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="flex flex-shrink-0 items-center mr-10">
+                            <a href="{% url 'AudioXApp:creator_dashboard' %}" class="flex items-center text-2xl font-extrabold tracking-tight text-white">
+                                <span>AUDIO</span><span class="text-red-500">X</span><span class="inline-block w-1.5 h-1.5 bg-theme-secondary rounded-full ml-0.5 mb-1"></span>
+                            </a>
+                        </div>
+                        <div class="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-1">
+                            <a href="{% url 'AudioXApp:creator_dashboard' %}" class="top-nav-link rounded-md px-3 py-2 text-sm font-medium text-theme-text-nav-dark-bg hover:bg-theme-bg-nav-dark-bg-hover hover:text-theme-text-nav-dark-bg-hover">Dashboard</a>
+                            <a href="{% url 'AudioXApp:creator_my_audiobooks' %}" class="top-nav-link rounded-md px-3 py-2 text-sm font-medium text-theme-text-nav-dark-bg hover:bg-theme-bg-nav-dark-bg-hover hover:text-theme-text-nav-dark-bg-hover">My Audiobooks</a>
+                            <a href="{% url 'AudioXApp:creator_upload_audiobook' %}" class="top-nav-link rounded-md px-3 py-2 text-sm font-medium text-theme-text-nav-dark-bg hover:bg-theme-bg-nav-dark-bg-hover hover:text-theme-text-nav-dark-bg-hover">Upload Audiobook</a>
+                            <a href="{% url 'AudioXApp:creator_my_earnings' %}" class="top-nav-link rounded-md px-3 py-2 text-sm font-medium text-theme-text-nav-dark-bg hover:bg-theme-bg-nav-dark-bg-hover hover:text-theme-text-nav-dark-bg-hover">My Earnings</a>
+                            <a href="{% url 'AudioXApp:creator_request_withdrawal_list' %}" class="top-nav-link rounded-md px-3 py-2 text-sm font-medium text-theme-text-nav-dark-bg hover:bg-theme-bg-nav-dark-bg-hover hover:text-theme-text-nav-dark-bg-hover">Withdrawals</a>
+                        </div>
+                    </div>
+                    <div class="flex items-center ml-auto pl-4">
+                         <div class="hidden sm:flex items-center mr-4 border-r border-white/10 pr-4 h-8">
+                            <i class="fas fa-wallet text-lg text-green-300 mr-2"></i>
+                            <span class="text-sm font-medium text-white">
+                                Rs. {{ available_balance|default:"0.00"|floatformat:2|intcomma }}
+                            </span>
+                        </div>
+
+                         <div class="hidden sm:flex items-center mr-3 h-8">
+                            <button id="header-switch-normal-btn" type="button" title="Switch to User Mode" class="flex items-center h-full px-3 rounded-full text-xs font-medium text-gray-200 bg-white/10 hover:bg-white/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-theme-primary-hover transition duration-150 ease-in-out group">
+                                <i class="fas fa-sync-alt mr-1.5 group-hover:rotate-180 transition-transform duration-300"></i>
+                                Switch Mode
+                            </button>
+                        </div>
+
+                        <div class="relative" x-data="{ profileMenuOpen: false }" @click.outside="profileMenuOpen = false">
+                            <div>
+                                <button @click="profileMenuOpen = !profileMenuOpen" type="button" class="flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-theme-primary-hover" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+                                    <span class="sr-only">Open user menu</span>
+                                    {% if creator.creator_profile_pic %}
+                                        <img class="h-9 w-9 rounded-full object-cover ring-1 ring-white/50" src="{{ creator.creator_profile_pic.url }}" alt="Creator Profile Picture">
+                                    {% else %}
+                                        <span class="inline-flex items-center justify-center h-9 w-9 rounded-full bg-theme-primary-light ring-1 ring-theme-primary/50">
+                                            <span class="text-sm font-semibold leading-none text-theme-primary">{{ creator.creator_name|slice:":1"|upper|default:user.username|slice:":1"|upper|default:"U" }}</span>
+                                        </span>
+                                    {% endif %}
+                                </button>
+                            </div>
+                            <div x-show="profileMenuOpen"
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="transform opacity-0 scale-90"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-90"
+                                 class="absolute right-0 z-20 mt-2.5 w-72 origin-top-right rounded-dropdown bg-white p-2.5 shadow-dropdown-dark ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                 role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1"
+                                 style="display: none;">
+
+                                <div class="px-3.5 py-4 border-b border-theme-border-light mb-1.5 bg-theme-primary-lightest rounded-lg">
+                                    <p class="text-lg font-bold text-theme-text-primary truncate" title="{{ creator.creator_name|default:user.username }}">{{ creator.creator_name|default:user.username }}</p>
+                                    <p class="text-sm text-theme-text-secondary truncate mt-0.5" title="@{{ creator.creator_unique_name|default:'N/A' }}">@{{ creator.creator_unique_name|default:'N/A' }}</p>
+                                    <p class="text-sm text-theme-text-secondary truncate mt-0.5" title="{{ user.email }}">{{ user.email }}</p>
+                                    {% if creator.cid %}
+                                    <p class="text-xs text-theme-text-light truncate mt-2 font-medium"><span class="font-semibold text-theme-text-secondary">[ Creator ID ]:</span> {{ creator.cid }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="space-y-1.5 py-1">
+                                    <a href="{% url 'AudioXApp:update_creator_profile' %}" class="group flex items-center w-full px-3.5 py-3 text-sm font-medium text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary rounded-lg transition-colors-transform duration-150 ease-in-out" role="menuitem" tabindex="-1">
+                                        <i class="fas fa-user-edit fa-fw w-5 h-5 mr-3 text-theme-text-light group-hover:text-theme-primary transition-colors duration-150 ease-in-out"></i>
+                                        <span>Update Profile Info</span>
+                                    </a>
+                                    <a href="{% url 'AudioXApp:creator_manage_withdrawal_accounts' %}" class="group flex items-center w-full px-3.5 py-3 text-sm font-medium text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary rounded-lg transition-colors-transform duration-150 ease-in-out" role="menuitem" tabindex="-1">
+                                        <i class="fas fa-university fa-fw w-5 h-5 mr-3 text-theme-text-light group-hover:text-theme-primary transition-colors duration-150 ease-in-out"></i>
+                                        <span>Withdrawal Accounts</span>
+                                    </a>
+                                </div>
+
+                                <div class="mt-1.5 pt-2.5 border-t border-theme-border-light">
+                                    <a href="{% url 'AudioXApp:logout' %}" id="desktop-logout-link" class="group flex items-center w-full px-3.5 py-3 text-sm font-medium text-theme-text-secondary hover:bg-theme-bg-error-light hover:text-theme-error-hover rounded-lg transition-colors-transform duration-150 ease-in-out" role="menuitem" tabindex="-1">
+                                        <i class="fas fa-sign-out-alt fa-fw w-5 h-5 mr-3 text-theme-text-light group-hover:text-theme-error-hover transition-colors duration-150 ease-in-out"></i>
+                                        <span class="font-medium">Logout</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="-mr-2 flex items-center sm:hidden ml-4">
+                            <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="inline-flex items-center justify-center rounded-md p-2 text-gray-300 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
+                                <span class="sr-only">Open main menu</span>
+                                <i class="fas fa-bars fa-lg block" :class="{ 'hidden': mobileMenuOpen, 'block': !mobileMenuOpen }"></i>
+                                <i class="fas fa-times fa-lg hidden" :class="{ 'block': mobileMenuOpen, 'hidden': !mobileMenuOpen }"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sm:hidden border-t border-theme-border-dark-nav" id="mobile-menu" x-show="mobileMenuOpen" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2">
+                <div class="space-y-1 px-2 pt-2 pb-3">
+                    <a href="{% url 'AudioXApp:creator_dashboard' %}" class="mobile-nav-link block rounded-md px-3 py-2 text-base font-medium text-theme-text-nav-dark-bg hover:bg-white/10 hover:text-white">Dashboard</a>
+                    <a href="{% url 'AudioXApp:creator_my_audiobooks' %}" class="mobile-nav-link block rounded-md px-3 py-2 text-base font-medium text-theme-text-nav-dark-bg hover:bg-white/10 hover:text-white">My Audiobooks</a>
+                    <a href="{% url 'AudioXApp:creator_upload_audiobook' %}" class="mobile-nav-link block rounded-md px-3 py-2 text-base font-medium text-theme-text-nav-dark-bg hover:bg-white/10 hover:text-white">Upload Audiobook</a>
+                    <a href="{% url 'AudioXApp:creator_my_earnings' %}" class="mobile-nav-link block rounded-md px-3 py-2 text-base font-medium text-theme-text-nav-dark-bg hover:bg-white/10 hover:text-white">My Earnings</a>
+                    <a href="{% url 'AudioXApp:creator_request_withdrawal_list' %}" class="mobile-nav-link block rounded-md px-3 py-2 text-base font-medium text-theme-text-nav-dark-bg hover:bg-white/10 hover:text-white">Withdrawals</a>
+                </div>
+                <div class="border-t border-theme-border-dark-nav pt-4 pb-3">
+                    <div class="flex items-center px-5 mb-3">
+                        <div class="flex-shrink-0">
+                            {% if creator.creator_profile_pic %}
+                                <img class="h-10 w-10 rounded-full object-cover" src="{{ creator.creator_profile_pic.url }}" alt="Creator Profile Picture">
+                            {% else %}
+                                <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-theme-primary-light ring-1 ring-white/50">
+                                    <span class="text-base font-medium leading-none text-theme-primary">{{ creator.creator_name|slice:":1"|upper|default:user.username|slice:":1"|upper|default:"U" }}</span>
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="ml-3 min-w-0">
+                            <div class="text-base font-medium text-white truncate">{{ creator.creator_name|default:user.username }}</div>
+                            <div class="text-sm font-medium text-gray-400 truncate">@{{ creator.creator_unique_name|default:'N/A' }}</div>
+                            <div class="text-sm font-medium text-gray-400 truncate">{{ user.email }}</div>
+                            {% if creator.cid %}
+                            <div class="text-sm font-medium text-gray-400 truncate"><span class="font-semibold">[ Creator ID ]:</span> {{ creator.cid }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-3 space-y-1 px-2">
+                        <div class="flex items-center px-3 py-2 text-base font-medium text-green-300">
+                            <i class="fas fa-wallet mr-3 flex-shrink-0 h-6 w-6"></i>
+                            <span>Rs. {{ available_balance|default:"0.00"|floatformat:2|intcomma }}</span>
+                        </div>
+                        <button id="mobile-switch-normal-btn" type="button" class="flex w-full items-center rounded-md px-3 py-2 text-base font-medium text-theme-text-nav-dark-bg hover:bg-white/10 hover:text-white group">
+                            <i class="fas fa-sync-alt mr-3 flex-shrink-0 text-gray-400 h-6 w-6 group-hover:rotate-180 transition-transform duration-300"></i> Switch to User Mode
+                        </button>
+                        <a href="{% url 'AudioXApp:update_creator_profile' %}" class="flex items-center rounded-md px-3 py-2 text-base font-medium text-theme-text-nav-dark-bg hover:bg-white/10 hover:text-white">
+                            <i class="fas fa-user-edit mr-3 flex-shrink-0 text-gray-400 h-6 w-6"></i> Update Profile Info
+                        </a>
+                        <a href="{% url 'AudioXApp:creator_manage_withdrawal_accounts' %}" class="flex items-center rounded-md px-3 py-2 text-base font-medium text-theme-text-nav-dark-bg hover:bg-white/10 hover:text-white">
+                            <i class="fas fa-university mr-3 flex-shrink-0 text-gray-400 h-6 w-6"></i> Withdrawal Accounts
+                        </a>
+                        <a href="{% url 'AudioXApp:logout' %}" id="mobile-logout-link" class="flex items-center rounded-md px-3 py-2 text-base font-medium text-theme-text-nav-dark-bg hover:bg-white/10 hover:text-white">
+                            <i class="fas fa-sign-out-alt mr-3 flex-shrink-0 text-gray-400 h-6 w-6"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="py-6 md:py-10">
+            <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    function handleSwitchToUserMode() {
+        const targetUrl = "{% url 'AudioXApp:myprofile' %}"; const modeText = 'Normal User Profile';
+        Swal.fire({ title: `Switch to Normal Mode?`, text: `You will be redirected to your ${modeText}.`, icon: 'question', showCancelButton: true, confirmButtonText: 'Switch Mode', confirmButtonColor: '#0a2a71', cancelButtonText: 'Cancel', reverseButtons: true, customClass: { popup: 'rounded-xl' }, showClass: { popup: 'swal2-show', backdrop: 'swal2-backdrop-show', icon: 'swal2-icon-show' }, hideClass: { popup: 'swal2-hide', backdrop: 'swal2-backdrop-hide', icon: 'swal2-icon-hide' } })
+        .then((result) => { if (result.isConfirmed) { document.body.classList.add('is-switching'); Swal.fire({ title: 'Switching...', icon: 'info', timer: 600, showConfirmButton: false, timerProgressBar: true, customClass: { popup: 'rounded-xl' }, didOpen: () => { Swal.showLoading(); }, willClose: () => { window.location.href = targetUrl; } }); } });
+    }
+    const headerSwitchBtn = document.getElementById('header-switch-normal-btn'); if (headerSwitchBtn) { headerSwitchBtn.addEventListener('click', handleSwitchToUserMode); }
+    const mobileSwitchBtn = document.getElementById('mobile-switch-normal-btn'); if (mobileSwitchBtn) { mobileSwitchBtn.addEventListener('click', handleSwitchToUserMode); }
+
+    const currentPath = window.location.pathname;
+    const topNavLinks = document.querySelectorAll('nav .top-nav-link');
+    const mobileNavLinks = document.querySelectorAll('#mobile-menu a.mobile-nav-link');
+    const dashboardUrl = "{% url 'AudioXApp:creator_dashboard' %}";
+    let activeSet = false;
+
+    const withdrawalAccountUrl = "{% url 'AudioXApp:creator_manage_withdrawal_accounts' %}";
+    const profileUpdateUrl = "{% url 'AudioXApp:update_creator_profile' %}";
+    const withdrawalListUrl = "{% url 'AudioXApp:creator_request_withdrawal_list' %}";
+    const uploadAudiobookUrl = "{% url 'AudioXApp:creator_upload_audiobook' %}";
+    const myAudiobooksUrl = "{% url 'AudioXApp:creator_my_audiobooks' %}";
+    const myEarningsUrl = "{% url 'AudioXApp:creator_my_earnings' %}";
+    const manageAudiobookDetailPattern = /^\/creator\/manage-upload\/[\w-]+?\/?$/;
+
+    function isLinkActive(linkHref, currentPath) {
+        if (linkHref === currentPath) return true;
+        if (linkHref === withdrawalListUrl && (currentPath === withdrawalAccountUrl || currentPath === withdrawalListUrl)) return true;
+        if (linkHref === myAudiobooksUrl && (currentPath === myAudiobooksUrl || manageAudiobookDetailPattern.test(currentPath))) return true;
+        if (linkHref === myEarningsUrl && currentPath === myEarningsUrl) return true;
+        return false;
+    }
+
+    topNavLinks.forEach(link => {
+        const linkHref = link.getAttribute('href');
+        link.classList.remove('active', 'bg-theme-bg-nav-dark-bg-active', 'text-theme-text-nav-dark-bg-active', 'font-semibold');
+        link.classList.add('text-theme-text-nav-dark-bg', 'font-medium'); 
+        if (isLinkActive(linkHref, currentPath)) {
+            link.classList.add('active', 'bg-theme-bg-nav-dark-bg-active', 'text-theme-text-nav-dark-bg-active', 'font-semibold');
+            link.classList.remove('text-theme-text-nav-dark-bg', 'font-medium');
+            activeSet = true;
+        }
+    });
+
+    mobileNavLinks.forEach(link => {
+        const linkHref = link.getAttribute('href');
+        link.classList.remove('active', 'bg-white/10', 'text-white', 'font-semibold'); 
+        link.classList.add('text-theme-text-nav-dark-bg', 'font-medium'); 
+
+        if (isLinkActive(linkHref, currentPath)) {
+            link.classList.add('active', 'bg-white/10', 'text-white', 'font-semibold');
+            link.classList.remove('text-theme-text-nav-dark-bg', 'font-medium');
+        }
+    });
+
+    if (!activeSet && currentPath === dashboardUrl) {
+        const dashboardLinkDesktop = document.querySelector(`nav .top-nav-link[href="${dashboardUrl}"]`);
+        if (dashboardLinkDesktop) {
+            dashboardLinkDesktop.classList.add('active', 'bg-theme-bg-nav-dark-bg-active', 'text-theme-text-nav-dark-bg-active', 'font-semibold');
+            dashboardLinkDesktop.classList.remove('text-theme-text-nav-dark-bg', 'font-medium');
+        }
+        const dashboardLinkMobile = document.querySelector(`#mobile-menu a.mobile-nav-link[href="${dashboardUrl}"]`);
+        if (dashboardLinkMobile) {
+            dashboardLinkMobile.classList.add('active', 'bg-white/10', 'text-white', 'font-semibold');
+            dashboardLinkMobile.classList.remove('text-theme-text-nav-dark-bg', 'font-medium');
+        }
+    }
+    
+    const mobileMenuDiv = document.getElementById('mobile-menu');
+    if (mobileMenuDiv) {
+        mobileMenuDiv.setAttribute('x-cloak', '');
+    }
+});
+</script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

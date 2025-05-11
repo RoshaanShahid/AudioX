@@ -1,0 +1,150 @@
+{% extends 'creator/creator_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}My Audiobooks - AudioX Creator Platform{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endblock %}
+
+{% block content %}
+    <div class="mb-10 md:mb-14 text-center">
+        <i class="fas fa-book-journal-whills text-5xl text-[#091e65] mb-4"></i>
+        <h1 class="text-4xl sm:text-5xl font-bold text-gray-800 tracking-tight">Your Audiobook Library</h1>
+        <p class="mt-3 text-lg text-gray-600 max-w-2xl mx-auto">
+            Manage, track, and celebrate your published stories. You currently have 
+            <span class="font-semibold text-[#091e65]">{{ audiobooks_count }}</span> audiobook{{ audiobooks_count|pluralize }}.
+        </p>
+        <div class="mt-8">
+            <a href="{% url 'AudioXApp:creator_upload_audiobook' %}"
+                class="inline-flex items-center justify-center px-7 py-3.5 border border-transparent text-base font-semibold rounded-xl shadow-lg text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-[#091e65]/50 transition-all duration-200 ease-in-out transform hover:scale-105 group">
+                <i class="fas fa-plus mr-2.5 opacity-90 transition-transform duration-300 group-hover:rotate-90"></i>
+                Upload New Audiobook
+            </a>
+        </div>
+    </div>
+
+    {% if audiobooks_data %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8 xl:gap-x-8 xl:gap-y-10">
+            {% for data_item in audiobooks_data %}
+            {% with book=data_item.book %}
+            <div class="group bg-white rounded-2xl shadow-xl hover:shadow-2xl border border-slate-200/70 hover:border-[#091e65]/40 overflow-hidden flex flex-col transition-all duration-300 ease-in-out transform hover:-translate-y-1.5">
+                <div class="relative aspect-[16/10] w-full overflow-hidden">
+                    <img src="{{ book.cover_image.url|default:'https://placehold.co/600x375/e2e8f0/091e65?text=AudioX+Cover' }}"
+                            alt="{{ book.title }} Cover Art"
+                            class="absolute inset-0 h-full w-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+                            onerror="this.onerror=null; this.src='https://placehold.co/600x375/fecaca/b91c1c?text=Load+Error';">
+                    
+                    <div class="absolute top-4 left-4 flex flex-col space-y-2">
+                        {% if book.is_paid %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white shadow-md ring-1 ring-white/30">
+                                <i class="fas fa-dollar-sign mr-1.5"></i> PAID
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-600 text-white shadow-md ring-1 ring-white/30">
+                                <i class="fas fa-gift mr-1.5"></i> FREE
+                            </span>
+                        {% endif %}
+
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-md ring-1 ring-white/30
+                            {% if book.status == 'PUBLISHED' %}bg-emerald-500 text-white{% endif %}
+                            {% if book.status == 'PENDING' %}bg-amber-500 text-white{% endif %}
+                            {% if book.status == 'INACTIVE' %}bg-slate-500 text-white{% endif %}
+                            {% if book.status == 'REJECTED' %}bg-red-500 text-white{% endif %}
+                            {% if book.status == 'PAUSED_BY_ADMIN' %}bg-red-500 text-white{% endif %}">
+                            <i class="fas 
+                                {% if book.status == 'PUBLISHED' %}fa-check-circle{% endif %}
+                                {% if book.status == 'PENDING' %}fa-hourglass-half{% endif %}
+                                {% if book.status == 'INACTIVE' %}fa-eye-slash{% endif %}
+                                {% if book.status == 'REJECTED' %}fa-times-circle{% endif %}
+                                {% if book.status == 'PAUSED_BY_ADMIN' %}fa-pause-circle{% endif %}
+                                mr-1.5"></i> {{ book.get_status_display|upper }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="p-6 flex flex-col flex-grow">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-1.5 leading-tight truncate group-hover:text-[#091e65] transition-colors" title="{{ book.title }}">
+                        {{ book.title }}
+                    </h3>
+                    <p class="text-sm text-slate-500 mb-4 truncate" title="By {{ book.author|default:'N/A' }}">
+                        By <span class="font-medium text-slate-600">{{ book.author|default:'N/A' }}</span>
+                    </p>
+
+                    <div class="grid grid-cols-3 gap-4 border-t border-b border-slate-200 py-4 my-4 text-center">
+                        <div>
+                            <i class="fas fa-eye text-lg text-[#091e65]/70 mb-1"></i>
+                            <p class="text-xs text-slate-500 uppercase tracking-wider">Views</p>
+                            <p class="text-lg font-semibold text-[#091e65] mt-0.5">{{ book.total_views|default:0|intcomma }}</p>
+                        </div>
+
+                        {% if book.is_paid %}
+                            <div>
+                                <i class="fas fa-shopping-cart text-lg text-[#091e65]/70 mb-1"></i>
+                                <p class="text-xs text-slate-500 uppercase tracking-wider">Units Sold</p>
+                                <p class="text-lg font-semibold text-[#091e65] mt-0.5">{{ book.total_sales|default:0|intcomma }}</p>
+                            </div>
+                            <div>
+                                <i class="fas fa-coins text-lg text-green-600/80 mb-1"></i>
+                                <p class="text-xs text-slate-500 uppercase tracking-wider">Earnings</p>
+                                <p class="text-lg font-semibold text-green-600 mt-0.5">
+                                    <span class="text-xs">PKR</span> {{ book.total_revenue_generated|default:"0"|floatformat:0|intcomma }}
+                                </p>
+                            </div>
+                        {% else %}
+                            <div>
+                                <i class="fas fa-layer-group text-lg text-[#091e65]/70 mb-1"></i>
+                                <p class="text-xs text-slate-500 uppercase tracking-wider">Chapters</p>
+                                <p class="text-lg font-semibold text-[#091e65] mt-0.5">{{ book.chapters.count }}</p>
+                            </div>
+                            <div>
+                                <i class="fas fa-coins text-lg text-green-600/80 mb-1"></i>
+                                <p class="text-xs text-slate-500 uppercase tracking-wider">Earnings (Views)</p>
+                                <p class="text-lg font-semibold text-green-600 mt-0.5">
+                                    <span class="text-xs">PKR</span> {{ data_item.earnings_from_views|default:"0"|floatformat:2|intcomma }}
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-auto flex flex-col sm:flex-row justify-between items-center pt-2 gap-3">
+                        <p class="text-xs text-slate-500 inline-flex items-center">
+                            <i class="far fa-calendar-check mr-1.5 text-slate-400"></i>
+                            Published: {{ book.publish_date|date:"M d, Y" }}
+                        </p>
+                        <a href="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=book.slug %}"
+                            class="inline-flex items-center px-4 py-2 border border-slate-300 shadow-sm text-xs font-medium rounded-lg text-[#091e65] bg-white hover:bg-slate-50 hover:border-[#091e65]/50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]/50 transition-all duration-150 ease-in-out whitespace-nowrap">
+                            <i class="fas fa-edit mr-2 text-[#091e65]/70"></i>
+                            Manage
+                            <span class="sr-only">, {{ book.title }}</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div class="text-center py-20 sm:py-28 px-6 bg-white rounded-3xl border-2 border-dashed border-slate-200 mt-6 flex flex-col items-center shadow-xl">
+            <div class="p-6 rounded-full bg-[#091e65]/10 text-[#091e65] mb-8 shadow-lg">
+                <i class="fas fa-book-open-reader fa-4x"></i>
+            </div>
+            <h2 class="mt-2 text-3xl sm:text-4xl font-bold text-gray-800">Your Library Awaits Its First Story</h2>
+            <p class="mt-4 text-base sm:text-lg text-slate-600 max-w-xl mx-auto">
+                It looks like you haven't published any audiobooks yet. Click the button below to share your first narrative with the world!
+            </p>
+            <div class="mt-10">
+                <a href="{% url 'AudioXApp:creator_upload_audiobook' %}"
+                    class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-semibold rounded-xl shadow-xl text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-[#091e65]/50 transition-all duration-200 ease-in-out transform hover:scale-105 group">
+                    <i class="fas fa-microphone-stand mr-3 opacity-90 transition-transform duration-300 group-hover:scale-110"></i>
+                    Upload Your First Audiobook
+                </a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% endblock %}

@@ -1,0 +1,336 @@
+{% extends 'creator/creator_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Update Creator Profile - AudioX{% endblock %}
+
+{% block page_title %}Update Creator Profile{% endblock %}
+
+{% block page_subtitle %}
+    <p class="text-base text-gray-500 mt-1">Shape your public creator identity.</p>
+{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endblock %}
+
+
+{% block content %}
+<div class="bg-white w-full">
+    <form id="update-profile-form" action="{% url 'AudioXApp:update_creator_profile' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="remove_profile_pic" id="remove_profile_pic" value="0">
+
+        <div class="px-6 py-5 sm:px-8 lg:px-10 bg-gray-50/80 border-b border-gray-200/90">
+             <h2 class="text-xl font-semibold text-gray-800">
+                Edit Your Profile
+             </h2>
+             <p class="text-sm text-gray-500 mt-0.5">Keep your public information current.</p>
+        </div>
+
+        <div class="p-6 sm:p-8 lg:p-10 space-y-10">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 md:gap-8 lg:gap-12 items-start">
+                <div class="md:col-span-1 flex flex-col items-center mb-6 md:mb-0">
+                    <label class="block text-sm font-medium text-gray-600 mb-2 text-center">Profile Picture</label>
+                    <div class="relative group" id="profile-pic-preview-container">
+                        {% if creator.creator_profile_pic %}
+                            <img id="profile-pic-preview" src="{{ creator.creator_profile_pic.url }}" alt="Current Profile Picture" class="h-32 w-32 rounded-full object-cover ring-2 ring-offset-2 ring-offset-white ring-[#091e65]/50 shadow-md">
+                        {% else %}
+                            <span id="profile-pic-placeholder" class="inline-flex items-center justify-center h-32 w-32 rounded-full bg-gray-200 ring-2 ring-offset-2 ring-offset-white ring-gray-300 shadow-sm">
+                                <span class="text-4xl font-medium leading-none text-gray-400">{{ creator.creator_name|slice:":1"|upper|default:"?" }}</span>
+                            </span>
+                            <img id="profile-pic-preview" src="" alt="Profile Picture Preview" class="h-32 w-32 rounded-full object-cover ring-2 ring-offset-2 ring-offset-white ring-[#091e65]/50 shadow-md hidden">
+                        {% endif %}
+
+                        <label for="creator_profile_pic_input"
+                               class="absolute inset-0 rounded-full bg-black/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                            <i class="fas fa-camera text-2xl mb-1 pointer-events-none"></i>
+                            <span class="text-xs font-semibold pointer-events-none">{% if creator.creator_profile_pic %}Change{% else %}Upload{% endif %}</span>
+                            <input type="file" name="creator_profile_pic" id="creator_profile_pic_input" accept="image/png, image/jpeg, image/jpg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        </label>
+
+                         <button type="button" id="remove-pic-btn"
+                            class="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-1/4 bg-red-600 hover:bg-red-700 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs shadow-md transition z-10
+                                   {% if not creator.creator_profile_pic %} hidden {% endif %}"
+                            title="Remove Picture">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p class="mt-3 text-xs text-gray-500 text-center">Max 2MB (PNG, JPG)</p>
+                     {% if form_errors.creator_profile_pic %}
+                        <p class="mt-1.5 text-xs text-red-600 bg-red-50 p-1.5 rounded border border-red-200 w-full text-center max-w-xs">{{ form_errors.creator_profile_pic }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="md:col-span-2 space-y-6">
+                    <div>
+                        <label for="creator_name" class="block text-sm font-medium leading-6 text-gray-700 mb-1.5">Display Name</label>
+                        <input type="text" name="creator_name" id="creator_name" value="{{ form_values.creator_name|default:creator.creator_name|default:'' }}" required maxlength="100"
+                               data-initial-value="{{ creator.creator_name|default:'' }}"
+                               class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-[#091e65] focus:ring focus:ring-[#091e65] focus:ring-opacity-40 sm:text-sm transition duration-150 ease-in-out py-2 px-3
+                               {% if not can_change_name %} bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500 focus:ring-gray-300/50 {% else %} placeholder:text-gray-400/90 {% endif %}"
+                               {% if not can_change_name %} readonly title="You can change your display name again on {{ next_name_change_date|date:'M d, Y' }}" {% else %} placeholder="Your public display name" {% endif %}>
+                        <div class="mt-2 text-xs {% if not can_change_name %} bg-blue-50 text-blue-800 p-2 rounded-md border border-blue-200 flex items-start {% else %} text-gray-500 pl-1 {% endif %}">
+                            {% if not can_change_name %}
+                                <i class="fas fa-lock text-blue-600 mr-2 mt-0.5 flex-shrink-0"></i>
+                                <span>Locked until <b>{{ next_name_change_date|date:"M d, Y" }}</b>.</span>
+                            {% else %}
+                                <i class="fas fa-info-circle mr-1.5 text-[#091e65]/80"></i> Name changes are locked for 60 days.
+                            {% endif %}
+                        </div>
+                        {% if form_errors.creator_name %}
+                            <p class="mt-1 text-xs text-red-600 font-medium">{{ form_errors.creator_name }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="creator_unique_name" class="block text-sm font-medium leading-6 text-gray-700 mb-1.5">Unique Handle <span class="text-gray-400 font-normal">(used in URLs)</span></label>
+                         <div class="relative flex items-center">
+                            <span class="absolute left-0 pl-3 flex items-center pointer-events-none text-gray-400">@</span>
+                            <input type="text" name="creator_unique_name" id="creator_unique_name" value="{{ form_values.creator_unique_name|default:creator.creator_unique_name|default:'' }}" required maxlength="50" pattern="^[a-zA-Z0-9_]+$" title="Only letters, numbers, and underscores allowed."
+                                   data-initial-value="{{ creator.creator_unique_name|default:'' }}"
+                                   class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-[#091e65] focus:ring focus:ring-[#091e65] focus:ring-opacity-40 sm:text-sm transition duration-150 ease-in-out py-2 pl-7 pr-3 font-mono
+                                   {% if not can_change_unique_name %} bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500 focus:ring-gray-300/50 {% else %} placeholder:text-gray-400/90 {% endif %}"
+                                   {% if not can_change_unique_name %} readonly title="You can change your unique handle again on {{ next_unique_name_change_date|date:'M d, Y' }}" {% else %} placeholder="your_unique_handle" {% endif %}>
+                        </div>
+                         <div class="mt-2 text-xs {% if not can_change_unique_name %} bg-blue-50 text-blue-800 p-2 rounded-md border border-blue-200 flex items-start {% else %} text-gray-500 pl-1 {% endif %}">
+                            {% if not can_change_unique_name %}
+                                <i class="fas fa-lock text-blue-600 mr-2 mt-0.5 flex-shrink-0"></i>
+                                <span>Locked until <b>{{ next_unique_name_change_date|date:"M d, Y" }}</b>.</span>
+                            {% else %}
+                                <i class="fas fa-info-circle mr-1.5 text-[#091e65]/80"></i> Letters, numbers, underscores only. Locked for 60 days after change.
+                            {% endif %}
+                        </div>
+                        {% if form_errors.creator_unique_name %}
+                            <p class="mt-1 text-xs text-red-600 font-medium">{{ form_errors.creator_unique_name }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-gray-200/80">
+
+            <div class="flex justify-end">
+                <button type="submit"
+                        class="inline-flex items-center justify-center rounded-lg bg-[#091e65] px-7 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-[#071852] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#091e65] transition duration-200 ease-in-out transform hover:shadow-lg active:scale-[0.98]">
+                    <i class="fas fa-save mr-2"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="confirmation-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity duration-300 ease-out" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg scale-95 opacity-0 duration-300 ease-out data-[active]:scale-100 data-[active]:opacity-100">
+        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+                <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10 border border-blue-200">
+                    <i class="fas fa-shield-alt text-xl text-[#091e65]/80"></i>
+                </div>
+                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                    <h3 class="text-lg font-semibold leading-6 text-gray-900" id="modal-title">Confirm Identity Change</h3>
+                    <div class="mt-3">
+                        <div class="text-sm text-gray-700 space-y-2 mb-4" id="modal-message">
+                        </div>
+                        <p class="text-sm font-medium text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-200/80 flex items-center">
+                            <i class="fas fa-lock mr-2 flex-shrink-0"></i>
+                            <span>This change will be locked for <b>60 days</b>.</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 rounded-b-xl border-t border-gray-200">
+            <button type="button" id="confirm-button" class="inline-flex w-full justify-center rounded-md bg-[#091e65] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#071852] sm:ml-3 sm:w-auto transition duration-150 ease-in-out">
+                Confirm & Save Change
+            </button>
+            <button type="button" id="cancel-button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100 sm:mt-0 sm:w-auto transition duration-150 ease-in-out">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('update-profile-form');
+    const fileInput = document.getElementById('creator_profile_pic_input');
+    const profilePicPreview = document.getElementById('profile-pic-preview');
+    const profilePicPlaceholder = document.getElementById('profile-pic-placeholder');
+    let removePicBtn = document.getElementById('remove-pic-btn');
+    const removePicInput = document.getElementById('remove_profile_pic');
+    const previewContainer = document.getElementById('profile-pic-preview-container');
+
+    const creatorNameInput = document.getElementById('creator_name');
+    const uniqueNameInput = document.getElementById('creator_unique_name');
+    const initialCreatorName = creatorNameInput ? creatorNameInput.dataset.initialValue : '';
+    const initialUniqueName = uniqueNameInput ? uniqueNameInput.dataset.initialValue : '';
+
+    const modal = document.getElementById('confirmation-modal');
+    const modalPanel = modal ? modal.querySelector('.relative') : null;
+    const modalMessage = document.getElementById('modal-message');
+    const confirmButton = document.getElementById('confirm-button');
+    const cancelButton = document.getElementById('cancel-button');
+
+    let nameChangeConfirmed = false;
+
+    function showModal() {
+        if (!modal || !modalPanel) return;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        void modalPanel.offsetWidth; 
+        modalPanel.dataset.active = true;
+    }
+
+    function hideModal() {
+        if (!modal || !modalPanel) return;
+        delete modalPanel.dataset.active;
+        const timeoutId = setTimeout(() => {
+             if (!modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+             }
+        }, 350);
+        modalPanel.addEventListener('transitionend', () => {
+            clearTimeout(timeoutId);
+            if (!modalPanel.dataset.active) {
+               modal.classList.add('hidden');
+               modal.classList.remove('flex');
+            }
+        }, { once: true });
+    }
+
+    function updateRemoveButtonVisibility() {
+        removePicBtn = document.getElementById('remove-pic-btn');
+        if (removePicBtn) {
+            const hasImage = (profilePicPreview && !profilePicPreview.classList.contains('hidden') && profilePicPreview.src && !profilePicPreview.src.endsWith('/'));
+            if (hasImage) {
+                removePicBtn.classList.remove('hidden');
+            } else {
+                removePicBtn.classList.add('hidden');
+            }
+        }
+    }
+
+    if (fileInput && profilePicPreview && previewContainer) {
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const maxSize = 2 * 1024 * 1024; // 2MB
+                if (file.size > maxSize) {
+                    fileInput.value = ''; 
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profilePicPreview.src = e.target.result;
+                    profilePicPreview.classList.remove('hidden');
+                    if (profilePicPlaceholder) {
+                        profilePicPlaceholder.classList.add('hidden');
+                    }
+                    if (removePicInput) removePicInput.value = '0';
+                    updateRemoveButtonVisibility(); 
+                    addRemoveListener(); 
+                }
+                reader.readAsDataURL(file);
+            } else if (file) {
+                fileInput.value = '';
+            }
+        });
+    }
+
+    function addRemoveListener() {
+        removePicBtn = document.getElementById('remove-pic-btn'); 
+        if (removePicBtn) {
+            const newBtn = removePicBtn.cloneNode(true);
+            removePicBtn.parentNode.replaceChild(newBtn, removePicBtn);
+            removePicBtn = newBtn; 
+
+            removePicBtn.addEventListener('click', function() {
+                if (profilePicPreview) {
+                    profilePicPreview.src = '';
+                    profilePicPreview.classList.add('hidden');
+                }
+                if (profilePicPlaceholder) {
+                    profilePicPlaceholder.classList.remove('hidden');
+                }
+                if (fileInput) fileInput.value = '';
+                if (removePicInput) removePicInput.value = '1';
+                updateRemoveButtonVisibility(); 
+            });
+        }
+    }
+    updateRemoveButtonVisibility();
+    addRemoveListener();
+
+    if (form && creatorNameInput && uniqueNameInput) {
+        form.addEventListener('submit', function(event) {
+            const currentCreatorName = creatorNameInput.value.trim();
+            const currentUniqueName = uniqueNameInput.value.trim();
+            const initialName = initialCreatorName || '';
+            const initialUnique = initialUniqueName || '';
+
+            const nameChanged = initialName !== currentCreatorName && !creatorNameInput.readOnly;
+            const uniqueNameChanged = initialUnique !== currentUniqueName && !uniqueNameInput.readOnly;
+
+            if ((nameChanged || uniqueNameChanged) && !nameChangeConfirmed) {
+                event.preventDefault();
+
+                let message = "Please confirm the following changes:<br><ul class='list-none mt-2 space-y-1.5 text-gray-800'>";
+                 if (nameChanged) {
+                    message += `<li class="flex items-start p-2 bg-gray-50 rounded border border-gray-200"><i class="fas fa-user text-[#091e65]/70 w-4 pt-1 mr-2.5 flex-shrink-0"></i><span class="flex-grow">Display Name:<br>"<span class="font-medium text-gray-500 line-through">${initialName || '(empty)'}</span>" <i class="fas fa-arrow-right fa-xs mx-1 text-gray-400"></i> "<b class="text-[#091e65]">${currentCreatorName}</b>"</span></li>`;
+                }
+                if (uniqueNameChanged) {
+                    message += `<li class="flex items-start p-2 bg-gray-50 rounded border border-gray-200"><i class="fas fa-at text-[#091e65]/70 w-4 pt-1 mr-2.5 flex-shrink-0"></i><span class="flex-grow">Unique Handle:<br>"<span class="font-medium text-gray-500 line-through">@${initialUnique || '(empty)'}</span>" <i class="fas fa-arrow-right fa-xs mx-1 text-gray-400"></i> "<b class="text-[#091e65]">@${currentUniqueName}</b>"</span></li>`;
+                }
+                message += "</ul>";
+                if (modalMessage) modalMessage.innerHTML = message;
+                showModal();
+            } else {
+                nameChangeConfirmed = false; 
+                const submitButton = form.querySelector('button[type="submit"]');
+                if(submitButton) {
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+                    submitButton.disabled = true;
+                }
+            }
+        });
+    }
+
+    if (confirmButton) {
+        confirmButton.addEventListener('click', function() {
+            nameChangeConfirmed = true;
+            hideModal();
+            const submitButton = form.querySelector('button[type="submit"]');
+            if(submitButton) {
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+                submitButton.disabled = true;
+            }
+            setTimeout(() => {
+                if (form) form.submit();
+            }, 50);
+        });
+    }
+
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function() {
+            hideModal();
+            nameChangeConfirmed = false;
+        });
+    }
+
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                hideModal();
+                nameChangeConfirmed = false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

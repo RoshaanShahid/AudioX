@@ -1,0 +1,294 @@
+{% load static %}
+{% load humanize %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Area - AudioX{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+      // Tailwind configuration
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-navy': '#091e65',
+              'brand-navy-dark': '#051240',
+              'brand-navy-light': '#1c3a8a',
+              'brand-navy-lighter': '#3b5bb5',
+              'brand-navy-surface': 'rgba(9, 30, 101, 0.05)',
+              'brand-bg': '#f0f2f5',
+              'brand-surface': '#ffffff',
+              'brand-surface-alt': '#f8fafc',
+              'brand-border': '#e5e7eb',
+              'brand-border-light': '#f1f3f9',
+              'brand-text-primary': '#111827',
+              'brand-text-secondary': '#374151',
+              'brand-text-muted': '#6b7280',
+              'brand-text-on-navy': '#ffffff',
+              'brand-text-on-accent': '#ffffff',
+              'brand-accent': '#f97316',
+              'brand-accent-dark': '#ea580c',
+              'brand-accent-light': '#fb923c',
+              'brand-accent-surface': '#fff7ed',
+              'brand-success': '#10b981', 'brand-success-light': '#f0fdfa', 'brand-success-dark': '#047857',
+              'brand-danger': '#ef4444', 'brand-danger-light': '#fef2f2', 'brand-danger-dark': '#b91c1c',
+              'brand-warning': '#f59e0b', 'brand-warning-light': '#fffbeb', 'brand-warning-dark': '#d97706',
+              'brand-info': '#3b82f6', 'brand-info-light': '#eff6ff', 'brand-info-dark': '#1d4ed8',
+              'brand-purple': '#a855f7', 'brand-purple-light': '#faf5ff', 'brand-purple-dark': '#9333ea',
+              'brand-teal': '#14b8a6', 'brand-teal-light': '#ccfbf1', 'brand-teal-dark': '#0f766e',
+            },
+            boxShadow: {
+              'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+              'card': '0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07)',
+              'card-lg': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+              'header': '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
+              'input-focus': '0 0 0 2px theme("colors.brand-navy-light")',
+              'accent-glow': '0 0 15px 0px theme("colors.brand-accent-light")',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            borderRadius: {
+              'xl': '0.75rem',
+              '2xl': '1rem',
+              '3xl': '1.5rem',
+            },
+            backgroundImage: {
+              'sidebar-graphic': "linear-gradient(170deg, theme('colors.brand-navy') 30%, theme('colors.brand-navy-dark') 100%)",
+              'chart-placeholder-pattern': "url(\"data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e5e7eb' fill-opacity='0.4'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+              'earnings-gradient': "linear-gradient(105deg, theme('colors.brand-navy') 0%, theme('colors.brand-navy-light') 100%)",
+            },
+            transitionTimingFunction: {
+              'elastic': 'cubic-bezier(0.68, -0.55, 0.27, 1.55)',
+              'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+            },
+          }
+        }
+      }
+    </script>
+    <style>
+      html, body { height: 100%; overflow: hidden; }
+      body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
+      .sidebar-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+      .sidebar-scroll::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.25); }
+      .sidebar-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.4); }
+      .tooltip-container .tooltip-text { visibility: hidden; opacity: 0; position: absolute; background-color: theme('colors.brand-text-primary'); color: theme('colors.brand-surface'); text-align: center; border-radius: theme('borderRadius.md'); padding: 0.4rem 0.8rem; z-index: 50; bottom: 115%; left: 50%; transform: translateX(-50%); font-size: 0.75rem; white-space: nowrap; transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out; pointer-events: none; box-shadow: theme('boxShadow.card'); }
+      .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="flex justify-center bg-brand-bg">
+
+    <div class="flex w-full max-w-screen-2xl h-screen overflow-hidden">
+        <aside class="w-64 bg-brand-navy text-brand-text-on-navy flex flex-col flex-shrink-0 h-full sidebar-scroll overflow-y-auto bg-sidebar-graphic shadow-2xl">
+            <div class="flex items-center justify-center h-20 border-b border-white/10 flex-shrink-0 px-6">
+                <div class="flex items-center text-2xl font-bold tracking-tight text-white">
+                    <i class="fas fa-headphones-alt mr-2.5 text-brand-accent text-3xl"></i>
+                    <span>AUDIO</span><span class="text-brand-accent">X</span>
+                </div>
+            </div>
+
+            <nav class="flex-grow px-3 py-4 space-y-1">
+                {% url 'AudioXApp:admindashboard' as dashboard_url %}
+                <a href="{{ dashboard_url }}"
+                   class="group flex items-center py-2.5 px-5 my-px rounded-xl font-medium text-sm transition-all duration-200 ease-out relative outline-none border border-transparent origin-left
+                           {% if active_page == 'dashboard' %}
+                               bg-brand-accent text-brand-text-on-accent font-semibold opacity-100 mx-2 shadow-[0_4px_10px_-2px_rgba(249,115,22,0.3)] scale-100 translate-x-0
+                           {% else %}
+                               text-brand-text-on-navy opacity-70 mx-3 hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102
+                           {% endif %}">
+                    <i class="fas fa-tachometer-alt fa-fw w-[1.125rem] mr-3.5 text-base transition-all duration-200 ease-out
+                           {% if active_page == 'dashboard' %} text-brand-text-on-accent opacity-100 {% else %} text-brand-text-on-navy opacity-60 group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light {% endif %}"></i>
+                    Dashboard
+                </a>
+
+                {% with admin_roles=admin_user.get_roles_list %}
+                <p class="px-4 pt-5 pb-1.5 text-[0.65rem] font-semibold uppercase text-white/40 tracking-wider">Management</p>
+
+                <a href="#" {# Add URL for manage users #}
+                   class="group flex items-center py-2.5 px-5 my-px mx-3 rounded-xl font-medium text-sm text-brand-text-on-navy opacity-70 transition-all duration-200 ease-out relative outline-none border border-transparent origin-left hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102
+                           {% if 'full_access' not in admin_roles and 'manage_users' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                    <i class="fas fa-users fa-fw w-[1.125rem] mr-3.5 text-base text-brand-text-on-navy opacity-60 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light
+                               {% if 'full_access' not in admin_roles and 'manage_users' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i>
+                    Users
+                    {% if 'full_access' not in admin_roles and 'manage_users' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                </a>
+
+                {% url 'AudioXApp:admin_manage_creators' as manage_creators_url %}
+                <a href="{{ manage_creators_url }}"
+                   class="group flex items-center py-2.5 px-5 my-px rounded-xl font-medium text-sm transition-all duration-200 ease-out relative outline-none border border-transparent origin-left
+                           {% if active_page == 'manage_creators_overview' %}
+                               bg-brand-accent text-brand-text-on-accent font-semibold opacity-100 mx-2 shadow-[0_4px_10px_-2px_rgba(249,115,22,0.3)] scale-100 translate-x-0
+                           {% else %}
+                               text-brand-text-on-navy opacity-70 mx-3 hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102
+                           {% endif %}
+                           {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                   <i class="fas fa-user-tie fa-fw w-[1.125rem] mr-3.5 text-base transition-all duration-200 ease-out
+                           {% if active_page == 'manage_creators_overview' %} text-brand-text-on-accent opacity-100 {% else %} text-brand-text-on-navy opacity-60 group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light {% endif %}
+                           {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i>
+                    Creators
+                    {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                </a>
+
+                {# *** FIXED: Use boolean flag 'is_creator_management_page' *** #}
+                {% if is_creator_management_page %}
+                <div class="pl-6 border-l border-white/10 ml-[1.8rem] mr-3 my-1">
+                    {% url 'AudioXApp:admin_pending_creator_applications' as pending_url %}
+                    <a href="{{ pending_url }}"
+                       class="group flex items-center !py-1.5 !px-3 !text-xs !my-0.5 !mx-0 rounded-xl font-medium transition-all duration-200 ease-out relative outline-none border border-transparent origin-left
+                               {% if active_page == 'manage_creators_pending' %} bg-brand-accent text-brand-text-on-accent font-semibold opacity-100 shadow-[0_4px_10px_-2px_rgba(249,115,22,0.3)] scale-100 translate-x-0
+                               {% else %} text-brand-text-on-navy opacity-70 hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102 {% endif %}
+                               {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                        <i class="fas fa-hourglass-half fa-fw link-icon !w-auto !mr-2 !text-xs transition-all duration-200 ease-out
+                                   {% if active_page == 'manage_creators_pending' %} text-brand-text-on-accent opacity-100 {% else %} text-brand-text-on-navy opacity-60 group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light {% endif %}
+                                   {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i>
+                        Pending Apps
+                        {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                    </a>
+                    {% url 'AudioXApp:admin_approved_creator_applications' as approved_url %}
+                    <a href="{{ approved_url }}" class="group flex items-center !py-1.5 !px-3 !text-xs !my-0.5 !mx-0 rounded-xl font-medium transition-all duration-200 ease-out relative outline-none border border-transparent origin-left
+                               {% if active_page == 'manage_creators_approved' %} bg-brand-accent text-brand-text-on-accent font-semibold opacity-100 shadow-[0_4px_10px_-2px_rgba(249,115,22,0.3)] scale-100 translate-x-0
+                               {% else %} text-brand-text-on-navy opacity-70 hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102 {% endif %}
+                               {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                        <i class="fas fa-check-circle fa-fw link-icon !w-auto !mr-2 !text-xs transition-all duration-200 ease-out
+                                   {% if active_page == 'manage_creators_approved' %} text-brand-text-on-accent opacity-100 {% else %} text-brand-text-on-navy opacity-60 group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light {% endif %}
+                                   {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i> Approved Apps
+                        {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                    </a>
+                    {% url 'AudioXApp:admin_rejected_creator_applications' as rejected_url %}
+                    <a href="{{ rejected_url }}" class="group flex items-center !py-1.5 !px-3 !text-xs !my-0.5 !mx-0 rounded-xl font-medium transition-all duration-200 ease-out relative outline-none border border-transparent origin-left
+                               {% if active_page == 'manage_creators_rejected' %} bg-brand-accent text-brand-text-on-accent font-semibold opacity-100 shadow-[0_4px_10px_-2px_rgba(249,115,22,0.3)] scale-100 translate-x-0
+                               {% else %} text-brand-text-on-navy opacity-70 hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102 {% endif %}
+                               {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                        <i class="fas fa-times-circle fa-fw link-icon !w-auto !mr-2 !text-xs transition-all duration-200 ease-out
+                                   {% if active_page == 'manage_creators_rejected' %} text-brand-text-on-accent opacity-100 {% else %} text-brand-text-on-navy opacity-60 group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light {% endif %}
+                                   {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i> Rejected Apps
+                        {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                    </a>
+                    {% url 'AudioXApp:admin_banned_creators_list' as banned_url %}
+                    <a href="{{ banned_url }}" class="group flex items-center !py-1.5 !px-3 !text-xs !my-0.5 !mx-0 rounded-xl font-medium transition-all duration-200 ease-out relative outline-none border border-transparent origin-left
+                               {% if active_page == 'manage_creators_banned' %} bg-brand-accent text-brand-text-on-accent font-semibold opacity-100 shadow-[0_4px_10px_-2px_rgba(249,115,22,0.3)] scale-100 translate-x-0
+                               {% else %} text-brand-text-on-navy opacity-70 hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102 {% endif %}
+                               {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                        <i class="fas fa-ban fa-fw link-icon !w-auto !mr-2 !text-xs transition-all duration-200 ease-out
+                                   {% if active_page == 'manage_creators_banned' %} text-brand-text-on-accent opacity-100 {% else %} text-brand-text-on-navy opacity-60 group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light {% endif %}
+                                   {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i> Banned Creators
+                        {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                    </a>
+                    {% url 'AudioXApp:admin_creator_application_history' as history_url %}
+                     <a href="{{ history_url }}" class="group flex items-center !py-1.5 !px-3 !text-xs !my-0.5 !mx-0 rounded-xl font-medium transition-all duration-200 ease-out relative outline-none border border-transparent origin-left
+                               {% if active_page == 'manage_creators_history' %} bg-brand-accent text-brand-text-on-accent font-semibold opacity-100 shadow-[0_4px_10px_-2px_rgba(249,115,22,0.3)] scale-100 translate-x-0
+                               {% else %} text-brand-text-on-navy opacity-70 hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102 {% endif %}
+                               {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                        <i class="fas fa-history fa-fw link-icon !w-auto !mr-2 !text-xs transition-all duration-200 ease-out
+                                   {% if active_page == 'manage_creators_history' %} text-brand-text-on-accent opacity-100 {% else %} text-brand-text-on-navy opacity-60 group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light {% endif %}
+                                   {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i> History
+                        {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                    </a>
+                    {% url 'AudioXApp:admin_all_creators_list' as all_creators_url %}
+                    <a href="{{ all_creators_url }}" class="group flex items-center !py-1.5 !px-3 !text-xs !my-0.5 !mx-0 rounded-xl font-medium transition-all duration-200 ease-out relative outline-none border border-transparent origin-left
+                               {% if active_page == 'manage_creators_all' %} bg-brand-accent text-brand-text-on-accent font-semibold opacity-100 shadow-[0_4px_10px_-2px_rgba(249,115,22,0.3)] scale-100 translate-x-0
+                               {% else %} text-brand-text-on-navy opacity-70 hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102 {% endif %}
+                               {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                        <i class="fas fa-users-rectangle fa-fw link-icon !w-auto !mr-2 !text-xs transition-all duration-200 ease-out
+                                   {% if active_page == 'manage_creators_all' %} text-brand-text-on-accent opacity-100 {% else %} text-brand-text-on-navy opacity-60 group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light {% endif %}
+                                   {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i> All Creators List
+                        {% if 'full_access' not in admin_roles and 'manage_creators' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                    </a>
+                </div>
+                {% endif %}
+
+
+                <a href="#" {# Add URL for manage content #}
+                   class="group flex items-center py-2.5 px-5 my-px mx-3 rounded-xl font-medium text-sm text-brand-text-on-navy opacity-70 transition-all duration-200 ease-out relative outline-none border border-transparent origin-left hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102
+                           {% if 'full_access' not in admin_roles and 'manage_content' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                    <i class="fas fa-layer-group fa-fw w-[1.125rem] mr-3.5 text-base text-brand-text-on-navy opacity-60 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light
+                               {% if 'full_access' not in admin_roles and 'manage_content' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i>
+                    Content
+                    {% if 'full_access' not in admin_roles and 'manage_content' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                </a>
+
+                <a href="#" {# Add URL for manage transactions #}
+                   class="group flex items-center py-2.5 px-5 my-px mx-3 rounded-xl font-medium text-sm text-brand-text-on-navy opacity-70 transition-all duration-200 ease-out relative outline-none border border-transparent origin-left hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102
+                           {% if 'full_access' not in admin_roles and 'manage_transactions' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                    <i class="fas fa-exchange-alt fa-fw w-[1.125rem] mr-3.5 text-base text-brand-text-on-navy opacity-60 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light
+                               {% if 'full_access' not in admin_roles and 'manage_transactions' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i>
+                    Transactions
+                    {% if 'full_access' not in admin_roles and 'manage_transactions' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                </a>
+
+                <a href="#" {# Add URL for manage withdrawals #}
+                   class="group flex items-center py-2.5 px-5 my-px mx-3 rounded-xl font-medium text-sm text-brand-text-on-navy opacity-70 transition-all duration-200 ease-out relative outline-none border border-transparent origin-left hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102
+                           {% if 'full_access' not in admin_roles and 'manage_withdrawals' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                    <i class="fas fa-wallet fa-fw w-[1.125rem] mr-3.5 text-base text-brand-text-on-navy opacity-60 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light
+                               {% if 'full_access' not in admin_roles and 'manage_withdrawals' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i>
+                    Withdrawals
+                    {% if 'full_access' not in admin_roles and 'manage_withdrawals' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                </a>
+
+                <a href="#" {# Add URL for manage discussions #}
+                   class="group flex items-center py-2.5 px-5 my-px mx-3 rounded-xl font-medium text-sm text-brand-text-on-navy opacity-70 transition-all duration-200 ease-out relative outline-none border border-transparent origin-left hover:bg-white/10 hover:opacity-100 hover:translate-x-[5px] hover:scale-102 focus-visible:bg-white/10 focus-visible:opacity-100 focus-visible:translate-x-[5px] focus-visible:scale-102
+                           {% if 'full_access' not in admin_roles and 'manage_discussions' not in admin_roles %} opacity-40 !cursor-not-allowed pointer-events-auto hover:!bg-transparent hover:!opacity-40 hover:!transform-none focus-visible:!bg-transparent focus-visible:!opacity-40 focus-visible:!transform-none tooltip-container {% endif %}">
+                    <i class="fas fa-comments fa-fw w-[1.125rem] mr-3.5 text-base text-brand-text-on-navy opacity-60 transition-all duration-200 ease-out group-hover:opacity-100 group-hover:text-brand-accent-light group-focus-visible:opacity-100 group-focus-visible:text-brand-accent-light
+                               {% if 'full_access' not in admin_roles and 'manage_discussions' not in admin_roles %} !opacity-60 group-hover:!text-brand-text-on-navy group-hover:!opacity-60 group-focus-visible:!text-brand-text-on-navy group-focus-visible:!opacity-60 {% endif %}"></i>
+                    Discussions
+                    {% if 'full_access' not in admin_roles and 'manage_discussions' not in admin_roles %}<span class="tooltip-text">Access Restricted</span>{% endif %}
+                </a>
+
+                {% endwith %}
+            </nav>
+
+            <div class="border-t border-white/10 p-4 mt-auto flex-shrink-0">
+                <div class="flex items-center">
+                     <div class="relative flex-shrink-0">
+                         <div class="w-9 h-9 bg-gradient-to-tr from-brand-accent to-orange-300 rounded-full flex items-center justify-center text-brand-navy-dark font-semibold text-xs shadow-sm ring-1 ring-white/20">
+                             {{ admin_user.username|slice:":1"|upper }}
+                         </div>
+                         <span class="absolute bottom-0 right-0 block h-2 w-2 rounded-full bg-green-400 ring-1 ring-brand-navy-dark border border-white/10"></span>
+                     </div>
+                     <div class="ml-2.5 overflow-hidden">
+                         <p class="text-xs font-medium text-white truncate">{{ admin_user.username }}</p>
+                         <p class="text-[0.65rem] text-white/60 truncate" title="{{ admin_user.get_display_roles }}">
+                             {{ admin_user.get_display_roles }}
+                         </p>
+                     </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col overflow-hidden bg-brand-bg">
+            <header class="h-[4.75rem] px-8 flex items-center sticky top-0 z-40 flex-shrink-0 bg-brand-surface shadow-header border-b border-brand-border">
+                <div class="flex-grow">
+                    <h1 class="text-2xl font-bold text-brand-text-primary">{% block header_title %}Dashboard Overview{% endblock %}</h1>
+                </div>
+                <div class="ml-auto">
+                    <a href="{% url 'AudioXApp:admin_welcome' %}" class="bg-brand-navy hover:bg-brand-navy-light text-white font-medium py-2 px-4 rounded-lg text-xs transition-all duration-200 ease-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-surface focus:ring-brand-navy flex items-center space-x-1.5">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-6 lg:p-8 space-y-8">
+                {% block content %}
+                {# Default content can go here, or leave empty #}
+                <p>Welcome to the admin area.</p>
+                {% endblock %}
+            </div>
+        </main>
+    </div>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
