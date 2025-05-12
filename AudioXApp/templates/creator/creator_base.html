@@ -8,86 +8,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AudioX Creator Area{% endblock %}</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
-    <script>
-        // Tailwind configuration
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'theme-primary': '#091e65',
-                        'theme-primary-hover': '#071852',
-                        'theme-primary-light': '#eef2ff',
-                        'theme-primary-lighter': '#f0f5ff',
-                        'theme-primary-lightest': '#f9fafb',
-                        'theme-secondary': '#f97316',
-                        'theme-secondary-hover': '#ea580c',
-                        'theme-text-primary': '#1f2937',
-                        'theme-text-secondary': '#4b5563',
-                        'theme-text-light': '#6b7280',
-                        'theme-text-inverted': '#ffffff',
-                        'theme-text-nav-dark-bg': '#cbd5e1',
-                        'theme-text-nav-dark-bg-hover': '#ffffff',
-                        'theme-text-nav-dark-bg-active': '#ffffff',
-                        'theme-bg-nav-dark-bg-active': 'rgba(255, 255, 255, 0.1)',
-                        'theme-bg-nav-dark-bg-hover': 'rgba(255, 255, 255, 0.05)',
-                        'theme-border': '#e5e7eb',
-                        'theme-border-light': '#f3f4f6',
-                        'theme-border-dark-nav': '#1e3a8a',
-                        'theme-input-bg': '#ffffff',
-                        'theme-input-bg-focus': '#ffffff',
-                        'theme-error': '#ef4444',
-                        'theme-error-hover': '#dc2626', 
-                        'theme-bg-error-light': '#fee2e2', 
-                        'theme-success': '#10b981',
-                        'theme-bg-page': '#f8fafc',
-                        'theme-bg-card': '#ffffff',
-                        'theme-bg-header': '#091e65',
-                        'theme-bg-icon-yellow': '#fefce8',
-                        'theme-text-icon-yellow': '#b45309',
-                        'theme-bg-icon-green': '#f0fdf4',
-                        'theme-text-icon-green': '#15803d',
-                        'theme-bg-icon-blue': '#eff6ff',
-                        'theme-text-icon-blue': '#1d4ed8',
-                        'theme-bg-icon-purple': '#faf5ff',
-                        'theme-text-icon-purple': '#7e22ce',
-                        'theme-bg-icon-red': '#fef2f2',
-                        'theme-text-icon-red': '#b91c1c',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'card': '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
-                        'card-lg': '0 4px 8px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.06)',
-                        'header': '0 2px 4px 0 rgba(0, 0, 0, 0.1)',
-                        'dropdown-dark': '0 10px 20px -5px rgba(0, 0, 0, 0.25), 0 4px 6px -4px rgba(0, 0, 0, 0.15)',
-                    },
-                    transitionProperty: {
-                        'opacity-transform': 'opacity, transform',
-                        'colors-transform': 'background-color, border-color, color, fill, stroke, opacity, transform',
-                    },
-                    borderRadius: {
-                        'xl': '0.75rem', 
-                        '2xl': '1rem',
-                        'dropdown': '0.875rem',
-                    }
-                }
-            }
-        }
-    </script>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="h-full font-sans antialiased">
+
+    <div id="mode-switch-loader" class="fixed inset-0 bg-theme-primary/95 backdrop-blur-sm flex flex-col items-center justify-center text-white z-[9999] hidden transition-opacity duration-300 ease-in-out">
+        <svg class="animate-spin h-12 w-12 text-white mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <h2 class="text-2xl font-semibold tracking-wider uppercase">Switching to User Mode</h2>
+        <p class="text-sm text-white/80 mt-2">Please wait a moment...</p>
+    </div>
 
     <div class="min-h-screen bg-theme-bg-page">
         <nav class="bg-theme-bg-header shadow-header sticky top-0 z-40" x-data="{ mobileMenuOpen: false, profileMenuOpen: false }">
@@ -246,14 +186,30 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const modeSwitchLoader = document.getElementById('mode-switch-loader');
 
     function handleSwitchToUserMode() {
-        const targetUrl = "{% url 'AudioXApp:myprofile' %}"; const modeText = 'Normal User Profile';
-        Swal.fire({ title: `Switch to Normal Mode?`, text: `You will be redirected to your ${modeText}.`, icon: 'question', showCancelButton: true, confirmButtonText: 'Switch Mode', confirmButtonColor: '#0a2a71', cancelButtonText: 'Cancel', reverseButtons: true, customClass: { popup: 'rounded-xl' }, showClass: { popup: 'swal2-show', backdrop: 'swal2-backdrop-show', icon: 'swal2-icon-show' }, hideClass: { popup: 'swal2-hide', backdrop: 'swal2-backdrop-hide', icon: 'swal2-icon-hide' } })
-        .then((result) => { if (result.isConfirmed) { document.body.classList.add('is-switching'); Swal.fire({ title: 'Switching...', icon: 'info', timer: 600, showConfirmButton: false, timerProgressBar: true, customClass: { popup: 'rounded-xl' }, didOpen: () => { Swal.showLoading(); }, willClose: () => { window.location.href = targetUrl; } }); } });
+        const targetUrl = "{% url 'AudioXApp:myprofile' %}";
+        
+        if (modeSwitchLoader) {
+            modeSwitchLoader.classList.remove('hidden');
+            modeSwitchLoader.style.opacity = '1'; // Ensure opacity is set for transition
+        }
+
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 1500); // Delay for loader visibility
     }
-    const headerSwitchBtn = document.getElementById('header-switch-normal-btn'); if (headerSwitchBtn) { headerSwitchBtn.addEventListener('click', handleSwitchToUserMode); }
-    const mobileSwitchBtn = document.getElementById('mobile-switch-normal-btn'); if (mobileSwitchBtn) { mobileSwitchBtn.addEventListener('click', handleSwitchToUserMode); }
+
+    const headerSwitchBtn = document.getElementById('header-switch-normal-btn');
+    if (headerSwitchBtn) {
+        headerSwitchBtn.addEventListener('click', handleSwitchToUserMode);
+    }
+
+    const mobileSwitchBtn = document.getElementById('mobile-switch-normal-btn');
+    if (mobileSwitchBtn) {
+        mobileSwitchBtn.addEventListener('click', handleSwitchToUserMode);
+    }
 
     const currentPath = window.location.pathname;
     const topNavLinks = document.querySelectorAll('nav .top-nav-link');

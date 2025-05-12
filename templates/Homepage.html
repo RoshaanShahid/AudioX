@@ -8,12 +8,13 @@
 
     <link rel="icon" href="{% static 'img/audiox-favicon.png' %}" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://js.stripe.com/v3/"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
     {# --- Add CSRF token meta tag for JavaScript --- #}
     <meta name="csrf-token" content="{{ csrf_token }}">
@@ -22,88 +23,7 @@
     {# Ensure 'creator_js_context' is passed from your view #}
     {{ creator_js_context|json_script:"django-context-data" }}
 
-    <script>
-        // Tailwind Configuration - Define theme colors and fonts here
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'], // Set Inter as the default
-                    },
-                    colors: {
-                        // Core Theme Colors
-                        'theme-primary': '#091e65',       // Deep Blue (Your Primary)
-                        'theme-primary-hover': '#1e3a8a', // Slightly Lighter Blue (Indigo 700)
-                        'theme-primary-light': '#e0e7ff', // Light Blue bg (Indigo 100)
-                        'theme-primary-lighter': '#eef2ff',// Even Lighter Blue bg (Indigo 50)
-                        'theme-secondary': '#f59e0b',     // Accent Orange (Amber 500)
-                        'theme-secondary-hover': '#d97706',// Darker Orange (Amber 600)
-                        'theme-secondary-light': '#fffbeb', // Lighter orange bg (Amber 50)
-
-                        // Text Colors
-                        'theme-text-primary': '#1f2937',   // Dark Gray (Gray 800)
-                        'theme-text-secondary': '#4b5563', // Medium Gray (Gray 600)
-                        'theme-text-light': '#6b7280',     // Lighter Gray (Gray 500)
-                        'theme-text-inverted': '#ffffff',  // White
-                        'theme-text-inverted-muted': '#e5e7eb', // Light Gray for dark bg (Gray 200)
-                        'theme-text-inverted-subtle': '#9ca3af', // Subtler Gray for dark bg (Gray 400)
-
-                        // Status & Feedback Colors
-                        'theme-success': '#10b981',       // Emerald 500
-                        'theme-green': '#16a34a',         // Green 600
-                        'theme-green-hover': '#15803d',   // Green 700
-                        'theme-green-light': '#d1fae5',   // Green 100
-                        'theme-green-lighter': '#f0fdf4', // Green 50
-                        'theme-error': '#ef4444',         // Red 500
-                        'theme-error-hover': '#dc2626',   // Red 600 (Darker Red for hover)
-                        'theme-error-light': '#fee2e2',   // Red 100
-                        'theme-warning': '#f97316',       // Orange 500
-                        'theme-warning-light': '#ffedd5', // Orange 100
-
-                        // Borders and Backgrounds
-                        'theme-border': '#e5e7eb',         // Default Border (Gray 200)
-                        'theme-border-dark': '#374151',    // Dark Border (Gray 700) - For dark menus
-                        'theme-border-subtle': '#4b5563',  // Subtler Dark Border (Gray 600)
-                        'theme-bg-subtle': '#f9fafb',      // Very Light Gray BG (Gray 50)
-                        'theme-bg-dark-menu': '#081a56',   // Slightly darker than primary for depth
-                        'theme-bg-dark-hover': 'rgba(255, 255, 255, 0.1)', // Subtle white overlay for hover
-                        'theme-bg-dark-active': 'rgba(255, 255, 255, 0.15)', // Slightly stronger overlay for active
-                    },
-                    boxShadow: {
-                        'card': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-                        'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-                        'xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-                        'focus-ring': '0 0 0 3px rgba(9, 30, 101, 0.3)', // Focus ring using theme-primary
-                        'focus-ring-light': '0 0 0 3px rgba(245, 158, 11, 0.4)', // Focus ring using theme-secondary
-                        'focus-ring-inverted': '0 0 0 3px rgba(255, 255, 255, 0.3)', // Focus ring for dark bg
-                        'inner-dark': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.2)',
-                        'dropdown': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)', // Custom dropdown shadow
-                    },
-                    transitionProperty: {
-                        'height': 'height',
-                        'spacing': 'margin, padding',
-                        'max-height': 'max-height',
-                        'bg-color': 'background-color',
-                        'text-color': 'color',
-                        'border-color': 'border-color',
-                        'opacity': 'opacity',
-                        'transform': 'transform',
-                    },
-                    keyframes: {
-                        pulse: {
-                          '0%, 100%': { transform: 'scale(1)', opacity: '0.7' },
-                          '50%': { transform: 'scale(1.1)', opacity: '1' },
-                        }
-                    },
-                    animation: {
-                        pulse: 'pulse 1.5s infinite ease-in-out',
-                    }
-                }
-            },
-        }
-    </script>
-
-</head>
+    </head>
 
 <body class="font-sans bg-theme-bg-subtle text-theme-text-primary flex flex-col min-h-screen"> {# Use subtle background #}
 
