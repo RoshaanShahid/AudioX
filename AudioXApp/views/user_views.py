@@ -1,6 +1,8 @@
 import json
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import datetime
+import logging
+
 
 import stripe
 from django.conf import settings
@@ -19,8 +21,12 @@ from django.db import transaction, IntegrityError
 from django.db.models import F
 from django.core.files.storage import default_storage
 from django.utils import timezone
+from django.db.models import Value, CharField
+from django.db.models.functions import Concat
 from django.urls import reverse
 from django.core.validators import validate_email
+from datetime import datetime 
+
 
 from ..models import User, CoinTransaction, Subscription, Audiobook, Chapter, Review, AudiobookPurchase, CreatorEarning, Creator
 from .utils import _get_full_context
@@ -29,6 +35,7 @@ if not hasattr(settings, 'STRIPE_SECRET_KEY') or not settings.STRIPE_SECRET_KEY:
     pass # Critical error should be handled in a production environment
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
+logger = logging.getLogger(__name__) # Add this for logging
 
 @login_required
 def myprofile(request):
@@ -233,33 +240,43 @@ def subscribe(request):
 
 @login_required
 def managesubscription(request):
+    """
+    Handles displaying the user's current subscription status and management options.
+    Billing history is removed from this view and page.
+    """
     subscription = None
     user = request.user
     try:
+        # Get the user's subscription
         subscription = Subscription.objects.select_related('user').get(user=user)
+        # Check if an active subscription has actually expired based on the date
         if subscription.status == 'active' and subscription.end_date and subscription.end_date < timezone.now():
             subscription.status = 'expired'
+            # If the user object still thinks they are premium, downgrade them
             if user.subscription_type == 'PR':
                 user.subscription_type = 'FR'
                 user.save(update_fields=['subscription_type'])
             subscription.save(update_fields=['status'])
     except Subscription.DoesNotExist:
+        # If no subscription exists, ensure the user object reflects 'Free' status
         if user.subscription_type == 'PR':
             user.subscription_type = 'FR'
             user.save(update_fields=['subscription_type'])
     except Exception as e:
+        # Log the error in a real application
+        print(f"Error fetching or updating subscription for user {user.id}: {e}")
+        # Ensure user status is Free if an error occurs
         if user.subscription_type == 'PR':
             user.subscription_type = 'FR'
             user.save(update_fields=['subscription_type'])
 
-    payment_history = CoinTransaction.objects.filter(
-        user=user, transaction_type='purchase',
-        pack_name__in=['Monthly Premium Subscription', 'Annual Premium Subscription']
-    ).order_by('-transaction_date')
-
+    # Get the base context
     context = _get_full_context(request)
+    # Add the subscription object to the context (will be None if no subscription exists)
     context['subscription'] = subscription
-    context['payment_history'] = payment_history
+    # Payment history is no longer fetched or passed to the template
+
+    # Render the template
     return render(request, 'user/managesubscription.html', context)
 
 @login_required
@@ -572,3 +589,286 @@ def stripe_webhook(request):
         pass # Unhandled event type
 
     return JsonResponse({'status': 'success'})
+
+@login_required
+def billing_history(request):
+    """
+    Displays a comprehensive billing history for the logged-in user,
+    including audiobook purchases, subscription payments, and coin purchases,
+    with support for date range filtering.
+    """
+    user = request.user
+    billing_items_list = []
+
+    # --- NEW: Date Filtering Logic ---
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    start_date = None
+    end_date = None
+
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            # Make it timezone-aware if your project uses timezones
+            if settings.USE_TZ:
+                start_date = timezone.make_aware(start_date, timezone.get_default_timezone())
+        except ValueError:
+            # Handle invalid date format if necessary, e.g., show a message
+            pass 
+            
+    if end_date_str:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+            # Make it timezone-aware and set to end of day
+            if settings.USE_TZ:
+                end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()), timezone.get_default_timezone())
+            else: # For naive datetime
+                end_date = datetime.combine(end_date, datetime.max.time())
+        except ValueError:
+            pass
+
+    # 1. Fetch Audiobook Purchases
+    audiobook_purchases_qs = AudiobookPurchase.objects.filter(user=user).select_related('audiobook')
+    if start_date:
+        audiobook_purchases_qs = audiobook_purchases_qs.filter(purchase_date__gte=start_date)
+    if end_date:
+        audiobook_purchases_qs = audiobook_purchases_qs.filter(purchase_date__lte=end_date)
+    audiobook_purchases = audiobook_purchases_qs.order_by('-purchase_date')
+
+    for purchase in audiobook_purchases:
+        billing_items_list.append({
+            'type': 'Audiobook Purchase',
+            'description': f"'{purchase.audiobook.title}'",
+            'date': purchase.purchase_date,
+            'amount_pkr': purchase.amount_paid,
+            'details_url': reverse('AudioXApp:audiobook_detail', kwargs={'audiobook_slug': purchase.audiobook.slug}),
+            'status': 'Completed', # Assuming all purchases are completed
+            'status_class': 'bg-green-100 text-green-700'
+        })
+
+    # 2. Fetch Subscription Purchases (from CoinTransaction)
+    subscription_pack_names = ['Monthly Premium Subscription', 'Annual Premium Subscription']
+    subscription_transactions_qs = CoinTransaction.objects.filter(
+        user=user,
+        transaction_type='purchase',
+        pack_name__in=subscription_pack_names
+    )
+    if start_date:
+        subscription_transactions_qs = subscription_transactions_qs.filter(transaction_date__gte=start_date)
+    if end_date:
+        subscription_transactions_qs = subscription_transactions_qs.filter(transaction_date__lte=end_date)
+    subscription_transactions = subscription_transactions_qs.order_by('-transaction_date')
+    
+    for sub_txn in subscription_transactions:
+        status_display = sub_txn.get_status_display()
+        status_class = 'bg-gray-100 text-gray-700'
+        if sub_txn.status == 'completed': status_class = 'bg-green-100 text-green-700'
+        elif sub_txn.status == 'pending': status_class = 'bg-yellow-100 text-yellow-700'
+        elif sub_txn.status == 'failed' or sub_txn.status == 'rejected': status_class = 'bg-red-100 text-red-700'
+
+        billing_items_list.append({
+            'type': 'Subscription',
+            'description': sub_txn.pack_name,
+            'date': sub_txn.transaction_date,
+            'amount_pkr': sub_txn.price,
+            'details_url': reverse('AudioXApp:managesubscription'),
+            'status': status_display,
+            'status_class': status_class
+        })
+
+    # 3. Fetch Coin Purchases (from CoinTransaction, excluding subscriptions)
+    coin_purchases_qs = CoinTransaction.objects.filter(
+        user=user,
+        transaction_type='purchase'
+    ).exclude(
+        pack_name__in=subscription_pack_names
+    )
+    if start_date:
+        coin_purchases_qs = coin_purchases_qs.filter(transaction_date__gte=start_date)
+    if end_date:
+        coin_purchases_qs = coin_purchases_qs.filter(transaction_date__lte=end_date)
+    coin_purchases = coin_purchases_qs.order_by('-transaction_date')
+
+    for coin_txn in coin_purchases:
+        description = coin_txn.pack_name or f"{coin_txn.amount} Coins"
+        status_display = coin_txn.get_status_display()
+        status_class = 'bg-gray-100 text-gray-700'
+        if coin_txn.status == 'completed': status_class = 'bg-green-100 text-green-700'
+        elif coin_txn.status == 'pending': status_class = 'bg-yellow-100 text-yellow-700'
+        elif coin_txn.status == 'failed' or coin_txn.status == 'rejected': status_class = 'bg-red-100 text-red-700'
+
+        billing_items_list.append({
+            'type': 'Coin Purchase',
+            'description': description,
+            'date': coin_txn.transaction_date,
+            'amount_pkr': coin_txn.price,
+            'coins_received': coin_txn.amount,
+            'details_url': reverse('AudioXApp:buycoins'),
+            'status': status_display,
+            'status_class': status_class
+        })
+    
+    # 4. Fetch Redeemed Subscriptions (Example - adjust as per your implementation)
+    # redeemed_subscriptions_qs = CoinTransaction.objects.filter(
+    #     user=user,
+    #     transaction_type='subscription_redeemed' # Assuming you have such a type
+    # )
+    # if start_date:
+    #     redeemed_subscriptions_qs = redeemed_subscriptions_qs.filter(transaction_date__gte=start_date)
+    # if end_date:
+    #     redeemed_subscriptions_qs = redeemed_subscriptions_qs.filter(transaction_date__lte=end_date)
+    # redeemed_subscriptions = redeemed_subscriptions_qs.order_by('-transaction_date')
+
+    # for redeemed_txn in redeemed_subscriptions:
+    #     billing_items_list.append({
+    #         'type': 'Subscription Redeemed',
+    #         'description': redeemed_txn.pack_name or "Premium Subscription (Redeemed)",
+    #         'date': redeemed_txn.transaction_date,
+    #         'amount_pkr': redeemed_txn.price if redeemed_txn.price is not None else Decimal('0.00'),
+    #         'details_url': reverse('AudioXApp:managesubscription'),
+    #         'status': 'Completed', # Assuming redeemed are always completed
+    #         'status_class': 'bg-emerald-100 text-emerald-700' # Different color for redeemed
+    #     })
+
+
+    # Sort all items by date, descending
+    billing_items_list.sort(key=lambda x: x['date'], reverse=True)
+
+    context = _get_full_context(request)
+    context['billing_items'] = billing_items_list
+    # Pass the date strings back to pre-fill the form
+    context['start_date_str'] = start_date_str 
+    context['end_date_str'] = end_date_str
+    
+    return render(request, 'user/billing_history.html', context)
+
+@login_required
+def my_downloads(request):
+    """
+    Placeholder view for displaying the user's downloaded audiobooks.
+    (Needs implementation and a template: user/my_downloads.html)
+    """
+    context = _get_full_context(request)
+    # TODO: Fetch actual downloaded items
+    context['downloaded_audiobooks'] = [] # Placeholder
+    messages.info(request, "My Downloads page is under construction.") # Optional message
+    # return render(request, 'user/my_downloads.html', context)
+    # For now, redirect or render a simple message
+    return redirect('AudioXApp:myprofile') # Redirect temporarily
+
+@login_required
+def my_library(request):
+    """
+    Placeholder view for displaying the user's purchased/saved audiobooks.
+    (Needs implementation and a template: user/my_library.html)
+    """
+    context = _get_full_context(request)
+    # TODO: Fetch purchased/saved audiobooks (e.g., from AudiobookPurchase model)
+    context['library_audiobooks'] = [] 
+    messages.info(request, "My Library page is under construction.") 
+    return redirect('AudioXApp:myprofile') 
+
+@login_required
+@csrf_protect
+def complete_profile(request):
+    """
+    Handles displaying and processing the 'Complete Your Profile' form
+    for users, especially after social signup if details are missing.
+    """
+    user = request.user
+    context = _get_full_context(request)
+
+    # Determine the intended 'next' URL from query parameter for GET requests
+    # This 'next' is where the user should go *after* completing the profile *on this page*.
+    next_destination_after_save = request.GET.get('next')
+    if not next_destination_after_save:
+        # Fallback to the session variable if 'next' query param is not present
+        next_destination_after_save = request.session.get('next_url_after_profile_completion', reverse('AudioXApp:home'))
+        # Ensure it's a path, not a name, if it came from session and was already reversed
+        if not next_destination_after_save.startswith('/'):
+            try:
+                next_destination_after_save = reverse(next_destination_after_save)
+            except NoReverseMatch:
+                next_destination_after_save = reverse('AudioXApp:home')
+
+
+    # Check if the profile is already complete
+    profile_is_complete = (
+        user.phone_number and 
+        user.phone_number.startswith('+92') and 
+        len(user.phone_number) == 13 and 
+        user.full_name and 
+        user.full_name.strip()
+    )
+
+    if profile_is_complete:
+        # If profile is complete, clear the session flag and redirect.
+        if 'profile_incomplete' in request.session:
+            del request.session['profile_incomplete']
+        if 'next_url_after_profile_completion' in request.session:
+            del request.session['next_url_after_profile_completion']
+        return redirect(next_destination_after_save)
+
+    if request.method == 'POST':
+        if request.content_type == 'application/json':
+            try:
+                data = json.loads(request.body)
+                full_name = data.get('full_name', '').strip()
+                phone_number_full = data.get('phone_number', '').strip()
+
+                errors = {}
+                if not full_name:
+                    errors['full_name'] = 'Full name cannot be empty.'
+
+                if not phone_number_full:
+                    errors['phone_number'] = 'Phone number cannot be empty.'
+                elif not (phone_number_full.startswith('+92') and len(phone_number_full) == 13 and phone_number_full[3:].isdigit()):
+                    errors['phone_number'] = 'Please enter a valid 10-digit phone number after +92.'
+                
+                if 'phone_number' not in errors and User.objects.exclude(pk=user.pk).filter(phone_number=phone_number_full).exists():
+                    errors['phone_number'] = 'This phone number is already registered with another account.'
+
+                if errors:
+                    return JsonResponse({'status': 'error', 'message': 'Please correct the errors.', 'errors': errors}, status=400)
+
+                user.full_name = full_name
+                user.phone_number = phone_number_full
+                
+                fields_to_update = ['full_name', 'phone_number']
+                user.save(update_fields=fields_to_update)
+
+                # Profile is now complete, clear the session flags
+                if 'profile_incomplete' in request.session:
+                    del request.session['profile_incomplete']
+                # The 'next_url_after_profile_completion' from session was used to form 'next_destination_after_save'
+                # or 'next_destination_after_save' directly came from the ?next query param.
+                # Clear the session specific one if it exists.
+                if 'next_url_after_profile_completion' in request.session:
+                    del request.session['next_url_after_profile_completion']
+                
+                final_redirect_url = next_destination_after_save # This should be a valid path now
+
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Your profile has been updated successfully!',
+                    'redirect_url': final_redirect_url
+                })
+
+            except json.JSONDecodeError:
+                return JsonResponse({'status': 'error', 'message': 'Invalid JSON data.'}, status=400)
+            except Exception as e:
+                logger.error(f"Error in complete_profile POST: {e}", exc_info=True)
+                return JsonResponse({'status': 'error', 'message': f'An unexpected error occurred.'}, status=500)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid request content type. Expected application/json.'}, status=415)
+
+    # For GET request:
+    user_phone_number_only = ''
+    if user.phone_number and user.phone_number.startswith('+92') and len(user.phone_number) == 13:
+        user_phone_number_only = user.phone_number[3:]
+
+    context['user_phone_number_only'] = user_phone_number_only
+    # context['next_url_on_success'] = next_destination_after_save # Already handled by the redirect URL in JSON
+    
+    return render(request, 'auth/complete_profile.html', context)

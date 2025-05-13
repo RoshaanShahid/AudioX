@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import logging
 import logging.config
 from django.core.exceptions import ImproperlyConfigured
+from django.urls import reverse_lazy
 
 # Basic logging setup (can be configured further below)
 logging.basicConfig(level=logging.INFO, format='{levelname} {asctime} {name} {message}', style='{')
@@ -16,7 +17,6 @@ dotenv_path = BASE_DIR / '.env'
 
 if dotenv_path.exists():
     load_dotenv(dotenv_path=dotenv_path, override=True)
-    # logger.info(f"Loaded environment variables from: {dotenv_path}") # Removed for brevity
 else:
     logger.warning(f"WARNING: .env file not found at {dotenv_path}.")
 
@@ -38,7 +38,6 @@ if DEBUG:
     ALLOWED_HOSTS.extend(['127.0.0.1', 'localhost'])
     ALLOWED_HOSTS = list(set(ALLOWED_HOSTS))
 
-# logger.info(f"DEBUG mode is {'ON' if DEBUG else 'OFF'}") # Removed for brevity
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -47,9 +46,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'AudioXApp',
+    'django.contrib.sites',
+
+    'AudioXApp', # Your app
+
     'django.contrib.humanize',
     'mathfilters',
+
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -61,6 +68,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+    'AudioXApp.middleware.ProfileCompletionMiddleware', # ADDED THIS LINE
 ]
 
 ROOT_URLCONF = 'AudioXCore.urls'
@@ -73,7 +82,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                'django.template.context_processors.request',
+                'django.template.context_processors.request', # Required by allauth
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -126,7 +135,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_collected')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'), # Corrected path
+    os.path.join(BASE_DIR, 'static'),
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 os.makedirs(STATIC_ROOT, exist_ok=True)
@@ -141,7 +150,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- Custom User Model ---
 AUTH_USER_MODEL = 'AudioXApp.User'
-LOGIN_URL = '/login/'
+LOGIN_URL = '/login/' # Your existing login URL
 
 # --- Email Configuration ---
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -168,8 +177,6 @@ CACHES = {
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
-
-# Renamed variable and updated getenv key
 STRIPE_PRICE_ID_COINS_250 = os.getenv('STRIPE_PRICE_ID_COINS_250')
 STRIPE_PRICE_ID_COINS_500 = os.getenv('STRIPE_PRICE_ID_COINS_500')
 STRIPE_PRICE_ID_COINS_1000 = os.getenv('STRIPE_PRICE_ID_COINS_1000')
@@ -179,10 +186,55 @@ STRIPE_PRICE_ID_SUB_ANNUAL = os.getenv('STRIPE_PRICE_ID_SUB_ANNUAL')
 if not all([STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY]) and not DEBUG:
     raise ImproperlyConfigured("CRITICAL (PRODUCTION): Stripe keys missing.")
 if not STRIPE_WEBHOOK_SECRET:
-    raise ImproperlyConfigured("CRITICAL: Stripe Webhook Secret missing.")
-# Updated check to include the new 250 coin variable
+    logger.warning("Stripe Webhook Secret (STRIPE_WEBHOOK_SECRET) is missing in .env. Webhooks will not be secure.")
 if not all([STRIPE_PRICE_ID_COINS_250, STRIPE_PRICE_ID_COINS_500, STRIPE_PRICE_ID_COINS_1000, STRIPE_PRICE_ID_SUB_MONTHLY, STRIPE_PRICE_ID_SUB_ANNUAL]):
     logger.warning("One or more Stripe Price IDs are missing. Purchases might fail.")
+
+
+# --- Django Allauth Configuration ---
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SITE_ID = 1
+
+ACCOUNT_LOGIN_METHODS = ("email",)
+ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+
+ACCOUNT_SIGNUP_FIELDS = ("username", "email", "password")
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = "username"
+ACCOUNT_USER_MODEL_EMAIL_FIELD = "email"
+
+SOCIALACCOUNT_ADAPTER = 'AudioXApp.adapters.CustomSocialAccountAdapter'
+
+LOGIN_REDIRECT_URL = reverse_lazy('AudioXApp:home')
+LOGOUT_REDIRECT_URL = reverse_lazy('AudioXApp:home')
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+            'key': ''
+        }
+    }
+}
+# --- End Django Allauth Configuration ---
+
+# Define ADMIN_URL if you have a custom one, for the middleware.
+# Example: ADMIN_URL = '/my-secure-admin-path/'
+# If you use the default '/admin/', the middleware handles it.
 
 # --- Logging Configuration ---
 LOGGING = {
@@ -190,7 +242,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'simple': {
-            'format': '{levelname} {asctime} {name} {message}',
+            'format': '{levelname} {asctime} {name} {module} {message}',
             'style': '{',
         },
     },
@@ -215,9 +267,14 @@ LOGGING = {
             'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
         },
-         'stripe': {
+        'allauth': {
             'handlers': ['console'],
-            'level': 'WARNING', # Less verbose for stripe by default
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        'stripe': {
+            'handlers': ['console'],
+            'level': 'WARNING',
             'propagate': False,
         },
     },

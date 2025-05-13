@@ -1,9 +1,8 @@
 # AudioXApp/urls.py
 from django.urls import path
-# Make sure all necessary view modules are imported
 from .views import auth_views, user_views, creator_views, admin_views, content_views
 from django.conf import settings
-from django.conf.urls.static import static
+from django.conf.urls.static import static # Keep this for DEBUG media serving
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 app_name = 'AudioXApp'
@@ -29,15 +28,18 @@ urlpatterns = [
     path('login/', auth_views.login, name='login'),
     path('send-otp/', auth_views.send_otp, name='send_otp'),
     path('verify-login-otp/', auth_views.verify_login_otp, name='verify_login_otp'),
-    path('forgot-password/', auth_views.forgot_password_view, name='forgot_password'),
-    path('handle-forgot-password/', auth_views.handle_forgot_password, name='handle_forgot_password'),
-    path('verify-otp/', auth_views.verify_otp_view, name='verify_otp'),
-    path('reset-password/', auth_views.reset_password_view, name='reset_password'),
+
+    # --- Forgot/Reset Password URLs ---
+    path('forgot-password/', auth_views.forgot_password_request, name='forgot_password'),
+    path('verify-password-reset-otp/', auth_views.verify_password_reset_otp, name='verify_password_reset_otp'),
+    path('reset-password/', auth_views.reset_password_form, name='reset_password'),
+    path('reset-password/confirm/', auth_views.reset_password_confirm, name='reset_password_confirm'),
 
     # --- User Profile & Settings Views ---
     path('myprofile/', user_views.myprofile, name='myprofile'),
     path('update_profile/', user_views.update_profile, name='update_profile'),
     path('change_password/', user_views.change_password, name='change_password'),
+    path('complete-profile/', user_views.complete_profile, name='complete_profile'), # ADDED THIS LINE
 
     # --- Wallet & Subscription Views ---
     path('subscribe/', user_views.subscribe, name='subscribe'),
@@ -46,6 +48,11 @@ urlpatterns = [
     path('mywallet/', user_views.mywallet, name='mywallet'),
     path('buycoins/', user_views.buycoins, name='buycoins'),
     path('gift_coins/', user_views.gift_coins, name='gift_coins'),
+
+    # --- NEW URLS FOR DROPDOWN LINKS ---
+    path('billing-history/', user_views.billing_history, name='billing_history'),
+    path('my-downloads/', user_views.my_downloads, name='my_downloads'),
+    path('my-library/', user_views.my_library, name='my_library'),
 
     # --- Stripe Payment URLs ---
     path('payment/create-checkout-session/', user_views.create_checkout_session, name='create_checkout_session'),
@@ -57,21 +64,16 @@ urlpatterns = [
     path('creator/apply/', creator_views.creator_apply_view, name='creator_apply'),
     path('creator/profile/update/', creator_views.update_creator_profile, name='update_creator_profile'),
     path('creator/withdrawal-accounts/', creator_views.creator_manage_withdrawal_accounts_view, name='creator_manage_withdrawal_accounts'),
-    
-    # --- Updated URL for Withdrawal Requests (List and Create) ---
     path('creator/withdrawals/request/', creator_views.creator_request_withdrawal_list_view, name='creator_request_withdrawal_list'),
-    
     path('creator/upload/', creator_views.creator_upload_audiobook, name='creator_upload_audiobook'),
     path('creator/my-audiobooks/', creator_views.creator_my_audiobooks_view, name='creator_my_audiobooks'),
     path('creator/manage-upload/<slug:audiobook_slug>/', creator_views.creator_manage_upload_detail_view, name='creator_manage_upload_detail'),
     path('creator/my-earnings/', creator_views.creator_my_earnings_view, name='creator_my_earnings'),
 
-
     # --- API Endpoints ---
     path('api/creator/mark-welcome-popup/', creator_views.mark_welcome_popup_shown, name='api_mark_welcome_popup'),
     path('api/creator/mark-rejection-popup/', creator_views.mark_rejection_popup_shown, name='api_mark_rejection_popup'),
     path('api/audiobook/<slug:audiobook_slug>/chapters/', creator_views.get_audiobook_chapters_json, name='get_audiobook_chapters'),
-    # NEW URL for logging audiobook views
     path('api/audiobook/log-view/', creator_views.log_audiobook_view, name='log_audiobook_view'),
 
     # --- Admin Area Views ---
@@ -94,10 +96,11 @@ urlpatterns = [
     path('admin/creators/<int:user_id>/reject/', creator_views.admin_reject_creator, name='admin_reject_creator'),
     path('admin/creators/<int:user_id>/ban/', creator_views.admin_ban_creator, name='admin_ban_creator'),
     path('admin/creators/<int:user_id>/unban/', creator_views.admin_unban_creator, name='admin_unban_creator'),
-
 ]
 
 # Static and Media file serving
-urlpatterns += staticfiles_urlpatterns()
+# It's generally better to let Django handle static files with `staticfiles_urlpatterns()`
+# and conditionally serve media files in DEBUG mode.
+urlpatterns += staticfiles_urlpatterns() # For serving static files
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) # For serving media files

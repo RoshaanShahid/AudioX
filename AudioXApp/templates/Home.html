@@ -85,40 +85,25 @@
                              loading="lazy"
                              width="300" height="320"
                              onerror="this.onerror=null; this.src='https://placehold.co/300x320/eeeeee/999999?text=Cover+Error';">
-                        {# Play Button Overlay #}
+                        {# Play Button Overlay - onclick REMOVED #}
                         <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
-                            {% url 'AudioXApp:stream_audio' as stream_base_url %}
-                            {% with encoded_audio_url=book.first_chapter_audio_url|urlencode %}
-                            {% if encoded_audio_url %} {# Check if URL exists #}
-                                {% with full_audio_url=stream_base_url|add:"?url="|add:encoded_audio_url %}
-                                <button
-                                    type="button" {# Good practice for buttons not submitting forms #}
-                                    onclick="handlePlayClick(event, this)" {# Use new handler #}
-                                    data-audio-url="{{ full_audio_url }}"
-                                    data-book-title="{{ book.title|escapejs }}" {# Use book title for player #}
-                                    data-chapter-title="{{ book.first_chapter_title|default:'Chapter 1'|escapejs }}" {# Pass chapter title #}
-                                    data-cover-url="{{ book.cover_image|default:'' }}"
-                                    data-is-list-item="false" {# Indicate this is not from a chapter list #}
-                                    title="Play First Chapter"
-                                    class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                         stroke="currentColor" class="w-8 h-8">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                                    </svg>
-                                </button>
-                                {% endwith %}
-                            {% else %}
-                                <span class="text-white text-sm bg-black/50 px-2 py-1 rounded">Audio Unavailable</span>
-                            {% endif %}
-                            {% endwith %}
+                            <button
+                                type="button"
+                                title="View Details" {# Updated title attribute #}
+                                class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                     stroke="currentColor" class="w-8 h-8">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
-                       <div class="p-4 flex-grow">
+                        <div class="p-4 flex-grow">
                              <h3 class="font-semibold text-lg text-gray-800 truncate" title="{{ book.title }}">{{ book.title }}</h3>
                              <p class="text-sm text-gray-500">Source: LibriVox</p>
                              {# No rating/views for LibriVox #}
-                       </div>
+                        </div>
                 </div>
             </a>
             {% endfor %}
@@ -155,88 +140,71 @@
                                      class="w-full h-full object-cover rounded-t-3xl bg-gray-200"
                                      width="300" height="320">
                             {% endif %}
-                            {# Play button overlay #}
+                            {# Play button overlay - onclick REMOVED #}
                             <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
-                                {% url 'AudioXApp:stream_audio' as stream_base_url %}
-                                {% with audio_url_to_proxy=creator_book.first_chapter_audio_url %}
-                                {% if audio_url_to_proxy %}
-                                    {% with encoded_audio_url=audio_url_to_proxy|urlencode %}
-                                    {% with full_audio_url=stream_base_url|add:"?url="|add:encoded_audio_url %}
-                                        <button
-                                            type="button"
-                                            onclick="handlePlayClick(event, this)" {# Use new handler #}
-                                            data-audio-url="{{ full_audio_url }}"
-                                            data-book-title="{{ creator_book.title|escapejs }}" {# Pass book title #}
-                                            data-chapter-title="{{ creator_book.first_chapter_title|default:'Chapter 1'|escapejs }}" {# Pass chapter title #}
-                                            data-cover-url="{{ creator_book.cover_image.url|default:'' }}"
-                                            data-is-list-item="false" {# Indicate this is not from a chapter list #}
-                                            title="Play First Chapter"
-                                            class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                                 stroke="currentColor" class="w-8 h-8">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                      d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                                            </svg>
-                                        </button>
-                                    {% endwith %}
-                                    {% endwith %}
-                                {% else %}
-                                    <span class="text-white text-sm bg-black/50 px-2 py-1 rounded">Audio Unavailable</span>
-                                {% endif %}
-                                {% endwith %}
+                                <button
+                                    type="button"
+                                    title="View Details" {# Updated title attribute #}
+                                    class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                         stroke="currentColor" class="w-8 h-8">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
-                           <div class="p-4 flex-grow flex flex-col"> {# Make this flex column #}
-                                <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ creator_book.title }}">{{ creator_book.title }}</h3>
-                                {% if creator_book.author %}
-                                    <p class="text-sm text-gray-600 truncate" title="{{ creator_book.author }}">By {{ creator_book.author }}</p>
-                                {% endif %}
-                                {% if creator_book.creator.creator_name %}
-                                    <p class="text-xs text-[#091e65] mt-1">By: {{ creator_book.creator.creator_name }}</p>
-                                {% endif %}
+                            <div class="p-4 flex-grow flex flex-col"> {# Make this flex column #}
+                                 <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ creator_book.title }}">{{ creator_book.title }}</h3>
+                                 {% if creator_book.author %}
+                                     <p class="text-sm text-gray-600 truncate" title="{{ creator_book.author }}">By {{ creator_book.author }}</p>
+                                 {% endif %}
+                                 {% if creator_book.creator.creator_name %}
+                                     <p class="text-xs text-[#091e65] mt-1">By: {{ creator_book.creator.creator_name }}</p>
+                                 {% endif %}
 
-                                {# *** UPDATED: Rating and Views Display (Corrected Logic) *** #}
-                                <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500"> {# Push to bottom #}
-                                    <div class="flex items-center space-x-1 star-rating-card"> {# Added class for CSS #}
-                                        {% with rating=creator_book.average_rating %}
-                                            {% if rating is not None %}
-                                                {# --- Corrected Star Logic --- #}
-                                                {% with full_stars=rating|floatformat:0|add:"0" %}
-                                                {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                                {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                                    {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                                    {% if decimal_part_int >= 5 %}
-                                                        <i class="fas fa-star-half-alt text-yellow-400"></i>
-                                                        {% with current_stars=full_stars|add:1 %}
-                                                        {% with empty_stars=5|sub:current_stars %}
-                                                            {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                        {% endwith %}
-                                                        {% endwith %}
-                                                    {% else %}
-                                                        {% with empty_stars=5|sub:full_stars %}
-                                                            {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                        {% endwith %}
-                                                    {% endif %}
-                                                {% endwith %}{# end decimal_part_int #}
-                                                {% endwith %}{# end decimal_part_str #}
-                                                {% endwith %}{# end full_stars #}
-                                                {# --- End Corrected Star Logic --- #}
-                                                <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
-                                            {% else %}
-                                                <span class="text-gray-400 italic text-xs">No ratings</span>
-                                            {% endif %}
-                                        {% endwith %}
-                                    </div>
-                                    <div class="flex items-center space-x-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span>{{ creator_book.total_views|intcomma }}</span> {# Format views #}
-                                    </div>
-                                </div>
-                                {# *** END: Rating and Views Display *** #}
-                           </div>
+                                 {# *** UPDATED: Rating and Views Display (Corrected Logic) *** #}
+                                 <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500"> {# Push to bottom #}
+                                     <div class="flex items-center space-x-1 star-rating-card"> {# Added class for CSS #}
+                                         {% with rating=creator_book.average_rating %}
+                                             {% if rating is not None %}
+                                                 {# --- Corrected Star Logic --- #}
+                                                 {% with full_stars=rating|floatformat:0|add:"0" %}
+                                                 {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
+                                                 {% with decimal_part_int=decimal_part_str|add:"0" %}
+                                                     {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+                                                     {% if decimal_part_int >= 5 %}
+                                                         <i class="fas fa-star-half-alt text-yellow-400"></i>
+                                                         {% with current_stars=full_stars|add:1 %}
+                                                         {% with empty_stars=5|sub:current_stars %}
+                                                             {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                         {% endwith %}
+                                                         {% endwith %}
+                                                     {% else %}
+                                                         {% with empty_stars=5|sub:full_stars %}
+                                                             {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                         {% endwith %}
+                                                     {% endif %}
+                                                 {% endwith %}{# end decimal_part_int #}
+                                                 {% endwith %}{# end decimal_part_str #}
+                                                 {% endwith %}{# end full_stars #}
+                                                 {# --- End Corrected Star Logic --- #}
+                                                 <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
+                                             {% else %}
+                                                 <span class="text-gray-400 italic text-xs">No ratings</span>
+                                             {% endif %}
+                                         {% endwith %}
+                                     </div>
+                                     <div class="flex items-center space-x-1">
+                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                             <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                         </svg>
+                                         <span>{{ creator_book.total_views|intcomma }}</span> {# Format views #}
+                                     </div>
+                                 </div>
+                                 {# *** END: Rating and Views Display *** #}
+                            </div>
                     </div>
                 </a>
                 {% endif %} {# <<< --- END ADDED CHECK --- #}
@@ -370,26 +338,32 @@
 
     // --- Playback Control Functions ---
 
-    // NEW Handler for clicks on Play buttons on cards
+    // Handler for clicks on Play buttons on cards (NOW DEPRECATED FOR HOMEPAGE CARDS)
+    // This function will still be called if an element has onclick="handlePlayClick(event, this)"
+    // But we've removed it from the homepage card buttons.
     function handlePlayClick(event, buttonElement) {
-        event.stopPropagation(); // Prevent click going to the link
-        event.preventDefault();  // Prevent link navigation
+        // If this function is still called from somewhere else,
+        // ensure it doesn't interfere with default link behavior if that's desired there.
+        // For homepage cards, this function is no longer used.
 
-        // Read data attributes from the clicked button
+        // Original logic for player bar (kept for reference or other uses):
+        /*
+        event.stopPropagation();
+        event.preventDefault();
+
         const audioUrl = buttonElement.dataset.audioUrl;
         const bookTitle = buttonElement.dataset.bookTitle;
-        const chapterTitle = buttonElement.dataset.chapterTitle; // Get chapter title
+        const chapterTitle = buttonElement.dataset.chapterTitle;
         const coverUrl = buttonElement.dataset.coverUrl;
 
-        // Check if this audio is already loaded and playing/paused
         if (audioPlayer.src === audioUrl && !audioPlayer.paused) {
-            audioPlayer.pause(); // If same audio is playing, pause it
+            audioPlayer.pause();
         } else if (audioPlayer.src === audioUrl && audioPlayer.paused) {
-            audioPlayer.play().catch(e => console.error("Error resuming play:", e)); // If same audio is paused, play it
+            audioPlayer.play().catch(e => console.error("Error resuming play:", e));
         } else {
-            // Load and play new audio
             loadAndPlayAudio(audioUrl, bookTitle, chapterTitle, coverUrl);
         }
+        */
     }
 
     // Function to load and play a new audio source
@@ -417,7 +391,6 @@
              else if (e.name === 'NotSupportedError') { errorTitle = 'Format Not Supported'; errorText = 'Audio format not supported.'; }
              Swal.fire({ icon: 'error', title: errorTitle, text: errorText, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
              updatePlayerUIState('error');
-             // Optionally close player on error: closePlayer();
         });
     }
 
@@ -425,7 +398,6 @@
     function togglePlayPause() {
         if (!audioPlayer.src || audioPlayer.src === window.location.href || !currentAudioUrl) {
              console.log("No track loaded in player.");
-             // Optionally show a message or do nothing
              Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'Select a book to play', showConfirmButton: false, timer: 2000, timerProgressBar: true, background: '#f3f4f6', color: '#1f2937', customClass: { timerProgressBar: `bg-[${THEME_COLOR}]` }});
              return;
         }

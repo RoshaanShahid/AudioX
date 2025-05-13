@@ -1,0 +1,293 @@
+{% load static %}
+{% load socialaccount %} {# Though not directly used on this page, good to keep if base template might use it #}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Complete Your Profile - AudioX</title>
+
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .animate-fade-in-custom { animation: fadeInCustomKeyframe 0.5s ease-out forwards; }
+        .opacity-0-custom { opacity: 0; }
+        @keyframes fadeInCustomKeyframe {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 text-gray-900 font-inter antialiased overflow-x-hidden h-full">
+
+    <div id="customNotificationModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="customNotificationBox" class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-11/12 max-w-md transform transition-all duration-300 scale-95 opacity-0">
+            <div class="flex items-start justify-between mb-4">
+                <h3 id="notificationTitle" class="text-xl font-bold text-[#091e65]">Notification</h3>
+                <button id="closeNotificationButton" type="button" class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none -mt-1 -mr-1">
+                    <i class="fas fa-times fa-lg"></i>
+                </button>
+            </div>
+            <div id="notificationContent" class="text-center">
+                <div id="notificationLoader" class="hidden my-5">
+                    <div class="flex justify-center items-center space-x-2">
+                        <div class="w-3 h-3 bg-[#091e65] rounded-full animate-ping"></div>
+                        <div class="w-3 h-3 bg-[#091e65] rounded-full animate-ping" style="animation-delay: 0.15s;"></div>
+                        <div class="w-3 h-3 bg-[#091e65] rounded-full animate-ping" style="animation-delay: 0.3s;"></div>
+                    </div>
+                </div>
+                <div id="notificationIconContainer" class="hidden text-5xl mb-4 mt-2">
+                    {/* Icon will be injected here by JS */}
+                </div>
+                <p id="notificationMessage" class="text-sm text-gray-700 leading-relaxed">Message goes here.</p>
+            </div>
+            <div id="notificationActions" class="mt-6 text-right hidden">
+                   <button id="notificationConfirmButton" type="button" class="px-6 py-2.5 rounded-lg font-semibold text-sm text-white bg-[#091e65] hover:bg-[#0b267a] focus:outline-none focus:ring-2 ring-offset-2 ring-[#091e65] transition-colors">OK</button>
+            </div>
+        </div>
+    </div>
+    <div class="w-full min-h-screen flex flex-col justify-center items-center p-6 sm:p-10 lg:p-16">
+        <div class="w-full max-w-md mx-auto">
+            <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-xl animate-fade-in-custom opacity-0-custom">
+                <div class="text-center mb-8">
+                    <h1 class="text-2xl font-bold text-theme-text-primary mb-1">Complete Your Profile</h1>
+                    <p class="text-sm text-theme-text-secondary">Please provide a few more details to finish setting up your AudioX account.</p>
+                </div>
+
+                <form id="completeProfileForm" class="space-y-5">
+                    {% csrf_token %} {# Important for POST requests, even with fetch #}
+                    {% with common_input_classes="form-input w-full block px-4 py-3 border border-theme-border bg-theme-input-bg placeholder-gray-400 text-theme-text-primary text-sm transition duration-150 ease-in-out rounded-lg shadow-sm appearance-none focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65] focus:ring-opacity-30" %}
+                        
+                        <div class="relative">
+                            <label for="full_name" class="sr-only">Full Name</label>
+                            <input class="{{ common_input_classes }} pl-11" placeholder="Full Name" type="text" name="full_name" id="full_name" value="{{ user.full_name|default:'' }}" required />
+                            <i class="input-icon fas fa-user text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none transition-colors duration-150"></i>
+                            <p id="full_name-error" class="text-red-500 text-xs mt-1.5 hidden"><i class="fas fa-exclamation-circle mr-1"></i>Full name is required.</p>
+                        </div>
+
+                        <div class="relative">
+                            <label for="phone_number_only" class="sr-only">Phone Number</label>
+                            <div class="flex items-center">
+                                <span class="phone-prefix absolute left-px top-px bottom-px flex items-center pl-3 pr-2 text-sm text-gray-500 pointer-events-none border-r border-theme-border bg-gray-50 rounded-l-lg z-10 h-[calc(100%-2px)]">
+                                    <span class="flag" aria-label="Pakistan Flag">🇵🇰</span>&nbsp;+92
+                                </span>
+                                <input class="{{ common_input_classes }} pl-[5.75rem]" placeholder="Mobile Number (e.g. 3001234567)" type="tel" name="phone_number_only" id="phone_number_only" pattern="[0-9]{10}" title="Enter 10 digit phone number (e.g., 3001234567)" inputmode="numeric" value="{{ user_phone_number_only|default:'' }}" required />
+                            </div>
+                            <input type="hidden" name="phone" id="phone" value="{{ user.phone_number|default:'' }}">
+                            <p id="phone_number_only-error" class="text-red-500 text-xs mt-1.5 hidden"><i class="fas fa-exclamation-circle mr-1"></i>Please enter a valid 10-digit number.</p>
+                        </div>
+                    {% endwith %}
+
+                    <button id="submitProfileButton" class="w-full bg-[#091e65] hover:bg-[#0b267a] text-white py-3 rounded-lg font-semibold transition-all duration-300 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-[#091e65] text-sm mt-6 transform hover:-translate-y-0.5" type="submit">
+                        Save and Continue
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // --- DOM Elements for Custom Notification (reused) ---
+    const customNotificationModal = document.getElementById('customNotificationModal');
+    const customNotificationBox = document.getElementById('customNotificationBox');
+    const notificationTitleEl = document.getElementById('notificationTitle');
+    const notificationMessageEl = document.getElementById('notificationMessage');
+    const notificationIconContainerEl = document.getElementById('notificationIconContainer');
+    const notificationLoaderEl = document.getElementById('notificationLoader');
+    const closeNotificationButton = document.getElementById('closeNotificationButton');
+    const notificationConfirmButton = document.getElementById('notificationConfirmButton');
+    const notificationActions = document.getElementById('notificationActions');
+    let currentNotificationCallback = null;
+
+    // --- DOM Elements for Complete Profile Page ---
+    const completeProfileForm = document.getElementById('completeProfileForm');
+    const fullNameInput = document.getElementById('full_name');
+    const phoneNumberOnlyInput = document.getElementById('phone_number_only');
+    const hiddenPhoneInput = document.getElementById('phone'); // For the full +92 number
+    const submitProfileButton = document.getElementById('submitProfileButton');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+    // --- Custom Notification Functions (reused) ---
+    function showCustomNotification(title, message, type = 'info', showLoader = false, confirmText = 'OK', callback = null) {
+        notificationTitleEl.textContent = title;
+        notificationMessageEl.textContent = message;
+        currentNotificationCallback = callback;
+        notificationLoaderEl.classList.add('hidden');
+        notificationIconContainerEl.classList.add('hidden');
+        notificationIconContainerEl.innerHTML = '';
+        notificationConfirmButton.classList.remove('bg-green-500', 'hover:bg-green-600', 'focus:ring-green-500', 'bg-red-500', 'hover:bg-red-600', 'focus:ring-red-500', 'bg-yellow-400', 'hover:bg-yellow-500', 'focus:ring-yellow-400', 'text-black', 'bg-blue-500', 'hover:bg-blue-600', 'focus:ring-blue-500');
+        notificationConfirmButton.classList.add('bg-[#091e65]', 'hover:bg-[#0b267a]', 'focus:ring-[#091e65]', 'text-white');
+        notificationConfirmButton.textContent = confirmText;
+
+        if (showLoader || type === 'loading') {
+            notificationLoaderEl.classList.remove('hidden');
+            notificationActions.classList.add('hidden');
+        } else {
+            notificationActions.classList.remove('hidden');
+            let iconClass = '', colorClass = 'text-[#091e65]';
+            switch (type) {
+                case 'success': iconClass = 'fas fa-check-circle'; colorClass = 'text-green-500'; break;
+                case 'error': iconClass = 'fas fa-times-circle'; colorClass = 'text-red-500'; break;
+                case 'warning': iconClass = 'fas fa-exclamation-triangle'; colorClass = 'text-yellow-500'; break;
+                case 'info': iconClass = 'fas fa-info-circle'; colorClass = 'text-blue-500'; break;
+            }
+            if (iconClass) {
+                notificationIconContainerEl.innerHTML = `<i class="${iconClass} ${colorClass}"></i>`;
+                notificationIconContainerEl.classList.remove('hidden');
+            }
+        }
+        customNotificationModal.classList.remove('opacity-0', 'pointer-events-none');
+        customNotificationModal.classList.add('opacity-100', 'pointer-events-auto');
+        customNotificationBox.classList.remove('scale-95', 'opacity-0');
+        customNotificationBox.classList.add('scale-100', 'opacity-100');
+    }
+    function hideCustomNotification() {
+        customNotificationModal.classList.add('opacity-0', 'pointer-events-none');
+        customNotificationModal.classList.remove('opacity-100', 'pointer-events-auto');
+        customNotificationBox.classList.add('scale-95', 'opacity-0');
+        customNotificationBox.classList.remove('scale-100', 'opacity-100');
+        if (currentNotificationCallback && typeof currentNotificationCallback === 'function') {
+            setTimeout(() => { currentNotificationCallback(); currentNotificationCallback = null; }, 300);
+        }
+    }
+    closeNotificationButton.addEventListener('click', hideCustomNotification);
+    notificationConfirmButton.addEventListener('click', hideCustomNotification);
+
+    // --- Input Styling & Validation Utilities (simplified for this page) ---
+    function markInputError(inputEl, message) {
+        if (!inputEl) return;
+        const errorMsgEl = document.getElementById(inputEl.id + '-error');
+        inputEl.classList.remove('border-theme-border', 'focus:border-[#091e65]', 'focus:ring-[#091e65]');
+        inputEl.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+        if (errorMsgEl) {
+            errorMsgEl.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>${message}`;
+            errorMsgEl.classList.remove('hidden');
+        }
+    }
+    function clearInputVisualState(inputEl) {
+        if (!inputEl) return;
+        const errorMsgEl = document.getElementById(inputEl.id + '-error');
+        inputEl.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+        inputEl.classList.add('border-theme-border', 'focus:border-[#091e65]', 'focus:ring-[#091e65]');
+        if (errorMsgEl) errorMsgEl.classList.add('hidden');
+    }
+    function clearAllFormErrors() {
+        clearInputVisualState(fullNameInput);
+        clearInputVisualState(phoneNumberOnlyInput);
+    }
+
+    // --- Phone Number Formatting ---
+    if (phoneNumberOnlyInput && hiddenPhoneInput) {
+        phoneNumberOnlyInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            value = value.slice(0, 10); // Max 10 digits
+            e.target.value = value;
+            const isValid = value.length === 10;
+            hiddenPhoneInput.value = isValid ? '+92' + value : ''; // Update hidden input
+
+            if (value.length > 0 && !isValid) {
+                markInputError(phoneNumberOnlyInput, 'Please enter a valid 10-digit number.');
+            } else {
+                clearInputVisualState(phoneNumberOnlyInput);
+            }
+        });
+    }
+    
+    // --- Form Submission ---
+    if (completeProfileForm && submitProfileButton) {
+        completeProfileForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            clearAllFormErrors();
+            let isValid = true;
+
+            const fullNameVal = fullNameInput.value.trim();
+            const phoneDigits = phoneNumberOnlyInput.value.replace(/\D/g, '');
+
+            if (!fullNameVal) {
+                markInputError(fullNameInput, 'Full name is required.');
+                isValid = false;
+            }
+
+            if (phoneDigits.length !== 10) {
+                markInputError(phoneNumberOnlyInput, 'Please enter a valid 10-digit phone number.');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                showCustomNotification('Incomplete Form', 'Please check the highlighted fields.', 'warning');
+                return;
+            }
+
+            submitProfileButton.disabled = true;
+            submitProfileButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-1.5 text-xs"></i> Saving...`;
+            showCustomNotification('Saving Profile', 'Please wait...', 'loading', true);
+
+            const formData = {
+                full_name: fullNameVal,
+                phone_number: '+92' + phoneDigits // Send the full number
+            };
+
+            fetch("{% url 'AudioXApp:complete_profile' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(async response => {
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await response.json() : null;
+                if (!response.ok || data?.status !== 'success') {
+                    const errorMsg = data?.message || (isJson ? 'An error occurred.' : await response.text());
+                    const error = new Error(errorMsg);
+                    error.data = data;
+                    throw error;
+                }
+                return data;
+            })
+            .then(data => {
+                showCustomNotification('Profile Updated!', data.message || 'Your profile has been updated.', 'success', false, 'Go to Home', () => {
+                    window.location.href = data.redirect_url || "{% url 'AudioXApp:home' %}"; // Redirect to home or where specified
+                });
+            })
+            .catch(error => {
+                console.error('Complete Profile Error:', error, error.data);
+                let displayMessage = error.message || 'An error occurred. Please try again.';
+                if (error.data?.errors) {
+                    let errorMessages = [];
+                    Object.keys(error.data.errors).forEach(fieldName => {
+                        const inputField = document.getElementById(fieldName === 'phone_number' ? 'phone_number_only' : fieldName);
+                        const fieldErrorText = Array.isArray(error.data.errors[fieldName]) ? error.data.errors[fieldName].join(' ') : error.data.errors[fieldName];
+                        if (inputField) {
+                            markInputError(inputField, fieldErrorText);
+                        }
+                        errorMessages.push(fieldErrorText);
+                    });
+                    if (errorMessages.length > 0) {
+                        displayMessage = errorMessages.join(' ');
+                    }
+                }
+                showCustomNotification('Update Failed', displayMessage, 'error');
+            })
+            .finally(() => {
+                // Re-enable button only if not successful (success leads to redirect)
+                const isSuccessNotificationVisible = customNotificationModal.classList.contains('opacity-100') && 
+                                                   notificationIconContainerEl.querySelector('.fa-check-circle');
+                if (!isSuccessNotificationVisible) {
+                    submitProfileButton.disabled = false;
+                    submitProfileButton.innerHTML = 'Save and Continue';
+                }
+            });
+        });
+    }
+    </script>
+</body>
+</html>

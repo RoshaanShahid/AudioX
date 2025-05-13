@@ -9,6 +9,7 @@
     <link rel="icon" href="{% static 'img/audiox-favicon.png' %}" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'js/Audiobook_creator_details.js' %}" defer></script>
     <script src="https://js.stripe.com/v3/"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -144,23 +145,39 @@
                             {% endif %}
                         </div>
 
-                        {# Menu Items Section #}
-                        <div class="py-2" role="none">
-                             <a href="{% url 'AudioXApp:myprofile' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
-                                 <i class="fas fa-user-circle w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Profile
-                             </a>
-                             {% if subscription_type == 'PR' %}
-                                  <a href="{% url 'AudioXApp:managesubscription' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
-                                      <i class="fas fa-cog w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Manage Subscription
-                                  </a>
-                             {% endif %}
-                             <a href="{% url 'AudioXApp:buycoins' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
-                                 <i class="fas fa-coins w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Buy Coins
-                             </a>
-                             <a href="{% url 'AudioXApp:mywallet' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
-                                 <i class="fas fa-wallet w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Wallet
-                             </a>
-                        </div>
+                       {# --- UPDATED Profile Dropdown Menu Items Section --- #}
+            <div class="py-2" role="none">
+                <a href="{% url 'AudioXApp:myprofile' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                    <i class="fas fa-user-circle w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Profile
+                </a>
+                {% if subscription_type == 'PR' %}
+                    <a href="{% url 'AudioXApp:managesubscription' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                        <i class="fas fa-cog w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Manage Subscription
+                    </a>
+                {% endif %}
+                <a href="{% url 'AudioXApp:buycoins' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                    <i class="fas fa-coins w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Buy Coins
+                </a>
+                <a href="{% url 'AudioXApp:mywallet' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                    <i class="fas fa-wallet w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Wallet
+                </a>
+                {# --- Billing History Link (Visible to All Logged-in Users) --- #}
+                <a href="{% url 'AudioXApp:billing_history' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                    <i class="fas fa-history w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Billing History
+                </a>
+
+                {# --- Premium-Only Links --- #}
+                {% if subscription_type == 'PR' %}
+                    {# --- My Downloads Link (Premium Only) --- #}
+                    <a href="{% url 'AudioXApp:my_downloads' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                        <i class="fas fa-download w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Downloads
+                    </a>
+                    {# --- My Library Link (Premium Only) --- #}
+                    <a href="{% url 'AudioXApp:my_library' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                        <i class="fas fa-bookmark w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Library
+                    </a>
+                {% endif %}
+            </div>
 
                         {# Logout Section #}
                         <div class="border-t border-theme-border"></div>

@@ -5,20 +5,18 @@
 {% block title %}Manage Subscription - AudioX{% endblock %}
 
 {% block content %}
-{# Dependencies (Font Awesome, SweetAlert2, Tailwind CSS, Inter Font) are loaded in Homepage.html #}
-{# No need for redundant links or Tailwind config here #}
+{# Dependencies are loaded in Homepage.html #}
 
 <div class="min-h-screen bg-white font-sans antialiased">
 
     {# Header Section with Solid Theme Background #}
-    {# Changed from gradient to solid bg-theme-primary #}
     <div class="bg-theme-primary shadow-md">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
             <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-theme-primary-text tracking-tight mb-3 text-white">
                 My Subscription
             </h1>
             <p class="text-base sm:text-lg text-theme-primary-light max-w-2xl mx-auto">
-                Review your plan details, manage settings, and view billing history below.
+                Review your plan details and manage settings below.
             </p>
         </div>
     </div>
@@ -27,9 +25,8 @@
 
         {# Display Django Messages #}
         {% if messages %}
-            <div class="max-w-5xl mx-auto mb-8 space-y-3">
+            <div class="max-w-2xl mx-auto mb-8 space-y-3"> {# Adjusted max-width #}
                 {% for message in messages %}
-                    {# Using theme colors from Homepage.html config #}
                     <div class="rounded-md p-4 shadow-sm border
                         {% if message.tags == 'success' %} bg-theme-green-lighter border-theme-green-light text-theme-green
                         {% elif message.tags == 'error' %} bg-theme-error-light border-theme-error text-theme-error
@@ -50,202 +47,128 @@
             </div>
         {% endif %}
 
-        {# Main Content - Two Column Layout #}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        {# Main Content - Centered Single Column Layout #}
+        <div class="max-w-2xl mx-auto space-y-8"> {# Centered container #}
 
-            {# Left Column: Subscription Details & Actions #}
-            <div class="md:col-span-1 space-y-8">
-                {# Current Plan Section - Adjusted styling for white background #}
-                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                    <h2 class="text-lg font-semibold text-theme-primary mb-4 flex items-center gap-2">
-                        <i class="fas fa-user-check text-theme-primary/80"></i>
-                        Plan Details
-                    </h2>
-                    {% if subscription %}
-                        <dl class="space-y-3 text-sm">
-                            <div class="flex justify-between items-center">
-                                <dt class="text-gray-500">Plan</dt>
-                                <dd class="font-medium text-gray-800">{{ subscription.get_plan_display }} Premium</dd>
-                            </div>
-                            <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                                <dt class="text-gray-500">Status</dt>
-                                <dd>
-                                     {# Using theme colors from Homepage.html config #}
-                                     <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border
-                                        {% if subscription.is_active %} bg-theme-green-lighter text-theme-green border-theme-green-light
-                                        {% elif subscription.status == 'canceled' %} bg-theme-warning-light text-theme-warning border-amber-300 {# Assuming theme-warning is amber/orange #}
-                                        {% elif subscription.status == 'expired' %} bg-theme-error-light text-theme-error border-theme-error
-                                        {% elif subscription.status == 'pending' %} bg-theme-primary-lighter text-theme-primary border-theme-primary-light
-                                        {% else %} bg-gray-100 text-gray-600 border-gray-200 {% endif %}">
-                                        {% if subscription.is_active %} <i class="fas fa-check-circle text-xs"></i>Active
-                                        {% elif subscription.status == 'canceled' %} <i class="fas fa-ban text-xs"></i>Canceled
-                                        {% elif subscription.status == 'expired' %} <i class="fas fa-times-circle text-xs"></i>Expired
-                                        {% elif subscription.status == 'pending' %} <i class="fas fa-hourglass-half text-xs"></i>Pending
-                                        {% else %} {{ subscription.get_status_display }} {% endif %}
-                                    </span>
-                                </dd>
-                            </div>
-                             <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                                <dt class="text-gray-500">Price</dt>
-                                <dd class="font-medium text-gray-800">
-                                    {% if subscription.plan == 'monthly' %}PKR 350 / month
-                                    {% elif subscription.plan == 'annual' %}PKR 3,500 / year
-                                    {% else %}N/A{% endif %}
-                                </dd>
-                            </div>
-                             <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                                <dt class="text-gray-500">Started On</dt>
-                                <dd class="text-gray-600">{% timezone "Asia/Karachi" %}{{ subscription.start_date|date:"M d, Y" }}{% endtimezone %}</dd>
-                            </div>
-                            {% if subscription.is_active or subscription.status == 'canceled' %}
-                            <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                                <dt class="text-gray-500">
-                                    {% if subscription.is_active %}Renews On{% else %}Expires On{% endif %}
-                                </dt>
-                                <dd class="text-gray-600 {% if not subscription.is_active %}text-theme-warning font-medium{% endif %}"> {# Use theme-warning for amber/orange #}
-                                    {% timezone "Asia/Karachi" %}{{ subscription.end_date|date:"M d, Y" }}{% endtimezone %}
-                                </dd>
-                            </div>
-                            <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                                <dt class="text-gray-500">Remaining</dt>
-                                <dd class="text-gray-600">{{ subscription.remaining_days }} days</dd>
-                            </div>
-                            {% endif %}
-                            <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                                <dt class="text-gray-500">Payment Method</dt>
-                                <dd class="text-gray-600 flex items-center gap-1.5">
-                                     {% if subscription.stripe_payment_method_brand and subscription.stripe_payment_method_last4 %}
-                                        {# Assuming theme-secondary is defined in base as indigo/blue for cards #}
-                                        {# If not, adjust or use a specific blue like 'text-blue-600' #}
-                                        <i class="fab fa-cc-{{ subscription.stripe_payment_method_brand|lower }} text-lg text-indigo-600"></i>
-                                        <span class="text-xs">**** {{ subscription.stripe_payment_method_last4 }}</span>
-                                    {% elif subscription.status == 'active' or subscription.status == 'canceled' %}
-                                        <i class="fas fa-credit-card text-base text-gray-400"></i>
-                                        <span class="text-xs">Card on File</span>
-                                    {% else %}
-                                        <i class="fas fa-credit-card text-base text-gray-400"></i>
-                                        <span class="text-xs">N/A</span>
-                                    {% endif %}
-                                </dd>
-                            </div>
-                        </dl>
-                    {% else %}
-                        {# No Active Subscription State #}
-                        <div class="text-center py-6">
-                             <svg class="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.412 15.655L9.75 21.75l3.745-4.012M9.257 7.5H2.066l3.23-6.291L7.5 5.25l2.513.167 2.688-5.197 2.688 5.197L17.934 7.5h-7.191m-1.488 8.155L11.412 15.655m0 0l1.588 1.702 1.588-1.702m-1.588 1.702V12.75m0 0L9.75 9.75l1.662 2.838m0 0l1.662-2.838 1.662 2.838m0 0L15.25 9.75l-1.662 2.838" />
-                            </svg>
-                            <h3 class="mt-2 text-sm font-semibold text-gray-600">No Active Subscription</h3>
-                            <p class="mt-1 text-xs text-gray-500">Upgrade to Premium to unlock features.</p>
-                            <div class="mt-4">
-                                <a href="{% url 'AudioXApp:subscribe' %}" class="inline-flex items-center rounded-md bg-theme-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-theme-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors duration-200">
-                                    <i class="fas fa-star mr-1.5 h-3 w-3"></i>
-                                    View Premium Plans
-                                </a>
-                            </div>
+            {# Section 1: Subscription Details #}
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                <h2 class="text-lg font-semibold text-theme-primary mb-4 flex items-center gap-2">
+                    <i class="fas fa-user-check text-theme-primary/80"></i>
+                    Plan Details
+                </h2>
+                {% if subscription %}
+                    <dl class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center">
+                            <dt class="text-gray-500">Plan</dt>
+                            <dd class="font-medium text-gray-800">{{ subscription.get_plan_display }} Premium</dd>
                         </div>
-                    {% endif %}
-                </div>
-
-                {# Actions Section - Adjusted styling for white background #}
-                 {% if subscription %}
-                 <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                     <h2 class="text-lg font-semibold text-theme-primary mb-4 flex items-center gap-2">
-                        <i class="fas fa-cog text-theme-primary/80"></i>
-                        Manage Plan
-                    </h2>
-                    <div class="space-y-3">
-                        {% if subscription.is_active %}
-                           <p class="text-xs text-gray-500 mb-3">If you no longer need Premium, you can cancel your subscription here. Access continues until the current period ends.</p>
-                           <button type="button" id="open-cancel-modal" class="w-full inline-flex justify-center items-center rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 shadow-sm ring-1 ring-inset ring-red-200 hover:bg-red-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 transition-colors duration-200 group">
-                               <i class="fas fa-ban mr-2 h-4 w-4 text-red-500 group-hover:text-red-600"></i>
-                               Cancel Subscription
-                           </button>
-                        {% elif subscription.status == 'canceled' or subscription.status == 'expired' %}
-                           <p class="text-xs text-gray-500 mb-3">Your subscription is not currently active. Resubscribe to regain access to Premium features.</p>
-                           <a href="{% url 'AudioXApp:subscribe' %}" class="w-full inline-flex justify-center items-center rounded-md bg-theme-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-theme-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors duration-200 text-center group">
-                                <i class="fas fa-rocket mr-2 h-4 w-4 group-hover:translate-x-1 transition-transform"></i>
-                               Resubscribe to Premium
-                           </a>
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <dt class="text-gray-500">Status</dt>
+                            <dd>
+                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border
+                                    {% if subscription.is_active %} bg-theme-green-lighter text-theme-green border-theme-green-light
+                                    {% elif subscription.status == 'canceled' %} bg-theme-warning-light text-theme-warning border-amber-300
+                                    {% elif subscription.status == 'expired' %} bg-theme-error-light text-theme-error border-theme-error
+                                    {% elif subscription.status == 'pending' %} bg-theme-primary-lighter text-theme-primary border-theme-primary-light
+                                    {% else %} bg-gray-100 text-gray-600 border-gray-200 {% endif %}">
+                                    {% if subscription.is_active %} <i class="fas fa-check-circle text-xs"></i>Active
+                                    {% elif subscription.status == 'canceled' %} <i class="fas fa-ban text-xs"></i>Canceled
+                                    {% elif subscription.status == 'expired' %} <i class="fas fa-times-circle text-xs"></i>Expired
+                                    {% elif subscription.status == 'pending' %} <i class="fas fa-hourglass-half text-xs"></i>Pending
+                                    {% else %} {{ subscription.get_status_display }} {% endif %}
+                                </span>
+                            </dd>
+                        </div>
+                         <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <dt class="text-gray-500">Price</dt>
+                            <dd class="font-medium text-gray-800">
+                                {% if subscription.plan == 'monthly' %}PKR 350 / month
+                                {% elif subscription.plan == 'annual' %}PKR 3,500 / year
+                                {% else %}N/A{% endif %}
+                            </dd>
+                        </div>
+                         <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <dt class="text-gray-500">Started On</dt>
+                            <dd class="text-gray-600">{% timezone "Asia/Karachi" %}{{ subscription.start_date|date:"M d, Y" }}{% endtimezone %}</dd>
+                        </div>
+                        {% if subscription.is_active or subscription.status == 'canceled' %}
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <dt class="text-gray-500">
+                                {% if subscription.is_active %}Renews On{% else %}Expires On{% endif %}
+                            </dt>
+                            <dd class="text-gray-600 {% if not subscription.is_active %}text-theme-warning font-medium{% endif %}">
+                                {% timezone "Asia/Karachi" %}{{ subscription.end_date|date:"M d, Y" }}{% endtimezone %}
+                            </dd>
+                        </div>
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <dt class="text-gray-500">Remaining</dt>
+                            <dd class="text-gray-600">{{ subscription.remaining_days }} days</dd>
+                        </div>
                         {% endif %}
+                         <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <dt class="text-gray-500">Payment Method</dt>
+                            <dd class="text-gray-600 flex items-center gap-1.5">
+                                 {% if subscription.stripe_payment_method_brand and subscription.stripe_payment_method_last4 %}
+                                     <i class="fab fa-cc-{{ subscription.stripe_payment_method_brand|lower }} text-lg text-indigo-600"></i>
+                                     <span class="text-xs">**** {{ subscription.stripe_payment_method_last4 }}</span>
+                                 {% elif subscription.status == 'active' or subscription.status == 'canceled' %}
+                                     <i class="fas fa-credit-card text-base text-gray-400"></i>
+                                     <span class="text-xs">Card on File</span>
+                                 {% else %}
+                                     <i class="fas fa-credit-card text-base text-gray-400"></i>
+                                     <span class="text-xs">N/A</span>
+                                 {% endif %}
+                            </dd>
+                        </div>
+                    </dl>
+                {% else %}
+                    {# No Active Subscription State #}
+                    <div class="text-center py-6">
+                         <svg class="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M11.412 15.655L9.75 21.75l3.745-4.012M9.257 7.5H2.066l3.23-6.291L7.5 5.25l2.513.167 2.688-5.197 2.688 5.197L17.934 7.5h-7.191m-1.488 8.155L11.412 15.655m0 0l1.588 1.702 1.588-1.702m-1.588 1.702V12.75m0 0L9.75 9.75l1.662 2.838m0 0l1.662-2.838 1.662 2.838m0 0L15.25 9.75l-1.662 2.838" />
+                         </svg>
+                         <h3 class="mt-2 text-sm font-semibold text-gray-600">No Active Subscription</h3>
+                         <p class="mt-1 text-xs text-gray-500">Upgrade to Premium to unlock features.</p>
+                         <div class="mt-4">
+                             <a href="{% url 'AudioXApp:subscribe' %}" class="inline-flex items-center rounded-md bg-theme-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-theme-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors duration-200">
+                                 <i class="fas fa-star mr-1.5 h-3 w-3"></i>
+                                 View Premium Plans
+                             </a>
+                         </div>
                     </div>
-                 </div>
-                 {% endif %}
+                {% endif %}
             </div>
 
-            {# Right Column: Billing History - Adjusted styling for white background #}
-            <div class="md:col-span-2">
-                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200 h-full">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold text-theme-primary flex items-center gap-2">
-                            <i class="fas fa-receipt text-theme-primary/80"></i>
-                            Billing History
-                        </h2>
-                        {% if payment_history %}
-                        <a href="#" class="text-xs font-medium text-theme-primary hover:text-theme-primary-hover transition-colors duration-200 flex items-center gap-1 group">
-                            <i class="fas fa-download group-hover:scale-110 transition-transform"></i>Download All
-                        </a>
-                        {% endif %}
-                     </div>
-
-                     {% if payment_history %}
-                        <div class="flow-root">
-                            <ul role="list" class="-my-4 divide-y divide-gray-100">
-                                {% for transaction in payment_history %}
-                                <li class="flex items-center justify-between gap-x-4 py-4">
-                                    <div class="flex min-w-0 gap-x-3 items-center">
-                                        {# Icon - Using theme colors from Homepage.html config #}
-                                        <div class="flex-none flex h-9 w-9 items-center justify-center rounded-lg
-                                            {% if transaction.status == 'completed' %} bg-theme-green-light text-theme-green
-                                            {% elif transaction.status == 'pending' %} bg-theme-primary-lighter text-theme-primary
-                                            {% elif transaction.status == 'failed' %} bg-theme-error-light text-theme-error
-                                            {% else %} bg-gray-100 text-gray-500 {% endif %}">
-                                             {% if transaction.status == 'completed' %} <i class="fas fa-check h-4 w-4"></i>
-                                             {% elif transaction.status == 'pending' %} <i class="fas fa-hourglass-half h-4 w-4"></i>
-                                             {% elif transaction.status == 'failed' %} <i class="fas fa-times h-4 w-4"></i>
-                                             {% else %} <i class="fas fa-receipt h-4 w-4"></i> {% endif %}
-                                        </div>
-                                        {# Transaction Info #}
-                                        <div class="min-w-0 flex-auto">
-                                            <p class="text-sm font-medium leading-5 text-gray-700 truncate" title="Premium {% if transaction.pack_name %}{{ transaction.pack_name }}{% else %}{{ transaction.get_transaction_type_display }}{% endif %}">
-                                                Premium {% if transaction.pack_name %}{{ transaction.pack_name }}{% else %}{{ transaction.get_transaction_type_display }}{% endif %}
-                                            </p>
-                                            <p class="mt-0.5 truncate text-xs leading-4 text-gray-500">
-                                                {% timezone "Asia/Karachi" %}{{ transaction.transaction_date|date:"M d, Y, h:i A" }}{% endtimezone %}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    {# Amount and Status - Using theme colors from Homepage.html config #}
-                                    <div class="text-right flex-shrink-0">
-                                          <p class="text-sm font-semibold leading-5 text-gray-800">PKR {{ transaction.price|floatformat:2 }}</p>
-                                          <span class="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-wide
-                                            {% if transaction.status == 'completed' %} bg-theme-green-lighter text-theme-green
-                                            {% elif transaction.status == 'pending' %} bg-theme-primary-lighter text-theme-primary
-                                            {% elif transaction.status == 'failed' %} bg-theme-error-light text-theme-error
-                                            {% else %} bg-gray-100 text-gray-600 {% endif %}">
-                                            {{ transaction.get_status_display }}
-                                          </span>
-                                     </div>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                     {% else %}
-                        {# No Billing History State #}
-                        <div class="text-center py-16 border-t border-gray-100 mt-6">
-                            <i class="fas fa-file-invoice-dollar text-4xl text-gray-300 mb-4"></i>
-                            <p class="text-sm font-medium text-gray-600">No billing history found.</p>
-                            <p class="text-xs text-gray-400 mt-1">Your past transactions will appear here.</p>
-                        </div>
+            {# Section 2: Actions Section #}
+             {% if subscription %}
+             <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                 <h2 class="text-lg font-semibold text-theme-primary mb-4 flex items-center gap-2">
+                     <i class="fas fa-cog text-theme-primary/80"></i>
+                     Manage Plan
+                 </h2>
+                 <div class="space-y-3">
+                     {% if subscription.is_active %}
+                         <p class="text-xs text-gray-500 mb-3">If you no longer need Premium, you can cancel your subscription here. Access continues until the current period ends.</p>
+                         <button type="button" id="open-cancel-modal" class="w-full inline-flex justify-center items-center rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 shadow-sm ring-1 ring-inset ring-red-200 hover:bg-red-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 transition-colors duration-200 group">
+                             <i class="fas fa-ban mr-2 h-4 w-4 text-red-500 group-hover:text-red-600"></i>
+                             Cancel Subscription
+                         </button>
+                     {% elif subscription.status == 'canceled' or subscription.status == 'expired' %}
+                         <p class="text-xs text-gray-500 mb-3">Your subscription is not currently active. Resubscribe to regain access to Premium features.</p>
+                         <a href="{% url 'AudioXApp:subscribe' %}" class="w-full inline-flex justify-center items-center rounded-md bg-theme-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-theme-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors duration-200 text-center group">
+                             <i class="fas fa-rocket mr-2 h-4 w-4 group-hover:translate-x-1 transition-transform"></i>
+                             Resubscribe to Premium
+                         </a>
                      {% endif %}
-                </div>
-            </div>
+                 </div>
+             </div>
+             {% endif %}
 
-        </div> {# End Grid #}
-    </div> {# End Container #}
+        </div> {# End Centered Container #}
+    </div> {# End Outer Container #}
 </div> {# End Min Height Screen #}
 
-{# Cancellation Confirmation Modal (No changes needed here) #}
+{# Cancellation Confirmation Modal (Remains unchanged) #}
 <div id="cancel-modal-v9" class="fixed z-[100] inset-0 hidden overflow-y-auto transition-opacity duration-300 ease-out" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end sm:items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div id="modal-bg-overlay" class="fixed inset-0 bg-gray-600/75 backdrop-blur-sm transition-opacity duration-300 ease-out" aria-hidden="true"></div>
@@ -286,10 +209,10 @@
 {% endblock %}
 
 {% block javascript %}
-{# The JavaScript remains the same as the previous versions - no changes needed #}
+{# The JavaScript remains the same - no changes needed #}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Manage Subscription JS (Solid Header BG) Loaded.");
+    console.log("Manage Subscription JS (No Billing History) Loaded.");
 
     // --- Constants ---
     const REFRESH_DELAY_MS = 5000;
@@ -374,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Optional: Animation ---
-    const animatedElements = document.querySelectorAll('.md\\:col-span-1 > div, .md\\:col-span-2 > div'); // Select the main content blocks
+    const animatedElements = document.querySelectorAll('.max-w-2xl > div'); // Select the main content blocks in the centered container
     animatedElements.forEach((el, index) => {
         el.classList.add('opacity-0', 'translate-y-3', 'transition-all', 'duration-500', 'ease-out');
         el.style.transitionDelay = `${index * 100}ms`;
@@ -398,4 +321,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-

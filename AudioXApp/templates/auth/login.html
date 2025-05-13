@@ -1,4 +1,6 @@
 {% load static %}
+{% load socialaccount %} {# ADDED for django-allauth #}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,190 +8,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login - AudioX | Access Your Account</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <script>
-        // Simplified Tailwind config for the primary color
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        // Define the primary color for easy use
-                        primary: {
-                            DEFAULT: '#091e65', // Base primary color
-                            light: '#1a3a8a', // A slightly lighter shade for hover/accents
-                            dark: '#05134d',  // A slightly darker shade
-                            text: '#ffffff'   // Text color for primary backgrounds
-                        },
-                        // Define standard grays for text and borders
-                        gray: {
-                            50: '#f9fafb',
-                            100: '#f3f4f6',
-                            200: '#e5e7eb',
-                            300: '#d1d5db',
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827'
-                        },
-                        // Define semantic colors based on Tailwind defaults
-                        error: '#dc2626', // red-600
-                        success: '#16a34a', // green-600
-                        warning: '#f59e0b', // amber-500
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'], // Set Inter as the default sans-serif font
-                    },
-                    borderRadius: {
-                        'lg': '0.5rem',
-                        'xl': '0.75rem',
-                        '2xl': '1rem',
-                    },
-                    boxShadow: {
-                        // Define shadows for light theme
-                        'input': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-                        'input-focus': '0 0 0 3px rgba(9, 30, 101, 0.2)', // Focus ring using primary color alpha
-                        'input-error': '0 0 0 3px rgba(220, 38, 38, 0.2)', // Focus ring for error
-                        'button-primary': '0 4px 6px -1px rgba(9, 30, 101, 0.1), 0 2px 4px -2px rgba(9, 30, 101, 0.1)',
-                        'button-primary-hover': '0 10px 15px -3px rgba(9, 30, 101, 0.1), 0 4px 6px -4px rgba(9, 30, 101, 0.1)',
-                        'card': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)', // A general card shadow
-                    },
-                    animation: {
-                        'fade-in': 'fade-in 0.5s ease-out forwards',
-                    },
-                    keyframes: {
-                        'fade-in': {
-                            '0%': { opacity: '0', transform: 'translateY(10px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Basic body styling */
-        html, body { height: 100%; overflow-x: hidden; }
-        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; background-color: theme('colors.gray.100'); } /* Light gray background */
-
-        /* Input field with icon styling */
-        .input-with-icon { position: relative; }
-        .input-icon { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: theme('colors.gray.400'); pointer-events: none; font-size: 0.875rem; transition: color 0.15s ease-in-out; z-index: 2; }
-        .form-input:focus ~ .input-icon { color: theme('colors.primary.DEFAULT'); }
-        .form-input.border-error ~ .input-icon { color: theme('colors.error') !important; }
-
-        /* Password input specific padding and toggle button */
-        .password-input { padding-right: 3rem !important; } /* Increased padding for toggle button */
-        .password-toggle-btn { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); color: theme('colors.gray.400'); cursor: pointer; padding: 0.5rem; transition: color 0.15s ease-in-out; z-index: 3; background: none; border: none; }
-        .password-toggle-btn:hover { color: theme('colors.primary.DEFAULT'); }
-
-        /* OTP Input Styling */
-        .otp-input {
-            width: 3.5rem; height: 3.75rem; /* Slightly larger */
-            text-align: center; font-size: 1.25rem; font-weight: 600;
-            border: 1px solid theme('colors.gray.300');
-            background-color: theme('colors.white');
-            color: theme('colors.gray.900');
-            border-radius: theme('borderRadius.lg');
-            margin: 0 0.25rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            appearance: textfield; -moz-appearance: textfield;
+        /* Minimal style for potential Tailwind JIT features if CDN version is limited, or for very specific overrides. */
+        /* Ensure fade-in animations are defined if not in output.css or if output.css is minimal */
+        .animate-fade-in-custom { animation: fadeInCustomKeyframe 0.5s ease-out forwards; }
+        .opacity-0-custom { opacity: 0; } /* Ensure this is available */
+        @keyframes fadeInCustomKeyframe { /* Renamed to avoid conflict if output.css has fadeIn */
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .otp-input::-webkit-inner-spin-button, .otp-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        .otp-input:focus { border-color: theme('colors.primary.DEFAULT'); box-shadow: theme('boxShadow.input-focus'); outline: none; }
-        .otp-input.border-error { border-color: theme('colors.error'); }
-        .otp-input.border-error:focus { box-shadow: theme('boxShadow.input-error'); }
-
-
-        /* SweetAlert2 Light Theme Customization */
-        body.swal2-shown > [aria-hidden="true"] { filter: blur(3px); } /* Softer blur */
-        .swal2-popup {
-            background: theme('colors.white') !important;
-            border-radius: theme('borderRadius.xl') !important;
-            box-shadow: theme('boxShadow.card');
-            color: theme('colors.gray.700') !important;
-        }
-        .swal2-title { color: theme('colors.gray.900') !important; font-weight: 600 !important; }
-        .swal2-html-container { color: theme('colors.gray.600') !important; }
-        .swal2-confirm, .swal2-cancel, .swal2-deny {
-            border-radius: theme('borderRadius.lg') !important;
-            padding: 0.75rem 1.5rem !important; /* Slightly larger padding */
-            font-weight: 500 !important; /* Medium weight */
-            font-size: 0.875rem !important;
-            transition: all 0.2s ease; margin: 0 0.375rem !important; border: none;
-            box-shadow: theme('boxShadow.input'); /* Subtle shadow */
-        }
-        .swal2-confirm {
-            background-color: theme('colors.primary.DEFAULT') !important;
-            color: theme('colors.primary.text') !important;
-        }
-        .swal2-confirm:hover { background-color: theme('colors.primary.dark') !important; transform: translateY(-1px); box-shadow: theme('boxShadow.button-primary'); }
-        .swal2-cancel { background-color: theme('colors.gray.200') !important; color: theme('colors.gray.700') !important; }
-        .swal2-cancel:hover { background-color: theme('colors.gray.300') !important; }
-        .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(22, 163, 74, 0.3) !important; }
-        .swal2-icon.swal2-success .swal2-success-line-tip, .swal2-icon.swal2-success .swal2-success-line-long { background-color: theme('colors.success') !important; }
-        .swal2-icon.swal2-error { border-color: rgba(220, 38, 38, 0.3) !important; color: theme('colors.error') !important; }
-        .swal2-icon.swal2-warning { border-color: rgba(245, 158, 11, 0.3) !important; color: theme('colors.warning') !important; }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: theme('colors.gray.100'); }
-        ::-webkit-scrollbar-thumb { background-color: theme('colors.gray.300'); border-radius: 10px; border: 2px solid theme('colors.gray.100'); }
-        ::-webkit-scrollbar-thumb:hover { background-color: theme('colors.gray.400'); }
-
-        /* Disabled Resend Button Style */
-        #resendOtpButton:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            color: theme('colors.gray.500');
-            text-decoration: none;
-        }
-         #resendOtpButton:disabled:hover {
-             color: theme('colors.gray.500');
-             text-decoration: none;
-         }
-
-         /* Animation delays */
-         .animation-delay-100 { animation-delay: 100ms; }
-         .animation-delay-200 { animation-delay: 200ms; }
-         .animation-delay-300 { animation-delay: 300ms; }
-         .animation-delay-400 { animation-delay: 400ms; }
-         .animation-delay-500 { animation-delay: 500ms; }
-
     </style>
 </head>
 
-<body class="bg-gray-100 text-gray-900">
+<body class="bg-gray-100 text-gray-900 font-inter antialiased overflow-x-hidden h-full">
+
+    <div id="customNotificationModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="customNotificationBox" class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-11/12 max-w-md transform transition-all duration-300 scale-95 opacity-0">
+            <div class="flex items-start justify-between mb-4">
+                <h3 id="notificationTitle" class="text-xl font-bold text-[#091e65]">Notification</h3>
+                <button id="closeNotificationButton" type="button" class="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none -mt-1 -mr-1">
+                    <i class="fas fa-times fa-lg"></i>
+                </button>
+            </div>
+            <div id="notificationContent" class="text-center">
+                <div id="notificationLoader" class="hidden my-5">
+                    <div class="flex justify-center items-center space-x-2">
+                        <div class="w-3 h-3 bg-[#091e65] rounded-full animate-ping"></div>
+                        <div class="w-3 h-3 bg-[#091e65] rounded-full animate-ping" style="animation-delay: 0.15s;"></div>
+                        <div class="w-3 h-3 bg-[#091e65] rounded-full animate-ping" style="animation-delay: 0.3s;"></div>
+                    </div>
+                </div>
+                <div id="notificationIconContainer" class="hidden text-5xl mb-4 mt-2">
+                    {/* Icon will be injected by JS */}
+                </div>
+                <p id="notificationMessage" class="text-sm text-gray-700 leading-relaxed">Message goes here.</p>
+            </div>
+            <div id="notificationActions" class="mt-6 text-right hidden">
+                   <button id="notificationConfirmButton" type="button" class="px-6 py-2.5 rounded-lg font-semibold text-sm text-white bg-[#091e65] hover:bg-[#0b267a] focus:outline-none focus:ring-2 ring-offset-2 ring-[#091e65] transition-colors">OK</button>
+            </div>
+        </div>
+    </div>
 
     <div class="w-full min-h-screen grid grid-cols-1 lg:grid-cols-2">
-
-        <div class="bg-white flex flex-col justify-center items-center p-8 sm:p-12 lg:p-16 order-last lg:order-first relative overflow-hidden">
-            <div class="absolute -top-10 -left-10 w-48 h-48 border-[16px] border-primary/5 rounded-full opacity-50"></div>
-            <div class="absolute -bottom-16 -right-16 w-72 h-72 bg-primary/5 rounded-full opacity-60"></div>
-
+        <div class="bg-theme-bg-card flex flex-col justify-center items-center p-8 sm:p-12 lg:p-16 order-last lg:order-first relative overflow-hidden">
+            <div class="absolute -top-10 -left-10 w-48 h-48 border-[16px] border-brand-navy-surface rounded-full opacity-50"></div>
+            <div class="absolute -bottom-16 -right-16 w-72 h-72 bg-brand-navy-surface rounded-full opacity-60"></div>
             <div class="text-center max-w-md relative z-10">
-                 <div class="mb-8 inline-block">
-                     <svg class="w-16 h-16 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 2.25a14.98 14.98 0 00-6.16 12.12A14.98 14.98 0 009.63 21.75a6 6 0 015.96-7.38z"></path></svg>
-                 </div>
-
-                <h2 class="text-3xl lg:text-4xl font-bold mb-4 text-gray-900 animate-fade-in animation-delay-100 opacity-0">
+                <div class="mb-8 inline-block">
+                    <svg class="w-16 h-16 text-theme-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 2.25a14.98 14.98 0 00-6.16 12.12A14.98 14.98 0 009.63 21.75a6 6 0 015.96-7.38z"></path></svg>
+                </div>
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4 text-theme-text-primary animate-fade-in-custom opacity-0-custom" style="animation-delay: 0.1s;">
                     Welcome Back to AudioX
                 </h2>
-                <p class="text-base lg:text-lg text-gray-600 mb-10 leading-relaxed animate-fade-in animation-delay-200 opacity-0">
+                <p class="text-base lg:text-lg text-theme-text-secondary mb-10 leading-relaxed animate-fade-in-custom opacity-0-custom" style="animation-delay: 0.2s;">
                     Sign in to continue your journey through sound. Access your library, playlists, and more.
                 </p>
-                <div class="text-sm text-gray-500 animate-fade-in animation-delay-300 opacity-0">
+                <div class="text-sm text-theme-text-secondary animate-fade-in-custom opacity-0-custom" style="animation-delay: 0.3s;">
                     <p>Don't have an account?</p>
-                    <a href="{% url 'AudioXApp:signup' %}" class="mt-3 inline-block px-6 py-2.5 border border-primary bg-primary/5 text-primary rounded-lg font-semibold hover:bg-primary/10 transition duration-200 transform hover:scale-[1.03]">
+                    <a href="{% url 'AudioXApp:signup' %}" class="mt-3 inline-block px-6 py-2.5 border border-theme-primary bg-brand-navy-surface text-theme-primary rounded-lg font-semibold hover:bg-theme-primary/[.10] transition duration-200 transform hover:scale-[1.03]">
                         Create Account
                     </a>
                 </div>
@@ -198,607 +80,577 @@
 
         <div class="bg-gray-100 flex flex-col justify-center p-6 sm:p-10 lg:p-16 order-first lg:order-last">
             <div class="w-full max-w-md mx-auto">
-                <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-card animate-fade-in animation-delay-400 opacity-0">
-
+                <div class="bg-theme-bg-card p-8 sm:p-10 rounded-2xl shadow-lg animate-fade-in-custom opacity-0-custom" style="animation-delay: 0.4s;">
                     <div class="text-center mb-8">
-                        <h1 class="text-2xl font-bold text-gray-900 mb-1">Sign In</h1>
-                        <p class="text-sm text-gray-500">Access your AudioX account.</p>
+                        <h1 class="text-2xl font-bold text-theme-text-primary mb-1">Sign In</h1>
+                        <p class="text-sm text-theme-text-secondary">Access your AudioX account.</p>
                     </div>
 
                     <div class="mb-6">
-                        <button class="w-full flex items-center justify-center py-2.5 px-4 border border-gray-300 bg-white hover:bg-gray-50 transition-colors duration-200 rounded-lg text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-primary/50 text-sm font-medium transform hover:scale-[1.02] shadow-sm">
+                        <a href="{% provider_login_url 'google' %}" class="w-full flex items-center justify-center py-2.5 px-4 border border-theme-border bg-theme-bg-card hover:bg-gray-50 transition-colors duration-200 rounded-lg text-theme-text-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-theme-bg-card focus:ring-theme-primary focus:ring-opacity-50 text-sm font-medium transform hover:scale-[1.02] shadow-sm">
                             <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M21.8 10.1c0-.7-.1-1.4-.2-2.1H12v3.9h5.5c-.2 1.3-.9 2.4-1.9 3.2v2.5h3.2c1.9-1.7 3-4.2 3-7.5z" fill="#4285F4"/><path d="M12 22c2.7 0 4.9-.9 6.6-2.4l-3.2-2.5c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.8-5.6-4.2H3.1v2.6C4.8 19.9 8.1 22 12 22z" fill="#34A853"/><path d="M6.4 13.7c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8V7.6H3.1C2.4 9 2 10.5 2 12s.4 3 1.1 4.4l3.3-2.7z" fill="#FBBC05"/><path d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8C16.9 2.9 14.7 2 12 2 8.1 2 4.8 4.1 3.1 7.6l3.3 2.7c.8-2.4 3-4.2 5.6-4.2z" fill="#EA4335"/></svg>
                             Sign in with Google
-                        </button>
+                        </a>
                     </div>
-
                     <div class="flex items-center my-6">
                         <hr class="flex-grow border-gray-200" />
                         <span class="px-3 text-gray-400 text-xs font-medium uppercase">OR</span>
                         <hr class="flex-grow border-gray-200" />
                     </div>
 
+                    {% with common_input_classes="form-input w-full block px-4 py-3 border border-theme-border bg-theme-input-bg placeholder-gray-400 text-theme-text-primary text-sm transition duration-150 ease-in-out rounded-lg shadow-sm appearance-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary focus:ring-opacity-30" %}
                     <div id="login-form-container">
                         <form id="loginForm" method="post" class="space-y-5">
                             {% csrf_token %}
                             <div id="credentials-section">
-                                <div class="input-with-icon">
+                                <div class="relative">
                                     <label for="loginIdentifier" class="sr-only">Email or Username</label>
-                                    <input class="form-input w-full block px-4 py-3 border border-gray-300 bg-white placeholder-gray-400 text-gray-900 text-sm transition duration-150 ease-in-out rounded-lg shadow-input appearance-none pl-11 focus:border-primary focus:ring-0 focus:shadow-input-focus" placeholder="Email or Username" type="text" name="loginIdentifier" id="loginIdentifier" required />
-                                    <i class="fas fa-user input-icon"></i>
+                                    <input class="{{ common_input_classes }} pl-11" placeholder="Email or Username" type="text" name="loginIdentifier" id="loginIdentifier" required />
+                                    <i class="input-icon fas fa-user text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none transition-colors duration-150"></i>
                                 </div>
-                                <div class="input-with-icon relative mt-4">
-                                     <label for="password" class="sr-only">Password</label>
-                                    <input class="form-input password-input w-full block px-4 py-3 border border-gray-300 bg-white placeholder-gray-400 text-gray-900 text-sm transition duration-150 ease-in-out rounded-lg shadow-input appearance-none pl-11 focus:border-primary focus:ring-0 focus:shadow-input-focus" placeholder="Password" type="password" name="password" id="password" required />
-                                    <i class="fas fa-lock input-icon"></i>
-                                    <button type="button" class="password-toggle-btn" aria-label="Toggle password visibility">
+                                <div class="relative mt-4">
+                                    <label for="password" class="sr-only">Password</label>
+                                    <input class="{{ common_input_classes }} pl-11 pr-12 password-field" placeholder="Password" type="password" name="password" id="password" required />
+                                    <i class="input-icon fas fa-lock text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none transition-colors duration-150"></i>
+                                    <button type="button" class="password-toggle-btn absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#091e65] cursor-pointer p-2 z-10" aria-label="Toggle password visibility">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
                                 <div class="text-right mt-3">
-                                    <a href="{% url 'AudioXApp:forgot_password' %}" class="text-primary hover:text-primary-dark text-xs font-medium transition duration-150 ease-in-out">Forgot Password?</a>
+                                    <a href="{% url 'AudioXApp:forgot_password' %}" class="text-[#091e65] hover:text-[#0b267a] text-xs font-medium transition duration-150 ease-in-out">Forgot Password?</a>
                                 </div>
                             </div>
-
-                            <button id="submitButton" class="w-full bg-primary hover:bg-primary-dark text-primary-text py-3 rounded-lg font-semibold transition-all duration-300 ease-in-out shadow-button-primary hover:shadow-button-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-primary text-sm mt-6 transform hover:-translate-y-0.5"
-                                    type="submit">
+                            <button id="submitButton" class="w-full bg-[#091e65] hover:bg-[#0b267a] text-white py-3 rounded-lg font-semibold transition-all duration-300 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-theme-bg-card focus:ring-[#091e65] text-sm mt-6 transform hover:-translate-y-0.5" type="submit">
                                 Sign In
                             </button>
                         </form>
                     </div>
 
-                    <div id="otp-form-container" class="hidden animate-fade-in">
-                         <h2 class="text-xl font-bold text-gray-900 mb-2 text-center">Enter Verification Code</h2>
-                         <p class="text-gray-600 mb-6 text-center text-sm">
-                             A 6-digit code was sent to <strong id="otp-email-display" class="font-medium text-gray-800">your email</strong>.
-                         </p>
-                         <form id="otpForm" method="post" class="space-y-5">
-                             {% csrf_token %}
-                             <div class="flex justify-center space-x-2" dir="ltr">
-                                 <input type="number" name="otp1" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
-                                 <input type="number" name="otp2" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
-                                 <input type="number" name="otp3" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
-                                 <input type="number" name="otp4" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
-                                 <input type="number" name="otp5" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
-                                 <input type="number" name="otp6" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
-                             </div>
-                             <input type="hidden" name="full_otp" id="full_otp">
-
-                             <div class="text-center text-xs">
-                                 <button type="button" id="resendOtpButton" class="text-primary hover:text-primary-dark font-medium transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">Resend Code</button>
-                                 <span id="resendTimer" class="text-gray-500 ml-2"></span>
-                             </div>
-
-                             <button id="verifyOtpButton" class="w-full bg-primary hover:bg-primary-dark text-primary-text py-3 rounded-lg font-semibold transition-all duration-300 ease-in-out shadow-button-primary hover:shadow-button-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-primary text-sm mt-6 transform hover:-translate-y-0.5"
-                                     type="button">
-                                 Verify Code
-                             </button>
-
-                             <div class="text-center mt-4">
-                                 <button type="button" id="backToLoginButton" class="text-sm text-gray-500 hover:text-primary transition duration-150 ease-in-out">Back to Login</button>
-                             </div>
-                         </form>
+                    <div id="otp-form-container" class="hidden animate-fade-in-custom">
+                        <h2 class="text-xl font-bold text-theme-text-primary mb-2 text-center">Enter Verification Code</h2>
+                        <p class="text-theme-text-secondary mb-6 text-center text-sm">
+                            A 6-digit code was sent to <strong id="otp-email-display" class="font-medium text-theme-text-primary">your email</strong>.
+                        </p>
+                        <form id="otpForm" method="post" class="space-y-5"> {% csrf_token %} <div class="flex justify-center space-x-1 sm:space-x-2" dir="ltr">
+                                <input type="text" name="otp1" class="otp-input form-input w-12 h-14 sm:w-14 sm:h-[3.75rem] text-center text-lg sm:text-xl font-semibold border border-theme-border bg-theme-input-bg text-theme-text-primary rounded-lg transition-colors duration-200 ease-in-out focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65] focus:ring-opacity-30 appearance-none" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                                <input type="text" name="otp2" class="otp-input form-input w-12 h-14 sm:w-14 sm:h-[3.75rem] text-center text-lg sm:text-xl font-semibold border border-theme-border bg-theme-input-bg text-theme-text-primary rounded-lg transition-colors duration-200 ease-in-out focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65] focus:ring-opacity-30 appearance-none" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                                <input type="text" name="otp3" class="otp-input form-input w-12 h-14 sm:w-14 sm:h-[3.75rem] text-center text-lg sm:text-xl font-semibold border border-theme-border bg-theme-input-bg text-theme-text-primary rounded-lg transition-colors duration-200 ease-in-out focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65] focus:ring-opacity-30 appearance-none" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                                <input type="text" name="otp4" class="otp-input form-input w-12 h-14 sm:w-14 sm:h-[3.75rem] text-center text-lg sm:text-xl font-semibold border border-theme-border bg-theme-input-bg text-theme-text-primary rounded-lg transition-colors duration-200 ease-in-out focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65] focus:ring-opacity-30 appearance-none" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                                <input type="text" name="otp5" class="otp-input form-input w-12 h-14 sm:w-14 sm:h-[3.75rem] text-center text-lg sm:text-xl font-semibold border border-theme-border bg-theme-input-bg text-theme-text-primary rounded-lg transition-colors duration-200 ease-in-out focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65] focus:ring-opacity-30 appearance-none" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                                <input type="text" name="otp6" class="otp-input form-input w-12 h-14 sm:w-14 sm:h-[3.75rem] text-center text-lg sm:text-xl font-semibold border border-theme-border bg-theme-input-bg text-theme-text-primary rounded-lg transition-colors duration-200 ease-in-out focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65] focus:ring-opacity-30 appearance-none" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                            </div>
+                            <input type="hidden" name="full_otp" id="full_otp">
+                            <div class="text-center text-xs">
+                                <button type="button" id="resendOtpButton" class="text-[#091e65] hover:text-[#0b267a] font-medium transition duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed disabled:text-gray-500 disabled:no-underline">Resend Code</button>
+                                <span id="resendTimer" class="text-gray-500 ml-2"></span>
+                            </div>
+                            <button id="verifyOtpButton" class="w-full bg-[#091e65] hover:bg-[#0b267a] text-white py-3 rounded-lg font-semibold transition-all duration-300 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-theme-bg-card focus:ring-[#091e65] text-sm mt-6 transform hover:-translate-y-0.5" type="button">
+                                Verify Code
+                            </button>
+                            <div class="text-center mt-4">
+                                <button type="button" id="backToLoginButton" class="text-sm text-gray-500 hover:text-[#091e65] transition duration-150 ease-in-out">Back to Login</button>
+                            </div>
+                        </form>
                     </div>
+                    {% endwith %}
 
-                    <div class="mt-8 text-center text-xs text-gray-500">
+                    <div class="mt-8 text-center text-xs text-theme-text-secondary">
                         <span>Don't have an account?
-                            <a href="{% url 'AudioXApp:signup' %}" class="font-semibold text-primary hover:text-primary-dark transition duration-150 ease-in-out">Sign Up</a>
+                            <a href="{% url 'AudioXApp:signup' %}" class="font-semibold text-[#091e65] hover:text-[#0b267a] transition duration-150 ease-in-out">Sign Up</a>
                         </span>
                         <span class="mx-2">|</span>
-                        <a href="{% url 'AudioXApp:home' %}" class="hover:text-primary transition duration-150 ease-in-out">Go to Home</a>
+                        <a href="{% url 'AudioXApp:home' %}" class="hover:text-[#091e65] transition duration-150 ease-in-out">Go to Home</a>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // --- DOM Elements ---
-        const loginForm = document.getElementById('loginForm');
-        const otpFormContainer = document.getElementById('otp-form-container');
-        const loginFormContainer = document.getElementById('login-form-container');
-        const submitButton = document.getElementById('submitButton');
-        const verifyOtpButton = document.getElementById('verifyOtpButton');
-        const otpEmailDisplay = document.getElementById('otp-email-display');
-        const otpInputs = document.querySelectorAll('.otp-input');
-        const fullOtpInput = document.getElementById('full_otp');
-        const backToLoginButton = document.getElementById('backToLoginButton');
-        const resendOtpButton = document.getElementById('resendOtpButton');
-        const resendTimer = document.getElementById('resendTimer');
-        const passwordToggleButtons = document.querySelectorAll('.password-toggle-btn');
-        const djangoMessagesElement = document.getElementById('django-messages');
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-        const allFormInputs = document.querySelectorAll('.form-input'); // Includes login inputs
+    // --- DOM Elements for Custom Notification ---
+    const customNotificationModal = document.getElementById('customNotificationModal');
+    const customNotificationBox = document.getElementById('customNotificationBox');
+    const notificationTitleEl = document.getElementById('notificationTitle');
+    const notificationMessageEl = document.getElementById('notificationMessage');
+    const notificationIconContainerEl = document.getElementById('notificationIconContainer');
+    const notificationLoaderEl = document.getElementById('notificationLoader');
+    const closeNotificationButton = document.getElementById('closeNotificationButton');
+    const notificationConfirmButton = document.getElementById('notificationConfirmButton');
+    const notificationActions = document.getElementById('notificationActions');
 
-        // --- State Variables ---
-        let primaryColor, errorColor, successColor, warningColor, grayBorderColor, grayTextColor, inputFocusShadow, errorFocusShadow, inputBaseShadow;
-        let resendInterval; // Timer interval ID
+    // --- DOM Elements for Login Page ---
+    const loginForm = document.getElementById('loginForm');
+    const otpFormContainer = document.getElementById('otp-form-container');
+    const loginFormContainer = document.getElementById('login-form-container');
+    const submitButton = document.getElementById('submitButton'); // This is for your custom form
+    const verifyOtpButton = document.getElementById('verifyOtpButton');
+    const otpEmailDisplay = document.getElementById('otp-email-display');
+    const otpInputs = document.querySelectorAll('.otp-input');
+    const fullOtpInput = document.getElementById('full_otp');
+    const backToLoginButton = document.getElementById('backToLoginButton');
+    const resendOtpButton = document.getElementById('resendOtpButton');
+    const resendTimer = document.getElementById('resendTimer');
+    const passwordToggleButtons = document.querySelectorAll('.password-toggle-btn');
+    const djangoMessagesElement = document.getElementById('django-messages');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    const allStandardFormInputs = document.querySelectorAll('#loginForm .form-input');
 
-        // --- Initialization ---
-        function initializeThemeColors() {
-            // Use a function to get computed styles if Tailwind config isn't ready or reliable
-            const getStyle = (prop) => getComputedStyle(document.documentElement).getPropertyValue(prop).trim();
+    let resendInterval;
+    let currentNotificationCallback = null;
 
-            try {
-                primaryColor = tailwind.config.theme.extend.colors.primary.DEFAULT;
-                errorColor = tailwind.config.theme.extend.colors.error;
-                successColor = tailwind.config.theme.extend.colors.success;
-                warningColor = tailwind.config.theme.extend.colors.warning;
-                grayBorderColor = tailwind.config.theme.extend.colors.gray[300]; // e.g., border-gray-300
-                grayTextColor = tailwind.config.theme.extend.colors.gray[400]; // e.g., text-gray-400 for icons
-                inputFocusShadow = tailwind.config.theme.extend.boxShadow['input-focus'];
-                errorFocusShadow = tailwind.config.theme.extend.boxShadow['input-error'];
-                inputBaseShadow = tailwind.config.theme.extend.boxShadow['input'];
-            } catch (e) {
-                console.warn("Tailwind config not fully ready, using fallback/computed colors.");
-                // Fallback colors (should ideally match config)
-                primaryColor = '#091e65'; errorColor = '#dc2626'; successColor = '#16a34a'; warningColor = '#f59e0b'; grayBorderColor = '#d1d5db'; grayTextColor = '#9ca3af'; inputFocusShadow = '0 0 0 3px rgba(9, 30, 101, 0.2)'; errorFocusShadow = '0 0 0 3px rgba(220, 38, 38, 0.2)'; inputBaseShadow = '0 1px 2px 0 rgb(0 0 0 / 0.05)';
+    // --- Custom Notification Functions ---
+    function showCustomNotification(title, message, type = 'info', showLoader = false, confirmText = 'OK', callback = null) {
+        notificationTitleEl.textContent = title;
+        notificationMessageEl.textContent = message;
+        currentNotificationCallback = callback;
+
+        notificationLoaderEl.classList.add('hidden');
+        notificationIconContainerEl.classList.add('hidden');
+        notificationIconContainerEl.innerHTML = ''; 
+        notificationConfirmButton.classList.remove(
+            'bg-green-500', 'hover:bg-green-600', 'focus:ring-green-500',
+            'bg-red-500', 'hover:bg-red-600', 'focus:ring-red-500',
+            'bg-yellow-400', 'hover:bg-yellow-500', 'focus:ring-yellow-400', 'text-black',
+            'bg-blue-500', 'hover:bg-blue-600', 'focus:ring-blue-500' 
+        );
+        notificationConfirmButton.classList.add('bg-[#091e65]', 'hover:bg-[#0b267a]', 'focus:ring-[#091e65]', 'text-white');
+        notificationConfirmButton.textContent = confirmText;
+
+        if (showLoader || type === 'loading') {
+            notificationLoaderEl.classList.remove('hidden');
+            notificationActions.classList.add('hidden');
+        } else {
+            notificationActions.classList.remove('hidden');
+            let iconClass = '';
+            let colorClass = 'text-[#091e65]';
+
+            switch (type) {
+                case 'success':
+                    iconClass = 'fas fa-check-circle'; 
+                    colorClass = 'text-[#091e65]'; 
+                    notificationConfirmButton.classList.add('text-white');
+                    notificationConfirmButton.classList.remove('text-black'); 
+                    break;
+                case 'error':
+                    iconClass = 'fas fa-times-circle'; 
+                    colorClass = 'text-red-500'; 
+                    notificationConfirmButton.classList.remove('bg-[#091e65]', 'hover:bg-[#0b267a]', 'focus:ring-[#091e65]');
+                    notificationConfirmButton.classList.add('bg-red-500', 'hover:bg-red-600', 'focus:ring-red-500', 'text-white');
+                    notificationConfirmButton.classList.remove('text-black');
+                    break;
+                case 'warning':
+                    iconClass = 'fas fa-exclamation-triangle'; 
+                    colorClass = 'text-[#091e65]'; 
+                    notificationConfirmButton.classList.add('text-white');
+                    notificationConfirmButton.classList.remove('text-black');
+                    break;
+                case 'info':
+                    iconClass = 'fas fa-info-circle'; 
+                    colorClass = 'text-[#091e65]'; 
+                    notificationConfirmButton.classList.add('text-white');
+                    notificationConfirmButton.classList.remove('text-black');
+                    break;
+            }
+            if (iconClass) {
+                notificationIconContainerEl.innerHTML = `<i class="${iconClass} ${colorClass}"></i>`;
+                notificationIconContainerEl.classList.remove('hidden');
             }
         }
-        initializeThemeColors(); // Initialize on script load
 
-        // --- Utility Functions ---
-        const showNotification = (title, text, icon, confirmButtonColor = primaryColor) => {
-            // Determine button colors based on icon type for better context
-            let effectiveConfirmButtonColor = confirmButtonColor;
-            if (icon === 'success') effectiveConfirmButtonColor = successColor;
-            else if (icon === 'error') effectiveConfirmButtonColor = errorColor;
-            else if (icon === 'warning') effectiveConfirmButtonColor = warningColor;
+        customNotificationModal.classList.remove('opacity-0', 'pointer-events-none');
+        customNotificationModal.classList.add('opacity-100', 'pointer-events-auto');
+        customNotificationBox.classList.remove('scale-95', 'opacity-0');
+        customNotificationBox.classList.add('scale-100', 'opacity-100');
+    }
 
-            Swal.fire({
-                title: title,
-                text: text,
-                icon: icon,
-                confirmButtonColor: effectiveConfirmButtonColor, // Use determined color
-                customClass: {
-                    popup: 'swal2-popup', // Uses styles defined in <style>
-                    confirmButton: 'swal2-confirm',
-                    cancelButton: 'swal2-cancel',
-                    denyButton: 'swal2-deny', // Add if using deny buttons
-                    title: 'swal2-title',
-                    htmlContainer: 'swal2-html-container'
-                },
-                buttonsStyling: false, // IMPORTANT: Use custom classes for buttons
-            });
-        };
+    function hideCustomNotification() {
+        customNotificationModal.classList.add('opacity-0', 'pointer-events-none');
+        customNotificationModal.classList.remove('opacity-100', 'pointer-events-auto');
+        customNotificationBox.classList.add('scale-95', 'opacity-0');
+        customNotificationBox.classList.remove('scale-100', 'opacity-100');
+        if (currentNotificationCallback && typeof currentNotificationCallback === 'function') {
+            setTimeout(() => {
+                currentNotificationCallback();
+                currentNotificationCallback = null; 
+            }, 300); 
+        }
+    }
 
-        // --- Input Focus/Blur Styling ---
-        allFormInputs.forEach(input => {
-            const icon = input.parentElement?.querySelector('.input-icon');
-            input.addEventListener('focus', function(e) {
-                const hasError = e.target.classList.contains('border-error');
-                const focusBorderColor = hasError ? errorColor : primaryColor;
-                const focusBoxShadow = hasError ? errorFocusShadow : inputFocusShadow;
-                e.target.style.borderColor = focusBorderColor;
-                e.target.style.boxShadow = focusBoxShadow + ', ' + inputBaseShadow; // Combine focus ring with base shadow
-                if(icon && !e.target.classList.contains('border-error')) { // Only change icon color if not error
-                    icon.style.color = primaryColor;
-                }
-            });
-            input.addEventListener('blur', function(e) {
-                const hasError = e.target.classList.contains('border-error');
-                e.target.style.borderColor = hasError ? errorColor : grayBorderColor; // Use gray border color
-                e.target.style.boxShadow = inputBaseShadow; // Reset to base shadow
-                if(icon && !e.target.classList.contains('border-error')) { // Only reset icon color if not error
-                    icon.style.color = grayTextColor; // Reset icon to gray
-                } else if (icon && hasError) {
-                    icon.style.color = errorColor; // Ensure icon stays red on blur if error
-                }
-            });
+    closeNotificationButton.addEventListener('click', hideCustomNotification);
+    notificationConfirmButton.addEventListener('click', hideCustomNotification);
+
+    function updateInputIconColor(inputElement, colorClass) {
+        const icon = inputElement.parentElement?.querySelector('.input-icon');
+        if (icon) {
+            icon.classList.remove('text-gray-400', 'text-[#091e65]', 'text-red-500');
+            if (colorClass) {
+                icon.classList.add(colorClass);
+            } else {
+                icon.classList.add('text-gray-400');
+            }
+        }
+    }
+    
+    function markInputError(inputElement) {
+        if (!inputElement) return;
+        inputElement.classList.remove('border-theme-border', 'focus:border-[#091e65]', 'focus:ring-[#091e65]');
+        inputElement.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+        if (!inputElement.classList.contains('otp-input')) {
+            updateInputIconColor(inputElement, 'text-red-500');
+        }
+    }
+
+    function clearInputVisualState(inputElement) {
+        if (!inputElement) return;
+        inputElement.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+        inputElement.classList.add('border-theme-border', 'focus:border-[#091e65]', 'focus:ring-[#091e65]');
+        if (!inputElement.classList.contains('otp-input')) {
+            updateInputIconColor(inputElement, null); 
+        }
+    }
+
+    function clearAllInputErrors() {
+        allStandardFormInputs.forEach(clearInputVisualState);
+        otpInputs.forEach(clearInputVisualState);
+    }
+
+    allStandardFormInputs.forEach(input => {
+        input.addEventListener('focus', function(e) {
+            const icon = e.target.parentElement?.querySelector('.input-icon');
+            if (icon && !e.target.classList.contains('border-red-500')) {
+                icon.classList.remove('text-gray-400');
+                icon.classList.add('text-[#091e65]');
+            }
         });
-
-        // Function to visually mark input errors
-        function markInputError(inputElement) {
-            if (!inputElement) return;
-            inputElement.classList.add('border-error');
-            inputElement.style.borderColor = errorColor; // Ensure border color updates immediately
-            const icon = inputElement.parentElement?.querySelector('.input-icon');
-            if (icon) {
-                icon.style.color = errorColor; // Make icon red
-                icon.classList.add('text-error'); // Add class for potential other styling
+        input.addEventListener('blur', function(e) {
+            const icon = e.target.parentElement?.querySelector('.input-icon');
+            if (icon && !e.target.classList.contains('border-red-500')) {
+                icon.classList.remove('text-[#091e65]');
+                icon.classList.add('text-gray-400');
             }
-        }
-
-        // Function to clear visual input errors
-        function clearInputError(inputElement) {
-             if (!inputElement) return;
-             inputElement.classList.remove('border-error');
-             inputElement.style.borderColor = grayBorderColor; // Reset to default border
-             const icon = inputElement.parentElement?.querySelector('.input-icon');
-             if (icon) {
-                 icon.style.color = grayTextColor; // Reset icon to default gray
-                 icon.classList.remove('text-error');
-             }
-        }
-        function clearAllInputErrors() {
-            allFormInputs.forEach(clearInputError);
-            otpInputs.forEach(clearInputError); // Also clear OTP errors
-        }
-
-
-        // --- OTP/Resend Timer Logic ---
-        function startResendTimer(duration = 60) {
-            let timer = duration;
-            resendOtpButton.disabled = true;
+        });
+    });
+    
+    function startResendTimer(duration = 60) {
+        let timer = duration;
+        resendOtpButton.disabled = true;
+        resendTimer.textContent = `(${timer}s)`;
+        clearInterval(resendInterval);
+        resendInterval = setInterval(() => {
+            timer--;
             resendTimer.textContent = `(${timer}s)`;
-            clearInterval(resendInterval); // Clear any existing interval
-            resendInterval = setInterval(() => {
-                timer--;
-                resendTimer.textContent = `(${timer}s)`;
-                if (timer <= 0) {
-                    clearInterval(resendInterval);
-                    resendTimer.textContent = '';
-                    resendOtpButton.disabled = false;
-                    resendOtpButton.innerHTML = 'Resend Code'; // Restore text
-                }
-            }, 1000);
-        }
-
-        // --- Form Switching Logic ---
-        function showOtpForm(email) {
-            clearAllInputErrors(); // Clear errors when switching forms
-            loginFormContainer.classList.add('hidden');
-            otpFormContainer.classList.remove('hidden');
-            otpFormContainer.classList.add('animate-fade-in'); // Add fade-in animation
-            if (otpEmailDisplay && email) {
-                otpEmailDisplay.textContent = email; // Display the email
+            if (timer <= 0) {
+                clearInterval(resendInterval);
+                resendTimer.textContent = '';
+                resendOtpButton.disabled = false;
+                resendOtpButton.innerHTML = 'Resend Code';
             }
-            otpInputs.forEach(input => input.value = ''); // Clear inputs
-            fullOtpInput.value = '';
-            otpInputs[0].focus(); // Focus the first OTP input
-            startResendTimer(); // Start the resend timer
-        }
+        }, 1000);
+    }
 
-        function showLoginForm() {
-            clearAllInputErrors(); // Clear errors when switching forms
-            otpFormContainer.classList.add('hidden');
-            otpFormContainer.classList.remove('animate-fade-in');
-            loginFormContainer.classList.remove('hidden');
-            loginFormContainer.classList.add('animate-fade-in'); // Add fade-in animation
-            clearInterval(resendInterval); // Stop timer if going back
-            resendTimer.textContent = '';
-            resendOtpButton.disabled = false; // Re-enable resend button
-            resendOtpButton.innerHTML = 'Resend Code'; // Ensure text is correct
-            document.getElementById('loginIdentifier').focus(); // Focus login input
-            // Ensure login button is enabled when switching back
+    function showOtpForm(email) {
+        clearAllInputErrors();
+        loginFormContainer.classList.add('hidden');
+        otpFormContainer.classList.remove('hidden');
+        otpFormContainer.classList.add('animate-fade-in-custom');
+        if (otpEmailDisplay && email) {
+            otpEmailDisplay.textContent = email;
+        }
+        otpInputs.forEach(input => input.value = '');
+        if(fullOtpInput) fullOtpInput.value = '';
+        if(otpInputs.length > 0) otpInputs[0].focus();
+        startResendTimer();
+    }
+
+    function showLoginForm() {
+        clearAllInputErrors();
+        otpFormContainer.classList.add('hidden');
+        otpFormContainer.classList.remove('animate-fade-in-custom');
+        loginFormContainer.classList.remove('hidden');
+        loginFormContainer.classList.add('animate-fade-in-custom');
+        clearInterval(resendInterval);
+        if(resendTimer) resendTimer.textContent = ''; 
+        if (resendOtpButton) {
+             resendOtpButton.disabled = false;
+             resendOtpButton.innerHTML = 'Resend Code';
+        }
+        const loginIdentifierEl = document.getElementById('loginIdentifier');
+        if(loginIdentifierEl) loginIdentifierEl.focus();
+        if(submitButton) { // Check if submitButton exists (it's for the custom form)
             submitButton.disabled = false;
             submitButton.innerHTML = 'Sign In';
         }
+    }
 
-        // --- Event Listeners ---
-
-        // 1. Login Form Submission
+    // --- Event Listeners for Custom Login Form ---
+    if (loginForm && submitButton) { // Ensure both exist for custom form logic
         loginForm.addEventListener('submit', function(event) {
             event.preventDefault();
-            clearAllInputErrors(); // Clear previous errors visually
+            clearAllInputErrors();
             const formData = new FormData(this);
             submitButton.disabled = true;
             submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Signing In...`;
+            showCustomNotification('Processing...', 'Please wait while we sign you in.', 'loading', true);
 
-            fetch("{% url 'AudioXApp:login' %}", { // Use Django URL tag
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest' // Important for Django
-                }
+            fetch("{% url 'AudioXApp:login' %}", {
+                method: 'POST', body: formData,
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(async response => {
                 const isJson = response.headers.get('content-type')?.includes('application/json');
                 const data = isJson ? await response.json() : null;
-
                 if (!response.ok) {
                     let errorMsg = `Login failed! Status: ${response.status}`;
-                    if (data?.message) {
-                        errorMsg = data.message;
-                    } else if (!isJson) {
-                        errorMsg = await response.text() || errorMsg;
-                    }
+                    if (data?.message) errorMsg = data.message;
+                    else if (!isJson && response.status !== 200) errorMsg = await response.text() || errorMsg; 
                     const error = new Error(errorMsg);
-                    error.status = response.status;
-                    error.data = data; // Attach data if available (e.g., form errors)
-                    throw error;
+                    error.status = response.status; error.data = data; throw error;
                 }
-                return data; // Return JSON data on success
+                return data;
             })
             .then(data => {
                 if (data.status === 'success') {
-                    showNotification('Success!', 'Login successful! Redirecting...', 'success');
-                    window.location.href = data.redirect_url || "{% url 'AudioXApp:home' %}";
+                    showCustomNotification('Success!', 'Login successful!', 'success', false, 'Go to Home', () => {
+                        window.location.href = data.redirect_url || "{% url 'AudioXApp:home' %}";
+                    });
                 } else if (data.status === '2fa_required') {
-                    showOtpForm(data.email); // Switch to OTP form
-                    // Keep the login button visually disabled until user goes back
-                    submitButton.innerHTML = 'Sign In'; // Reset text but keep disabled state
+                    hideCustomNotification(); 
+                    showOtpForm(data.email);
                 } else {
-                    // Handle other potential backend 'error' statuses
-                    showNotification('Login Error', data.message || 'An unexpected issue occurred.', 'error');
-                    submitButton.disabled = false; // Re-enable button on logical error
-                    submitButton.innerHTML = 'Sign In';
-                    // Optionally highlight fields based on backend error message or data
+                    showCustomNotification('Login Error', data.message || 'An unexpected issue occurred.', 'error');
+                    submitButton.disabled = false; submitButton.innerHTML = 'Sign In';
                     if (data.message && data.message.toLowerCase().includes('password')) {
                         markInputError(document.getElementById('password'));
                     } else if (data.message && (data.message.toLowerCase().includes('user') || data.message.toLowerCase().includes('email'))) {
-                         markInputError(document.getElementById('loginIdentifier'));
+                        markInputError(document.getElementById('loginIdentifier'));
                     }
                 }
             })
             .catch(error => {
                 console.error('Login Fetch Error:', error);
-                showNotification('Login Error', error.message || 'Could not connect. Please try again.', 'error');
-                submitButton.disabled = false; // Re-enable button on fetch/network error or HTTP error
-                submitButton.innerHTML = 'Sign In';
-
-                // Highlight specific fields based on error status or data
-                if (error.status === 401) { // Unauthorized (likely wrong password/user)
+                showCustomNotification('Login Error', error.message || 'Could not connect. Please try again.', 'error');
+                submitButton.disabled = false; submitButton.innerHTML = 'Sign In';
+                if (error.status === 401 || (error.data && error.data.message && (error.data.message.toLowerCase().includes("credentials") || error.data.message.toLowerCase().includes("password") || error.data.message.toLowerCase().includes("user") ))) {
                     markInputError(document.getElementById('loginIdentifier'));
                     markInputError(document.getElementById('password'));
-                } else if (error.data?.errors) { // Handle specific field errors if backend sends them
+                } else if (error.data?.errors) {
                     Object.keys(error.data.errors).forEach(fieldName => {
                         const inputField = document.querySelector(`[name=${fieldName}]`);
-                        markInputError(inputField);
+                        if(inputField) markInputError(inputField);
                     });
-                } else {
-                    // Generic error, maybe highlight both as a fallback
-                     markInputError(document.getElementById('loginIdentifier'));
-                     markInputError(document.getElementById('password'));
                 }
             });
         });
+    }
 
-        // 2. OTP Input Handling (Auto-tab, Backspace, Paste)
-        otpInputs.forEach((input, index) => {
-            input.addEventListener('input', (e) => {
-                const value = input.value;
-                // Move focus to next input if a digit is entered
-                if (value.length === 1 && index < otpInputs.length - 1) {
-                    otpInputs[index + 1].focus();
-                }
-                // Combine OTP digits into the hidden input
-                let combinedOtp = '';
-                otpInputs.forEach(i => combinedOtp += i.value);
-                fullOtpInput.value = combinedOtp;
-
-                // Remove error border on input
-                clearInputError(input);
-
-                // Optional: Focus verify button when all digits entered
-                if (combinedOtp.length === otpInputs.length) {
-                     verifyOtpButton.focus();
-                }
-            });
-
-            input.addEventListener('keydown', (e) => {
-                // Move focus to previous input on backspace if current input is empty
-                if (e.key === 'Backspace' && input.value.length === 0 && index > 0) {
-                    otpInputs[index - 1].focus();
-                    clearInputError(otpInputs[index - 1]); // Clear error on previous input too
-                }
-                // Allow only digits and necessary control keys
-                if (!/[0-9]/.test(e.key) && !['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete', 'Enter', 'Meta', 'Control', 'v', 'c', 'a', 'x'].includes(e.key) && !(e.metaKey || e.ctrlKey)) {
-                     e.preventDefault();
-                }
-                 // Clear error border on keydown (except backspace on empty)
-                if (e.key !== 'Backspace' || input.value.length > 0) {
-                    clearInputError(input);
-                }
-            });
-
-             // Handle pasting OTP
-            input.addEventListener('paste', (e) => {
-                e.preventDefault();
-                const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
-                const digits = pasteData.replace(/\D/g, ''); // Remove non-digits
-
-                if (digits.length >= 1) {
-                    let currentDigitIndex = 0;
-                    for (let i = index; i < otpInputs.length && currentDigitIndex < digits.length; i++) {
-                        otpInputs[i].value = digits[currentDigitIndex];
-                        clearInputError(otpInputs[i]); // Clear error on paste
-                        currentDigitIndex++;
-                        if (i < otpInputs.length - 1 && currentDigitIndex < digits.length) {
-                            otpInputs[i + 1].focus(); // Move focus if more digits pasted
-                        } else if (i === otpInputs.length - 1 || currentDigitIndex === digits.length) {
-                             otpInputs[i].focus(); // Keep focus on last pasted input
-                        }
-                    }
-                     // Update hidden input after paste
-                    let combinedOtp = '';
-                    otpInputs.forEach(i => combinedOtp += i.value);
-                    fullOtpInput.value = combinedOtp;
-                    // Focus verify button if complete
-                    if (combinedOtp.length === otpInputs.length) {
-                        verifyOtpButton.focus();
-                    }
-                }
-            });
-
-            // Select content on focus for easy replacement
-            input.addEventListener('focus', () => input.select());
-        });
-
-        // 3. OTP Verification Button Click
-        if (verifyOtpButton) {
-            verifyOtpButton.addEventListener('click', function() {
-                const enteredOtp = fullOtpInput.value;
-                let isComplete = true;
-                 otpInputs.forEach(input => {
-                     if (!input.value) {
-                         markInputError(input);
-                         isComplete = false;
-                     } else {
-                         clearInputError(input);
-                     }
-                 });
-
-
-                if (!isComplete || enteredOtp.length !== otpInputs.length) {
-                    showNotification('Incomplete Code', `Please enter all ${otpInputs.length} digits.`, 'warning');
-                    // Find the first empty input and focus it
-                    const firstEmpty = Array.from(otpInputs).find(input => !input.value);
-                    if (firstEmpty) firstEmpty.focus();
-                    return;
-                }
-
-                verifyOtpButton.disabled = true;
-                verifyOtpButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verifying...';
-
-                fetch("{% url 'AudioXApp:verify_login_otp' %}", { // Use Django URL tag
-                    method: 'POST',
-                    body: JSON.stringify({ otp: enteredOtp }),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(async response => {
-                    const isJson = response.headers.get('content-type')?.includes('application/json');
-                    const data = isJson ? await response.json() : null;
-                    if (!response.ok) {
-                        let errorMsg = `Verification failed! Status: ${response.status}`;
-                        if (data?.message) errorMsg = data.message;
-                        throw new Error(errorMsg); // Throw error for catch block
-                    }
-                    return data;
-                })
-                .then(data => {
-                    if (data.status === 'success') {
-                        showNotification('Success!', data.message || 'Verification successful! Logging in...', 'success');
-                        // Redirect on success
-                        setTimeout(() => window.location.href = data.redirect_url || "{% url 'AudioXApp:home' %}", 1000);
-                    } else {
-                        // Handle specific error message from backend (e.g., "Invalid verification code.")
-                        showNotification('Verification Failed', data.message || 'Invalid OTP entered.', 'error');
-                        // Mark all OTP inputs as error on failure
-                        otpInputs.forEach(markInputError);
-                        fullOtpInput.value = ''; // Clear hidden input
-                        otpInputs[0].focus(); // Focus first input
-                    }
-                })
-                .catch(error => {
-                    console.error('OTP Verification Error:', error);
-                    showNotification('Error', error.message || 'Verification error. Please try again.', 'error');
-                     // Mark all OTP inputs as error on failure
-                    otpInputs.forEach(markInputError);
-                    fullOtpInput.value = ''; // Clear hidden input
-                    otpInputs[0].focus(); // Focus first input
-                })
-                .finally(() => {
-                    // Re-enable button unless redirecting (simple check)
-                    if (!document.body.classList.contains('swal2-shown') || !Swal.getTitle()?.textContent.includes('Success')) {
-                         verifyOtpButton.disabled = false;
-                         verifyOtpButton.innerHTML = 'Verify Code';
-                    }
-                });
-            });
-        }
-
-        // 4. Resend OTP Button Click
-        if (resendOtpButton) {
-             resendOtpButton.addEventListener('click', function() {
-                 const userEmail = otpEmailDisplay.textContent; // Get email from display
-                 if (!userEmail || userEmail === 'your email') {
-                     showNotification('Error', 'Could not determine email to resend OTP.', 'error');
-                     return;
-                 }
-
-                 resendOtpButton.disabled = true;
-                 resendOtpButton.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i>'; // Show spinner
-
-                 fetch("{% url 'AudioXApp:send_otp' %}", { // Use Django URL tag for send_otp
-                     method: 'POST',
-                     body: JSON.stringify({ email: userEmail, purpose: 'login' }), // Send email and purpose
-                     headers: {
-                         'Content-Type': 'application/json',
-                         'X-CSRFToken': csrfToken,
-                         'X-Requested-With': 'XMLHttpRequest'
-                     }
-                 })
-                 .then(async response => {
-                     const isJson = response.headers.get('content-type')?.includes('application/json');
-                     const data = isJson ? await response.json() : null;
-                     if (!response.ok) {
-                         let errorMsg = `Resend failed! Status: ${response.status}`;
-                         if (data?.message) errorMsg = data.message;
-                         throw new Error(errorMsg);
-                     }
-                     return data;
-                 })
-                 .then(data => {
-                     if (data.status === 'success') {
-                         showNotification('Code Resent', data.message || 'A new verification code has been sent.', 'success');
-                         startResendTimer(); // Restart timer
-                         otpInputs.forEach(input => { input.value = ''; clearInputError(input); }); // Clear inputs and errors
-                         fullOtpInput.value = '';
-                         otpInputs[0].focus(); // Focus first input
-                     } else {
-                         showNotification('Resend Failed', data.message || 'Could not resend code.', 'error');
-                         resendOtpButton.disabled = false; // Re-enable button on failure
-                         resendOtpButton.innerHTML = 'Resend Code'; // Restore text
-                     }
-                 })
-                 .catch(error => {
-                     console.error('Resend OTP Error:', error);
-                     showNotification('Error', error.message || 'Could not resend code. Please try again.', 'error');
-                     resendOtpButton.disabled = false; // Re-enable button on error
-                     resendOtpButton.innerHTML = 'Resend Code'; // Restore text
-                 });
-             });
-         }
-
-
-        // 5. Back to Login Button
-        if (backToLoginButton) {
-            backToLoginButton.addEventListener('click', () => {
-                showLoginForm();
-            });
-        }
-
-        // 6. Password Visibility Toggle
-        passwordToggleButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const parent = this.closest('div.relative');
-                const targetInput = parent?.querySelector('input.password-input'); // More specific selector
-                const icon = this.querySelector('i');
-                if (targetInput && icon) {
-                    const isPassword = targetInput.type === 'password';
-                    targetInput.type = isPassword ? 'text' : 'password';
-                    icon.classList.toggle('fa-eye', !isPassword);
-                    icon.classList.toggle('fa-eye-slash', isPassword);
-                    // Keep focus on the input after toggling
-                    targetInput.focus();
-                }
-            });
-        });
-
-        // 7. Django Messages Handling
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof primaryColor === 'undefined') initializeThemeColors(); // Ensure colors are set
-
-            if (djangoMessagesElement && djangoMessagesElement.textContent.trim() !== '[]') {
-                try {
-                    const messages = JSON.parse(djangoMessagesElement.textContent);
-                    messages.forEach(message => {
-                        let iconType = 'info', title = 'Notification';
-                        if (message.tags.includes('success')) { iconType = 'success'; title = 'Success'; }
-                        else if (message.tags.includes('error')) { iconType = 'error'; title = 'Error'; }
-                        else if (message.tags.includes('warning')) { iconType = 'warning'; title = 'Warning'; }
-                        else if (message.tags) { title = message.tags.charAt(0).toUpperCase() + message.tags.slice(1); }
-                        // Use the utility function which now determines color based on icon type
-                        showNotification(title, message.message, iconType);
-                    });
-                } catch (e) { console.error("Could not parse Django messages:", e); }
+    // --- OTP Form Logic (remains largely the same) ---
+    otpInputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            const value = input.value;
+            if (value.length === 1 && index < otpInputs.length - 1) {
+                otpInputs[index + 1].focus();
+            }
+            let combinedOtp = '';
+            otpInputs.forEach(i => combinedOtp += i.value);
+            if(fullOtpInput) fullOtpInput.value = combinedOtp;
+            clearInputVisualState(input);
+            if (combinedOtp.length === otpInputs.length && verifyOtpButton) {
+                verifyOtpButton.focus();
             }
         });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && input.value.length === 0 && index > 0) {
+                otpInputs[index - 1].focus();
+                clearInputVisualState(otpInputs[index - 1]);
+            }
+            if (!/[0-9]/.test(e.key) && !['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab', 'Delete', 'Enter', 'Meta', 'Control', 'v', 'c', 'a', 'x'].includes(e.key) && !(e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+            }
+            if (e.key !== 'Backspace' || input.value.length > 0) {
+                clearInputVisualState(input);
+            }
+        });
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim();
+            const digits = pasteData.replace(/\D/g, '');
+            if (digits.length >= 1) {
+                let currentDigitIndex = 0;
+                for (let i = index; i < otpInputs.length && currentDigitIndex < digits.length; i++) {
+                    otpInputs[i].value = digits[currentDigitIndex];
+                    clearInputVisualState(otpInputs[i]);
+                    currentDigitIndex++;
+                    if (i < otpInputs.length - 1 && currentDigitIndex < digits.length) {
+                        otpInputs[i + 1].focus();
+                    } else if (i === otpInputs.length - 1 || currentDigitIndex === digits.length) {
+                        otpInputs[i].focus();
+                    }
+                }
+                let combinedOtp = ''; otpInputs.forEach(i => combinedOtp += i.value);
+                if(fullOtpInput) fullOtpInput.value = combinedOtp;
+                if (combinedOtp.length === otpInputs.length && verifyOtpButton) verifyOtpButton.focus();
+            }
+        });
+        input.addEventListener('focus', () => input.select());
+    });
 
+    if (verifyOtpButton) {
+        verifyOtpButton.addEventListener('click', function() {
+            const enteredOtp = fullOtpInput ? fullOtpInput.value : "";
+            let isComplete = true;
+            otpInputs.forEach(input => {
+                if (!input.value) { markInputError(input); isComplete = false; }
+                else { clearInputVisualState(input); }
+            });
+
+            if (!isComplete || enteredOtp.length !== otpInputs.length) {
+                showCustomNotification('Incomplete Code', `Please enter all ${otpInputs.length} digits.`, 'warning');
+                const firstEmpty = Array.from(otpInputs).find(input => !input.value);
+                if (firstEmpty) firstEmpty.focus();
+                return;
+            }
+            verifyOtpButton.disabled = true;
+            verifyOtpButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verifying...';
+            showCustomNotification('Verifying Code', 'Please wait...', 'loading', true);
+
+            fetch("{% url 'AudioXApp:verify_login_otp' %}", {
+                method: 'POST', body: JSON.stringify({ otp: enteredOtp }),
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(async response => {
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await response.json() : null;
+                if (!response.ok) {
+                    let errorMsg = `Verification failed! Status: ${response.status}`;
+                    if (data?.message) errorMsg = data.message;
+                    else if (!isJson && response.status !== 200) errorMsg = await response.text() || errorMsg;
+                    throw new Error(errorMsg);
+                }
+                return data;
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    showCustomNotification('Success!', data.message || 'Verification successful! Logging in...', 'success', false, 'OK', () => {
+                         setTimeout(() => window.location.href = data.redirect_url || "{% url 'AudioXApp:home' %}", 300);
+                    });
+                } else {
+                    showCustomNotification('Verification Failed', data.message || 'Invalid OTP entered.', 'error');
+                    otpInputs.forEach(markInputError);
+                    if(fullOtpInput) fullOtpInput.value = '';
+                    if(otpInputs.length > 0) otpInputs[0].focus();
+                }
+            })
+            .catch(error => {
+                console.error('OTP Verification Error:', error);
+                showCustomNotification('Error', error.message || 'Verification error. Please try again.', 'error');
+                otpInputs.forEach(markInputError);
+                if(fullOtpInput) fullOtpInput.value = '';
+                if(otpInputs.length > 0) otpInputs[0].focus();
+            })
+            .finally(() => {
+                const isSuccessNotificationVisible = customNotificationModal.classList.contains('opacity-100') && 
+                                                   notificationIconContainerEl.querySelector('.fa-check-circle');
+                if (!isSuccessNotificationVisible) {
+                    verifyOtpButton.disabled = false;
+                    verifyOtpButton.innerHTML = 'Verify Code';
+                }
+            });
+        });
+    }
+
+    if (resendOtpButton) {
+        resendOtpButton.addEventListener('click', function() {
+            const userEmail = otpEmailDisplay ? otpEmailDisplay.textContent : null;
+            if (!userEmail || userEmail === 'your email') {
+                showCustomNotification('Error', 'Could not determine email to resend OTP.', 'error'); return;
+            }
+            resendOtpButton.disabled = true;
+            resendOtpButton.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i>';
+            
+            fetch("{% url 'AudioXApp:send_otp' %}", {
+                method: 'POST', body: JSON.stringify({ email: userEmail, purpose: 'login' }),
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(async response => {
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await response.json() : null;
+                if (!response.ok) {
+                    let errorMsg = `Resend failed! Status: ${response.status}`;
+                    if (data?.message) errorMsg = data.message; 
+                    else if (!isJson && response.status !== 200) errorMsg = await response.text() || errorMsg;
+                    throw new Error(errorMsg);
+                } return data;
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    showCustomNotification('Code Resent', data.message || 'A new verification code has been sent.', 'success');
+                    startResendTimer();
+                    otpInputs.forEach(input => { input.value = ''; clearInputVisualState(input); });
+                    if(fullOtpInput) fullOtpInput.value = '';
+                    if(otpInputs.length > 0) otpInputs[0].focus();
+                } else {
+                    showCustomNotification('Resend Failed', data.message || 'Could not resend code.', 'error');
+                    resendOtpButton.disabled = false; resendOtpButton.innerHTML = 'Resend Code';
+                }
+            })
+            .catch(error => {
+                console.error('Resend OTP Error:', error);
+                showCustomNotification('Error', error.message || 'Could not resend code. Please try again.', 'error');
+                resendOtpButton.disabled = false; resendOtpButton.innerHTML = 'Resend Code';
+            });
+        });
+    }
+
+    if (backToLoginButton) {
+        backToLoginButton.addEventListener('click', () => { showLoginForm(); });
+    }
+
+    passwordToggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const parent = this.closest('div.relative');
+            const targetInput = parent?.querySelector('input.password-field');
+            const icon = this.querySelector('i');
+            if (targetInput && icon) {
+                const isPassword = targetInput.type === 'password';
+                targetInput.type = isPassword ? 'text' : 'password';
+                icon.classList.toggle('fa-eye', !isPassword);
+                icon.classList.toggle('fa-eye-slash', isPassword);
+                targetInput.focus();
+            }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (djangoMessagesElement && djangoMessagesElement.textContent.trim() !== '' && djangoMessagesElement.textContent.trim() !== '[]') {
+            try {
+                const messagesData = JSON.parse(djangoMessagesElement.textContent);
+                if (Array.isArray(messagesData)) { 
+                    messagesData.forEach(message => {
+                        let iconType = 'info';
+                        let title = 'Notification';
+                        if (message.tags) { 
+                            if (message.tags.includes('success')) { iconType = 'success'; title = 'Success!'; }
+                            else if (message.tags.includes('error')) { iconType = 'error'; title = 'Error!'; }
+                            else if (message.tags.includes('warning')) { iconType = 'warning'; title = 'Warning!'; }
+                            else { title = message.tags.charAt(0).toUpperCase() + message.tags.slice(1); }
+                        }
+                        showCustomNotification(title, message.message, iconType);
+                    });
+                }
+            } catch (e) { console.error("Could not parse Django messages:", e, "\nContent:", djangoMessagesElement.textContent); }
+        }
+    });
     </script>
 
     <script id="django-messages" type="application/json" style="display: none;">
         {% autoescape off %}
         [
             {% for message in messages %}
-                { "message": "{{ message|escapejs }}", "tags": "{{ message.tags|escapejs }}" } {% if not forloop.last %},{% endif %}
+                {
+                    "message": "{{ message.message|escapejs }}",
+                    "tags": "{{ message.tags|escapejs }}",
+                    "level": {{ message.level }}
+                }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ]
         {% endautoescape %}
