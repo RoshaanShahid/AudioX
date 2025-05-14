@@ -62,12 +62,16 @@
             <div class="flex items-center space-x-2 sm:space-x-3">
                 {# Language Selector - Styled with Tailwind #}
                 <div class="relative hidden sm:block">
-                     <select class="appearance-none pl-3 pr-8 py-2 border border-theme-border rounded-full text-theme-text-secondary focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none text-sm bg-white shadow-sm hover:border-gray-400 transition duration-150 ease-in-out cursor-pointer" id="language-selector" onchange="redirectToLanguage()">
-                         <option value="English">English</option>
-                         <option value="Urdu">اردو</option>
-                         <option value="Punjabi">پنجابی</option>
-                         <option value="Sindhi">سنڌي</option>
-                     </select>
+                    <select 
+                    class="px-2 py-1 border border-[#091e65] rounded-full text-gray-700 focus-ring text-sm" 
+                    id="language-selector"
+                    onchange="redirectToLanguage()">
+                    
+                    <option value="English">English</option>
+                    <option value="Urdu">اردو</option>
+                    <option value="Punjabi">پنجابی</option>
+                    <option value="Sindhi">سنڌي</option>
+                </select>
                      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-theme-text-light">
                          <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                      </div>
@@ -542,7 +546,13 @@
                               <li><a href="/genrefiction" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fiction</a></li>
                               <li><a href="/genremystery" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Mystery</a></li>
                               <li><a href="/genrethriller" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Thriller</a></li>
-                              <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out font-medium opacity-90 hover:opacity-100">More...</a></li>
+                              <li><a href="/genrescifi" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Scifi</a></li>
+                              <li><a href="/genrefantasy" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fantasy</a></li>
+                              <li><a href="/genreromance" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Romance</a></li>
+                              <li><a href="/genrebiography" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Biography</a></li>
+                              <li><a href="/genrehistory" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">History</a></li>
+                              <li><a href="/genreselfhelp" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">SelfHelp</a></li>
+                              <li><a href="/genrebusiness" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Business</a></li>
                           </ul>
                       </div>
                   </div>
@@ -1114,19 +1124,38 @@
 
     }); // End DOMContentLoaded
 
-    // --- Language Redirect Function (Global Scope) ---
-    function redirectToLanguage() {
-        const selector = document.getElementById('language-selector');
-        if (selector) {
-            const selectedLanguage = selector.value;
-            console.log(`Language selected: ${selectedLanguage}`);
-            // TODO: Implement actual language switching logic here
-            // (e.g., set cookie, reload page, redirect to language-specific URL)
-            alert(`Language switching to ${selectedLanguage} not implemented yet.`);
-        } else {
-            console.error("Language selector element not found.");
+   
+           function redirectToLanguage() {
+            const selector = document.getElementById('language-selector');
+            const selectedLang = selector.value;
+
+            if (selectedLang === 'English') {
+                window.location.href = '/'; // Home page
+            } else {
+                // Construct URL like /Urdu/, /Punjabi/, /Sindhi/
+                // Ensure your Django urls.py has patterns that match this format
+                window.location.href = '/' + selectedLang + '/';
+            }
         }
-    }
+
+        // This part is for "remembering" the selected language based on URL
+        window.addEventListener('DOMContentLoaded', () => {
+            const path = window.location.pathname; // e.g., "/Urdu/" or "/Punjabi/"
+            const selector = document.getElementById('language-selector');
+
+            if (selector) { // Check if the selector exists
+                if (path.startsWith('/Urdu/')) {
+                    selector.value = 'Urdu';
+                } else if (path.startsWith('/Punjabi/')) {
+                    selector.value = 'Punjabi';
+                } else if (path.startsWith('/Sindhi/')) {
+                    selector.value = 'Sindhi';
+                } else {
+                    selector.value = 'English'; // Default Home
+                }
+            }
+        });
+    
     </script>
 
     {% block javascript %}{% endblock %} {# Allow specific pages to add more JS #}

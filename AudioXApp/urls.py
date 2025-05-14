@@ -96,6 +96,24 @@ urlpatterns = [
     path('admin/creators/<int:user_id>/reject/', creator_views.admin_reject_creator, name='admin_reject_creator'),
     path('admin/creators/<int:user_id>/ban/', creator_views.admin_ban_creator, name='admin_ban_creator'),
     path('admin/creators/<int:user_id>/unban/', creator_views.admin_unban_creator, name='admin_unban_creator'),
+
+
+    path('Urdu/', content_views.urdu_page, name='urdu_page'),
+    path('Punjabi/', content_views.punjabi_page, name='punjabi_page'),
+    path('Sindhi/', content_views.sindhi_page, name='sindhi_page'),
+    path('genrefiction/', content_views.genre_fiction, name='genre_fiction'),
+    path('genremystery/', content_views.genre_mystery, name='genre_mystery'),
+    path('genrethriller/', content_views.genre_thriller, name='genre_thriller'),
+    path('genrescifi/', content_views.genre_scifi, name='genre_scifi'),
+    path('genrefantasy/', content_views.genre_fantasy, name='genre_fantasy'),
+    path('genrebiography/', content_views.genre_biography, name='genre_biography'),
+    path('genreromance/', content_views.genre_romance, name='genre_romance'),
+    path('genrehistory/', content_views.genre_history, name='genre_history'),
+    path('genreselfhelp/', content_views.genre_selfhelp, name='genre_selfhelp'),
+    path('genrebusiness/', content_views.genre_business, name='genre_business'),
+   # path('genre/<slug:genre_slug>/', content_views.genre_detail, name='genre_detail'),
+
+
 ]
 
 # Static and Media file serving

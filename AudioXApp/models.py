@@ -13,7 +13,8 @@ import os
 import uuid
 from django.conf import settings 
 from datetime import timedelta 
-from django.db.models import Avg, Sum, F, Prefetch 
+from django.db.models import Avg, Sum, F, Prefetch
+from django.db import transaction 
 
 # Helper functions (creator_cnic_path, creator_profile_pic_path remain the same)
 def creator_cnic_path(instance, filename):

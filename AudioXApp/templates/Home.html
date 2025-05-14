@@ -5,10 +5,8 @@
 
 
 {% block content %}
-{# Added pb-28 for bottom player bar spacing #}
 <div class="bg-gray-50 min-h-screen font-sans antialiased pb-28">
 
-    {# --- Hero Section (Existing) --- #}
     <div class="relative overflow-hidden">
         <div class="absolute inset-0">
             <video autoplay muted loop class="w-full h-full object-cover" poster="{% static 'img/your_video_poster_placeholder.jpg' %}"> {# Add a poster image path #}
@@ -32,33 +30,36 @@
             {# Use theme color for button #}
             <a href="/subscribe"
                class="inline-block bg-[#091e65] hover:bg-[#071852] text-white font-bold py-4 px-12 rounded-full text-lg tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl">
-                Explore Now
+                Subscribe Now
             </a>
 
             <div class="mt-12 w-full overflow-hidden">
-                <div class="marquee flex items-center whitespace-nowrap space-x-8">
-                    {# Genre list duplicated for seamless scroll #}
-                    <span class="text-lg md:text-xl font-bold text-white">Fiction</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Mystery</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Thriller</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Sci-Fi</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Fantasy</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Romance</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Biography</span>
-                    <span class="text-lg md:text-xl font-bold text-white">History</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Self-Help</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Business</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Fiction</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Mystery</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Thriller</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Sci-Fi</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Fantasy</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Romance</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Biography</span>
-                    <span class="text-lg md:text-xl font-bold text-white">History</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Self-Help</span>
-                    <span class="text-lg md:text-xl font-bold text-white">Business</span>
-                </div>
+
+                    <div class="marquee-container">
+                        <div class="marquee-genre flex items-center whitespace-nowrap space-x-8">
+                            <a href="/genrefiction" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fiction</a>
+                            <a href="/genremystery" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Mystery</a>
+                            <a href="/genrethriller" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Thriller</a>
+                            <a href="/genrescifi" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Sci-Fi</a>
+                            <a href="/genrefantasy" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fantasy</a>
+                            <a href="/genreromance" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Romance</a>
+                            <a href="/genrebiography" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Biography</a>
+                            <a href="/genrehistory" class="text-lg md:text-xl font-bold text-white flex-shrink-0">History</a>
+                            <a href="/genreselfhelp" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Self-Help</a>
+                            <a href="/genrebusiness" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Business</a>
+                            {# Duplicate for seamless scrolling #}
+                            <a href="/genrefiction" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fiction</a>
+                            <a href="/genremystery" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Mystery</a>
+                            <a href="/genrethriller" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Thriller</a>
+                            <a href="/genrescifi" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Sci-Fi</a>
+                            <a href="/genrefantasy" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fantasy</a>
+                            <a href="/genreromance" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Romance</a>
+                            <a href="/genrebiography" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Biography</a>
+                            <a href="/genrehistory" class="text-lg md:text-xl font-bold text-white flex-shrink-0">History</a>
+                            <a href="/genreselfhelp" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Self-Help</a>
+                            <a href="/genrebusiness" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Business</a>
+                        </div>
+                    </div>
             </div>
         </div>
     </div>
@@ -67,7 +68,7 @@
     <div class="container mx-auto px-4 py-16 sm:py-24">
         <h2 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-12 sm:mb-16">Discover New Favorites</h2>
 
-        {% if error_message and not creator_audiobooks %} {# Show error only if both fail #}
+        {% if error_message and not creator_audiobooks and not archive_genre_audiobooks %} {# Show error only if all fail #}
              <p class="text-center text-red-600 bg-red-100 p-4 rounded-lg mb-8">{{ error_message }}</p>
         {% endif %}
 
@@ -92,7 +93,7 @@
                                 title="View Details" {# Updated title attribute #}
                                 class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                     stroke="currentColor" class="w-8 h-8">
+                                    stroke="currentColor" class="w-8 h-8">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                           d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
                                 </svg>
@@ -108,10 +109,66 @@
             </a>
             {% endfor %}
         </div>
-        {% elif not creator_audiobooks %} {# Show only if creator books also failed/empty #}
+        {% elif not creator_audiobooks and not archive_genre_audiobooks %} {# Show only if creator and genre books also failed/empty #}
              <p class="text-center text-gray-500 col-span-full mt-8">No LibriVox audiobooks available at the moment.</p>
         {% endif %}
     </div>
+
+    {# --- Archive.org Genre Books Section --- #}
+    {% if archive_genre_audiobooks %}
+    <div class="bg-gray-100 py-16 sm:py-24"> {# Different background for visual separation #}
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-12 sm:mb-16">Explore by Genre</h2>
+
+            {% for genre_name, audiobooks_list in archive_genre_audiobooks.items %}
+                {% if audiobooks_list %} {# Only show genre heading if there are books in it #}
+                    <div class="mb-16"> {# Add margin between genres #}
+                        <h3 class="text-2xl font-semibold text-gray-700 mb-8">{{ genre_name }}</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12">
+                            {% for book in audiobooks_list %}
+                                {# Link to detail page #}
+                                <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" class="block group relative">
+                                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl h-full flex flex-col">
+                                        <div class="relative h-80 w-full">
+                                            {# Cover Image #}
+                                            <img src="{{ book.cover_image|default:'https://placehold.co/300x320/eeeeee/999999?text=Cover+Not+Found' }}"
+                                                 alt="{{ book.title }}"
+                                                 class="w-full h-full object-cover rounded-t-3xl"
+                                                 loading="lazy"
+                                                 width="300" height="320"
+                                                 onerror="this.onerror=null; this.src='https://placehold.co/300x320/eeeeee/999999?text=Cover+Error';">
+                                            {# Play Button Overlay #}
+                                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
+                                                <button
+                                                    type="button"
+                                                    title="View Details"
+                                                    class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="p-4 flex-grow">
+                                            <h3 class="font-semibold text-lg text-gray-800 truncate" title="{{ book.title }}">{{ book.title }}</h3>
+                                            <p class="text-sm text-gray-600 truncate" title="{{ book.author|default:'Unknown Author' }}">By {{ book.author|default:'Unknown Author' }}</p>
+                                            <p class="text-sm text-gray-500 mt-1">Source: Archive.org</p>
+                                            {# No rating/views for Archive.org books on home page #}
+                                        </div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% elif not librivox_audiobooks and not creator_audiobooks %} {# Show only if LibriVox and creator books also failed/empty #}
+         <p class="text-center text-gray-500 col-span-full mt-8">No genre audiobooks available at the moment.</p>
+    {% endif %}
+    {# --- End Archive.org Genre Books Section --- #}
+
 
     {# --- Creator Uploads Section --- #}
     {% if creator_audiobooks %}
@@ -147,7 +204,7 @@
                                     title="View Details" {# Updated title attribute #}
                                     class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                         stroke="currentColor" class="w-8 h-8">
+                                        stroke="currentColor" class="w-8 h-8">
                                         <path stroke-linecap="round" stroke-linejoin="round"
                                               d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
                                     </svg>
@@ -212,7 +269,7 @@
             </div>
         </div>
     </div>
-    {% elif not librivox_audiobooks %} {# Show only if librivox books also failed/empty #}
+    {% elif not librivox_audiobooks and not archive_genre_audiobooks %} {# Show only if LibriVox and genre books also failed/empty #}
          <p class="text-center text-gray-500 col-span-full mt-8">No audiobooks uploaded by creators yet.</p>
     {% endif %}
     {# --- End Creator Uploads Section --- #}
@@ -336,37 +393,10 @@
     }
 
 
-    // --- Playback Control Functions ---
 
-    // Handler for clicks on Play buttons on cards (NOW DEPRECATED FOR HOMEPAGE CARDS)
-    // This function will still be called if an element has onclick="handlePlayClick(event, this)"
-    // But we've removed it from the homepage card buttons.
     function handlePlayClick(event, buttonElement) {
-        // If this function is still called from somewhere else,
-        // ensure it doesn't interfere with default link behavior if that's desired there.
-        // For homepage cards, this function is no longer used.
-
-        // Original logic for player bar (kept for reference or other uses):
-        /*
-        event.stopPropagation();
-        event.preventDefault();
-
-        const audioUrl = buttonElement.dataset.audioUrl;
-        const bookTitle = buttonElement.dataset.bookTitle;
-        const chapterTitle = buttonElement.dataset.chapterTitle;
-        const coverUrl = buttonElement.dataset.coverUrl;
-
-        if (audioPlayer.src === audioUrl && !audioPlayer.paused) {
-            audioPlayer.pause();
-        } else if (audioPlayer.src === audioUrl && audioPlayer.paused) {
-            audioPlayer.play().catch(e => console.error("Error resuming play:", e));
-        } else {
-            loadAndPlayAudio(audioUrl, bookTitle, chapterTitle, coverUrl);
-        }
-        */
     }
 
-    // Function to load and play a new audio source
     function loadAndPlayAudio(audioUrl, bookTitle, chapterTitle, coverUrl) {
         if (!audioUrl || audioUrl.endsWith('?url=') || audioUrl.includes('?url=None')) {
             console.error("Invalid audio URL provided:", audioUrl);
