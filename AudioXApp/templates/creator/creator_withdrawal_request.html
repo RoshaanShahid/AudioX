@@ -19,6 +19,15 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    /* Custom modal transition styles (if not covered by Tailwind directly) */
+    #customModal.visible .modal-content-wrapper {
+        transform: scale(1);
+    }
+    #customModal .modal-content-wrapper {
+        transition: transform 0.3s ease-in-out;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -242,7 +251,7 @@
 </div>
 
 <div id="customModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out">
-    <div class="bg-white rounded-2xl shadow-2xl w-[90%] max-w-md overflow-hidden transform scale-95 transition-transform duration-300 ease-in-out">
+    <div class="modal-content-wrapper bg-white rounded-2xl shadow-2xl w-[90%] max-w-md overflow-hidden transform scale-95">
         <div class="bg-[#091e65] text-white px-6 py-5 flex justify-between items-center border-b border-[#071852]">
             <div class="flex items-center">
                 <span id="modalIconContainer" class="mr-3 text-2xl"></span> 
@@ -254,7 +263,7 @@
             <p>Modal content goes here.</p>
         </div>
         <div class="px-6 py-4 bg-slate-100 border-t border-slate-200 flex justify-end space-x-3" id="modalFooter">
-        </div>
+            </div>
     </div>
 </div>
 
@@ -262,264 +271,11 @@
 
 {% block extra_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('customModal');
-    const modalTitleEl = document.getElementById('modalTitle');
-    const modalBodyEl = document.getElementById('modalBody');
-    const modalIconContainerEl = document.getElementById('modalIconContainer');
-    const modalFooterEl = document.getElementById('modalFooter');
-    const modalCloseBtnEl = document.getElementById('modalCloseBtn');
-
-    window.showModal = function(title, htmlContent, type = 'info', buttons = []) {
-        if (!modal || !modalTitleEl || !modalBodyEl || !modalIconContainerEl || !modalFooterEl) {
-            alert(title + "\n" + htmlContent.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, ""));
-            return;
-        }
-        modalTitleEl.textContent = title;
-        modalBodyEl.innerHTML = htmlContent; 
-        
-        modalIconContainerEl.innerHTML = ''; 
-        let iconClass = '';
-        let iconColor = 'text-slate-500'; 
-
-        if (type === 'success') { iconClass = 'fas fa-check-circle'; iconColor = 'text-green-500'; }
-        else if (type === 'error') { iconClass = 'fas fa-times-circle'; iconColor = 'text-red-500'; }
-        else if (type === 'warning') { iconClass = 'fas fa-exclamation-triangle'; iconColor = 'text-amber-500'; }
-        else if (type === 'question') { iconClass = 'fas fa-question-circle'; iconColor = 'text-blue-500'; }
-        
-        if (iconClass) {
-            const i = document.createElement('i');
-            i.className = `${iconClass} ${iconColor}`;
-            modalIconContainerEl.appendChild(i);
-        }
-
-        modalFooterEl.innerHTML = ''; 
-        buttons.forEach(btnConfig => {
-            const button = document.createElement('button');
-            button.textContent = btnConfig.text;
-            button.className = 'px-5 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
-            
-            if (btnConfig.class === 'confirm') {
-                button.classList.add('bg-[#091e65]', 'text-white', 'hover:bg-[#071852]', 'focus-visible:ring-[#091e65]');
-            } else if (btnConfig.class === 'danger') {
-                button.classList.add('bg-red-600', 'text-white', 'hover:bg-red-700', 'focus-visible:ring-red-600');
-            } else { // Default to cancel style
-                button.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300', 'focus-visible:ring-slate-400');
-            }
-            
-            button.addEventListener('click', () => {
-                if (btnConfig.onClick) btnConfig.onClick();
-                closeModal();
-            });
-            modalFooterEl.appendChild(button);
-        });
-        
-        modal.classList.remove('opacity-0', 'invisible');
-        modal.classList.add('opacity-100', 'visible');
-        modal.querySelector('.modal-box').classList.remove('scale-95');
-        modal.querySelector('.modal-box').classList.add('scale-100');
-    }
-
-    window.closeModal = function() {
-        if (modal) {
-            modal.classList.add('opacity-0');
-            modal.querySelector('.modal-box').classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('invisible');
-                modal.classList.remove('opacity-100', 'visible');
-                modal.querySelector('.modal-box').classList.remove('scale-100');
-            }, 300);
-        }
-    }
-    
-    if (modalCloseBtnEl) modalCloseBtnEl.addEventListener('click', closeModal);
-    if (modal) {
-        modal.addEventListener('click', function(event) {
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
-    }
-
-    const withdrawalForm = document.getElementById('requestWithdrawalForm');
-    const amountErrorDiv = document.getElementById('amountError');
-    const accountErrorDiv = document.getElementById('accountError');
-
-    const jsHasActiveRequest = ("{{ has_active_request|yesno:'true,false'|lower }}" === "true");
-    const jsReasonForActiveRequestMessage = "{{ reason_cant_request|escapejs }}";
-
-    function showInlineError(element, messages) {
-        if (!element) return;
-        if (messages && messages.length > 0) {
-            element.innerHTML = '<ul class="list-none p-0 m-0">' + messages.map(msg => `<li class="mb-1 last:mb-0">${msg}</li>`).join('') + '</ul>';
-            element.classList.remove('hidden');
-        } else {
-            element.innerHTML = '';
-            element.classList.add('hidden');
-        }
-    }
-
-    if (withdrawalForm) {
-        withdrawalForm.addEventListener('submit', function(event) {
-            event.preventDefault(); 
-
-            const amountInput = document.getElementById('amount');
-            const accountSelect = document.getElementById('withdrawal_account_id');
-            const submitButton = document.getElementById('submitWithdrawalBtn');
-
-            let isValid = true;
-            let amountErrorMessages = [];
-            let accountErrorMessages = [];
-
-            showInlineError(amountErrorDiv, []);
-            showInlineError(accountErrorDiv, []);
-
-            if (jsHasActiveRequest) {
-                let messageForPopup = "You already have a withdrawal request that is being processed or is pending.";
-                if (jsReasonForActiveRequestMessage && jsReasonForActiveRequestMessage.toLowerCase().includes("already have a withdrawal request")) {
-                    messageForPopup = jsReasonForActiveRequestMessage;
-                }
-                showModal(
-                    'Withdrawal Not Available',
-                    messageForPopup,
-                    'warning', 
-                    [{ text: 'OK', class: 'cancel' }]
-                );
-                return; 
-            }
-
-            const amountValue = parseFloat(amountInput.value);
-            const minAmount = parseFloat(amountInput.min || '{{ min_withdrawal_amount|default:50|floatformat:"2" }}');
-            const maxAmount = parseFloat(amountInput.max || '{{ available_balance|default:0|floatformat:"2" }}');
-
-            if (!amountInput.value || isNaN(amountValue) || amountValue <= 0) {
-                amountErrorMessages.push("Please enter a valid withdrawal amount.");
-                isValid = false;
-            } else {
-                if (minAmount > 0 && amountValue < minAmount) {
-                    amountErrorMessages.push(`Withdrawal amount must be at least Rs. ${minAmount.toFixed(2)}.`);
-                    isValid = false;
-                }
-                if (maxAmount > 0 && amountValue > maxAmount) { 
-                    amountErrorMessages.push(`Withdrawal amount cannot exceed your available balance of Rs. ${maxAmount.toFixed(2)}.`);
-                    isValid = false;
-                }
-            }
-            
-            if (!accountSelect.value) {
-                accountErrorMessages.push("Please select a payout account.");
-                isValid = false;
-            }
-
-            if (!isValid) {
-                showInlineError(amountErrorDiv, amountErrorMessages);
-                showInlineError(accountErrorDiv, accountErrorMessages);
-                if (amountErrorMessages.length > 0 && amountInput) amountInput.focus();
-                else if (accountErrorMessages.length > 0 && accountSelect) accountSelect.focus();
-                return;
-            }
-            
-            const amount = parseFloat(amountInput.value).toFixed(2);
-            const accountText = accountSelect.options[accountSelect.selectedIndex].text;
-            
-            showModal(
-                'Confirm Withdrawal',
-                `Request withdrawal of <strong class="text-[#091e65]">Rs. ${amount}</strong> to:<br/>${accountText}?`,
-                'question',
-                [
-                    { 
-                        text: 'Yes, Request Withdrawal!', 
-                        class: 'confirm', 
-                        onClick: () => {
-                            if(submitButton) {
-                                submitButton.disabled = true; 
-                                submitButton.innerHTML = `
-                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Processing...`;
-                            }
-                            withdrawalForm.submit(); 
-                        }
-                    },
-                    { text: 'Cancel', class: 'cancel' }
-                ]
-            );
-        });
-    }
-
-    const CANCELLATION_WINDOW_MS = 30 * 60 * 1000; 
-
-    function formatTime(milliseconds) {
-        if (milliseconds < 0) milliseconds = 0;
-        let totalSeconds = Math.floor(milliseconds / 1000);
-        let minutes = Math.floor(totalSeconds / 60);
-        let seconds = totalSeconds % 60;
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    function initializeCountdownTimers() {
-        const requestRows = document.querySelectorAll('.withdrawal-request-row');
-        requestRows.forEach(row => {
-            const requestDateStr = row.dataset.requestDate;
-            const requestId = row.dataset.requestId;
-            const status = row.dataset.status;
-            
-            if (status !== 'pending' || !requestDateStr) return; 
-
-            const requestDate = new Date(requestDateStr);
-            const expirationTime = requestDate.getTime() + CANCELLATION_WINDOW_MS;
-            
-            const countdownElement = document.getElementById(`countdown-${requestId}`);
-            const cancelForm = row.querySelector(`.cancel-form[data-request-id="${requestId}"]`);
-
-            if (!countdownElement || !cancelForm) return;
-
-            function updateCountdown() {
-                const now = new Date().getTime();
-                const timeRemaining = expirationTime - now;
-
-                if (timeRemaining > 0) {
-                    countdownElement.textContent = `Cancellable for: ${formatTime(timeRemaining)}`;
-                    cancelForm.style.display = 'inline-block'; 
-                } else {
-                    countdownElement.textContent = 'Cancellation window expired';
-                    countdownElement.classList.remove('text-slate-600');
-                    countdownElement.classList.add('text-slate-400', 'italic');
-                    cancelForm.style.display = 'none'; 
-                    clearInterval(intervalId); 
-                }
-            }
-            const intervalId = setInterval(updateCountdown, 1000);
-            updateCountdown(); 
-        });
-    }
-    initializeCountdownTimers(); 
-}); 
-
-window.handleCancelSubmit = function(event, amount, formElement) {
-    event.preventDefault(); 
-    showModal( 
-        'Cancel Withdrawal Request?',
-        `Are you sure you want to cancel the withdrawal request for <strong class="text-red-600">Rs. ${amount}</strong>? This action cannot be undone.`,
-        'warning', 
-        [
-            {
-                text: 'Yes, Cancel It',
-                class: 'danger', 
-                onClick: () => {
-                    const cancelButtonInForm = formElement.querySelector('button[type="submit"]'); 
-                    if(cancelButtonInForm) { 
-                        cancelButtonInForm.disabled = true;
-                        cancelButtonInForm.innerHTML = 'Cancelling...'; 
-                    }
-                    formElement.submit(); 
-                }
-            },
-            { text: 'No, Keep It', class: 'cancel' }
-        ]
-    );
-};
+    // Pass Django context variables to JavaScript
+    const DJANGO_HAS_ACTIVE_REQUEST = ("{{ has_active_request|yesno:'true,false'|lower }}" === "true");
+    const DJANGO_REASON_CANT_REQUEST = "{{ reason_cant_request|escapejs }}";
+    const DJANGO_MIN_WITHDRAWAL_AMOUNT = parseFloat('{{ min_withdrawal_amount|default:50|floatformat:"2" }}');
+    const DJANGO_AVAILABLE_BALANCE = parseFloat('{{ available_balance|default:0|floatformat:"2" }}');
 </script>
+<script src="{% static 'js/creator/creator_withdrawal_request.js' %}"></script>
 {% endblock %}

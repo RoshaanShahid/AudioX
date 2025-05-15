@@ -23,7 +23,7 @@
 
         <div class="px-6 py-5 sm:px-8 lg:px-10 bg-gray-50/80 border-b border-gray-200/90">
              <h2 class="text-xl font-semibold text-gray-800">
-                Edit Your Profile
+                 Edit Your Profile
              </h2>
              <p class="text-sm text-gray-500 mt-0.5">Keep your public information current.</p>
         </div>
@@ -51,9 +51,9 @@
                         </label>
 
                          <button type="button" id="remove-pic-btn"
-                            class="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-1/4 bg-red-600 hover:bg-red-700 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs shadow-md transition z-10
-                                   {% if not creator.creator_profile_pic %} hidden {% endif %}"
-                            title="Remove Picture">
+                                class="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-1/4 bg-red-600 hover:bg-red-700 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs shadow-md transition z-10
+                                {% if not creator.creator_profile_pic %} hidden {% endif %}"
+                                title="Remove Picture">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -154,183 +154,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('update-profile-form');
-    const fileInput = document.getElementById('creator_profile_pic_input');
-    const profilePicPreview = document.getElementById('profile-pic-preview');
-    const profilePicPlaceholder = document.getElementById('profile-pic-placeholder');
-    let removePicBtn = document.getElementById('remove-pic-btn');
-    const removePicInput = document.getElementById('remove_profile_pic');
-    const previewContainer = document.getElementById('profile-pic-preview-container');
-
-    const creatorNameInput = document.getElementById('creator_name');
-    const uniqueNameInput = document.getElementById('creator_unique_name');
-    const initialCreatorName = creatorNameInput ? creatorNameInput.dataset.initialValue : '';
-    const initialUniqueName = uniqueNameInput ? uniqueNameInput.dataset.initialValue : '';
-
-    const modal = document.getElementById('confirmation-modal');
-    const modalPanel = modal ? modal.querySelector('.relative') : null;
-    const modalMessage = document.getElementById('modal-message');
-    const confirmButton = document.getElementById('confirm-button');
-    const cancelButton = document.getElementById('cancel-button');
-
-    let nameChangeConfirmed = false;
-
-    function showModal() {
-        if (!modal || !modalPanel) return;
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        void modalPanel.offsetWidth; 
-        modalPanel.dataset.active = true;
-    }
-
-    function hideModal() {
-        if (!modal || !modalPanel) return;
-        delete modalPanel.dataset.active;
-        const timeoutId = setTimeout(() => {
-             if (!modal.classList.contains('hidden')) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-             }
-        }, 350);
-        modalPanel.addEventListener('transitionend', () => {
-            clearTimeout(timeoutId);
-            if (!modalPanel.dataset.active) {
-               modal.classList.add('hidden');
-               modal.classList.remove('flex');
-            }
-        }, { once: true });
-    }
-
-    function updateRemoveButtonVisibility() {
-        removePicBtn = document.getElementById('remove-pic-btn');
-        if (removePicBtn) {
-            const hasImage = (profilePicPreview && !profilePicPreview.classList.contains('hidden') && profilePicPreview.src && !profilePicPreview.src.endsWith('/'));
-            if (hasImage) {
-                removePicBtn.classList.remove('hidden');
-            } else {
-                removePicBtn.classList.add('hidden');
-            }
-        }
-    }
-
-    if (fileInput && profilePicPreview && previewContainer) {
-        fileInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const maxSize = 2 * 1024 * 1024; // 2MB
-                if (file.size > maxSize) {
-                    fileInput.value = ''; 
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    profilePicPreview.src = e.target.result;
-                    profilePicPreview.classList.remove('hidden');
-                    if (profilePicPlaceholder) {
-                        profilePicPlaceholder.classList.add('hidden');
-                    }
-                    if (removePicInput) removePicInput.value = '0';
-                    updateRemoveButtonVisibility(); 
-                    addRemoveListener(); 
-                }
-                reader.readAsDataURL(file);
-            } else if (file) {
-                fileInput.value = '';
-            }
-        });
-    }
-
-    function addRemoveListener() {
-        removePicBtn = document.getElementById('remove-pic-btn'); 
-        if (removePicBtn) {
-            const newBtn = removePicBtn.cloneNode(true);
-            removePicBtn.parentNode.replaceChild(newBtn, removePicBtn);
-            removePicBtn = newBtn; 
-
-            removePicBtn.addEventListener('click', function() {
-                if (profilePicPreview) {
-                    profilePicPreview.src = '';
-                    profilePicPreview.classList.add('hidden');
-                }
-                if (profilePicPlaceholder) {
-                    profilePicPlaceholder.classList.remove('hidden');
-                }
-                if (fileInput) fileInput.value = '';
-                if (removePicInput) removePicInput.value = '1';
-                updateRemoveButtonVisibility(); 
-            });
-        }
-    }
-    updateRemoveButtonVisibility();
-    addRemoveListener();
-
-    if (form && creatorNameInput && uniqueNameInput) {
-        form.addEventListener('submit', function(event) {
-            const currentCreatorName = creatorNameInput.value.trim();
-            const currentUniqueName = uniqueNameInput.value.trim();
-            const initialName = initialCreatorName || '';
-            const initialUnique = initialUniqueName || '';
-
-            const nameChanged = initialName !== currentCreatorName && !creatorNameInput.readOnly;
-            const uniqueNameChanged = initialUnique !== currentUniqueName && !uniqueNameInput.readOnly;
-
-            if ((nameChanged || uniqueNameChanged) && !nameChangeConfirmed) {
-                event.preventDefault();
-
-                let message = "Please confirm the following changes:<br><ul class='list-none mt-2 space-y-1.5 text-gray-800'>";
-                 if (nameChanged) {
-                    message += `<li class="flex items-start p-2 bg-gray-50 rounded border border-gray-200"><i class="fas fa-user text-[#091e65]/70 w-4 pt-1 mr-2.5 flex-shrink-0"></i><span class="flex-grow">Display Name:<br>"<span class="font-medium text-gray-500 line-through">${initialName || '(empty)'}</span>" <i class="fas fa-arrow-right fa-xs mx-1 text-gray-400"></i> "<b class="text-[#091e65]">${currentCreatorName}</b>"</span></li>`;
-                }
-                if (uniqueNameChanged) {
-                    message += `<li class="flex items-start p-2 bg-gray-50 rounded border border-gray-200"><i class="fas fa-at text-[#091e65]/70 w-4 pt-1 mr-2.5 flex-shrink-0"></i><span class="flex-grow">Unique Handle:<br>"<span class="font-medium text-gray-500 line-through">@${initialUnique || '(empty)'}</span>" <i class="fas fa-arrow-right fa-xs mx-1 text-gray-400"></i> "<b class="text-[#091e65]">@${currentUniqueName}</b>"</span></li>`;
-                }
-                message += "</ul>";
-                if (modalMessage) modalMessage.innerHTML = message;
-                showModal();
-            } else {
-                nameChangeConfirmed = false; 
-                const submitButton = form.querySelector('button[type="submit"]');
-                if(submitButton) {
-                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
-                    submitButton.disabled = true;
-                }
-            }
-        });
-    }
-
-    if (confirmButton) {
-        confirmButton.addEventListener('click', function() {
-            nameChangeConfirmed = true;
-            hideModal();
-            const submitButton = form.querySelector('button[type="submit"]');
-            if(submitButton) {
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
-                submitButton.disabled = true;
-            }
-            setTimeout(() => {
-                if (form) form.submit();
-            }, 50);
-        });
-    }
-
-    if (cancelButton) {
-        cancelButton.addEventListener('click', function() {
-            hideModal();
-            nameChangeConfirmed = false;
-        });
-    }
-
-    if (modal) {
-        modal.addEventListener('click', function(event) {
-            if (event.target === modal) {
-                hideModal();
-                nameChangeConfirmed = false;
-            }
-        });
-    }
-});
-</script>
+<script src="{% static 'js/creator/creator_profile.js' %}"></script>
 {% endblock %}

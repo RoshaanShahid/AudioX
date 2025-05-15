@@ -297,20 +297,5 @@
 
 {% block extra_scripts %}
 <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    window.addEventListener('setmainloading', (event) => {
-        const mainContentAlpine = document.querySelector('[x-data*="mainContentLoading"]');
-        if (mainContentAlpine && mainContentAlpine.__x) {
-            mainContentAlpine.__x.$data.mainContentLoading = event.detail;
-        }
-    });
-    window.addEventListener('setbooklistloading', (event) => {
-        const mainContentAlpine = document.querySelector('[x-data*="mainContentLoading"]'); 
-        if (mainContentAlpine && mainContentAlpine.__x) {
-            mainContentAlpine.__x.$data.bookListLoadingState = event.detail;
-        }
-    });
-});
-</script>
+<script src="{% static 'js/creator/creator_myearnings.js' %}"></script>
 {% endblock %}

@@ -9,22 +9,40 @@
     <link rel="icon" href="{% static 'img/audiox-favicon.png' %}" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{% static 'js/Audiobook_creator_details.js' %}" defer></script>
-    <script src="https://js.stripe.com/v3/"></script>
+
+    {# Conditionally load Audiobook_creator_details.js #}
+    {# This script should only load on pages where it's specifically needed, #}
+    {# typically the audiobook detail page for a creator's book. #}
+    {# The 'is_creator_book' variable must be passed from your Django view. #}
+    {% if is_creator_book %}
+        <script src="{% static 'js/Audiobook_creator_details.js' %}" defer></script>
+    {% endif %}
+
+    <script src="https://js.stripe.com/v3/"></script> {# Stripe for payments #}
+    
+    {# Google Fonts #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+    {# Link to your compiled Tailwind CSS file #}
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
     {# --- Add CSRF token meta tag for JavaScript --- #}
     <meta name="csrf-token" content="{{ csrf_token }}">
 
     {# --- Pass JSON-serialized context from view --- #}
-    {# Ensure 'creator_js_context' is passed from your view #}
-    {{ creator_js_context|json_script:"django-context-data" }}
+    {# This is used by Audiobook_creator_details.js and potentially other scripts. #}
+    {# Ensure 'creator_js_context' is passed from your view if this script is loaded. #}
+    {# For pages not using Audiobook_creator_details.js, this can be omitted or empty. #}
+    {% block page_specific_js_data %}
+        {# Example: Only include if needed for the current page's scripts #}
+        {% if is_creator_book and creator_js_context %} 
+            {{ creator_js_context|json_script:"django-context-data" }}
+        {% endif %}
+    {% endblock %}
 
-    </head>
+</head>
 
 <body class="font-sans bg-theme-bg-subtle text-theme-text-primary flex flex-col min-h-screen"> {# Use subtle background #}
 

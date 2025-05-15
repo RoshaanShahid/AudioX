@@ -12,8 +12,8 @@
 
     {# Page Header - Centered #}
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 md:mb-14 text-center">
-         <h1 class="text-4xl md:text-5xl font-bold text-theme-primary tracking-tight">Account Settings</h1>
-         <p class="mt-2 text-base text-slate-600">Manage your profile details and security preferences.</p>
+        <h1 class="text-4xl md:text-5xl font-bold text-theme-primary tracking-tight">Account Settings</h1>
+        <p class="mt-2 text-base text-slate-600">Manage your profile details and security preferences.</p>
     </div>
 
     {# Main Content Area - Centered Card Layout #}
@@ -30,13 +30,13 @@
                         Profile
                     </button>
                     <button id="security-tab" data-target="security-content" class="profile-tab group inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-theme-primary/80 transition-all duration-150 ease-in-out" aria-current="false">
-                         <i class="fas fa-shield-alt text-base opacity-70 group-aria-[current=page]:opacity-100"></i>
-                         Security
+                        <i class="fas fa-shield-alt text-base opacity-70 group-aria-[current=page]:opacity-100"></i>
+                        Security
                     </button>
                     {# Add more tabs here if needed #}
                 </nav>
-                 {# Active Tab Indicator Styling (using aria-current) - Refined #}
-                 <style>
+                {# Active Tab Indicator Styling (using aria-current) - Refined #}
+                <style>
                     .profile-tab[aria-current="page"] {
                         color: var(--theme-primary, #091e65);
                         border-color: var(--theme-primary, #091e65);
@@ -44,12 +44,12 @@
                         font-weight: 600; /* Semibold for active tab */
                     }
                     .profile-tab[aria-current="page"] i {
-                         color: var(--theme-primary, #091e65);
+                        color: var(--theme-primary, #091e65);
                     }
-                 </style>
+                </style>
             </div>
 
-             {# Message Area - Placed prominently #}
+            {# Message Area - Placed prominently #}
             <div id="profile-update-message" class="px-6 md:px-8 pt-5 min-h-[2.5rem]"></div> {# Placeholder #}
             <input type="hidden" id="update-profile-url" data-url="{% url 'AudioXApp:update_profile' %}">
             <input type="hidden" id="update-2fa-url" data-url="{% url 'AudioXApp:update_profile' %}">
@@ -103,27 +103,27 @@
                                            class="absolute text-sm text-slate-500 duration-300 transform -translate-y-3.5 scale-75 top-4 z-10 origin-[0] start-3.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-3.5 peer-focus:text-theme-primary rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto pointer-events-none">
                                         Username
                                     </label>
-                                     <div class="absolute top-1/2 -translate-y-1/2 right-0 flex items-center pr-3">
-                                         <button type="button" class="edit-icon form-icon-button p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition duration-150 focus:outline-none text-sm" data-target="username" title="Edit Username"> <i class="fas fa-pencil-alt"></i> </button>
-                                         <button type="button" class="save-icon hidden form-icon-button p-1.5 rounded-full text-green-600 hover:text-green-700 hover:bg-green-100 transition duration-150 focus:outline-none text-sm" data-target="username" title="Save Username"> <i class="fas fa-check-circle text-base"></i> </button>
-                                     </div>
+                                    <div class="absolute top-1/2 -translate-y-1/2 right-0 flex items-center pr-3">
+                                        <button type="button" class="edit-icon form-icon-button p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition duration-150 focus:outline-none text-sm" data-target="username" title="Edit Username"> <i class="fas fa-pencil-alt"></i> </button>
+                                        <button type="button" class="save-icon hidden form-icon-button p-1.5 rounded-full text-green-600 hover:text-green-700 hover:bg-green-100 transition duration-150 focus:outline-none text-sm" data-target="username" title="Save Username"> <i class="fas fa-check-circle text-base"></i> </button>
+                                    </div>
                                 </div>
                                 {# Full Name Field #}
                                 <div class="relative group">
-                                     <input type="text" id="name" name="full_name" value="{{ user.full_name|default:'' }}"
-                                            class="form-input peer block w-full px-3.5 pb-2 pt-5 border border-slate-300 rounded-lg text-sm shadow-sm bg-white text-slate-900 placeholder-transparent focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary read-only:bg-slate-100 read-only:text-slate-600 read-only:cursor-default"
-                                            placeholder="Full Name" readonly>
-                                     <label for="name"
-                                            class="absolute text-sm text-slate-500 duration-300 transform -translate-y-3.5 scale-75 top-4 z-10 origin-[0] start-3.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-3.5 peer-focus:text-theme-primary rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto pointer-events-none">
-                                         Full Name
-                                     </label>
-                                     <div class="absolute top-1/2 -translate-y-1/2 right-0 flex items-center pr-3">
-                                         <button type="button" class="edit-icon form-icon-button p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition duration-150 focus:outline-none text-sm" data-target="name" title="Edit Name"> <i class="fas fa-pencil-alt"></i> </button>
-                                         <button type="button" class="save-icon hidden form-icon-button p-1.5 rounded-full text-green-600 hover:text-green-700 hover:bg-green-100 transition duration-150 focus:outline-none text-sm" data-target="name" title="Save Name"> <i class="fas fa-check-circle text-base"></i> </button>
-                                     </div>
+                                    <input type="text" id="name" name="full_name" value="{{ user.full_name|default:'' }}"
+                                           class="form-input peer block w-full px-3.5 pb-2 pt-5 border border-slate-300 rounded-lg text-sm shadow-sm bg-white text-slate-900 placeholder-transparent focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary read-only:bg-slate-100 read-only:text-slate-600 read-only:cursor-default"
+                                           placeholder="Full Name" readonly>
+                                    <label for="name"
+                                           class="absolute text-sm text-slate-500 duration-300 transform -translate-y-3.5 scale-75 top-4 z-10 origin-[0] start-3.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-3.5 peer-focus:text-theme-primary rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto pointer-events-none">
+                                        Full Name
+                                    </label>
+                                    <div class="absolute top-1/2 -translate-y-1/2 right-0 flex items-center pr-3">
+                                        <button type="button" class="edit-icon form-icon-button p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition duration-150 focus:outline-none text-sm" data-target="name" title="Edit Name"> <i class="fas fa-pencil-alt"></i> </button>
+                                        <button type="button" class="save-icon hidden form-icon-button p-1.5 rounded-full text-green-600 hover:text-green-700 hover:bg-green-100 transition duration-150 focus:outline-none text-sm" data-target="name" title="Save Name"> <i class="fas fa-check-circle text-base"></i> </button>
+                                    </div>
                                 </div>
                                 {# Email Field #}
-                                <div class="md:col-span-2 relative group">
+                                <div class="relative group"> {# Changed from md:col-span-2 to allow phone number next to it #}
                                     <input type="email" id="email" name="email" value="{{ user.email }}"
                                            class="form-input peer block w-full px-3.5 pb-2 pt-5 border border-slate-300 rounded-lg text-sm shadow-sm bg-white text-slate-900 placeholder-transparent focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary read-only:bg-slate-100 read-only:text-slate-600 read-only:cursor-default"
                                            placeholder="Email Address" readonly>
@@ -131,24 +131,38 @@
                                            class="absolute text-sm text-slate-500 duration-300 transform -translate-y-3.5 scale-75 top-4 z-10 origin-[0] start-3.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-3.5 peer-focus:text-theme-primary rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto pointer-events-none">
                                         Email Address
                                     </label>
-                                     <div class="absolute top-1/2 -translate-y-1/2 right-0 flex items-center pr-3">
-                                         <button type="button" class="edit-icon form-icon-button p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition duration-150 focus:outline-none text-sm" data-target="email" title="Edit Email"> <i class="fas fa-pencil-alt"></i> </button>
-                                         <button type="button" class="save-icon hidden form-icon-button p-1.5 rounded-full text-green-600 hover:text-green-700 hover:bg-green-100 transition duration-150 focus:outline-none text-sm" data-target="email" title="Save Email"> <i class="fas fa-check-circle text-base"></i> </button>
-                                     </div>
+                                    <div class="absolute top-1/2 -translate-y-1/2 right-0 flex items-center pr-3">
+                                        <button type="button" class="edit-icon form-icon-button p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition duration-150 focus:outline-none text-sm" data-target="email" title="Edit Email"> <i class="fas fa-pencil-alt"></i> </button>
+                                        <button type="button" class="save-icon hidden form-icon-button p-1.5 rounded-full text-green-600 hover:text-green-700 hover:bg-green-100 transition duration-150 focus:outline-none text-sm" data-target="email" title="Save Email"> <i class="fas fa-check-circle text-base"></i> </button>
+                                    </div>
                                 </div>
-                                 {# Bio Field #}
+                                {# Phone Number Field - NEW #}
+                                <div class="relative group">
+                                    <input type="tel" id="phone_number" name="phone_number" value="{{ user.phone_number|default:'' }}"
+                                           class="form-input peer block w-full px-3.5 pb-2 pt-5 border border-slate-300 rounded-lg text-sm shadow-sm bg-white text-slate-900 placeholder-transparent focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary read-only:bg-slate-100 read-only:text-slate-600 read-only:cursor-default"
+                                           placeholder="Phone Number (e.g., +923xxxxxxxxx)" readonly>
+                                    <label for="phone_number"
+                                           class="absolute text-sm text-slate-500 duration-300 transform -translate-y-3.5 scale-75 top-4 z-10 origin-[0] start-3.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-3.5 peer-focus:text-theme-primary rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto pointer-events-none">
+                                        Phone Number
+                                    </label>
+                                    <div class="absolute top-1/2 -translate-y-1/2 right-0 flex items-center pr-3">
+                                        <button type="button" class="edit-icon form-icon-button p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition duration-150 focus:outline-none text-sm" data-target="phone_number" title="Edit Phone Number"> <i class="fas fa-pencil-alt"></i> </button>
+                                        <button type="button" class="save-icon hidden form-icon-button p-1.5 rounded-full text-green-600 hover:text-green-700 hover:bg-green-100 transition duration-150 focus:outline-none text-sm" data-target="phone_number" title="Save Phone Number"> <i class="fas fa-check-circle text-base"></i> </button>
+                                    </div>
+                                </div>
+                                {# Bio Field #}
                                 <div class="md:col-span-2 relative group">
-                                     <textarea id="bio" name="bio" rows="4"
-                                               class="form-input peer block w-full px-3.5 pb-2 pt-5 border border-slate-300 rounded-lg text-sm shadow-sm bg-white text-slate-900 placeholder-transparent focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary read-only:bg-slate-100 read-only:text-slate-600 read-only:cursor-default resize-none min-h-[120px]"
-                                               placeholder="Bio" readonly>{{ user.bio|default:'' }}</textarea>
-                                     <label for="bio"
-                                            class="absolute text-sm text-slate-500 duration-300 transform -translate-y-3.5 scale-75 top-4 z-10 origin-[0] start-3.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-3.5 peer-focus:text-theme-primary rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto pointer-events-none">
-                                         Bio (Optional)
-                                     </label>
-                                     <div class="absolute top-3 right-0 flex items-center pr-3"> {# Adjusted position for textarea #}
-                                         <button type="button" class="edit-icon form-icon-button p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition duration-150 focus:outline-none text-sm" data-target="bio" title="Edit Bio"> <i class="fas fa-pencil-alt"></i> </button>
-                                         <button type="button" class="save-icon hidden form-icon-button p-1.5 rounded-full text-green-600 hover:text-green-700 hover:bg-green-100 transition duration-150 focus:outline-none text-sm" data-target="bio" title="Save Bio"> <i class="fas fa-check-circle text-base"></i> </button>
-                                     </div>
+                                    <textarea id="bio" name="bio" rows="4"
+                                              class="form-input peer block w-full px-3.5 pb-2 pt-5 border border-slate-300 rounded-lg text-sm shadow-sm bg-white text-slate-900 placeholder-transparent focus:outline-none focus:border-theme-primary focus:ring-1 focus:ring-theme-primary read-only:bg-slate-100 read-only:text-slate-600 read-only:cursor-default resize-none min-h-[120px]"
+                                              placeholder="Bio" readonly>{{ user.bio|default:'' }}</textarea>
+                                    <label for="bio"
+                                           class="absolute text-sm text-slate-500 duration-300 transform -translate-y-3.5 scale-75 top-4 z-10 origin-[0] start-3.5 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-3.5 peer-focus:text-theme-primary rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto pointer-events-none">
+                                        Bio (Optional)
+                                    </label>
+                                    <div class="absolute top-3 right-0 flex items-center pr-3"> {# Adjusted position for textarea #}
+                                        <button type="button" class="edit-icon form-icon-button p-1.5 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition duration-150 focus:outline-none text-sm" data-target="bio" title="Edit Bio"> <i class="fas fa-pencil-alt"></i> </button>
+                                        <button type="button" class="save-icon hidden form-icon-button p-1.5 rounded-full text-green-600 hover:text-green-700 hover:bg-green-100 transition duration-150 focus:outline-none text-sm" data-target="bio" title="Save Bio"> <i class="fas fa-check-circle text-base"></i> </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -161,13 +175,13 @@
                         {# Change Password Sub-section #}
                         <div class="p-6 rounded-lg border border-slate-200 bg-slate-50/50">
                             <div class="flex items-start mb-5 gap-4">
-                                 <div class="bg-theme-primary text-white p-3 rounded-lg shadow-md flex-shrink-0 ring-1 ring-black/5 mt-1">
-                                     <i class="fas fa-key fa-fw text-lg"></i>
-                                 </div>
-                                 <div>
-                                     <h3 class="text-lg font-semibold text-slate-800">Change Password</h3>
-                                     <p class="text-sm text-slate-500 mt-0.5">Update your password regularly for better security.</p>
-                                 </div>
+                                <div class="bg-theme-primary text-white p-3 rounded-lg shadow-md flex-shrink-0 ring-1 ring-black/5 mt-1">
+                                    <i class="fas fa-key fa-fw text-lg"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-800">Change Password</h3>
+                                    <p class="text-sm text-slate-500 mt-0.5">Update your password regularly for better security.</p>
+                                </div>
                             </div>
                             <form method="post" id="change-password-form" action="{% url 'AudioXApp:change_password' %}" class="space-y-5 max-w-lg ml-4 md:ml-[4.25rem]">
                                 {% csrf_token %}
@@ -182,7 +196,7 @@
                                     <div id="error-old_password" class="form-error text-red-600 text-xs mt-1 h-4 invisible"></div>
                                 </div>
                                 {# New Password #}
-                                 <div class="relative">
+                                <div class="relative">
                                     <label for="new_password1" class="block text-sm font-medium text-slate-700 mb-1.5 sr-only">New Password</label>
                                     <div class="password-input-wrapper relative">
                                         <i class="fas fa-lock input-icon absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
@@ -192,7 +206,7 @@
                                     <div id="error-new_password1" class="form-error text-red-600 text-xs mt-1 h-4 invisible"></div>
                                 </div>
                                 {# Confirm New Password #}
-                                 <div class="relative">
+                                <div class="relative">
                                     <label for="new_password2" class="block text-sm font-medium text-slate-700 mb-1.5 sr-only">Confirm New Password</label>
                                     <div class="password-input-wrapper relative">
                                         <i class="fas fa-lock input-icon absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
@@ -214,13 +228,13 @@
                         {# Two-Factor Authentication Sub-section #}
                         <div class="p-6 rounded-lg border border-slate-200 bg-slate-50/50">
                             <div class="flex items-start mb-4 gap-4">
-                                 <div class="bg-theme-primary text-white p-3 rounded-lg shadow-md flex-shrink-0 ring-1 ring-black/5 mt-1">
-                                     <i class="fas fa-mobile-alt fa-fw text-lg"></i>
-                                 </div>
-                                 <div>
-                                     <h3 class="text-lg font-semibold text-slate-800">Two-Factor Authentication</h3>
-                                     <p class="text-sm text-slate-500 mt-0.5">Add an extra layer of security to your account.</p>
-                                 </div>
+                                <div class="bg-theme-primary text-white p-3 rounded-lg shadow-md flex-shrink-0 ring-1 ring-black/5 mt-1">
+                                    <i class="fas fa-mobile-alt fa-fw text-lg"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-800">Two-Factor Authentication</h3>
+                                    <p class="text-sm text-slate-500 mt-0.5">Add an extra layer of security to your account.</p>
+                                </div>
                             </div>
                             <div class="ml-4 md:ml-[4.25rem]"> {# Align with content below icon #}
                                 <p class="text-sm text-slate-600 mb-5 max-w-xl leading-relaxed">
@@ -252,7 +266,7 @@
                                         <i class="fas fa-spinner fa-spin text-slate-500"></i>
                                     </div>
                                 </div>
-                                 <div id="2fa-update-message" class="mt-3 text-sm h-5 ml-1"></div> {# Placeholder #}
+                                <div id="2fa-update-message" class="mt-3 text-sm h-5 ml-1"></div> {# Placeholder #}
                             </div>
                         </div>
 
@@ -266,10 +280,10 @@
     {# Confirmation Modal (Tailwind Styled - Refined) #}
     <div id="confirm-save-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 transition-opacity duration-300 ease-out opacity-0">
         <div class="bg-white rounded-xl p-6 md:p-8 shadow-2xl border border-slate-300 w-full max-w-md transform transition-all duration-300 ease-out scale-95 opacity-0" id="confirm-modal-content">
-             <div class="flex justify-between items-start mb-4">
-                 <h2 class="text-xl font-semibold text-slate-800">Confirm Change</h2>
-                 <button type="button" id="confirm-save-cancel-x" class="text-slate-400 hover:text-slate-600 transition-colors" aria-label="Close"> <i class="fas fa-times text-lg"></i> </button>
-             </div>
+            <div class="flex justify-between items-start mb-4">
+                <h2 class="text-xl font-semibold text-slate-800">Confirm Change</h2>
+                <button type="button" id="confirm-save-cancel-x" class="text-slate-400 hover:text-slate-600 transition-colors" aria-label="Close"> <i class="fas fa-times text-lg"></i> </button>
+            </div>
             <p class="text-sm text-slate-600 mb-6" id="confirm-save-message">Are you sure you want to save this change?</p>
             <div class="flex justify-end space-x-3">
                 <button id="confirm-save-cancel" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out">Cancel</button>
@@ -379,7 +393,10 @@ document.addEventListener('DOMContentLoaded', function () {
             inputField.classList.remove(...readOnlyClasses);
             inputField.classList.add(...editableClasses);
             // Ensure placeholder is set for floating label to work correctly when empty
-            if (!inputField.placeholder) {
+            // For phone number, we can use a specific placeholder when editable.
+            if (inputField.id === 'phone_number' && !inputField.placeholder) {
+                 inputField.placeholder = '+923xxxxxxxxx';
+            } else if (!inputField.placeholder) {
                 const label = document.querySelector(`label[for="${inputField.id}"]`);
                 if (label) inputField.placeholder = label.textContent.trim();
             }
@@ -394,27 +411,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Helper: Display Password Field Errors ---
     function displayFieldErrors(errors) {
-         const errorDivs = changePasswordForm ? changePasswordForm.querySelectorAll('.form-error') : [];
-         errorDivs.forEach(el => { el.textContent = ''; el.classList.add('invisible'); }); // Hide all first
-         if (passwordChangeMessage) passwordChangeMessage.textContent = '';
+        const errorDivs = changePasswordForm ? changePasswordForm.querySelectorAll('.form-error') : [];
+        errorDivs.forEach(el => { el.textContent = ''; el.classList.add('invisible'); }); // Hide all first
+        if (passwordChangeMessage) passwordChangeMessage.textContent = '';
 
-         let hasErrors = false;
-         for (const field in errors) {
-             hasErrors = true;
-             const errorDiv = document.getElementById(`error-${field}`);
-             const message = Array.isArray(errors[field]) ? errors[field].join(' ') : errors[field];
-             if (errorDiv) {
-                 errorDiv.textContent = message;
-                 errorDiv.classList.remove('invisible'); // Show specific error
-             } else {
-                 // Fallback for general errors if specific div not found
-                 if (passwordChangeMessage) {
+        let hasErrors = false;
+        for (const field in errors) {
+            hasErrors = true;
+            const errorDiv = document.getElementById(`error-${field}`);
+            const message = Array.isArray(errors[field]) ? errors[field].join(' ') : errors[field];
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.remove('invisible'); // Show specific error
+            } else {
+                // Fallback for general errors if specific div not found
+                if (passwordChangeMessage) {
                     passwordChangeMessage.textContent += `${field}: ${message}\n`;
                     passwordChangeMessage.className = 'text-red-600 text-xs mt-1 h-5'; // Ensure style is error
-                 }
-             }
-         }
-         return hasErrors;
+                }
+            }
+        }
+        return hasErrors;
     }
 
     // --- Confirmation Modal Logic ---
@@ -452,6 +469,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- AJAX Save Functions ---
     function saveProfileField(fieldId, fieldValue) {
         if (!updateProfileURL) { showMessage('Error', 'Configuration error: Update URL not found.', 'error'); return; }
+        
+        // Map frontend ID 'name' to backend 'full_name'. Other fields should match.
         const backendFieldName = (fieldId === 'name') ? 'full_name' : fieldId;
         const dataToSave = { [backendFieldName]: fieldValue };
 
@@ -467,16 +486,27 @@ document.addEventListener('DOMContentLoaded', function () {
         if (editIconElement) editIconElement.classList.add('hidden'); // Hide edit icon during save
 
         fetch(updateProfileURL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify(dataToSave) })
-        .then(async response => { /* ... same response handling ... */
+        .then(async response => { 
             const isJson = response.headers.get('content-type')?.includes('application/json');
             const responseData = isJson ? await response.json() : null;
-            if (!response.ok) { let errorMsg = `HTTP error! Status: ${response.status} ${response.statusText}`; if (responseData?.message) errorMsg = responseData.message; else if (responseData?.error) errorMsg = responseData.error; else if (responseData?.errors) errorMsg = Object.values(responseData.errors).flat().join(' '); const error = new Error(errorMsg); error.data = responseData; error.status = response.status; throw error; } return responseData;
+            if (!response.ok) { 
+                let errorMsg = `HTTP error! Status: ${response.status} ${response.statusText}`; 
+                if (responseData?.message) errorMsg = responseData.message; 
+                else if (responseData?.error) errorMsg = responseData.error; 
+                else if (responseData?.errors) errorMsg = Object.values(responseData.errors).flat().join(' '); 
+                const error = new Error(errorMsg); 
+                error.data = responseData; 
+                error.status = response.status; 
+                throw error; 
+            } 
+            return responseData;
         })
         .then(data => {
             if (data && data.status === 'success') {
                 showMessage('Success', data.message || 'Profile updated successfully.', 'success');
                 const inputField = document.getElementById(fieldId);
                 if (inputField) setInputState(inputField, false); // Set back to readonly
+                
                 // Update sidebar/header if needed (e.g., username in header dropdown)
                 if (fieldId === 'username') {
                     const headerUsername = document.querySelector('#profile-dropdown p[title*="username"]'); // Adjust selector if needed
@@ -490,9 +520,20 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error updating profile field:', error);
             showMessage('Error', error.message || 'An error occurred.', 'error');
             // Revert input state on error ONLY if it's not a validation error from backend
-            if (!error.data || !error.data.errors) {
+            if (!error.data || !error.data.errors) { // if no specific field errors from backend
                 const inputField = document.getElementById(fieldId);
-                if (inputField) setInputState(inputField, false);
+                if (inputField) {
+                    // Potentially revert to original value if available, or just set to readonly
+                    // For now, just setting to readonly. A more complex state management might be needed for perfect revert.
+                    setInputState(inputField, false);
+                }
+            } else if (error.data && error.data.errors) {
+                 // If there are specific field errors, keep the field editable for correction.
+                const inputField = document.getElementById(fieldId);
+                if (inputField) {
+                    setInputState(inputField, true); // Keep editable
+                    inputField.focus();
+                }
             }
         })
         .finally(() => {
@@ -502,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 saveIconElement.disabled = false;
                 saveIconElement.classList.add('hidden'); // Hide save icon again
             }
-             if (editIconElement) editIconElement.classList.remove('hidden'); // Show edit icon again
+            if (editIconElement) editIconElement.classList.remove('hidden'); // Show edit icon again
         });
     }
 
@@ -518,9 +559,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if(removeProfilePicButton) removeProfilePicButton.disabled = true;
 
         fetch(updateProfileURL, { method: 'POST', body: formData, headers: { 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(async response => { /* ... same response handling ... */
-             const isJson = response.headers.get('content-type')?.includes('application/json'); const data = isJson ? await response.json() : null; if (!response.ok) { const errorText = !isJson ? await response.text() : null; const errorMsg = data?.message || data?.error || (data?.errors ? Object.values(data.errors).flat().join(' ') : null) || errorText || `HTTP error! Status: ${response.status}`; const error = new Error(errorMsg); error.data = data; error.status = response.status; throw error; } return data;
-         })
+        .then(async response => { 
+            const isJson = response.headers.get('content-type')?.includes('application/json'); const data = isJson ? await response.json() : null; if (!response.ok) { const errorText = !isJson ? await response.text() : null; const errorMsg = data?.message || data?.error || (data?.errors ? Object.values(data.errors).flat().join(' ') : null) || errorText || `HTTP error! Status: ${response.status}`; const error = new Error(errorMsg); error.data = data; error.status = response.status; throw error; } return data;
+        })
         .then(data => {
             if (data.status === 'success') {
                 showMessage('Success', data.message || 'Profile picture updated.', 'success');
@@ -537,8 +578,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     const headerProfilePlaceholder = document.querySelector('#profile-dropdown-toggle span:not(.sr-only)'); // Get header placeholder span
                     if(headerProfilePic) { headerProfilePic.src = newUrl; headerProfilePic.classList.remove('hidden'); }
                     if(headerProfilePlaceholder) headerProfilePlaceholder.classList.add('hidden');
-
-
                 }
             } else {
                 showMessage('Error', data?.message || 'Failed to update picture.', 'error');
@@ -551,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .finally(() => {
             saveProfilePicButton.disabled = false;
             saveProfilePicButton.innerHTML = originalButtonHTML; // Restore original text/icon
-             if(removeProfilePicButton) removeProfilePicButton.disabled = false;
+            if(removeProfilePicButton) removeProfilePicButton.disabled = false;
         });
     }
 
@@ -572,16 +611,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 if(saveProfilePicButton) saveProfilePicButton.disabled = true;
 
                 fetch(updateProfileURL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ remove_profile_pic: true }) })
-                .then(async response => { /* ... same response handling ... */
+                .then(async response => { 
                     const isJson = response.headers.get('content-type')?.includes('application/json'); const data = isJson ? await response.json() : null; if (!response.ok) { const errorText = !isJson ? await response.text() : null; const errorMsg = data?.message || data?.error || errorText || `HTTP error! Status: ${response.status}`; const error = new Error(errorMsg); error.data = data; error.status = response.status; throw error; } return data;
-                 })
+                })
                 .then(data => {
                     if (data.status === 'success') {
                         showMessage('Success', data.message || 'Profile picture removed.', 'success');
                         // Update main image
                         if (profilePictureImgMain) { profilePictureImgMain.src = ''; profilePictureImgMain.classList.add('hidden'); }
                         if (profilePicturePlaceholderMain) profilePicturePlaceholderMain.classList.remove('hidden');
-                         // Update header image (if header dropdown uses it)
+                        // Update header image (if header dropdown uses it)
                         const headerProfilePic = document.querySelector('#profile-dropdown-toggle img');
                         const headerProfilePlaceholder = document.querySelector('#profile-dropdown-toggle span:not(.sr-only)');
                         if(headerProfilePic) { headerProfilePic.src = ''; headerProfilePic.classList.add('hidden'); } // Hide img
@@ -623,9 +662,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (passwordChangeMessage) passwordChangeMessage.textContent = '';
 
         fetch(changePasswordForm.action, { method: 'POST', body: formData, headers: { 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(async response => { /* ... same response handling ... */
-             const isJson = response.headers.get('content-type')?.includes('application/json'); const data = isJson ? await response.json() : null; if (!response.ok) { const errorText = !isJson ? await response.text() : null; const error = data || { message: errorText || `HTTP error! Status: ${response.status}` }; error.status = response.status; error.data = data; throw error; } return data;
-         })
+        .then(async response => { 
+            const isJson = response.headers.get('content-type')?.includes('application/json'); const data = isJson ? await response.json() : null; if (!response.ok) { const errorText = !isJson ? await response.text() : null; const error = data || { message: errorText || `HTTP error! Status: ${response.status}` }; error.status = response.status; error.data = data; throw error; } return data;
+        })
         .then(data => {
             if (data.status === 'success') {
                 showMessage('Success', data.message || 'Password changed successfully!', 'success');
@@ -640,11 +679,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.errors) { displayedErrors = displayFieldErrors(data.errors); }
                 // Show general message only if no specific field errors were shown OR if a general message exists
                 if (!displayedErrors || data.message) {
-                     showMessage('Error', data.message || 'Failed to change password.', 'error');
+                    showMessage('Error', data.message || 'Failed to change password.', 'error');
                 }
                 if (passwordChangeMessage && data.message && !displayedErrors) {
-                     passwordChangeMessage.textContent = data.message;
-                     passwordChangeMessage.className = 'text-red-600 text-xs mt-1 h-5'; // Use error class
+                    passwordChangeMessage.textContent = data.message;
+                    passwordChangeMessage.className = 'text-red-600 text-xs mt-1 h-5'; // Use error class
                 }
             }
         })
@@ -655,10 +694,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 displayedErrors = displayFieldErrors(error.data.errors);
             }
             showMessage('Error', error.message || 'An unexpected error occurred.', 'error');
-             if (passwordChangeMessage && !displayedErrors) {
-                 passwordChangeMessage.textContent = error.message || 'An unexpected error occurred.';
-                 passwordChangeMessage.className = 'text-red-600 text-xs mt-1 h-5'; // Use error class
-             }
+            if (passwordChangeMessage && !displayedErrors) {
+                passwordChangeMessage.textContent = error.message || 'An unexpected error occurred.';
+                passwordChangeMessage.className = 'text-red-600 text-xs mt-1 h-5'; // Use error class
+            }
         })
         .finally(() => {
             submitButton.disabled = false;
@@ -687,9 +726,9 @@ document.addEventListener('DOMContentLoaded', function () {
         message2FA.className = 'mt-3 text-sm h-5 ml-1'; // Reset message class
 
         fetch(update2FA_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' }, body: JSON.stringify({ is_2fa_enabled: isEnabled }) })
-        .then(async response => { /* ... same response handling ... */
-             const isJson = response.headers.get('content-type')?.includes('application/json'); const responseData = isJson ? await response.json() : { status: 'error', message: 'Invalid response from server.' }; if (!response.ok || responseData.status !== 'success') { let errorMsg = responseData.message || `Failed to update 2FA status (HTTP ${response.status})`; const error = new Error(errorMsg); error.data = responseData; throw error; } return responseData;
-         })
+        .then(async response => { 
+            const isJson = response.headers.get('content-type')?.includes('application/json'); const responseData = isJson ? await response.json() : { status: 'error', message: 'Invalid response from server.' }; if (!response.ok || responseData.status !== 'success') { let errorMsg = responseData.message || `Failed to update 2FA status (HTTP ${response.status})`; const error = new Error(errorMsg); error.data = responseData; throw error; } return responseData;
+        })
         .then(data => {
             const successMsg = isEnabled ? 'Two-Factor Authentication enabled.' : 'Two-Factor Authentication disabled.';
             showMessage('Success', successMsg, 'success');
@@ -714,8 +753,8 @@ document.addEventListener('DOMContentLoaded', function () {
             toggle2FA.disabled = false;
             // Final check for status text consistency
             if (statusSpan && statusSpan.textContent === 'Updating...') {
-                 statusSpan.textContent = toggle2FA.checked ? 'Enabled' : 'Disabled';
-                 statusSpan.className = toggle2FA.checked ? 'text-theme-green' : 'text-slate-500';
+                statusSpan.textContent = toggle2FA.checked ? 'Enabled' : 'Disabled';
+                statusSpan.className = toggle2FA.checked ? 'text-theme-green' : 'text-slate-500';
             }
         });
     }
@@ -774,7 +813,7 @@ document.addEventListener('DOMContentLoaded', function () {
             else if (inputField.tagName === 'TEXTAREA') { inputField.setSelectionRange(inputField.value.length, inputField.value.length); }
             // Toggle icon visibility
             this.classList.add('hidden');
-            this.closest('.relative').querySelector(`.save-icon[data-target="${targetId}"]`)?.classList.remove('hidden');
+            this.closest('.relative.group').querySelector(`.save-icon[data-target="${targetId}"]`)?.classList.remove('hidden');
         });
     });
 
@@ -787,21 +826,37 @@ document.addEventListener('DOMContentLoaded', function () {
             let isValid = true;
             let errorMsg = '';
             const labelElement = document.querySelector(`label[for="${targetId}"]`);
-            const fieldLabel = labelElement ? labelElement.textContent : (targetId.charAt(0).toUpperCase() + targetId.slice(1));
+            let fieldLabel = labelElement ? labelElement.textContent.replace('(Optional)', '').trim() : (targetId.charAt(0).toUpperCase() + targetId.slice(1));
+            if (fieldLabel === "Bio (Optional)") fieldLabel = "Bio";
 
-            // Basic Validation - Allow empty for username now
-            if (!trimmedValue && targetId === 'email') { isValid = false; errorMsg = `${fieldLabel} cannot be empty.`; }
-            else if (targetId === 'email') { const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; if (!emailRegex.test(trimmedValue)) { isValid = false; errorMsg = 'Please enter a valid email address.'; } }
-            else if (targetId === 'username' && trimmedValue && trimmedValue.length < 3) { isValid = false; errorMsg = 'Username must be at least 3 characters long.'; } // Validate length only if not empty
+
+            // Basic Validation
+            if (targetId === 'email') {
+                if (!trimmedValue) { isValid = false; errorMsg = `${fieldLabel} cannot be empty.`; }
+                else { const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; if (!emailRegex.test(trimmedValue)) { isValid = false; errorMsg = 'Please enter a valid email address.'; } }
+            } else if (targetId === 'username') {
+                 if (!trimmedValue) { isValid = false; errorMsg = 'Username cannot be empty.'; } // Username cannot be empty
+                 else if (trimmedValue.length < 3) { isValid = false; errorMsg = 'Username must be at least 3 characters long.'; }
+            } else if (targetId === 'name') { // Assuming 'name' is for 'Full Name'
+                 if (!trimmedValue) { isValid = false; errorMsg = 'Full Name cannot be empty.'; }
+            } else if (targetId === 'phone_number') {
+                const phoneRegex = /^\+923\d{9}$/; // Example: +923001234567
+                if (!trimmedValue) {
+                    // Phone number can be optional, so allow empty string.
+                    // If it's not optional, uncomment the next two lines:
+                    // isValid = false;
+                    // errorMsg = `${fieldLabel} cannot be empty.`;
+                } else if (!phoneRegex.test(trimmedValue)) {
+                    isValid = false;
+                    errorMsg = 'Please enter a valid phone number in the format +923xxxxxxxxx.';
+                }
+            }
+            // Bio can be empty, so no validation needed for emptiness unless other rules apply.
 
             if (!isValid) { showMessage('Validation Error', errorMsg, 'error'); inputField.focus(); return; }
 
             // Confirmation Message Logic
             let confirmMsg = `Are you sure you want to update your ${fieldLabel}?`;
-            // Specific messages (optional)
-            // if (targetId !== 'bio' && trimmedValue) { confirmMsg = `Are you sure you want to change your ${fieldLabel} to "${trimmedValue}"?`; }
-            // else if (targetId !== 'bio' && !trimmedValue && targetId !== 'name') { confirmMsg = `Are you sure you want to clear your ${fieldLabel}?`; }
-
             showConfirmationModal(confirmMsg, targetId);
         });
     });
@@ -832,7 +887,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Initial Setup ---
     // Set initial input states (readonly)
     document.querySelectorAll('#profile-info-content .form-input').forEach(input => {
-        // Apply initial state (readonly)
         setInputState(input, false);
     });
     // Hide password error divs initially

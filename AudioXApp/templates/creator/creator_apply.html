@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <script>
-        // Tailwind config remains the same for reference and potential JS use
+        // Tailwind config (can be removed if not used by other inline JS, but kept for reference)
         tailwind.config = {
           theme: {
             extend: {
@@ -46,148 +46,121 @@
     </script>
 
     <style>
-        /* --- FIXED: Using Hex Values instead of theme() --- */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #091e65; /* theme('colors.theme-primary') */
-            color: #111827; /* theme('colors.theme-text-primary') */
+            background-color: #091e65; 
+            color: #111827; 
         }
-
-        .main-container {
-            display: flex;
-            min-height: 100vh;
-        }
-
+        .main-container { display: flex; min-height: 100vh; }
         .sidebar {
-            width: 320px;
-            background-color: #091e65; /* theme('colors.theme-primary') */
-            color: #ffffff; /* theme('colors.theme-text-inverted') */
-            padding: 3rem 2rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            flex-shrink: 0;
+            width: 320px; background-color: #091e65; color: #ffffff; 
+            padding: 3rem 2rem; display: flex; flex-direction: column;
+            justify-content: space-between; flex-shrink: 0;
         }
-        .sidebar-header .logo {
-            font-size: 2rem; font-weight: 800; letter-spacing: -0.05em; margin-bottom: 1rem;
-        }
-        .sidebar-header .logo .logo-x { color: #ef4444; /* theme('colors.theme-error') */ }
+        .sidebar-header .logo { font-size: 2rem; font-weight: 800; letter-spacing: -0.05em; margin-bottom: 1rem; }
+        .sidebar-header .logo .logo-x { color: #ef4444; }
         .sidebar-header .logo .logo-dot {
             display: inline-block; width: 0.5rem; height: 0.5rem;
-            background-color: #f59e0b; /* theme('colors.theme-secondary') */
-            border-radius: 50%; margin-left: 0.15rem; vertical-align: middle;
+            background-color: #f59e0b; border-radius: 50%; 
+            margin-left: 0.15rem; vertical-align: middle;
         }
         .sidebar-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.75rem; line-height: 1.3; }
-        .sidebar-header p { font-size: 0.95rem; color: #e0e7ff; /* theme('colors.theme-text-inverted-muted') */ line-height: 1.6; }
-        .sidebar-footer { font-size: 0.8rem; color: #e0e7ff; /* theme('colors.theme-text-inverted-muted') */ opacity: 0.7; }
-         .sidebar-footer a { color: #e0e7ff; /* theme('colors.theme-primary-light') */ text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s ease; }
-         .sidebar-footer a:hover { color: #f59e0b; /* theme('colors.theme-secondary') */ }
-
+        .sidebar-header p { font-size: 0.95rem; color: #e0e7ff; line-height: 1.6; }
+        .sidebar-footer { font-size: 0.8rem; color: #e0e7ff; opacity: 0.7; }
+        .sidebar-footer a { color: #e0e7ff; text-decoration: underline; text-underline-offset: 2px; transition: color 0.2s ease; }
+        .sidebar-footer a:hover { color: #f59e0b; }
 
         .content-area {
-            flex-grow: 1;
-            background-color: #ffffff; /* theme('colors.theme-bg-card') */
-            padding: 3rem 4rem;
-            border-top-left-radius: 1.5rem;
-            border-bottom-left-radius: 1.5rem;
-            box-shadow: -10px 0 25px -5px rgba(0,0,0,0.1);
+            flex-grow: 1; background-color: #ffffff; 
+            padding: 3rem 4rem; border-top-left-radius: 1.5rem;
+            border-bottom-left-radius: 1.5rem; box-shadow: -10px 0 25px -5px rgba(0,0,0,0.1);
             overflow-y: auto;
         }
-
         .content-header p {
-            font-size: 1rem; color: #6b7280; /* theme('colors.theme-text-light') */ margin-bottom: 2rem;
-            border-left: 3px solid #091e65; /* theme('colors.theme-primary') */ padding-left: 1rem;
+            font-size: 1rem; color: #6b7280; margin-bottom: 2rem;
+            border-left: 3px solid #091e65; padding-left: 1rem;
         }
-         .content-header p strong { font-weight: 600; color: #374151; /* theme('colors.theme-text-secondary') */ }
-
-        .form-section-alt { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; /* theme('colors.theme-border-light') */ }
+        .content-header p strong { font-weight: 600; color: #374151; }
+        .form-section-alt { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; }
         .form-section-alt:last-of-type { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-
-        .form-section-title-alt { font-size: 1.25rem; font-weight: 600; color: #091e65; /* theme('colors.theme-primary') */ margin-bottom: 1.5rem; }
-
+        .form-section-title-alt { font-size: 1.25rem; font-weight: 600; color: #091e65; margin-bottom: 1.5rem; }
         .input-group-alt { position: relative; margin-bottom: 1.75rem; }
-        .input-label-v3 { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151; /* theme('colors.theme-text-secondary') */ }
-        .input-label-v3 .required-star { color: #ef4444; /* theme('colors.theme-error') */ margin-left: 2px; }
-
+        .input-label-v3 { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151; }
+        .input-label-v3 .required-star { color: #ef4444; margin-left: 2px; }
         .input-field-v3 {
             width: 100%; padding: 0.8rem 1rem 0.8rem 2.75rem;
-            border: 1px solid #d1d5db; /* theme('colors.theme-border') */ border-radius: 0.5rem;
-            background-color: #ffffff; /* theme('colors.theme-input-bg') */ color: #111827; /* theme('colors.theme-text-primary') */
+            border: 1px solid #d1d5db; border-radius: 0.5rem;
+            background-color: #ffffff; color: #111827; 
             transition: border-color 0.2s ease, box-shadow 0.2s ease; font-size: 0.95rem;
         }
         .input-field-v3:focus {
-            outline: none; border-color: #091e65; /* theme('colors.theme-primary') */
-            box-shadow: 0 0 0 3px #e0e7ff; /* theme('colors.theme-primary-light') */
-            background-color: #ffffff; /* theme('colors.theme-input-bg-focus') */
+            outline: none; border-color: #091e65; 
+            box-shadow: 0 0 0 3px #e0e7ff; 
+            background-color: #ffffff; 
         }
-        .input-field-v3::placeholder { color: #6b7280; /* theme('colors.theme-text-light') */ opacity: 0.9; }
-
+        .input-field-v3::placeholder { color: #6b7280; opacity: 0.9; }
         .input-icon-v3 {
             position: absolute; left: 1rem; top: calc(50% + 0.1rem); transform: translateY(-50%);
-            color: #6b7280; /* theme('colors.theme-text-light') */ transition: color 0.2s ease;
+            color: #6b7280; transition: color 0.2s ease;
             font-size: 0.9rem; pointer-events: none;
         }
-        .input-field-v3:focus ~ .input-icon-v3 { color: #091e65; /* theme('colors.theme-primary') */ }
-
-        .error-message-v3 { color: #ef4444; /* theme('colors.theme-error') */ font-size: 0.8rem; margin-top: 0.35rem; min-height: 1.1em; font-weight: 500; }
-
+        .input-field-v3:focus ~ .input-icon-v3 { color: #091e65; }
+        .error-message-v3 { color: #ef4444; font-size: 0.8rem; margin-top: 0.35rem; min-height: 1.1em; font-weight: 500; }
         .file-upload-v3 {
-            border: 1px solid #d1d5db; /* theme('colors.theme-border') */ border-radius: 0.75rem; padding: 1rem;
-            background-color: #f8f9fc; /* theme('colors.theme-bg-page') */ display: flex; align-items: center; gap: 1rem;
+            border: 1px solid #d1d5db; border-radius: 0.75rem; padding: 1rem;
+            background-color: #f8f9fc; display: flex; align-items: center; gap: 1rem;
             transition: box-shadow 0.2s ease;
         }
-         .file-upload-v3:hover { border-color: #e0e7ff; /* theme('colors.theme-primary-light') */ box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .file-upload-v3:hover { border-color: #e0e7ff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .file-upload-icon-v3 {
-            font-size: 1.5rem; color: #091e65; /* theme('colors.theme-primary') */ flex-shrink: 0;
+            font-size: 1.5rem; color: #091e65; flex-shrink: 0;
             width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
-            background-color: #f0f3ff; /* theme('colors.theme-primary-lighter') */ border-radius: 0.5rem;
+            background-color: #f0f3ff; border-radius: 0.5rem;
         }
         .file-upload-info-v3 { flex-grow: 1; }
-        .file-upload-info-v3 p { font-size: 0.9rem; font-weight: 500; color: #374151; /* theme('colors.theme-text-secondary') */ margin-bottom: 0; }
-        .file-upload-info-v3 .file-constraints { font-size: 0.8rem; color: #6b7280; /* theme('colors.theme-text-light') */ }
+        .file-upload-info-v3 p { font-size: 0.9rem; font-weight: 500; color: #374151; margin-bottom: 0; }
+        .file-upload-info-v3 .file-constraints { font-size: 0.8rem; color: #6b7280; }
         .file-upload-button-v3 {
-            padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 600; color: #091e65; /* theme('colors.theme-primary') */ background-color: white;
-            border: 1px solid #d1d5db; /* theme('colors.theme-border') */ border-radius: 0.5rem; cursor: pointer;
+            padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 600; color: #091e65; background-color: white;
+            border: 1px solid #d1d5db; border-radius: 0.5rem; cursor: pointer;
             transition: all 0.2s ease; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .file-upload-button-v3:hover { background-color: #f0f3ff; /* theme('colors.theme-primary-lighter') */ border-color: #e0e7ff; /* theme('colors.theme-primary-light') */ }
-        .file-preview-v3 { margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #374151; /* theme('colors.theme-text-secondary') */ display: none; }
+        .file-upload-button-v3:hover { background-color: #f0f3ff; border-color: #e0e7ff; }
+        .file-preview-v3 { margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #374151; display: none; }
         .file-preview-v3.visible { display: flex; }
         .file-preview-v3 img { height: 1.5rem; width: auto; border-radius: 0.25rem; }
         .file-preview-v3 .file-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
         .checkbox-group-v3 { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.5rem 0; }
         .checkbox-input-v3 {
             margin-top: 0.15rem; height: 1.1rem; width: 1.1rem; flex-shrink: 0; border-radius: 0.25rem;
-            border: 1.5px solid #d1d5db; /* theme('colors.theme-border') */ color: #091e65; /* theme('colors.theme-primary') */
+            border: 1.5px solid #d1d5db; color: #091e65; 
             transition: all 0.2s ease; cursor: pointer; appearance: none; position: relative;
         }
-        .checkbox-input-v3:checked { border-color: #091e65; /* theme('colors.theme-primary') */ background-color: #091e65; /* theme('colors.theme-primary') */ }
+        .checkbox-input-v3:checked { border-color: #091e65; background-color: #091e65; }
         .checkbox-input-v3:checked::after {
             content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
             color: white; font-size: 0.7rem; position: absolute;
             top: 50%; left: 50%; transform: translate(-50%, -50%);
         }
-        .checkbox-input-v3:focus { outline: none; box-shadow: 0 0 0 3px #e0e7ff; /* theme('colors.theme-primary-light') */ }
-        .checkbox-label-v3 { font-size: 0.9rem; color: #374151; /* theme('colors.theme-text-secondary') */ cursor: pointer; line-height: 1.5; }
+        .checkbox-input-v3:focus { outline: none; box-shadow: 0 0 0 3px #e0e7ff; }
+        .checkbox-label-v3 { font-size: 0.9rem; color: #374151; cursor: pointer; line-height: 1.5; }
         .checkbox-label-v3 a {
-            color: #091e65; /* theme('colors.theme-primary') */ font-weight: 500; text-decoration: underline;
-            text-decoration-color: #e0e7ff; /* theme('colors.theme-primary-light') */ text-underline-offset: 2px;
+            color: #091e65; font-weight: 500; text-decoration: underline;
+            text-decoration-color: #e0e7ff; text-underline-offset: 2px;
             transition: color 0.2s ease, text-decoration-color 0.2s ease;
         }
-        .checkbox-label-v3 a:hover { color: #1e3a8a; /* theme('colors.theme-primary-hover') */ text-decoration-color: #1e3a8a; /* theme('colors.theme-primary-hover') */ }
-
+        .checkbox-label-v3 a:hover { color: #1e3a8a; text-decoration-color: #1e3a8a; }
         .submit-button-v3 {
             width: 100%; display: inline-flex; justify-content: center; align-items: center; gap: 0.6rem;
             padding: 0.9rem 1.5rem; border: none; font-size: 1rem; font-weight: 600; border-radius: 0.6rem;
             box-shadow: 0 4px 10px -2px rgba(9, 30, 101, 0.25); color: white;
-            background: #091e65; /* theme('colors.theme-primary') */ transition: all 0.25s ease-out;
+            background: #091e65; transition: all 0.25s ease-out;
         }
         .submit-button-v3:hover:not(:disabled) {
-            background: #1e3a8a; /* theme('colors.theme-primary-hover') */
+            background: #1e3a8a; 
             box-shadow: 0 6px 15px -3px rgba(9, 30, 101, 0.3); transform: translateY(-1px);
         }
-        .submit-button-v3:focus { outline: none; box-shadow: 0 0 0 2px #ffffff, 0 0 0 5px #e0e7ff; /* theme('colors.theme-primary-light') */ }
+        .submit-button-v3:focus { outline: none; box-shadow: 0 0 0 2px #ffffff, 0 0 0 5px #e0e7ff; }
         .submit-button-v3:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
 
         @media (max-width: 1024px) {
@@ -196,12 +169,12 @@
             .sidebar-footer { margin-top: 2rem; }
             .content-area { border-radius: 0; box-shadow: none; padding: 2rem 1.5rem; }
         }
-         @media (max-width: 768px) {
-             .content-area { padding: 1.5rem 1rem; }
-             .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-             .file-upload-v3 { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
-             .file-upload-button-v3 { margin-left: 0; margin-top: 0.5rem; }
-         }
+        @media (max-width: 768px) {
+            .content-area { padding: 1.5rem 1rem; }
+            .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+            .file-upload-v3 { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+            .file-upload-button-v3 { margin-left: 0; margin-top: 0.5rem; }
+        }
 
         .swal2-popup { border-radius: 1rem !important; font-family: 'Inter', sans-serif !important; }
         .swal2-title { color: #091e65 !important; font-weight: 700 !important; font-size: 1.5rem !important; }
@@ -214,7 +187,6 @@
         .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(16, 185, 129, 0.3) !important; }
         .swal2-icon.swal2-error { border-color: #ef4444 !important; }
         .swal2-icon.swal2-error [class^=swal2-x-mark-line] { background-color: #ef4444 !important; }
-
     </style>
 </head>
 <body>
@@ -246,7 +218,7 @@
                 <div class="mb-6 space-y-3">
                     {% for message in messages %}
                         <div class="p-4 rounded-lg text-sm font-medium {% if message.tags == 'error' %} bg-red-100 border border-red-300 text-red-800 {% elif message.tags == 'success' %} bg-green-100 border border-green-300 text-green-800 {% else %} bg-blue-100 border border-blue-300 text-blue-800 {% endif %}" role="alert">
-                           <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'success' %}fa-check-circle{% else %}fa-info-circle{% endif %} mr-2"></i> {{ message }}
+                            <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'success' %}fa-check-circle{% else %}fa-info-circle{% endif %} mr-2"></i> {{ message }}
                         </div>
                     {% endfor %}
                 </div>
@@ -302,23 +274,23 @@
                             </label>
                         </div>
                          <div class="file-upload-v3">
-                             <input type="file" id="id_cnic_back" name="cnic_back" class="sr-only" accept="image/png, image/jpeg, image/jpg" required>
-                             <div class="file-upload-icon-v3"><i class="fa-solid fa-id-card-clip"></i></div>
-                             <div class="file-upload-info-v3">
-                                 <p>CNIC Back Image<span class="required-star">*</span></p>
-                                 <span class="file-constraints">Max 2MB, PNG/JPG</span>
-                                 <div id="cnic-back-preview-container" class="file-preview-v3">
-                                     <img id="cnic-back-preview" src="#" alt="Preview">
-                                     <span id="cnic-back-chosen-text" class="file-name"></span>
-                                 </div>
-                                 <p class="error-message-v3 mt-1" id="error-cnic_back">
-                                     {% if errors.cnic_back %}{{ errors.cnic_back }}{% endif %}
-                                 </p>
-                             </div>
-                             <label for="id_cnic_back" class="file-upload-button-v3">
-                                 <i class="fa-solid fa-arrow-up-from-bracket fa-xs mr-1"></i> Upload
-                             </label>
-                         </div>
+                            <input type="file" id="id_cnic_back" name="cnic_back" class="sr-only" accept="image/png, image/jpeg, image/jpg" required>
+                            <div class="file-upload-icon-v3"><i class="fa-solid fa-id-card-clip"></i></div>
+                            <div class="file-upload-info-v3">
+                                <p>CNIC Back Image<span class="required-star">*</span></p>
+                                <span class="file-constraints">Max 2MB, PNG/JPG</span>
+                                <div id="cnic-back-preview-container" class="file-preview-v3">
+                                    <img id="cnic-back-preview" src="#" alt="Preview">
+                                    <span id="cnic-back-chosen-text" class="file-name"></span>
+                                </div>
+                                <p class="error-message-v3 mt-1" id="error-cnic_back">
+                                    {% if errors.cnic_back %}{{ errors.cnic_back }}{% endif %}
+                                </p>
+                            </div>
+                            <label for="id_cnic_back" class="file-upload-button-v3">
+                                <i class="fa-solid fa-arrow-up-from-bracket fa-xs mr-1"></i> Upload
+                            </label>
+                        </div>
                     </div>
                      <p class="error-message-v3 text-center mt-3" id="error-cnic_files">
                          {% if errors.cnic_files %}{{ errors.cnic_files }}{% endif %}
@@ -359,181 +331,7 @@
         </main>
     </div>
 
-<script>
-    function setupPreviewV3(inputId, previewContainerId, previewImgId, textId) {
-        const input = document.getElementById(inputId);
-        const previewContainer = document.getElementById(previewContainerId);
-        const previewImg = document.getElementById(previewImgId);
-        const text = document.getElementById(textId);
-        const errorP = document.getElementById(`error-${inputId.replace('id_', '')}`);
-
-        if (!input || !previewContainer || !previewImg || !text || !errorP) {
-            console.warn(`Preview elements not found for ${inputId}`);
-            return;
-        }
-
-        input.addEventListener('change', function() {
-            errorP.textContent = '';
-            const file = this.files[0];
-
-            if (file) {
-                const maxSize = 2 * 1024 * 1024;
-                const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-
-                if (file.size > maxSize) {
-                    errorP.textContent = 'File is too large (Max 2MB).';
-                    previewContainer.classList.remove('visible');
-                    this.value = '';
-                    return;
-                }
-                if (!allowedTypes.includes(file.type)) {
-                    errorP.textContent = 'Invalid file type (PNG, JPG/JPEG only).';
-                    previewContainer.classList.remove('visible');
-                    this.value = '';
-                    return;
-                }
-
-                text.textContent = file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    previewContainer.classList.add('visible');
-                }
-                reader.readAsDataURL(file);
-            } else {
-                previewContainer.classList.remove('visible');
-                text.textContent = '';
-            }
-        });
-    }
-
-    setupPreviewV3('id_cnic_front', 'cnic-front-preview-container', 'cnic-front-preview', 'cnic-front-chosen-text');
-    setupPreviewV3('id_cnic_back', 'cnic-back-preview-container', 'cnic-back-preview', 'cnic-back-chosen-text');
-
-    const applyForm = document.getElementById('creator-apply-form');
-    const submitButton = document.getElementById('submit-button');
-
-    const errorFieldMap = {
-        creator_name: 'error-creator_name',
-        creator_unique_name: 'error-creator_unique_name',
-        cnic_front: 'error-cnic_front',
-        cnic_back: 'error-cnic_back',
-        cnic_files: 'error-cnic_files',
-        agreements: 'error-agreements',
-        __all__: 'error-agreements'
-    };
-
-    function clearAllErrors() {
-        Object.values(errorFieldMap).forEach(errorId => {
-            const el = document.getElementById(errorId);
-            if (el) el.textContent = '';
-        });
-        document.querySelectorAll('.content-area .bg-red-100').forEach(el => el.style.display = 'none');
-    }
-
-    function showFieldError(fieldName, message) {
-        const errorId = errorFieldMap[fieldName] || errorFieldMap.__all__;
-        const el = document.getElementById(errorId);
-        if (el) {
-            el.textContent = message;
-            el.style.display = 'block';
-        } else {
-            console.warn(`No error placeholder found for field: ${fieldName}`);
-        }
-    }
-
-    if (applyForm && submitButton) {
-        applyForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            clearAllErrors();
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Submitting...';
-
-            let currentSwal = null;
-
-            Swal.fire({
-                title: 'Processing Application',
-                html: '<p>Submitting your details...</p>',
-                allowOutsideClick: false, timer: 1500, timerProgressBar: true,
-                didOpen: () => { Swal.showLoading(); }, willClose: () => {}
-            }).then(() => {
-                return Swal.fire({
-                    title: 'Processing Application',
-                    html: '<p>Hang on tight, we are almost there...</p>',
-                    allowOutsideClick: false, timer: 2000, timerProgressBar: true,
-                    didOpen: () => { Swal.showLoading(); }, willClose: () => {}
-                });
-            }).then(() => {
-                 currentSwal = Swal.fire({
-                    title: 'Finalizing...',
-                    html: '<p>Sending your application to the AudioX team.</p>',
-                    allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }
-                 });
-
-                 const formData = new FormData(applyForm);
-                 const csrfToken = formData.get('csrfmiddlewaretoken');
-
-                 fetch(applyForm.action, {
-                     method: 'POST',
-                     headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
-                     body: formData
-                 })
-                 .then(response => response.json().then(data => ({ status: response.status, body: data })))
-                 .then(({ status, body }) => {
-                     Swal.close();
-
-                     if (status >= 200 && status < 300 && body.status === 'success') {
-                         Swal.fire({
-                             title: 'Application Submitted!',
-                             html: "<p>Thank you! Your request has been generated.</p><p>AudioX team will verify your request and will approve or reject accordingly. You will know within 24hrs.</p>",
-                             icon: 'success', confirmButtonText: 'Go to My Profile', confirmButtonColor: '#091e65'
-                         }).then((result) => {
-                             if (result.isConfirmed) { window.location.href = "{% url 'AudioXApp:myprofile' %}"; }
-                         });
-                     } else {
-                         let errorTitle = 'Submission Failed';
-                         let errorMessage = body.message || 'An unknown error occurred. Please check the form and try again.';
-                         let errorHtml = `<p>${errorMessage}</p>`;
-
-                         if (body.errors) {
-                             errorHtml += '<ul class="list-disc list-inside text-left mt-2 text-sm">';
-                             Object.keys(body.errors).forEach(field => {
-                                 const fieldErrorMessage = Array.isArray(body.errors[field]) ? body.errors[field][0] : body.errors[field];
-                                 showFieldError(field, fieldErrorMessage);
-                                 errorHtml += `<li>${field.replace(/_/g, ' ')}: ${fieldErrorMessage}</li>`;
-                             });
-                              errorHtml += '</ul>';
-                         }
-                         Swal.fire({ title: errorTitle, html: errorHtml, icon: 'error', confirmButtonColor: '#091e65' });
-                         submitButton.disabled = false;
-                         submitButton.innerHTML = '<i class="fa-solid fa-rocket fa-fw"></i> Submit Application';
-                     }
-                 })
-                 .catch(error => {
-                     Swal.close();
-                     console.error('Error submitting application:', error);
-                     Swal.fire({ title: 'Network Error', text: 'Could not submit application. Please check your internet connection and try again.', icon: 'error', confirmButtonColor: '#091e65' });
-                     submitButton.disabled = false;
-                     submitButton.innerHTML = '<i class="fa-solid fa-rocket fa-fw"></i> Submit Application';
-                 });
-            });
-        });
-
-        applyForm.querySelectorAll('input, textarea, select').forEach(input => {
-            input.addEventListener('input', () => {
-                const fieldName = input.name;
-                const errorId = errorFieldMap[fieldName];
-                 if (errorId) { const el = document.getElementById(errorId); if (el) el.textContent = ''; }
-            });
-            input.addEventListener('change', () => {
-                 const fieldName = input.name;
-                 const errorId = errorFieldMap[fieldName];
-                 if (errorId) { const el = document.getElementById(errorId); if (el) el.textContent = ''; }
-                 if(input.type === 'checkbox' && errorFieldMap.agreements){ const agreeEl = document.getElementById(errorFieldMap.agreements); if(agreeEl) agreeEl.textContent = ''; }
-            });
-        });
-    }
-</script>
+<script src="{% static 'js/creator/creator_apply.js' %}"></script>
 
 </body>
 </html>

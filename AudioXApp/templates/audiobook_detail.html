@@ -1,4 +1,5 @@
 {% extends 'Homepage.html' %}
+
 {% load static %} {# Load static if needed for fallback images etc. #}
 {% load humanize %} {# Optional: For formatting numbers, dates etc. #}
 
@@ -13,14 +14,13 @@
         <nav class="text-xs mb-8 text-gray-500" aria-label="Breadcrumb">
             <ol class="list-none p-0 inline-flex items-center space-x-1.5">
                 <li class="flex items-center">
-                    {# Use theme color for link hover #}
                     <a href="{% url 'AudioXApp:home' %}" class="hover:text-[#091e65] hover:underline transition duration-150">Home</a>
                 </li>
                 <li>
-                    <svg class="fill-current w-3 h-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569-9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
+                    <svg class="fill-current w-3 h-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569 9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
                 </li>
                 <li>
-                    <span class="font-medium text-gray-600">{{ audiobook.title }}</span> {# Current page slightly darker #}
+                    <span class="font-medium text-gray-600">{% if is_creator_book %}{{ audiobook.title }}{% else %}{{ audiobook.title }}{% endif %}</span>
                 </li>
             </ol>
         </nav>
@@ -30,237 +30,200 @@
 
             {# Left Column: Cover Image & Actions #}
             <div class="md:col-span-1 flex flex-col items-center md:items-start">
-                {# Cover Image - Uses direct URL for Librivox #}
                 <div class="w-full max-w-xs sm:max-w-sm md:max-w-full mb-6 shadow-xl rounded-xl overflow-hidden border border-gray-100">
-                     {% if audiobook.cover_image %}
-                        <img id="main-cover-image" src="{{ audiobook.cover_image }}" alt="{{ audiobook.title }}" class="w-full h-auto object-cover aspect-[4/3]">
+                    {% if audiobook.cover_image %}
+                        <img id="main-cover-image" 
+                             src="{% if is_creator_book %}{{ audiobook.cover_image.url }}{% else %}{{ audiobook.cover_image }}{% endif %}" 
+                             alt="{% if is_creator_book %}{{ audiobook.title }}{% else %}{{ audiobook.title }}{% endif %}" 
+                             class="w-full h-auto object-cover aspect-[4/3]">
                     {% else %}
                         <div id="main-cover-image" class="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center border border-gray-200 rounded-xl">
-                           <span class="text-gray-400">No Cover</span>
-                           <template data-placeholder-src="https://placehold.co/100x75/e5e7eb/4b5563?text=N/A"></template>
+                            <span class="text-gray-400">No Cover</span>
+                            <template data-placeholder-src="https://placehold.co/100x75/e5e7eb/4b5563?text=N/A"></template>
                         </div>
                     {% endif %}
                 </div>
 
-                {# Action Buttons (Save, Rate, Share) - Styled more elegantly #}
                 <div class="flex items-center justify-center md:justify-start space-x-4 w-full">
-                     {# Use theme color for focus ring #}
                     <button class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                         <span>Save</span>
                     </button>
-                     <button class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
-                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                    <button class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                         <span>Rate</span>
                     </button>
-                     <button class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
-                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.001l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
+                    <button class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.001l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
                         <span>Share</span>
                     </button>
                 </div>
             </div>
 
-            {# Right Column: Details, Tabs, Episodes #}
             <div class="md:col-span-2">
-                {# Title - Use theme color #}
-                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#091e65] mb-3 font-serif leading-tight">{{ audiobook.title }}</h1>
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#091e65] mb-3 font-serif leading-tight">
+                    {% if is_creator_book %}{{ audiobook.title }}{% else %}{{ audiobook.title }}{% endif %}
+                </h1>
 
-                {# Source Info for Librivox #}
-                 <div class="mb-4 text-base text-gray-600 space-y-1">
-                     <p><span class="font-medium text-gray-800">Source:</span> LibriVox</p>
-                     {# Maybe add author/narrator if parsed and available in context #}
-                 </div>
+                <div class="mb-4 text-base text-gray-600 space-y-1">
+                    <p><span class="font-medium text-gray-800">Source:</span> {% if is_creator_book %}{{ audiobook.creator.creator_name|default:"Creator" }}{% else %}LibriVox{% endif %}</p>
+                    {% if audiobook.author %}
+                    <p><span class="font-medium text-gray-800">Author:</span> {{ audiobook.author }}</p>
+                    {% endif %}
+                </div>
 
-                {# Metadata Row (Genre, Language) - Simplified for Librivox #}
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 mb-6">
-                    {% if audiobook.genre %} {# Assuming genre might be available #}
-                         {# Use theme color for genre tag #}
-                        <span class="inline-flex items-center bg-[#eef2ff] text-[#091e65] px-2.5 py-0.5 rounded-full text-xs font-semibold"> {# bg-indigo-100 equivalent #}
+                    {% if audiobook.genre %}
+                        <span class="inline-flex items-center bg-[#eef2ff] text-[#091e65] px-2.5 py-0.5 rounded-full text-xs font-semibold">
                             <svg class="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
                             {{ audiobook.genre }}
                         </span>
                     {% endif %}
-                    {% if audiobook.language %} {# Assuming language might be available #}
-                         <span class="inline-flex items-center bg-gray-100 text-gray-800 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                             <svg class="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.029 18.029 0 01-1.192 2.336 18.023 18.023 0 01-1.61 1.89L8 10.999l.001.001.002.002a17.96 17.96 0 01-.92 1.085l-.002.002-.001.001a17.96 17.96 0 01-1.086.92l-.001.001-.002.001a17.99 17.99 0 01-1.889 1.609 18.016 18.016 0 01-2.336 1.192V17a1 1 0 11-2 0v-1H2a1 1 0 110-2h1.001A18.03 18.03 0 014.335 9.61 18.03 18.03 0 015.68 8.313l-.001-.001a17.94 17.94 0 011.085-.92l.001-.001L8 6.04l.005-.006a17.98 17.98 0 011.609-1.89 18.032 18.032 0 011.192-2.336H12V3a1 1 0 011-1h1a1 1 0 100-2H7zM6.313 9.687a16.01 16.01 0 00-1.085.92l-.001.001a16.005 16.005 0 00-.92 1.085l-.001.001a15.99 15.99 0 00-1.89 1.61 16.016 16.016 0 00-1.191 2.335H3V17h.001a16.023 16.023 0 002.334-1.191 16.005 16.005 0 001.61-1.89l.001-.001a15.94 15.94 0 001.085-.92l.001-.001a16.03 16.03 0 00.92-1.085l.001-.001A15.99 15.99 0 008 11.001l-.001-.001a15.97 15.97 0 00-1.085-.92l-.001-.001z" clip-rule="evenodd"></path></svg>
+                    {% if audiobook.language %}
+                        <span class="inline-flex items-center bg-gray-100 text-gray-800 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                            <svg class="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.029 18.029 0 01-1.192 2.336 18.023 18.023 0 01-1.61 1.89L8 10.999l.001.001.002.002a17.96 17.96 0 01-.92 1.085l-.002.002-.001.001a17.96 17.96 0 01-1.086.92l-.001.001-.002.001a17.99 17.99 0 01-1.889 1.609 18.016 18.016 0 01-2.336 1.192V17a1 1 0 11-2 0v-1H2a1 1 0 110-2h1.001A18.03 18.03 0 014.335 9.61 18.03 18.03 0 015.68 8.313l-.001-.001a17.94 17.94 0 011.085-.92l.001-.001L8 6.04l.005-.006a17.98 17.98 0 011.609-1.89 18.032 18.032 0 011.192-2.336H12V3a1 1 0 011-1h1a1 1 0 100-2H7zM6.313 9.687a16.01 16.01 0 00-1.085.92l-.001.001a16.005 16.005 0 00-.92 1.085l-.001.001a15.99 15.99 0 00-1.89 1.61 16.016 16.016 0 00-1.191 2.335H3V17h.001a16.023 16.023 0 002.334-1.191 16.005 16.005 0 001.61-1.89l.001-.001a15.94 15.94 0 001.085-.92l.001-.001a16.03 16.03 0 00.92-1.085l.001-.001A15.99 15.99 0 008 11.001l-.001-.001a15.97 15.97 0 00-1.085-.92l-.001-.001z" clip-rule="evenodd"></path></svg>
                             {{ audiobook.language }}
                         </span>
                     {% endif %}
                 </div>
 
-                {# Tabs Section - Added Reviews & Recommendations #}
                 <div class="border-b border-gray-200 mb-6">
-                    {# Use theme color for active tab border and text #}
                     <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
-                        <button onclick="showTab('about')" id="tab-about" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm text-[#091e65] border-[#091e65]" aria-current="page">
-                            ABOUT
-                        </button>
+                        <button onclick="showTab('about')" id="tab-about" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm text-[#091e65] border-[#091e65]" aria-current="page">ABOUT</button>
                         <button onclick="showTab('episodes')" id="tab-episodes" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
-                            EPISODES ({{ audiobook.chapters|length|default:"0" }}) {# Use length filter for list #}
+                            EPISODES ({{ chapters_to_display|length|default:"0" }})
                         </button>
-                         <button onclick="showTab('reviews')" id="tab-reviews" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
-                            REVIEWS
-                        </button>
-                         <button onclick="showTab('recommendations')" id="tab-recommendations" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
-                            RECOMMENDATIONS
-                        </button>
+                        <button onclick="showTab('reviews')" id="tab-reviews" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">REVIEWS</button>
+                        <button onclick="showTab('recommendations')" id="tab-recommendations" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">RECOMMENDATIONS</button>
                     </nav>
                 </div>
 
-                {# Tab Content #}
-                <div class="min-h-[200px]"> {# Ensure minimum height for content area #}
-                    {# About Tab Content #}
+                <div class="min-h-[200px]">
                     <div id="content-about" class="tab-content">
-                         <div class="bg-white p-5 rounded-lg">
-                             <h3 class="text-lg font-semibold text-gray-800 mb-3">Description</h3>
-                             {# Use safe filter for Librivox HTML description #}
-                             <div class="prose prose-sm sm:prose-base max-w-none text-gray-600 leading-relaxed">
-                                 {{ audiobook.description|safe|default:"No description available." }}
-                             </div>
-                         </div>
+                        <div class="bg-white p-5 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Description</h3>
+                            <div class="prose prose-sm sm:prose-base max-w-none text-gray-600 leading-relaxed">
+                                {% if is_creator_book %}{{ audiobook.description|safe|default:"No description available." }}{% else %}{{ audiobook.description|safe|default:"No description available." }}{% endif %}
+                            </div>
+                        </div>
                     </div>
 
-                    {# Episodes Tab Content #}
                     <div id="content-episodes" class="tab-content hidden">
                         <div class="space-y-2.5 relative">
-                            {% if audiobook.chapters %}
-                                {% for chapter in audiobook.chapters %} {# Librivox chapters are list of dicts #}
-                                    {% with chapter_title=chapter.chapter_title original_audio_url=chapter.audio_url %}
+                            {% if chapters_to_display %}
+                                {% for chapter_display_item in chapters_to_display %}
+                                    {% with original_audio_url=chapter_display_item.audio_url chapter_title=chapter_display_item.chapter_title chapter_idx=chapter_display_item.chapter_index %}
                                         {% url 'AudioXApp:stream_audio' as stream_base_url %}
-                                        {% with encoded_audio_url=original_audio_url|urlencode %}
-                                            {% if encoded_audio_url %}
-                                                {% with full_audio_url=stream_base_url|add:"?url="|add:encoded_audio_url %}
-                                                    {# Chapter Item Card - Use theme color for hover/active states #}
+                                        {% if original_audio_url %}
+                                            {% with encoded_audio_url=original_audio_url|urlencode %}
+                                                {% if encoded_audio_url %}
+                                                    {% with full_audio_url_template=stream_base_url|add:"?url="|add:encoded_audio_url %}
                                                     <div class="chapter-item bg-white p-3 rounded-lg border border-gray-200 hover:border-[#b1b8d7] hover:bg-[#f0f5ff] transition duration-150 ease-in-out flex items-center space-x-3 group"
-                                                         data-chapter-title="{{ chapter_title|escapejs }}"
-                                                         data-chapter-index="{{ forloop.counter0 }}" {# 0-based index #}
-                                                         data-audio-url="{{ full_audio_url }}">
-                                                        {# Play/Pause Button Area #}
+                                                         data-chapter-title="{{ chapter_title|escapejs|default:"Untitled Episode" }}"
+                                                         data-chapter-index="{{ chapter_idx }}"
+                                                         data-audio-url-template="{{ full_audio_url_template }}"
+                                                         {# Removed TTS-specific data attributes #}
+                                                         >
                                                         <div class="flex-shrink-0">
-                                                             <button onclick="playChapter(this)"
+                                                            <button onclick="playChapter(this)"
                                                                     title="Play Episode {{ forloop.counter }}"
                                                                     class="play-button flex items-center justify-center w-9 h-9 bg-[#eef2ff] hover:bg-[#e0e7ff] text-[#091e65] rounded-full transition duration-150 ease-in-out focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[#091e65] transform active:scale-90">
-                                                                {# Icons controlled by JS #}
-                                                                <svg class="w-4 h-4 play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" ><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                                                                <svg class="w-4 h-4 pause-icon hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" ><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>
+                                                                <svg class="w-4 h-4 play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
+                                                                <svg class="w-4 h-4 pause-icon hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>
                                                                 <svg class="w-4 h-4 loading-icon hidden animate-spin text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                                             </button>
                                                         </div>
-                                                        {# Chapter Title & Number #}
                                                         <div class="flex-grow min-w-0">
-                                                            <p class="text-sm font-medium text-gray-800 truncate group-hover:text-[#091e65] transition" title="{{ chapter_title }}">
+                                                            <p class="text-sm font-medium text-gray-800 truncate group-hover:text-[#091e65] transition" title="{{ chapter_title|default:"Untitled Episode" }}">
                                                                 <span class="text-xs text-gray-400 mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }}
                                                             </p>
                                                         </div>
-                                                        {# Optional: Duration #}
                                                         <div class="flex-shrink-0 text-xs text-gray-400 font-mono">
-                                                            {{ chapter.duration|default:"--:--" }} {# Assuming duration might exist #}
+                                                            {{ chapter_display_item.duration|default:"--:--" }}
                                                         </div>
                                                     </div>
-                                                {% endwith %}
-                                            {% else %}
-                                                 {# Chapter without Audio URL #}
-                                                <div class="chapter-item bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-3 opacity-60 cursor-not-allowed">
-                                                     <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
-                                                     <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }}</p></div>
-                                                     <div class="flex-shrink-0 text-xs text-gray-400">N/A</div>
-                                                </div>
-                                            {% endif %}
-                                        {% endwith %}
+                                                    {% endwith %}
+                                                {% else %} 
+                                                    <div class="chapter-item bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-3 opacity-60 cursor-not-allowed">
+                                                        <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
+                                                        <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }} (Audio URL missing after encoding)</p></div>
+                                                        <div class="flex-shrink-0 text-xs text-gray-400">N/A</div>
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %} 
+                                            <div class="chapter-item bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-3 opacity-60 cursor-not-allowed">
+                                                <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
+                                                <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }} (Audio URL missing)</p></div>
+                                                <div class="flex-shrink-0 text-xs text-gray-400">N/A</div>
+                                            </div>
+                                        {% endif %}
                                     {% endwith %}
                                 {% endfor %}
                             {% else %}
-                                <p class="text-center text-gray-500 py-10">No episodes available.</p>
+                                <p class="text-center text-gray-500 py-10">No episodes available for this audiobook.</p>
                             {% endif %}
-                        </div> {# End Chapter List Space #}
-                    </div> {# End Episodes Content #}
+                        </div>
+                    </div>
 
-                    {# Reviews Tab Content (Placeholder) #}
                     <div id="content-reviews" class="tab-content hidden">
-                         <div class="bg-white p-5 rounded-lg">
-                             <h3 class="text-lg font-semibold text-gray-800 mb-3">Reviews</h3>
-                             <p class="text-gray-600">Reviews are not available yet for this audiobook.</p>
-                             {# Add review display logic here later #}
-                         </div>
+                        <div class="bg-white p-5 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Reviews</h3>
+                            <p class="text-gray-600">Reviews are not available yet for this audiobook.</p>
+                        </div>
                     </div>
-
-                    {# Recommendations Tab Content (Placeholder) #}
                     <div id="content-recommendations" class="tab-content hidden">
-                         <div class="bg-white p-5 rounded-lg">
-                             <h3 class="text-lg font-semibold text-gray-800 mb-3">Recommendations</h3>
-                             <p class="text-gray-600">No recommendations available at this time.</p>
-                             {# Add recommendation display logic here later #}
-                         </div>
+                        <div class="bg-white p-5 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Recommendations</h3>
+                            <p class="text-gray-600">No recommendations available at this time.</p>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                </div> {# End Tab Content Wrapper #}
-            </div> {# End Right Column #}
-        </div> {# End Main Grid #}
-    </div> {# End Outer Container #}
-
-    {# --- Elegant Bottom Audio Player Bar --- #}
-    {# Use theme color for main button background #}
     <div id="bottom-player-bar" class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-gray-50 border-t border-gray-200/80 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.05)] p-3 z-50 transform translate-y-full transition-transform duration-300 ease-in-out">
         <audio id="audioPlayer" class="hidden" preload="metadata"></audio>
-        <div class="max-w-7xl mx-auto flex items-center space-x-3 sm:space-x-4">
-
-            {# Cover Image & Episode Info #}
-            <div class="flex items-center space-x-3 flex-shrink-0 min-w-0 max-w-[150px] sm:max-w-[250px] md:max-w-xs">
+        <div class="max-w-7xl mx-auto flex items-center space-x-2 sm:space-x-3">
+            <div class="flex items-center space-x-3 flex-shrink-0 min-w-0 max-w-[120px] sm:max-w-[200px] md:max-w-[220px]">
                 <img id="player-cover-image" src="https://placehold.co/100x75/e5e7eb/4b5563?text=N/A" alt="Now Playing" class="flex-shrink-0 w-12 h-12 rounded-md object-cover shadow-sm border border-gray-100">
                 <div class="overflow-hidden">
                     <p id="player-episode-title" class="text-sm font-semibold text-gray-800 truncate" title="Select an episode">Select an episode</p>
                     <p id="player-episode-number" class="text-xs text-gray-500 truncate">Episode N/A</p>
                 </div>
             </div>
-
-             {# Main Controls (Prev, Play/Pause, Next) - Centered Group #}
-            <div class="flex-grow flex justify-center items-center space-x-3 sm:space-x-4">
-                {# Use theme color for hover text #}
+            <div class="flex-grow flex justify-center items-center space-x-2 sm:space-x-3">
                 <button id="player-prev-button" onclick="playPreviousChapter()" title="Previous Episode" class="p-2 text-gray-500 hover:text-[#091e65] disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full hover:bg-[#eef2ff]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 3.5A.5.5 0 0 1 1 4v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m3.5 0a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m4.904 8.697l-6-4.5a.5.5 0 0 1 0-.894l6-4.5a.5.5 0 0 1 .796.447v9a.5.5 0 0 1-.796.447"/></svg>
                 </button>
-                 {# Use theme color for background and focus ring #}
                 <button id="player-play-pause-button" onclick="togglePlayPause()" title="Play/Pause" class="p-2.5 bg-[#091e65] text-white rounded-full shadow-lg hover:bg-[#071852] transition transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-white">
                     <svg id="player-play-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7" fill="currentColor" viewBox="0 0 16 16"><path d="M10.804 8 5 4.633v6.734zm.792-.696a.803.803 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/></svg>
                     <svg id="player-pause-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 hidden" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/></svg>
                 </button>
-                 {# Use theme color for hover text #}
                 <button id="player-next-button" onclick="playNextChapter()" title="Next Episode" class="p-2 text-gray-500 hover:text-[#091e65] disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full hover:bg-[#eef2ff]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 16 16"><path d="M12.5 4a.5.5 0 0 0-1 0v8a.5.5 0 0 0 1 0zM15.5 3.5a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 1 0V4a.5.5 0 0 0-.5-.5M4.904 3.303l6 4.5a.5.5 0 0 1 0 .894l-6 4.5a.5.5 0 0 1-.796-.447v-9a.5.5 0 0 1 .796-.447"/></svg>
                 </button>
             </div>
-
-            {# Seek Bar & Time - Use theme color for accent #}
-            <div class="flex-grow flex items-center space-x-2 sm:space-x-3 min-w-0 max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg">
+            <div class="flex-grow flex items-center space-x-2 sm:space-x-3 min-w-0 max-w-[150px] sm:max-w-xs md:max-w-sm lg:max-w-md">
                 <span id="player-current-time" class="text-xs text-gray-500 font-mono w-10 text-right">0:00</span>
                 <input type="range" id="player-seek-bar" value="0" max="100" step="0.1" class="player-seek-bar-theme w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer range-sm hover:opacity-90">
                 <span id="player-duration" class="text-xs text-gray-500 font-mono w-10 text-left">0:00</span>
             </div>
-
-            {# Speed Control & Close #}
-            <div class="flex items-center space-x-2 sm:space-x-3">
-                 {# Use theme color for hover text #}
-                 <button id="player-speed-button" onclick="cyclePlaybackSpeed()" title="Playback Speed" class="p-1.5 text-gray-500 hover:text-[#091e65] hover:bg-[#eef2ff] rounded-full transition text-xs font-semibold w-8 h-8 flex items-center justify-center">
-                    1x
-                 </button>
-                 <button onclick="closePlayer()" title="Close Player" class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition">
+            
+            <div class="flex items-center space-x-1 sm:space-x-2">
+                <button id="player-speed-button" onclick="cyclePlaybackSpeed()" title="Playback Speed" class="p-1.5 text-gray-500 hover:text-[#091e65] hover:bg-[#eef2ff] rounded-full transition text-xs font-semibold w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center">1x</button>
+                <button onclick="closePlayer()" title="Close Player" class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
         </div>
     </div>
-    {# --- End Bottom Audio Player Bar --- #}
 
-</div> {# End Outer Background Div #}
+</div>
 
-{# Load SweetAlert #}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-{# NOTE: The JavaScript is largely identical to the previous version, #}
-{# as the player logic and structure remain the same. #}
-{# Key is ensuring data-* attributes are correctly populated in the loop above. #}
 <script>
-    // --- DOM Elements ---
     const audioPlayer = document.getElementById("audioPlayer");
     const bottomPlayerBar = document.getElementById("bottom-player-bar");
     const playerCoverImage = document.getElementById("player-cover-image");
@@ -275,17 +238,19 @@
     const playerDuration = document.getElementById("player-duration");
     const playerSeekBar = document.getElementById("player-seek-bar");
     const playerSpeedButton = document.getElementById("player-speed-button");
+    // const playerVoiceSelector = document.getElementById("player-voice-selector"); // Voice selector removed
     const mainCoverImage = document.getElementById("main-cover-image");
     const placeholderCoverSrc = document.querySelector('template[data-placeholder-src]')?.dataset.placeholderSrc || 'https://placehold.co/100x75/e5e7eb/4b5563?text=N/A';
-
-    const chapterItems = document.querySelectorAll('.chapter-item'); // Get all chapter items
+    
+    const chapterItems = document.querySelectorAll('.chapter-item');
     let currentChapterIndex = -1;
     let currentlyPlayingListItemButton = null;
     const playbackSpeeds = [1, 1.5, 2];
     let currentSpeedIndex = 0;
     const THEME_COLOR = '#091e65';
+    
+    // Removed availableVoices and currentSelectedVoice related to TTS
 
-    // --- Utility Functions ---
     function formatTime(seconds) {
         if (isNaN(seconds) || seconds < 0) return '0:00';
         const minutes = Math.floor(seconds / 60);
@@ -293,7 +258,6 @@
         return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
-    // --- Tab Switching Logic ---
     const tabs = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
     function showTab(tabId) {
@@ -312,123 +276,197 @@
         }
     }
 
-    // --- Player State & UI Update Functions ---
     function updatePlayerUIState(state) {
         playerPlayIcon?.classList.toggle('hidden', state === 'playing' || state === 'loading');
         playerPauseIcon?.classList.toggle('hidden', state !== 'playing');
         if (currentlyPlayingListItemButton) {
-             updateListItemButtonState(currentlyPlayingListItemButton, state);
+            updateListItemButtonState(currentlyPlayingListItemButton, state);
         }
     }
+
     function updateListItemButtonState(listItemButton, state) {
-         if (!listItemButton) return;
-         const playIcon = listItemButton.querySelector('.play-icon');
-         const pauseIcon = listItemButton.querySelector('.pause-icon');
-         const loadingIcon = listItemButton.querySelector('.loading-icon');
-         const chapterItemDiv = listItemButton.closest('.chapter-item');
+        if (!listItemButton) return;
+        const playIcon = listItemButton.querySelector('.play-icon');
+        const pauseIcon = listItemButton.querySelector('.pause-icon');
+        const loadingIcon = listItemButton.querySelector('.loading-icon');
+        const chapterItemDiv = listItemButton.closest('.chapter-item');
+        
+        playIcon?.classList.add('hidden'); 
+        pauseIcon?.classList.add('hidden'); 
+        loadingIcon?.classList.add('hidden');
+        
+        listItemButton.classList.remove('bg-pink-100', 'text-pink-600', 'hover:bg-pink-200', 'animate-pulse');
+        listItemButton.classList.add(`bg-[#eef2ff]`, `text-[${THEME_COLOR}]`, `hover:bg-[#e0e7ff]`);
+        chapterItemDiv?.classList.remove(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`);
+        chapterItemDiv?.classList.add('bg-white', 'border-gray-200', `hover:border-[#b1b8d7]`, 'hover:bg-[#f0f5ff]');
 
-         playIcon?.classList.add('hidden'); pauseIcon?.classList.add('hidden'); loadingIcon?.classList.add('hidden');
-         listItemButton.classList.remove('bg-pink-100', 'text-pink-600', 'hover:bg-pink-200', 'animate-pulse');
-         listItemButton.classList.add(`bg-[#eef2ff]`, `text-[${THEME_COLOR}]`, `hover:bg-[#e0e7ff]`);
-         chapterItemDiv?.classList.remove(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`);
-         chapterItemDiv?.classList.add('bg-white', 'border-gray-200', `hover:border-[#b1b8d7]`, 'hover:bg-[#f0f5ff]');
-
-         if (state === 'playing') {
-             pauseIcon?.classList.remove('hidden');
-             listItemButton.classList.remove(`bg-[#eef2ff]`, `text-[${THEME_COLOR}]`, `hover:bg-[#e0e7ff]`);
-             listItemButton.classList.add('bg-pink-100', 'text-pink-600', 'hover:bg-pink-200');
-             chapterItemDiv?.classList.add(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`);
-             chapterItemDiv?.classList.remove('bg-white', 'border-gray-200', `hover:border-[#b1b8d7]`, 'hover:bg-[#f0f5ff]');
-         } else if (state === 'loading') {
-             loadingIcon?.classList.remove('hidden');
-             listItemButton.classList.add('animate-pulse');
-         } else { // paused, ended, error
-             playIcon?.classList.remove('hidden');
-         }
+        if (state === 'playing') {
+            pauseIcon?.classList.remove('hidden');
+            listItemButton.classList.remove(`bg-[#eef2ff]`, `text-[${THEME_COLOR}]`, `hover:bg-[#e0e7ff]`);
+            listItemButton.classList.add('bg-pink-100', 'text-pink-600', 'hover:bg-pink-200');
+            chapterItemDiv?.classList.add(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`);
+            chapterItemDiv?.classList.remove('bg-white', 'border-gray-200', `hover:border-[#b1b8d7]`, 'hover:bg-[#f0f5ff]');
+        } else if (state === 'loading') {
+            loadingIcon?.classList.remove('hidden');
+            listItemButton.classList.add('animate-pulse');
+        } else { 
+            playIcon?.classList.remove('hidden');
+        }
     }
+
     function showPlayerBar() { bottomPlayerBar.classList.remove('translate-y-full'); }
     function hidePlayerBar() { bottomPlayerBar.classList.add('translate-y-full'); }
+
     function updatePlayerInfo(chapterIndex) {
-        const chapterItem = chapterItems[chapterIndex]; // Uses the NodeList chapterItems
+        const chapterItem = chapterItems[chapterIndex];
         if (!chapterItem) return;
         const title = chapterItem.dataset.chapterTitle || 'Unknown Title';
-        const episodeNum = chapterIndex + 1; const totalEpisodes = chapterItems.length;
-        playerEpisodeTitle.textContent = title; playerEpisodeTitle.title = title;
+        const episodeNum = chapterIndex + 1; 
+        const totalEpisodes = chapterItems.length;
+        
+        playerEpisodeTitle.textContent = title; 
+        playerEpisodeTitle.title = title;
         playerEpisodeNumber.textContent = `Episode ${episodeNum}/${totalEpisodes}`;
-        playerCoverImage.src = mainCoverImage?.src || placeholderCoverSrc; // Use main cover from page
+        playerCoverImage.src = mainCoverImage?.src || placeholderCoverSrc;
+        
         playerPrevButton.disabled = chapterIndex <= 0;
         playerNextButton.disabled = chapterIndex >= totalEpisodes - 1;
     }
 
-    // --- Playback Control Functions ---
     function playChapter(buttonElement) {
         const chapterItem = buttonElement.closest('.chapter-item');
-        const audioUrl = chapterItem?.dataset.audioUrl;
-        const chapterTitle = chapterItem?.dataset.chapterTitle || 'Episode';
-        const chapterIndex = parseInt(chapterItem?.dataset.chapterIndex ?? '-1', 10);
-
-        if (!audioUrl || audioUrl === 'None' || audioUrl.endsWith('?url=') || audioUrl.includes('?url=None') || chapterIndex < 0) {
-            console.error("Invalid audio data:", chapterTitle, audioUrl, chapterIndex);
-            Swal.fire({ icon: 'error', title: 'Audio Unavailable', text: `Could not load data for "${chapterTitle}".`, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
-            updateListItemButtonState(buttonElement, 'error'); return;
+        if (!chapterItem) {
+            console.error("playChapter: Could not find parent .chapter-item for button:", buttonElement);
+            Swal.fire({ icon: 'error', title: 'Player Error', text: 'Could not find chapter data.', confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
+            return;
         }
-        const isCurrentlyPlayingThis = currentlyPlayingListItemButton === buttonElement && !audioPlayer.paused;
-        if (isCurrentlyPlayingThis) { audioPlayer.pause(); }
-        else {
-            updateListItemButtonState(currentlyPlayingListItemButton, 'paused');
+
+        const audioUrlTemplate = chapterItem.dataset.audioUrlTemplate; 
+        const chapterTitle = chapterItem.dataset.chapterTitle || 'Episode';
+        const chapterIndex = parseInt(chapterItem.dataset.chapterIndex ?? '-1', 10);
+        
+        console.log("--- playChapter Initiated ---");
+        console.log("Audio URL Template:", audioUrlTemplate);
+
+        if (typeof audioUrlTemplate !== 'string' || audioUrlTemplate.trim() === '' || !audioUrlTemplate.includes('?url=')) {
+            console.error(`Invalid or incomplete audioUrlTemplate for "${chapterTitle}":`, audioUrlTemplate);
+            Swal.fire({ 
+                icon: 'error', title: 'Audio Unavailable', 
+                text: `Could not prepare audio link for "${chapterTitle}". The audio source URL might be missing or improperly formatted.`,
+                confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } 
+            });
+            if (buttonElement) updateListItemButtonState(buttonElement, 'error');
+            return;
+        }
+        
+        let audioUrl = audioUrlTemplate; // Use the template directly as no voice parameter is appended
+        
+        console.log("Final audioUrl to be played:", audioUrl);
+
+        if (chapterIndex < 0) { 
+            console.error("Invalid chapterIndex:", chapterIndex);
+            Swal.fire({ icon: 'error', title: 'Audio Unavailable', text: `Could not load data for "${chapterTitle}". Invalid chapter index.`, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
+            if (buttonElement) updateListItemButtonState(buttonElement, 'error');
+            return;
+        }
+        
+        // Check if this chapter is already playing
+        const isPlayingThisChapter = currentlyPlayingListItemButton === buttonElement && audioPlayer.src === audioUrl && !audioPlayer.paused;
+
+        if (isPlayingThisChapter) {
+            audioPlayer.pause();
+        } else { 
+            if(currentlyPlayingListItemButton && currentlyPlayingListItemButton !== buttonElement) {
+                updateListItemButtonState(currentlyPlayingListItemButton, 'paused'); 
+            }
             currentChapterIndex = chapterIndex;
             currentlyPlayingListItemButton = buttonElement;
             updateListItemButtonState(currentlyPlayingListItemButton, 'loading');
             updatePlayerUIState('loading');
             updatePlayerInfo(currentChapterIndex);
             showPlayerBar();
-            audioPlayer.src = audioUrl; audioPlayer.load();
-            audioPlayer.play().catch(e => {
-                console.error("Error playing audio:", e);
-                let errorTitle = 'Playback Error'; let errorText = 'Could not play audio.';
-                 if (e.name === 'NotAllowedError') { errorTitle = 'Autoplay Blocked'; errorText = 'Click play again.'; }
-                 else if (e.name === 'AbortError') { errorTitle = 'Load Interrupted'; errorText = 'Loading stopped.'; }
-                 else if (e.name === 'NotSupportedError') { errorTitle = 'Format Not Supported'; errorText = 'Audio format not supported.'; }
-                 Swal.fire({ icon: 'error', title: errorTitle, text: errorText, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
-                 updatePlayerUIState('error'); updateListItemButtonState(currentlyPlayingListItemButton, 'error');
-            });
+            audioPlayer.src = audioUrl; 
+            audioPlayer.load();
+            audioPlayer.play().catch(handlePlaybackError);
         }
-     }
+    }
+
+    function handlePlaybackError(e) {
+        console.error("Error playing audio:", e);
+        let errorTitle = 'Playback Error'; 
+        let errorText = 'Could not play audio. The file might be missing, or there could be a network issue.';
+        if (e.name === 'NotAllowedError') { errorTitle = 'Autoplay Blocked'; errorText = 'Playback was prevented. Please click play again.'; }
+        else if (e.name === 'AbortError') { errorTitle = 'Load Interrupted'; errorText = 'Audio loading was interrupted. Please try again.'; }
+        else if (e.name === 'NotSupportedError') { errorTitle = 'Format Not Supported'; errorText = 'The audio format may not be supported by your browser.'; }
+        
+        Swal.fire({ icon: 'error', title: errorTitle, text: errorText, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
+        updatePlayerUIState('error'); 
+        if(currentlyPlayingListItemButton) updateListItemButtonState(currentlyPlayingListItemButton, 'error');
+    }
+
     function togglePlayPause() {
         if (currentChapterIndex < 0) {
-             const firstEpisodeButton = document.querySelector('.chapter-item[data-chapter-index="0"] .play-button');
-             if (firstEpisodeButton) { firstEpisodeButton.click(); }
-             else { Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'Select an episode first', showConfirmButton: false, timer: 2500, timerProgressBar: true, background: '#f3f4f6', color: '#1f2937', customClass: { timerProgressBar: `bg-[${THEME_COLOR}]` } }); }
-             return;
-        }
-        if (audioPlayer.paused || audioPlayer.ended) {
-            if (audioPlayer.src && audioPlayer.src !== window.location.href) {
-                 audioPlayer.play().catch(e => { console.error("Error resuming play:", e); Swal.fire({ icon: 'error', title: 'Playback Error', text: 'Could not resume audio.', confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } }); });
-            } else {
-                 const currentButton = chapterItems[currentChapterIndex]?.querySelector('.play-button');
-                 if (currentButton) { currentButton.click(); } else { closePlayer(); }
+            const firstEpisodeButton = document.querySelector('.chapter-item[data-chapter-index="0"] .play-button');
+            if (firstEpisodeButton) { 
+                firstEpisodeButton.click();
+            } else { 
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'Select an episode first', showConfirmButton: false, timer: 2500, timerProgressBar: true, background: '#f3f4f6', color: '#1f2937', customClass: { timerProgressBar: `bg-[${THEME_COLOR}]` } }); 
             }
-        } else { audioPlayer.pause(); }
+            return;
+        }
+
+        if (audioPlayer.paused || audioPlayer.ended) {
+            // If src is set and matches the current chapter's expected URL, play
+            // (No need to check voice parameters anymore)
+            const chapterItemForCurrentTrack = chapterItems[currentChapterIndex];
+            if (chapterItemForCurrentTrack && audioPlayer.src === chapterItemForCurrentTrack.dataset.audioUrlTemplate) {
+                 audioPlayer.play().catch(handlePlaybackError);
+            } else { // src is not set or doesn't match, re-trigger playChapter
+                const currentButton = chapterItems[currentChapterIndex]?.querySelector('.play-button');
+                if (currentButton) { currentButton.click(); } else { closePlayer(); }
+            }
+        } else {
+            audioPlayer.pause();
+        }
     }
+
     function playNextChapter() {
         const nextIndex = currentChapterIndex + 1;
-        if (nextIndex < chapterItems.length) { chapterItems[nextIndex]?.querySelector('.play-button')?.click(); }
+        if (nextIndex < chapterItems.length) {
+            chapterItems[nextIndex]?.querySelector('.play-button')?.click();
+        } else {
+            updatePlayerUIState('ended'); 
+            console.log("End of playlist reached.");
+        }
     }
     function playPreviousChapter() {
         const prevIndex = currentChapterIndex - 1;
-        if (prevIndex >= 0) { chapterItems[prevIndex]?.querySelector('.play-button')?.click(); }
+        if (prevIndex >= 0) {
+            chapterItems[prevIndex]?.querySelector('.play-button')?.click();
+        }
     }
+
     function closePlayer() {
-        audioPlayer.pause(); audioPlayer.src = ''; hidePlayerBar();
-        updateListItemButtonState(currentlyPlayingListItemButton, 'paused');
-        currentlyPlayingListItemButton = null; currentChapterIndex = -1;
-        playerSeekBar.value = 0; playerCurrentTime.textContent = '0:00'; playerDuration.textContent = '0:00';
-        playerEpisodeTitle.textContent = 'Select an episode'; playerEpisodeNumber.textContent = 'Episode N/A';
+        audioPlayer.pause(); 
+        audioPlayer.src = ''; 
+        hidePlayerBar();
+        if(currentlyPlayingListItemButton) updateListItemButtonState(currentlyPlayingListItemButton, 'paused');
+        currentlyPlayingListItemButton = null; 
+        currentChapterIndex = -1;
+        playerSeekBar.value = 0; 
+        playerCurrentTime.textContent = '0:00'; 
+        playerDuration.textContent = '0:00';
+        playerEpisodeTitle.textContent = 'Select an episode'; 
+        playerEpisodeNumber.textContent = 'Episode N/A';
         playerCoverImage.src = placeholderCoverSrc;
-        playerPrevButton.disabled = true; playerNextButton.disabled = true;
-        currentSpeedIndex = 0; audioPlayer.playbackRate = playbackSpeeds[currentSpeedIndex];
+        playerPrevButton.disabled = true; 
+        playerNextButton.disabled = true;
+        currentSpeedIndex = 0; 
+        audioPlayer.playbackRate = playbackSpeeds[currentSpeedIndex];
         playerSpeedButton.textContent = `${playbackSpeeds[currentSpeedIndex]}x`;
+        // Removed voice selector reset as it's removed from HTML
     }
+
     function cyclePlaybackSpeed() {
         currentSpeedIndex = (currentSpeedIndex + 1) % playbackSpeeds.length;
         const newSpeed = playbackSpeeds[currentSpeedIndex];
@@ -436,71 +474,94 @@
         playerSpeedButton.textContent = `${newSpeed}x`;
     }
 
-    // --- Audio Player Event Listeners ---
+    // Removed populateVoiceSelector function as the selector is removed
+
     audioPlayer.addEventListener('play', () => { updatePlayerUIState('playing'); });
     audioPlayer.addEventListener('pause', () => { updatePlayerUIState('paused'); });
-    audioPlayer.addEventListener('ended', () => { updatePlayerUIState('ended'); /* playNextChapter(); */ });
-    audioPlayer.addEventListener('error', (e) => { updatePlayerUIState('error'); /* ... */ });
+    audioPlayer.addEventListener('ended', () => { 
+        updatePlayerUIState('ended'); 
+        playNextChapter(); 
+    });
+    audioPlayer.addEventListener('error', (e) => { 
+        updatePlayerUIState('error'); 
+        console.error("Audio Player Error Event:", e);
+        let userMessage = 'Sorry, an unknown error occurred with the audio.';
+        if (audioPlayer.error) {
+            console.error("Audio Player Error Code:", audioPlayer.error.code);
+            console.error("Audio Player Error Message:", audioPlayer.error.message);
+            userMessage = `Sorry, an error occurred (Code: ${audioPlayer.error.code}). Please try another track or voice.`;
+            if (audioPlayer.error.message) {
+                userMessage += ` (Details: ${audioPlayer.error.message})`;
+            }
+        }
+        Swal.fire({ icon: 'error', title: 'Audio Playback Failed', text: userMessage, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
+    });
     audioPlayer.addEventListener('loadedmetadata', () => {
         if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
-            playerDuration.textContent = formatTime(audioPlayer.duration); playerSeekBar.max = audioPlayer.duration;
-        } else { playerDuration.textContent = '--:--'; playerSeekBar.max = 0; }
-        playerCurrentTime.textContent = '0:00'; playerSeekBar.value = 0;
+            playerDuration.textContent = formatTime(audioPlayer.duration); 
+            playerSeekBar.max = audioPlayer.duration;
+        } else { 
+            playerDuration.textContent = '--:--'; 
+            playerSeekBar.max = 0; 
+        }
+        playerCurrentTime.textContent = '0:00'; 
+        playerSeekBar.value = 0;
     });
     audioPlayer.addEventListener('timeupdate', () => {
         if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
-            playerCurrentTime.textContent = formatTime(audioPlayer.currentTime); playerSeekBar.value = audioPlayer.currentTime;
+            playerCurrentTime.textContent = formatTime(audioPlayer.currentTime); 
+            playerSeekBar.value = audioPlayer.currentTime;
         }
     });
 
-    // --- Seek Bar Interaction ---
     playerSeekBar.addEventListener('input', () => {
         if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration) && audioPlayer.readyState >= 1) {
              audioPlayer.currentTime = playerSeekBar.value;
         }
     });
 
-    // --- Initialization ---
     document.addEventListener('DOMContentLoaded', () => {
-        showTab('about');
-        bottomPlayerBar.classList.add('translate-y-full');
-        playerPrevButton.disabled = true; playerNextButton.disabled = true;
+        showTab('about'); 
+        bottomPlayerBar.classList.add('translate-y-full'); 
+        playerPrevButton.disabled = true; 
+        playerNextButton.disabled = true;
         playerSpeedButton.textContent = `${playbackSpeeds[currentSpeedIndex]}x`;
-        playerSeekBar.style.setProperty('--seek-accent-color', THEME_COLOR);
+        playerSeekBar.style.setProperty('--seek-accent-color', THEME_COLOR); 
+        // Removed call to populateVoiceSelector()
     });
-
 </script>
-
-{# Custom CSS #}
 <style>
-    /* Seek Bar Styling using CSS variable */
-    .player-seek-bar-theme {
-        accent-color: var(--seek-accent-color, #4f46e5); /* Fallback */
+    /* Custom styles for the player seek bar */
+    .player-seek-bar-theme { 
+        accent-color: var(--seek-accent-color, #091e65); 
     }
     .player-seek-bar-theme::-webkit-slider-thumb {
-        -webkit-appearance: none; appearance: none;
-        width: 14px; height: 14px;
-        background: var(--seek-accent-color, #4f46e5); /* Fallback */
-        border-radius: 50%; cursor: pointer; margin-top: -5px;
+        -webkit-appearance: none; appearance: none; width: 14px; height: 14px; 
+        background: var(--seek-accent-color, #091e65); border-radius: 50%; 
+        cursor: pointer; margin-top: -5px; 
     }
     .player-seek-bar-theme::-moz-range-thumb {
-        width: 14px; height: 14px;
-        background: var(--seek-accent-color, #4f46e5); /* Fallback */
+        width: 14px; height: 14px; background: var(--seek-accent-color, #091e65); 
         border-radius: 50%; cursor: pointer; border: none;
     }
-    .player-seek-bar-theme::-webkit-slider-runnable-track { height: 6px; background: #e5e7eb; border-radius: 9999px; }
-    .player-seek-bar-theme::-moz-range-track { height: 6px; background: #e5e7eb; border-radius: 9999px; }
+    .player-seek-bar-theme::-webkit-slider-runnable-track {
+        height: 6px; background: #e5e7eb; border-radius: 9999px;
+    }
+    .player-seek-bar-theme::-moz-range-track {
+        height: 6px; background: #e5e7eb; border-radius: 9999px; border: none;
+    }
 
-    /* SweetAlert adjustments using theme color */
+    /* SweetAlert2 Customizations */
     .swal2-popup.rounded-xl { border-radius: 0.75rem !important; }
     .swal2-confirm { background-color: #091e65 !important; border-radius: 0.5rem !important; }
-    .swal2-confirm:hover { background-color: #071852 !important; } /* Slightly darker shade */
+    .swal2-confirm:hover { background-color: #071852 !important; }
     .swal2-icon.swal2-error { border-color: #fca5a5 !important; }
     .swal2-icon.swal2-error [class^=swal2-x-mark-line] { background-color: #ef4444 !important; }
     .swal2-icon.swal2-info { border-color: #93c5fd !important; color: #3b82f6 !important; }
     .swal2-toast { box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important; }
     .swal2-toast .swal2-title { font-size: 0.875rem !important; font-weight: 500 !important; }
-    .swal2-timer-progress-bar.bg-\[\#091e65\] { background-color: #091e65 !important; } /* Use actual hex */
+    .swal2-timer-progress-bar.bg-\[\#091e65\] { background-color: #091e65 !important; }
+    
+    /* #player-voice-selector { -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none; } */ /* Commented out as selector is removed */
 </style>
-
 {% endblock %}

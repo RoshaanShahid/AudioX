@@ -66,6 +66,8 @@ urlpatterns = [
     path('creator/withdrawal-accounts/', creator_views.creator_manage_withdrawal_accounts_view, name='creator_manage_withdrawal_accounts'),
     path('creator/withdrawals/request/', creator_views.creator_request_withdrawal_list_view, name='creator_request_withdrawal_list'),
     path('creator/upload/', creator_views.creator_upload_audiobook, name='creator_upload_audiobook'),
+    # New URL pattern for TTS preview generation
+    path('creator/upload/generate-tts-preview/', creator_views.generate_tts_preview_audio, name='generate_tts_preview_audio'),
     path('creator/my-audiobooks/', creator_views.creator_my_audiobooks_view, name='creator_my_audiobooks'),
     path('creator/manage-upload/<slug:audiobook_slug>/', creator_views.creator_manage_upload_detail_view, name='creator_manage_upload_detail'),
     path('creator/my-earnings/', creator_views.creator_my_earnings_view, name='creator_my_earnings'),

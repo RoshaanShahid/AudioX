@@ -8,15 +8,17 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 urlpatterns = [
     # Django's built-in admin.
-    # This is useful for managing django-allauth's SocialApp model if you ever need to,
-    # and for other Django admin functionalities.
-    path('admin/', admin.site.urls),
+    # Changed path to 'django-admin/' to avoid conflict with custom admin URLs.
+    # You will now access the default Django admin at /django-admin/
+    path('django-admin/', admin.site.urls),
 
     # Redirect the root URL ('/') to the home page.
     # Ensure 'AudioXApp:home' is a valid named URL in your AudioXApp/urls.py
     path('', lambda request: redirect('AudioXApp:home', permanent=False), name='root_redirect'),
 
-    # Include your app's URLs (handles '/Home/', '/login/', etc.)
+    # Include your app's URLs (handles '/Home/', '/login/', '/admin/welcome/', etc.)
+    # This should come AFTER more specific paths if there were any overlaps,
+    # but in this case, changing the Django admin path is the cleaner solution.
     path('', include('AudioXApp.urls')),
 
     # django-allauth URLs for social login, account management etc.

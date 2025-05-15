@@ -1,13 +1,22 @@
-# AudioXApp/apps.py
 from django.apps import AppConfig
+import logging
 
-class AudioxappConfig(AppConfig): # Ensure this class name matches what's in your __init__.py or settings.py if specified
+logger = logging.getLogger(__name__)
+
+class AudioxappConfig(AppConfig): # Ensure class name matches your app's name in INSTALLED_APPS
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'AudioXApp'
+    name = 'AudioXApp' # This should be the name of your Django app
 
     def ready(self):
         """
         Import signals when the app is ready.
         This is the recommended way to connect signal handlers.
         """
-        import AudioXApp.signals # noqa: F401 (suppress unused import warning if linters complain)
+        try:
+            import AudioXApp.signals # Import the signals module
+            logger.info("AudioXApp signals imported successfully in ready().")
+        except ImportError as e:
+            logger.error(f"Error importing AudioXApp.signals in ready(): {e}")
+        except Exception as e:
+            logger.error(f"An unexpected error occurred during AudioXApp.ready() while importing signals: {e}")
+

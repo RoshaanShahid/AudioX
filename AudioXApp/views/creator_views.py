@@ -1,8 +1,11 @@
 import json
+import uuid
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
 import os
 from collections import defaultdict, OrderedDict
+import logging # Added logging import
+from django.utils.text import capfirst # For capitalizing
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponseForbidden, Http404
@@ -23,15 +26,52 @@ from django.utils.text import slugify
 from django.contrib.messages import get_messages
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
+from django.core.files.base import ContentFile
+# from django.core.files.storage import default_storage # To save TTS audio # Already imported
 
 from ..models import User, Creator, Audiobook, Chapter, WithdrawalRequest, CreatorApplicationLog, Admin, WithdrawalAccount, CreatorEarning, AudiobookViewLog
 from .utils import _get_full_context
 from .decorators import admin_role_required
 
+# --- Logger Setup ---
+logger = logging.getLogger(__name__) # Initialize logger
+
 PLATFORM_COMMISSION_RATE = Decimal('10.00')
 EARNING_PER_VIEW = Decimal('1.00')
 MIN_WITHDRAWAL_AMOUNT = Decimal('50.00')
 CANCELLATION_WINDOW_MINUTES = 30
+
+# --- Google Cloud Text-to-Speech (TTS) Setup ---
+try:
+    from google.cloud import texttospeech
+    google_tts_available = True
+    logger.info("Google Cloud Text-to-Speech library loaded successfully in creator_views.")
+except ImportError:
+    logger.warning("Google Cloud Text-to-Speech library (google-cloud-texttospeech) not found. TTS functionality will be disabled in creator_views.")
+    google_tts_available = False
+except Exception as e:
+    logger.error(f"Error importing Google Cloud Text-to-Speech library in creator_views: {e}")
+    google_tts_available = False
+
+# --- Google Cloud Text-to-Speech (TTS) Voice Mapping ---
+# Testing Aisha with a US Female voice to diagnose the issue.
+TTS_VOICE_MAPPING = {
+    'ali_narrator': { # Male
+        'name': "en-US-Wavenet-D", # US Male voice (currently working)
+        'language_code': "en-US"
+    },
+    'aisha_narrator': { # Female
+        'name': "en-US-Wavenet-E", # Switched to US Female Wavenet voice for testing
+        'language_code': "en-US"
+    },
+}
+DEFAULT_TTS_VOICE_PARAMS = { 
+    'name': "en-US-Wavenet-A", 
+    'language_code': "en-US"
+}
+# --- End Google Cloud TTS Setup ---
+
+
 
 def creator_required(view_func):
     @login_required
@@ -51,6 +91,7 @@ def creator_required(view_func):
             return redirect('AudioXApp:creator_welcome')
         except Exception as e:
             user_identifier = request.user.user_id if hasattr(request.user, 'user_id') else "Unknown User"
+            logger.error(f"An error occurred accessing creator information for user {user_identifier}: {type(e).__name__} - {e}") # Used logger
             messages.error(request, f"An error occurred accessing creator information for user {user_identifier}: {type(e).__name__} - {e}")
             return redirect('AudioXApp:home')
     return _wrapped_view
@@ -116,8 +157,10 @@ def log_audiobook_view(request):
         return JsonResponse({'status': 'success', 'message': 'View logged, total views updated, and earnings updated (if applicable).'})
 
     except Http404:
+        logger.warning(f"Audiobook not found for view logging: ID {audiobook_id}") # Used logger
         return JsonResponse({'status': 'error', 'message': 'Audiobook not found.'}, status=404)
     except Exception as e:
+        logger.error(f"Internal error in log_audiobook_view: {e}", exc_info=True) # Used logger
         return JsonResponse({'status': 'error', 'message': 'An internal error occurred.'}, status=500)
 
 
@@ -127,6 +170,7 @@ def creator_dashboard_view(request):
         creator_profile = request.creator
     except AttributeError:
         messages.error(request, "Creator profile not available. Please log in again.")
+        logger.warning("Creator profile not found on request in creator_dashboard_view.") # Used logger
         return redirect('AudioXApp:home')
 
     user = request.user
@@ -212,11 +256,11 @@ def creator_dashboard_view(request):
                 })
 
         if creator_profile.last_name_change_date and (now - creator_profile.last_name_change_date) < timedelta(days=90):
-                 recent_activities.append({
-                    'type': 'profile_update_name', 'icon_class': 'fas fa-user-edit',
-                    'description': f"Display name changed.", 'timestamp': creator_profile.last_name_change_date,
-                    'url': reverse('AudioXApp:update_creator_profile')
-                })
+                    recent_activities.append({
+                        'type': 'profile_update_name', 'icon_class': 'fas fa-user-edit',
+                        'description': f"Display name changed.", 'timestamp': creator_profile.last_name_change_date,
+                        'url': reverse('AudioXApp:update_creator_profile')
+                    })
 
         recent_earning_events = CreatorEarning.objects.filter(creator=creator_profile).order_by('-transaction_date')[:5]
         for earning in recent_earning_events:
@@ -226,9 +270,9 @@ def creator_dashboard_view(request):
                 if not title_to_display and earning.audiobook:
                     title_to_display = earning.audiobook.title
                 if title_to_display:
-                     activity_desc += f" from '{title_to_display}'."
+                    activity_desc += f" from '{title_to_display}'."
                 else:
-                     activity_desc += "."
+                    activity_desc += "."
                 recent_activities.append({
                     'type': 'earning_received', 'icon_class': 'fas fa-coins',
                     'description': activity_desc, 'timestamp': earning.transaction_date,
@@ -327,12 +371,15 @@ def creator_dashboard_view(request):
         return render(request, 'creator/creator_dashboard.html', context)
 
     except FieldError as fe:
+        logger.error(f"FieldError in creator_dashboard_view: {fe}", exc_info=True) # Used logger
         messages.error(request, f"A data error occurred while loading the dashboard (missing field: {fe.args[0]}). Please ensure migrations are complete and the database schema is up to date. If the issue persists, contact support.")
         return redirect('AudioXApp:home')
     except Creator.DoesNotExist:
+        logger.warning("Creator.DoesNotExist in creator_dashboard_view after initial check.") # Used logger
         messages.error(request, "Creator profile not found. Please log in again.")
         return redirect('AudioXApp:home')
     except Exception as e:
+        logger.error(f"Unexpected error in creator_dashboard_view: {e}", exc_info=True) # Used logger
         messages.error(request, "An unexpected error occurred while loading your dashboard. Please try again later.")
         return redirect('AudioXApp:home')
 
@@ -376,6 +423,7 @@ def creator_apply_view(request):
     except Creator.DoesNotExist:
         application_status = None
     except Exception as e:
+        logger.error(f"Error checking creator status in creator_apply_view for user {user.username}: {e}", exc_info=True) # Used logger
         messages.error(request, "An error occurred while checking your creator status.")
         return redirect('AudioXApp:home')
 
@@ -465,6 +513,7 @@ def creator_apply_view(request):
             return JsonResponse({'status': 'success', 'message': 'Application submitted.', 'redirect_url': redirect_url})
 
         except IntegrityError as e:
+            logger.error(f"IntegrityError in creator_apply_view: {e}", exc_info=True) # Used logger
             error_message = 'An error occurred.'
             errors = {}
             if 'creator_unique_name' in str(e).lower():
@@ -474,6 +523,7 @@ def creator_apply_view(request):
                 error_message = "A database error occurred."; errors['__all__'] = error_message
             return JsonResponse({ 'status': 'error', 'message': error_message, 'errors': errors }, status=400)
         except Exception as e:
+            logger.error(f"Unexpected error in creator_apply_view POST: {e}", exc_info=True) # Used logger
             return JsonResponse({ 'status': 'error', 'message': 'An unexpected error occurred.', 'errors': {'__all__': 'Server error.'} }, status=500)
 
     else: # GET Request
@@ -516,7 +566,7 @@ def update_creator_profile(request):
             if creator.creator_profile_pic:
                 if old_profile_pic_path and default_storage.exists(old_profile_pic_path):
                     try: default_storage.delete(old_profile_pic_path)
-                    except Exception as del_e: pass # Silently fail on delete error
+                    except Exception as del_e: logger.warning(f"Failed to delete old profile pic {old_profile_pic_path}: {del_e}") # Used logger
                 creator.creator_profile_pic = None
                 update_fields.append('creator_profile_pic')
                 made_changes = True
@@ -527,7 +577,7 @@ def update_creator_profile(request):
             else:
                 if old_profile_pic_path and old_profile_pic_path != profile_pic_file.name and default_storage.exists(old_profile_pic_path):
                     try: default_storage.delete(old_profile_pic_path)
-                    except Exception as del_e: pass # Silently fail
+                    except Exception as del_e: logger.warning(f"Failed to delete old profile pic {old_profile_pic_path} during update: {del_e}") # Used logger
                 creator.creator_profile_pic = profile_pic_file
                 update_fields.append('creator_profile_pic')
                 made_changes = True
@@ -582,10 +632,12 @@ def update_creator_profile(request):
                         creator.save(update_fields=['creator_profile_pic'])
                         messages.success(request, "Profile picture removed successfully!")
                     elif made_changes:
+                        logger.warning("Profile update: 'made_changes' was true but 'update_fields' was empty or inconsistent.") # Used logger
                         messages.warning(request, "An internal inconsistency occurred. Please try again.")
                     else: messages.info(request, "No changes were detected.")
                 return redirect('AudioXApp:update_creator_profile')
             except IntegrityError:
+                logger.warning(f"IntegrityError updating creator profile for {creator.user.username}", exc_info=True) # Used logger
                 messages.error(request, "That unique name might already be taken. Please try another.")
                 errors['creator_unique_name'] = 'This unique name is already taken.'
                 context = {
@@ -597,6 +649,7 @@ def update_creator_profile(request):
                 }
                 return render(request, 'creator/creator_profile.html', context)
             except Exception as e:
+                logger.error(f"Unexpected error updating creator profile for {creator.user.username}: {e}", exc_info=True) # Used logger
                 messages.error(request, "An unexpected error occurred while updating your profile.")
 
     context = {
@@ -955,8 +1008,111 @@ def creator_my_audiobooks_view(request):
         })
         return render(request, 'creator/creator_my_audiobooks.html', context)
     except Exception as e:
+        logger.error(f"Could not load creator's audiobooks: {e}", exc_info=True) # Used logger
         messages.error(request, "Could not load your audiobooks.")
         return redirect('AudioXApp:creator_dashboard')
+
+@creator_required
+@require_POST
+@csrf_protect
+def generate_tts_preview_audio(request):
+    """
+    Generates TTS audio from text for preview and returns a URL to the temporary audio file.
+    Uses the centrally defined TTS_VOICE_MAPPING and TEMP_TTS_PREVIEWS_DIR_NAME from settings.
+    Includes enhanced logging.
+    """
+    if not google_tts_available:
+        logger.error("TTS generation requested (preview) but Google TTS library is not available.")
+        return JsonResponse({'status': 'error', 'message': 'Text-to-Speech service is currently unavailable.'}, status=503)
+
+    try:
+        text_content = request.POST.get('text_content', '').strip()
+        tts_voice_id_from_request = request.POST.get('tts_voice_id', 'default')
+
+        logger.info(f"[TTS PREVIEW] Received request. User: {request.user.username}, Requested Voice ID: '{tts_voice_id_from_request}', Text Length: {len(text_content)}")
+
+        if not text_content:
+            logger.warning(f"[TTS PREVIEW] Text content missing for user {request.user.username}.")
+            return JsonResponse({'status': 'error', 'message': 'Text content is required for TTS generation.'}, status=400)
+        if len(text_content) < 10:
+            logger.warning(f"[TTS PREVIEW] Text content too short for user {request.user.username}.")
+            return JsonResponse({'status': 'error', 'message': 'Text content is too short (min 10 characters).'}, status=400)
+        if len(text_content) > 5000:  # Max length for preview
+            logger.warning(f"[TTS PREVIEW] Text content too long for user {request.user.username}.")
+            return JsonResponse({'status': 'error', 'message': 'Text content is too long (max 5000 characters for preview).'}, status=400)
+        
+        if tts_voice_id_from_request == 'default' or tts_voice_id_from_request not in TTS_VOICE_MAPPING:
+            logger.error(f"[TTS PREVIEW] Invalid or default voice_id '{tts_voice_id_from_request}' selected by user {request.user.username}. Available mapping keys: {list(TTS_VOICE_MAPPING.keys())}")
+            return JsonResponse({'status': 'error', 'message': 'Please select a specific valid narrator voice for TTS preview.'}, status=400)
+
+        selected_voice_params_dict = TTS_VOICE_MAPPING.get(tts_voice_id_from_request)
+        if not selected_voice_params_dict: # Should not happen due to the check above
+            logger.error(f"[TTS PREVIEW] CRITICAL: Voice ID '{tts_voice_id_from_request}' was in mapping keys but .get() returned None.")
+            selected_voice_params_dict = DEFAULT_TTS_VOICE_PARAMS # Fallback
+            logger.info(f"[TTS PREVIEW] Falling back to DEFAULT_TTS_VOICE_PARAMS: {selected_voice_params_dict}")
+
+        logger.info(f"[TTS PREVIEW] For Voice ID '{tts_voice_id_from_request}', using mapped params: {selected_voice_params_dict}")
+
+        tts_client = texttospeech.TextToSpeechClient()
+        synthesis_input = texttospeech.SynthesisInput(text=text_content)
+
+        voice_params = texttospeech.VoiceSelectionParams(
+            language_code=selected_voice_params_dict['language_code'],
+            name=selected_voice_params_dict['name']
+        )
+        logger.info(f"[TTS PREVIEW] VoiceSelectionParams sent to Google: language_code='{selected_voice_params_dict['language_code']}', name='{selected_voice_params_dict['name']}'")
+
+        audio_config_tts = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3
+        )
+
+        response = tts_client.synthesize_speech(
+            request={"input": synthesis_input, "voice": voice_params, "audio_config": audio_config_tts}
+        )
+
+        # Use TEMP_TTS_PREVIEWS_DIR_NAME from settings
+        temp_tts_dir_name = getattr(settings, 'TEMP_TTS_PREVIEWS_DIR_NAME', 'temp_tts_previews') # Default if not set
+        temp_tts_path = os.path.join(settings.MEDIA_ROOT, temp_tts_dir_name)
+        os.makedirs(temp_tts_path, exist_ok=True)
+
+        temp_audio_filename = f"preview_{request.user.user_id}_{uuid.uuid4().hex[:8]}.mp3"
+        temp_audio_filepath = os.path.join(temp_tts_path, temp_audio_filename)
+        
+        with open(temp_audio_filepath, "wb") as out:
+            out.write(response.audio_content)
+        logger.info(f"[TTS PREVIEW] TTS preview audio saved to: {temp_audio_filepath}")
+
+        # Construct URL using TEMP_TTS_PREVIEWS_DIR_NAME from settings
+        temp_audio_url = os.path.join(settings.MEDIA_URL, temp_tts_dir_name, temp_audio_filename)
+        temp_audio_url = temp_audio_url.replace(os.sep, '/') 
+        if not temp_audio_url.startswith('/'): # Ensure it's a root-relative URL if MEDIA_URL is empty or relative
+            temp_audio_url = '/' + temp_audio_url
+        
+        # Cleanup old temporary files (older than 2 hours)
+        try:
+            for old_file in os.listdir(temp_tts_path):
+                old_filepath = os.path.join(temp_tts_path, old_file)
+                if os.path.isfile(old_filepath):
+                    # Compare file modification time with 2 hours ago
+                    file_mod_time_aware = timezone.make_aware(datetime.fromtimestamp(os.path.getmtime(old_filepath)))
+                    two_hours_ago = timezone.now() - timezone.timedelta(hours=2)
+                    if file_mod_time_aware < two_hours_ago:
+                        default_storage.delete(old_filepath) # Use default_storage for consistency if it handles remote storage
+                        logger.info(f"[TTS PREVIEW] Deleted old temp file: {old_filepath}")
+        except Exception as e_cleanup:
+            logger.error(f"[TTS PREVIEW] Error cleaning up old temp TTS files: {e_cleanup}")
+
+        return JsonResponse({
+            'status': 'success',
+            'audio_url': temp_audio_url,
+            'voice_id_used': tts_voice_id_from_request, 
+            'filename': temp_audio_filename 
+        })
+
+    except Exception as e:
+        logger.error(f"[TTS PREVIEW] Unexpected error during TTS preview generation for user {request.user.username}: {e}", exc_info=True)
+        return JsonResponse({'status': 'error', 'message': f'An error occurred during TTS generation: {str(e)}'}, status=500)
+
 
 @creator_required
 @require_http_methods(["GET", "POST"])
@@ -964,11 +1120,11 @@ def creator_my_audiobooks_view(request):
 def creator_upload_audiobook(request):
     creator = request.creator
     form_errors = {}
-    submitted_values = {}
-    submitted_chapters_for_template = []
+    submitted_values = {} 
+    submitted_chapters_for_template = [] 
 
     if request.method == 'POST':
-        submitted_values = request.POST.copy()
+        submitted_values = request.POST.copy() 
 
         title = submitted_values.get('title', '').strip()
         author = submitted_values.get('author', '').strip()
@@ -983,6 +1139,7 @@ def creator_upload_audiobook(request):
         is_paid = (pricing_type == 'paid')
         price = Decimal('0.00')
 
+        # --- Basic Audiobook Detail Validation ---
         if not title: form_errors['title'] = "Audiobook title is required."
         if not author: form_errors['author'] = "Author name is required."
         if not narrator: form_errors['narrator'] = "Narrator name is required."
@@ -991,19 +1148,21 @@ def creator_upload_audiobook(request):
         if not description: form_errors['description'] = "Audiobook description is required."
 
         if not cover_image_file:
+            # If editing, this might not be an error if a cover already exists.
+            # For new upload, it's an error. Assuming new upload context here.
             form_errors['cover_image'] = "Cover image is required."
         else:
-            max_cover_size = 2 * 1024 * 1024
+            max_cover_size = 2 * 1024 * 1024 
             allowed_cover_types = ['image/jpeg', 'image/png', 'image/jpg']
             if cover_image_file.size > max_cover_size:
-                form_errors['cover_image'] = "Cover image too large (Max 2MB)."
+                form_errors['cover_image'] = f"Cover image too large (Max {filesizeformat(max_cover_size)})."
                 submitted_values['cover_image_filename'] = f"{cover_image_file.name} (Too large)"
             elif cover_image_file.content_type not in allowed_cover_types:
                 form_errors['cover_image'] = "Invalid cover image type (PNG, JPG/JPEG only)."
                 submitted_values['cover_image_filename'] = f"{cover_image_file.name} (Invalid type)"
             else:
                 submitted_values['cover_image_filename'] = cover_image_file.name
-
+        
         if pricing_type not in ['free', 'paid']:
             form_errors['pricing_type'] = "Invalid pricing type selected."
         elif is_paid:
@@ -1012,68 +1171,153 @@ def creator_upload_audiobook(request):
             else:
                 try:
                     price = Decimal(price_str)
-                    if price <= Decimal('0.00'):
+                    if price <= Decimal('0.00'): 
                         form_errors['price'] = "Price must be a positive value for paid audiobooks."
                 except InvalidOperation:
                     form_errors['price'] = "Invalid price format. Please enter a number."
+        # --- End Basic Audiobook Detail Validation ---
 
-        chapters_to_save = []
+        chapters_to_save_data = [] 
         chapter_indices = set()
 
-        for key in request.POST:
+        for key in request.POST: 
             if key.startswith('chapters[') and '][title]' in key:
                 try:
                     index_str = key.split('[')[1].split(']')[0]
                     chapter_indices.add(int(index_str))
                 except (IndexError, ValueError):
+                    logger.warning(f"Could not parse chapter index from key: {key}")
                     continue
-
+        
         if not chapter_indices:
             form_errors['chapters_general'] = "At least one chapter is required."
         else:
             sorted_indices = sorted(list(chapter_indices))
             for index in sorted_indices:
                 chapter_title = submitted_values.get(f'chapters[{index}][title]', '').strip()
-                chapter_audio_file = request.FILES.get(f'chapters[{index}][audio]')
+                # This is the type selected by the user: 'file' or 'tts' (which covers new and using previewed)
+                chapter_input_type_from_toggle = submitted_values.get(f'chapters[{index}][input_type]', 'file') 
+                # This hidden input is set by JS to 'file', 'tts' (for new generation), or 'generated_tts' (if preview was confirmed)
+                # We should prioritize this hidden input if available, as it's more specific.
+                effective_chapter_input_type = submitted_values.get(f'chapters[{index}][input_type_hidden]', chapter_input_type_from_toggle)
+
+
+                chapter_audio_file_from_form = request.FILES.get(f'chapters[{index}][audio_file]') 
+                chapter_text_content_input = submitted_values.get(f'chapters[{index}][text_content]', '').strip()
+                chapter_tts_voice_id_from_form = submitted_values.get(f'chapters[{index}][tts_voice]', 'default') 
+                generated_tts_audio_url_from_form = submitted_values.get(f'chapters[{index}][generated_tts_audio_url]', '').strip()
+                
                 try:
                     chapter_order = int(submitted_values.get(f'chapters[{index}][order]', index + 1))
                 except ValueError:
-                    chapter_order = index + 1
+                    chapter_order = index + 1 
+
+                # Prepare display name for TTS voice for template repopulation
+                tts_voice_display_name = ""
+                if chapter_tts_voice_id_from_form and chapter_tts_voice_id_from_form != 'default':
+                    # Ensure it's a string before calling replace
+                    voice_str_for_display = str(chapter_tts_voice_id_from_form)
+                    tts_voice_display_name = capfirst(voice_str_for_display.replace("_narrator", ""))
 
                 current_chapter_errors = {}
+                temp_chapter_data_for_repopulation = {
+                    'original_index': index, 'title': chapter_title, 'order': chapter_order,
+                    'input_type': effective_chapter_input_type, # Use the more specific type for repopulation logic
+                    'text_content': chapter_text_content_input,
+                    'tts_voice': chapter_tts_voice_id_from_form, 
+                    'tts_voice_display_name': tts_voice_display_name, # Add pre-processed name
+                    'audio_filename': "No file chosen", 
+                    'generated_tts_audio_url': generated_tts_audio_url_from_form, # Store this for repopulation
+                    'errors': {}
+                }
+                if chapter_audio_file_from_form:
+                    temp_chapter_data_for_repopulation['audio_filename'] = chapter_audio_file_from_form.name
+
+
                 if not chapter_title:
                     current_chapter_errors['title'] = "Chapter title is required."
-                if not chapter_audio_file:
-                    current_chapter_errors['audio'] = "Audio file is required for this chapter."
-                else:
-                    max_audio_size = 50 * 1024 * 1024
-                    allowed_audio_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg']
-                    if chapter_audio_file.size > max_audio_size:
-                        current_chapter_errors['audio'] = f"Audio file too large (Max 50MB)."
-                    if chapter_audio_file.content_type not in allowed_audio_types:
-                        current_chapter_errors['audio'] = f"Invalid audio file type (MP3, WAV, OGG)."
+                
+                audio_source_valid_for_submission = False
+                audio_file_to_process_for_db = None 
+                text_content_for_db = None
+                is_tts_generated_for_db = False
+                final_tts_voice_id_for_db = 'default'
+
+                # Use effective_chapter_input_type for logic
+                if effective_chapter_input_type == 'file':
+                    if not chapter_audio_file_from_form:
+                        current_chapter_errors['audio_file'] = "Audio file is required for this chapter."
+                    else:
+                        audio_file_to_process_for_db = chapter_audio_file_from_form
+                        max_audio_size = 50 * 1024 * 1024 
+                        allowed_audio_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/m4a']
+                        if chapter_audio_file_from_form.size > max_audio_size:
+                            current_chapter_errors['audio_file'] = f"Audio file too large (Max {filesizeformat(max_audio_size)})."
+                        if chapter_audio_file_from_form.content_type not in allowed_audio_types:
+                            current_chapter_errors['audio_file'] = f"Invalid audio file type. Allowed: MP3, WAV, OGG, M4A."
+                        if not current_chapter_errors.get('audio_file'):
+                            audio_source_valid_for_submission = True
+                
+                elif effective_chapter_input_type == 'generated_tts': 
+                    if not generated_tts_audio_url_from_form:
+                        current_chapter_errors['generated_tts'] = "Confirmed TTS audio URL is missing. Please re-generate and confirm."
+                    elif chapter_tts_voice_id_from_form == 'default' or chapter_tts_voice_id_from_form not in TTS_VOICE_MAPPING: # Ensure voice is still valid
+                         current_chapter_errors['tts_voice'] = "A valid narrator voice for the confirmed audio is missing."
+                    else:
+                        audio_file_to_process_for_db = generated_tts_audio_url_from_form 
+                        text_content_for_db = chapter_text_content_input 
+                        is_tts_generated_for_db = True
+                        final_tts_voice_id_for_db = chapter_tts_voice_id_from_form
+                        audio_source_valid_for_submission = True
+                        # For repopulation, ensure audio_filename shows the generated one
+                        if generated_tts_audio_url_from_form:
+                             temp_chapter_data_for_repopulation['audio_filename'] = f"Generated: {os.path.basename(generated_tts_audio_url_from_form)}"
+
+
+                elif effective_chapter_input_type == 'tts': 
+                    if not chapter_text_content_input:
+                        current_chapter_errors['text_content'] = "Text content is required for TTS generation."
+                    elif len(chapter_text_content_input) < 10:
+                        current_chapter_errors['text_content'] = "Text content is too short for TTS (min 10 characters)."
+                    elif len(chapter_text_content_input) > 20000: 
+                        current_chapter_errors['text_content'] = "Text content is too long for direct TTS generation (max 20000 characters)."
+
+                    if chapter_tts_voice_id_from_form == 'default' or chapter_tts_voice_id_from_form not in TTS_VOICE_MAPPING:
+                        current_chapter_errors['tts_voice'] = "Please select a valid narrator voice for TTS."
+                    
+                    if not google_tts_available:
+                        current_chapter_errors['tts_general'] = "Text-to-Speech service is currently unavailable. Please upload an audio file instead."
+                    
+                    if not current_chapter_errors: 
+                        audio_source_valid_for_submission = True 
+                        text_content_for_db = chapter_text_content_input
+                        is_tts_generated_for_db = True 
+                        final_tts_voice_id_for_db = chapter_tts_voice_id_from_form
+                else: # Should not happen if JS sets hidden input correctly
+                    current_chapter_errors['input_type'] = "Invalid input type for chapter."
+
+                if not audio_source_valid_for_submission and not current_chapter_errors:
+                    current_chapter_errors.setdefault('audio_file', "Audio source is missing or invalid for this chapter.")
+
 
                 if current_chapter_errors:
                     form_errors[f'chapter_{index}'] = current_chapter_errors
-
-                submitted_chapters_for_template.append({
-                    'original_index': index,
-                    'title': chapter_title,
-                    'audio_filename': chapter_audio_file.name if chapter_audio_file else "No file chosen",
-                    'order': chapter_order,
-                    'errors': current_chapter_errors
-                })
-
+                    temp_chapter_data_for_repopulation['errors'] = current_chapter_errors
+                
+                submitted_chapters_for_template.append(temp_chapter_data_for_repopulation)
+                
                 if not current_chapter_errors:
-                    chapters_to_save.append({
-                        'title': chapter_title,
-                        'audio_file': chapter_audio_file,
-                        'order': chapter_order
+                    chapters_to_save_data.append({
+                        'title': chapter_title, 'order': chapter_order,
+                        'input_type_final': effective_chapter_input_type, # Store the effective type
+                        'audio_file_obj_or_temp_url': audio_file_to_process_for_db,
+                        'text_content_for_tts': text_content_for_db,
+                        'is_tts_final': is_tts_generated_for_db, 
+                        'final_tts_voice_id': final_tts_voice_id_for_db,
                     })
-
+            
             if form_errors and any(key.startswith('chapter_') for key in form_errors):
                 form_errors.setdefault('chapters_general', "Please correct errors in the chapter details below.")
-
 
         if not form_errors:
             try:
@@ -1081,47 +1325,142 @@ def creator_upload_audiobook(request):
                     new_audiobook = Audiobook(
                         creator=creator, title=title, author=author, narrator=narrator, language=language,
                         genre=genre, description=description, cover_image=cover_image_file,
-                        is_paid=is_paid, price=price if is_paid else Decimal('0.00')
+                        is_paid=is_paid, price=price if is_paid else Decimal('0.00'),
+                        status='PUBLISHED' 
                     )
-                    try:
-                        new_audiobook.full_clean()
-                    except ValidationError as e: # DjangoValidationError
-                        for field, error_list in e.message_dict.items():
-                            form_errors[field] = " ".join(error_list)
-                        if hasattr(e, 'non_field_errors') and e.non_field_errors():
-                            form_errors['general_error'] = " ".join(e.non_field_errors())
-                        raise
-                    new_audiobook.save()
-                    chapters_to_save.sort(key=lambda c: c['order'])
+                    new_audiobook.full_clean() 
+                    new_audiobook.save() 
 
-                    for chapter_data_item in chapters_to_save:
+                    chapters_to_save_data.sort(key=lambda c: c['order'])
+
+                    for chapter_data_to_save in chapters_to_save_data:
+                        final_audio_file_path_for_chapter_model = None 
+                        db_text_content = chapter_data_to_save['text_content_for_tts']
+                        db_is_tts_generated = chapter_data_to_save['is_tts_final']
+                        db_tts_voice_id = chapter_data_to_save['final_tts_voice_id']
+
+                        chapter_input_source_type = chapter_data_to_save['input_type_final']
+
+                        if chapter_input_source_type == 'file':
+                            final_audio_file_path_for_chapter_model = chapter_data_to_save['audio_file_obj_or_temp_url']
+                            db_is_tts_generated = False 
+                            db_tts_voice_id = 'default'
+                            db_text_content = None 
+
+                        elif chapter_input_source_type == 'generated_tts': # Audio was previewed and confirmed
+                            temp_audio_url = chapter_data_to_save['audio_file_obj_or_temp_url'] 
+                            relative_path_to_media_root = temp_audio_url.replace(settings.MEDIA_URL, '', 1)
+                            full_temp_file_path = os.path.join(settings.MEDIA_ROOT, relative_path_to_media_root)
+
+                            if default_storage.exists(full_temp_file_path):
+                                chapter_audio_dir = os.path.join('chapters_audio', new_audiobook.slug)
+                                new_filename = f"ch_{chapter_data_to_save['order']}_{slugify(chapter_data_to_save['title'])}_tts_{uuid.uuid4().hex[:6]}.mp3"
+                                new_chapter_audio_path_rel_to_media_root = os.path.join(chapter_audio_dir, new_filename)
+                                
+                                with open(full_temp_file_path, 'rb') as temp_file_content_stream:
+                                    saved_file_name = default_storage.save(new_chapter_audio_path_rel_to_media_root, ContentFile(temp_file_content_stream.read()))
+                                final_audio_file_path_for_chapter_model = saved_file_name
+                                
+                                try:
+                                    default_storage.delete(full_temp_file_path) 
+                                    logger.info(f"Moved and deleted temporary TTS preview file: {full_temp_file_path} to {saved_file_name}")
+                                except Exception as del_e:
+                                    logger.warning(f"Could not delete temporary TTS preview file {full_temp_file_path} after moving: {del_e}")
+                            else:
+                                logger.error(f"Confirmed TTS file not found at expected path: {full_temp_file_path} (URL was {temp_audio_url}). Skipping audio for chapter '{chapter_data_to_save['title']}'.")
+                                form_errors.setdefault('chapters_general', f"Audio for chapter '{chapter_data_to_save['title']}' (from preview) was missing. Please try generating it again.")
+                                raise ValidationError(f"Missing confirmed TTS file for chapter '{chapter_data_to_save['title']}'.")
+                        
+                        elif chapter_input_source_type == 'tts': # Generate TTS now, on submit
+                            if not google_tts_available:
+                                form_errors.setdefault('chapters_general', "TTS service became unavailable during submission.")
+                                raise ValidationError("TTS service unavailable.")
+
+                            logger.info(f"Generating TTS for chapter (on submit): {chapter_data_to_save['title']}, voice: {db_tts_voice_id}")
+                            tts_client = texttospeech.TextToSpeechClient()
+                            synthesis_input = texttospeech.SynthesisInput(text=db_text_content)
+                            
+                            selected_voice_params = TTS_VOICE_MAPPING.get(db_tts_voice_id, DEFAULT_TTS_VOICE_PARAMS)
+
+                            voice_params_gcp = texttospeech.VoiceSelectionParams(
+                                language_code=selected_voice_params['language_code'],
+                                name=selected_voice_params['name']
+                            )
+                            audio_config_gcp = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+                            
+                            tts_response = tts_client.synthesize_speech(
+                                request={"input": synthesis_input, "voice": voice_params_gcp, "audio_config": audio_config_gcp}
+                            )
+                            
+                            tts_audio_dir = os.path.join('chapters_audio', new_audiobook.slug)
+                            tts_audio_filename_final = f"ch_{chapter_data_to_save['order']}_{slugify(chapter_data_to_save['title'])}_tts_{uuid.uuid4().hex[:6]}.mp3"
+                            tts_audio_path_rel_to_media = os.path.join(tts_audio_dir, tts_audio_filename_final)
+
+                            saved_file_name = default_storage.save(tts_audio_path_rel_to_media, ContentFile(tts_response.audio_content))
+                            final_audio_file_path_for_chapter_model = saved_file_name 
+                            logger.info(f"TTS audio generated and saved as {saved_file_name} for chapter '{chapter_data_to_save['title']}' during submission.")
+                            # db_is_tts_generated, db_tts_voice_id, db_text_content are already set correctly for this path
+
+                        else:
+                            logger.error(f"Unhandled audio source type '{chapter_input_source_type}' for chapter '{chapter_data_to_save['title']}'. Skipping chapter.")
+                            form_errors.setdefault('chapters_general', f"Could not determine audio source for chapter '{chapter_data_to_save['title']}'.")
+                            raise ValidationError(f"Audio source undetermined for chapter '{chapter_data_to_save['title']}'.")
+
                         Chapter.objects.create(
                             audiobook=new_audiobook,
-                            chapter_name=chapter_data_item['title'],
-                            chapter_order=chapter_data_item['order'],
-                            audio_file=chapter_data_item['audio_file']
+                            chapter_name=chapter_data_to_save['title'],
+                            chapter_order=chapter_data_to_save['order'],
+                            audio_file=final_audio_file_path_for_chapter_model,
+                            text_content=db_text_content, 
+                            is_tts_generated=db_is_tts_generated,
+                            tts_voice_id=db_tts_voice_id if db_is_tts_generated else 'default'
                         )
-                    messages.success(request, f"Audiobook '{title}' uploaded and published successfully! It is now in your library.")
+                        
+                    messages.success(request, f"Audiobook '{new_audiobook.title}' and its chapters uploaded successfully!")
                     return redirect('AudioXApp:creator_my_audiobooks')
-            except ValidationError: # DjangoValidationError
-                messages.error(request, "Please correct the validation errors found.")
-            except IntegrityError as e:
-                messages.error(request, f"Database Error: Could not save audiobook. It might conflict with existing data (e.g., duplicate title/slug).")
-                form_errors['general_error'] = "A database error occurred. Please check for duplicate titles or ensure slug uniqueness."
-            except Exception as e:
-                messages.error(request, f"An unexpected error occurred during upload: {e}")
-                form_errors['general_error'] = f"An unexpected server error occurred: {e}"
-        else:
-            messages.error(request, "Please correct the errors highlighted below.")
 
+            except ValidationError as e: 
+                logger.error(f"Validation Error during audiobook/chapter save: {e.message_dict if hasattr(e, 'message_dict') else e}", exc_info=True)
+                if hasattr(e, 'message_dict'):
+                    for field, error_list in e.message_dict.items():
+                        if field == '__all__' or hasattr(Audiobook, field): # Check if error is for Audiobook model
+                             form_errors[field if field != '__all__' else 'general_error'] = " ".join(error_list)
+                        else: 
+                            form_errors.setdefault('chapters_general', "An error occurred with one of the chapters. " + " ".join(error_list))
+                else: 
+                    if "Missing confirmed TTS file for chapter" in str(e) or "Audio source undetermined for chapter" in str(e):
+                         form_errors.setdefault('chapters_general', str(e))
+                    else:
+                        form_errors['general_error'] = str(e)
+                messages.error(request, "Please correct the validation errors found.")
+            except IntegrityError as e: # Catch database integrity errors (e.g. unique constraint)
+                logger.error(f"Integrity Error during audiobook/chapter save: {e}", exc_info=True)
+                # Check if the error is related to the slug (common unique constraint)
+                if 'audiobook_slug' in str(e).lower() or ('audiobook' in str(e).lower() and 'slug' in str(e).lower()):
+                     form_errors['title'] = "This title (or its generated slug) already exists. Please choose a different title."
+                     messages.error(request, "An audiobook with a similar title already exists. Please choose a different title.")
+                else:
+                    messages.error(request, f"Database Error: Could not save audiobook. It might conflict with existing data.")
+                    form_errors['general_error'] = "A database error occurred. Please check for duplicate titles or ensure slug uniqueness."
+            except Exception as e: # Catch any other unexpected errors
+                logger.error(f"Unexpected error during audiobook upload: {e}", exc_info=True)
+                messages.error(request, f"An unexpected error occurred during upload: {str(e)[:200]}") 
+                form_errors['general_error'] = f"An unexpected server error occurred: {str(e)[:100]}"
+        else: 
+            messages.error(request, "Please correct the errors highlighted below.")
+        
+        # This ensures submitted_chapters_for_template is available when re-rendering with errors
         submitted_values['chapters'] = submitted_chapters_for_template
+
 
     context = _get_full_context(request)
     context.update({
         'creator': creator,
         'available_balance': creator.available_balance,
         'form_errors': form_errors,
-        'submitted_values': submitted_values,
+        'submitted_values': submitted_values, 
+        'google_tts_available': google_tts_available,
+        'TTS_VOICE_CHOICES_FOR_JS': [{'id': k, 'name': f"{v['name']} ({v['language_code']})"} for k,v in TTS_VOICE_MAPPING.items()]
     })
     return render(request, 'creator/creator_upload_audiobooks.html', context)
 
@@ -1131,11 +1470,27 @@ def creator_upload_audiobook(request):
 @csrf_protect
 def creator_manage_upload_detail_view(request, audiobook_slug):
     creator = request.creator
-    audiobook = get_object_or_404(Audiobook, slug=audiobook_slug, creator=creator)
+    audiobook = get_object_or_404(Audiobook.objects.prefetch_related('chapters'), slug=audiobook_slug, creator=creator)
 
-    form_errors = {}
-    submitted_values = {}
-    chapters_context_list = []
+    view_form_errors = {}
+    view_chapter_form_errors = defaultdict(dict) 
+
+    view_submitted_values = {
+        'title': audiobook.title or '',
+        'author': audiobook.author or '',
+        'narrator': audiobook.narrator or '',
+        'genre': audiobook.genre or '',
+        'language': audiobook.language or '',
+        'description': audiobook.description or '',
+        'status_only_select': audiobook.status or '',
+        'current_cover_image_url': audiobook.cover_image.url if audiobook.cover_image else None,
+        'new_chapter_title': '',
+        'new_chapter_input_type_hidden': 'file',
+        'new_chapter_generated_tts_url': '',
+        'new_chapter_text_content': '',
+        'new_chapter_tts_voice': 'default',
+        'new_chapter_tts_voice_display_name': '',
+    }
 
     creator_allowed_statuses_for_toggle = [
         ('PUBLISHED', 'Published (Visible to users)'),
@@ -1144,233 +1499,554 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
     can_creator_change_status = audiobook.status not in ['REJECTED', 'PAUSED_BY_ADMIN']
 
     if request.method == 'POST':
-        action = request.POST.get('action')
-        submitted_values = request.POST.copy()
+        post_data = request.POST.copy()
+        for key in post_data:
+            view_submitted_values[key] = post_data.get(key)
 
+        action = view_submitted_values.get('action')
+        logger.info(f"POST Action: {action} for audiobook '{audiobook.slug}' by user '{request.user.username}'")
+
+        # --- Action: Edit Audiobook Details ---
         if action == 'edit_audiobook_details':
-            title = submitted_values.get('title', '').strip()
-            author = submitted_values.get('author', '').strip()
-            narrator = submitted_values.get('narrator', '').strip()
-            genre = submitted_values.get('genre', '').strip()
-            language = submitted_values.get('language', '').strip()
-            description = submitted_values.get('description', '').strip()
+            logger.info(f"Processing 'edit_audiobook_details' for audiobook '{audiobook.slug}'")
+            title_from_post = view_submitted_values.get('title', '').strip()
+            author_from_post = view_submitted_values.get('author', '').strip()
+            narrator_from_post = view_submitted_values.get('narrator', '').strip()
+            genre_from_post = view_submitted_values.get('genre', '').strip()
+            language_from_post = view_submitted_values.get('language', '').strip()
+            description_from_post = view_submitted_values.get('description', '').strip()
             cover_image_file = request.FILES.get('cover_image')
 
-            if not title: form_errors['title'] = "Audiobook title is required."
-            if not author: form_errors['author'] = "Author name is required."
-            if not narrator: form_errors['narrator'] = "Narrator name is required."
-            if not genre: form_errors['genre'] = "Genre is required."
-            if not language: form_errors['language'] = "Language is required."
-            if not description: form_errors['description'] = "Description is required."
+            current_action_form_errors = {}
+            if not title_from_post: current_action_form_errors['title'] = "Audiobook title is required."
+            if not author_from_post: current_action_form_errors['author'] = "Author name is required."
+            if not narrator_from_post: current_action_form_errors['narrator'] = "Narrator name is required."
+            if not genre_from_post: current_action_form_errors['genre'] = "Genre is required."
+            if not language_from_post: current_action_form_errors['language'] = "Language is required."
+            if not description_from_post: current_action_form_errors['description'] = "Description is required."
+
 
             if cover_image_file:
                 max_cover_size = 2 * 1024 * 1024
                 allowed_cover_types = ['image/jpeg', 'image/png', 'image/jpg']
                 if cover_image_file.size > max_cover_size:
-                    form_errors['cover_image'] = "Cover image too large (Max 2MB)."
+                    current_action_form_errors['cover_image'] = f"Cover image too large (Max {filesizeformat(max_cover_size)})."
                 if cover_image_file.content_type not in allowed_cover_types:
-                    form_errors['cover_image'] = "Invalid cover image type (PNG, JPG/JPEG only)."
+                    current_action_form_errors['cover_image'] = "Invalid cover image type (PNG, JPG/JPEG only)."
 
-            if not form_errors:
+            if not current_action_form_errors:
                 try:
                     with transaction.atomic():
-                        audiobook.title = title
-                        audiobook.author = author
-                        audiobook.narrator = narrator
-                        audiobook.genre = genre
-                        audiobook.language = language
-                        audiobook.description = description
-                        if cover_image_file:
-                            if audiobook.cover_image and hasattr(audiobook.cover_image, 'name') and audiobook.cover_image.name:
-                                if default_storage.exists(audiobook.cover_image.name):
-                                    default_storage.delete(audiobook.cover_image.name)
-                            audiobook.cover_image = cover_image_file
+                        audiobook_to_update = Audiobook.objects.select_for_update().get(pk=audiobook.pk)
+                        audiobook_to_update.title = title_from_post
+                        audiobook_to_update.author = author_from_post
+                        audiobook_to_update.narrator = narrator_from_post
+                        audiobook_to_update.genre = genre_from_post
+                        audiobook_to_update.language = language_from_post
+                        audiobook_to_update.description = description_from_post
+                        
+                        update_fields = ['title', 'author', 'narrator', 'genre', 'language', 'description', 'updated_at']
 
-                        new_slug_candidate = slugify(title)
-                        if audiobook.slug != new_slug_candidate:
+                        if cover_image_file:
+                            if audiobook_to_update.cover_image and hasattr(audiobook_to_update.cover_image, 'name') and audiobook_to_update.cover_image.name:
+                                if default_storage.exists(audiobook_to_update.cover_image.name):
+                                    default_storage.delete(audiobook_to_update.cover_image.name)
+                            audiobook_to_update.cover_image = cover_image_file
+                            update_fields.append('cover_image')
+                        
+                        new_slug_candidate = slugify(title_from_post)
+                        if audiobook_to_update.slug != new_slug_candidate:
                             temp_slug = new_slug_candidate
                             counter = 1
-                            while Audiobook.objects.filter(slug=temp_slug).exclude(pk=audiobook.pk).exists():
+                            while Audiobook.objects.filter(slug=temp_slug).exclude(pk=audiobook_to_update.pk).exists():
                                 temp_slug = f"{new_slug_candidate}-{counter}"
                                 counter += 1
-                            audiobook.slug = temp_slug
-
-                        audiobook.save()
-                        messages.success(request, f"Audiobook '{audiobook.title}' details updated successfully.")
-                        return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook.slug)
+                            audiobook_to_update.slug = temp_slug
+                            update_fields.append('slug')
+                        
+                        audiobook_to_update.updated_at = timezone.now()
+                        audiobook_to_update.save(update_fields=list(set(update_fields)))
+                        messages.success(request, f"Audiobook '{audiobook_to_update.title}' details updated successfully.")
+                        return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook_to_update.slug)
                 except Exception as e:
+                    logger.error(f"Error saving audiobook details for '{audiobook.slug}': {e}", exc_info=True)
                     messages.error(request, f"An error occurred while saving details: {e}")
-                    form_errors['general_error'] = f"An unexpected error occurred: {e}"
-            else:
+                    current_action_form_errors['general_error'] = f"An unexpected error occurred: {e}"
+            
+            if current_action_form_errors:
+                view_form_errors.update(current_action_form_errors)
                 messages.error(request, "Please correct the errors in the audiobook details.")
 
+        # --- Action: Add Chapter ---
         elif action == 'add_chapter':
-            chapter_title = submitted_values.get('new_chapter_title', '').strip()
-            chapter_audio_file = request.FILES.get('new_chapter_audio')
+            logger.info(f"Processing 'add_chapter' for audiobook '{audiobook.slug}'")
+            new_chapter_title_val = view_submitted_values.get('new_chapter_title', '').strip()
+            new_chapter_effective_input_type = view_submitted_values.get('new_chapter_input_type_hidden', 'file')
+            new_chapter_audio_file = request.FILES.get('new_chapter_audio')
+            new_chapter_text_content_val = view_submitted_values.get('new_chapter_text_content', '').strip()
+            new_chapter_tts_voice_id_val = view_submitted_values.get('new_chapter_tts_voice', 'default')
+            new_chapter_generated_tts_url_val = view_submitted_values.get('new_chapter_generated_tts_url', '').strip()
 
-            if not chapter_title: form_errors['new_chapter_title'] = "New chapter title is required."
-            if not chapter_audio_file:
-                form_errors['new_chapter_audio'] = "Audio file for the new chapter is required."
+            add_chapter_errors_local = {}
+            if not new_chapter_title_val:
+                add_chapter_errors_local['new_chapter_title'] = "New chapter title is required."
+
+            final_audio_file_for_db = None
+            is_tts_generated_for_db = False
+            tts_voice_id_for_db = 'default'
+            text_content_for_db = None
+
+            if new_chapter_effective_input_type == 'file':
+                if not new_chapter_audio_file:
+                    add_chapter_errors_local['new_chapter_audio'] = "Audio file is required for 'Upload File' option."
+                else:
+                    max_audio_size = 50 * 1024 * 1024 
+                    allowed_audio_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/m4a']
+                    if new_chapter_audio_file.size > max_audio_size:
+                        add_chapter_errors_local['new_chapter_audio'] = f"Audio file too large (Max {filesizeformat(max_audio_size)})."
+                    elif new_chapter_audio_file.content_type not in allowed_audio_types:
+                        add_chapter_errors_local['new_chapter_audio'] = "Invalid audio file type (MP3, WAV, OGG, M4A)."
+                    
+                    if not add_chapter_errors_local.get('new_chapter_audio'):
+                        final_audio_file_for_db = new_chapter_audio_file
+            
+            elif new_chapter_effective_input_type == 'generated_tts':
+                if not new_chapter_generated_tts_url_val:
+                    add_chapter_errors_local['new_chapter_generated_tts_url'] = "Confirmed TTS audio URL is missing."
+                elif new_chapter_tts_voice_id_val == 'default' or new_chapter_tts_voice_id_val not in TTS_VOICE_MAPPING:
+                     add_chapter_errors_local['new_chapter_tts_voice'] = "A valid narrator voice for the confirmed audio is missing."
+                else:
+                    try:
+                        temp_preview_dir = getattr(settings, 'TEMP_TTS_PREVIEWS_DIR_NAME', 'temp_tts_previews')
+                        temp_preview_url_segment = f"{settings.MEDIA_URL}{temp_preview_dir}/"
+                        if not new_chapter_generated_tts_url_val.startswith(temp_preview_url_segment):
+                            logger.error(f"Invalid 'generated_tts' URL for new chapter: {new_chapter_generated_tts_url_val}. Does not match temp preview path {temp_preview_url_segment}.")
+                            add_chapter_errors_local['new_chapter_tts_general'] = "Invalid source for confirmed TTS audio."
+                        else:
+                            relative_path_to_media_root = new_chapter_generated_tts_url_val.replace(settings.MEDIA_URL, '', 1).lstrip('/')
+                            full_temp_file_path = os.path.join(settings.MEDIA_ROOT, relative_path_to_media_root)
+
+                            if default_storage.exists(full_temp_file_path):
+                                chapter_audio_dir = os.path.join('chapters_audio', audiobook.slug)
+                                new_filename_base = slugify(new_chapter_title_val) if new_chapter_title_val else "chapter"
+                                new_filename = f"ch_new_{new_filename_base}_tts_{uuid.uuid4().hex[:6]}.mp3"
+                                new_chapter_audio_path_rel_to_media_root = os.path.join(chapter_audio_dir, new_filename)
+                                
+                                with default_storage.open(full_temp_file_path, 'rb') as temp_file_content_stream:
+                                    saved_file_name = default_storage.save(new_chapter_audio_path_rel_to_media_root, ContentFile(temp_file_content_stream.read()))
+                                final_audio_file_for_db = saved_file_name
+                                is_tts_generated_for_db = True
+                                tts_voice_id_for_db = new_chapter_tts_voice_id_val
+                                text_content_for_db = new_chapter_text_content_val 
+                                default_storage.delete(full_temp_file_path) 
+                                logger.info(f"Moved confirmed TTS preview {full_temp_file_path} to {saved_file_name} for new chapter.")
+                            else:
+                                add_chapter_errors_local['new_chapter_tts_general'] = "Confirmed TTS audio file not found. Please generate and confirm again."
+                                logger.error(f"Confirmed TTS file not found at {full_temp_file_path} for new chapter.")
+                    except Exception as e_tts_move:
+                        logger.error(f"Error processing confirmed TTS file for new chapter: {e_tts_move}", exc_info=True)
+                        add_chapter_errors_local['new_chapter_tts_general'] = "Error processing confirmed TTS audio."
+            
+            elif new_chapter_effective_input_type == 'tts': 
+                if not new_chapter_text_content_val:
+                    add_chapter_errors_local['new_chapter_text_content'] = "Text content is required for TTS generation."
+                elif len(new_chapter_text_content_val) < 10:
+                     add_chapter_errors_local['new_chapter_text_content'] = "Text too short (min 10 chars)."
+                elif len(new_chapter_text_content_val) > 20000: 
+                     add_chapter_errors_local['new_chapter_text_content'] = "Text too long (max 20000 chars)."
+                if new_chapter_tts_voice_id_val == 'default' or new_chapter_tts_voice_id_val not in TTS_VOICE_MAPPING:
+                    add_chapter_errors_local['new_chapter_tts_voice'] = "Please select a valid narrator voice."
+                if not google_tts_available:
+                    add_chapter_errors_local['new_chapter_tts_general'] = "TTS service is unavailable. Cannot generate audio."
+                
+                if not add_chapter_errors_local: 
+                    try:
+                        logger.info(f"Generating TTS on submit for new chapter: {new_chapter_title_val}, voice: {new_chapter_tts_voice_id_val}")
+                        tts_client = texttospeech.TextToSpeechClient()
+                        synthesis_input = texttospeech.SynthesisInput(text=new_chapter_text_content_val)
+                        selected_voice_params = TTS_VOICE_MAPPING.get(new_chapter_tts_voice_id_val, DEFAULT_TTS_VOICE_PARAMS)
+                        voice_params_gcp = texttospeech.VoiceSelectionParams(
+                            language_code=selected_voice_params['language_code'], name=selected_voice_params['name']
+                        )
+                        audio_config_gcp = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+                        tts_response = tts_client.synthesize_speech(
+                            request={"input": synthesis_input, "voice": voice_params_gcp, "audio_config": audio_config_gcp}
+                        )
+                        
+                        tts_audio_dir = os.path.join('chapters_audio', audiobook.slug)
+                        new_filename_base = slugify(new_chapter_title_val) if new_chapter_title_val else "chapter"
+                        tts_audio_filename_final = f"ch_new_{new_filename_base}_tts_{uuid.uuid4().hex[:6]}.mp3"
+                        tts_audio_path_rel_to_media = os.path.join(tts_audio_dir, tts_audio_filename_final)
+                        saved_file_name = default_storage.save(tts_audio_path_rel_to_media, ContentFile(tts_response.audio_content))
+                        
+                        final_audio_file_for_db = saved_file_name
+                        is_tts_generated_for_db = True
+                        tts_voice_id_for_db = new_chapter_tts_voice_id_val
+                        text_content_for_db = new_chapter_text_content_val
+                        logger.info(f"TTS audio generated and saved as {saved_file_name} for new chapter '{new_chapter_title_val}' during submission.")
+                    except Exception as e_tts_gen:
+                        logger.error(f"Error generating TTS on submit for new chapter: {e_tts_gen}", exc_info=True)
+                        add_chapter_errors_local['new_chapter_tts_general'] = f"TTS generation failed: {e_tts_gen}"
             else:
-                max_audio_size = 50 * 1024 * 1024
-                allowed_audio_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg']
-                if chapter_audio_file.size > max_audio_size:
-                    form_errors['new_chapter_audio'] = "Audio file too large (Max 50MB)."
-                if chapter_audio_file.content_type not in allowed_audio_types:
-                    form_errors['new_chapter_audio'] = "Invalid audio file type."
+                 add_chapter_errors_local['new_chapter_input_type'] = "Invalid chapter input type specified."
 
-            if not form_errors.get('new_chapter_title') and not form_errors.get('new_chapter_audio'):
+
+            if not add_chapter_errors_local:
                 try:
                     with transaction.atomic():
-                        max_order = audiobook.chapters.aggregate(Max('chapter_order'))['chapter_order__max'] or 0
+                        audiobook_for_chapter = Audiobook.objects.select_for_update().get(pk=audiobook.pk)
+                        max_order = audiobook_for_chapter.chapters.aggregate(Max('chapter_order'))['chapter_order__max'] or 0
+                        
                         Chapter.objects.create(
-                            audiobook=audiobook,
-                            chapter_name=chapter_title,
-                            audio_file=chapter_audio_file,
-                            chapter_order=max_order + 1
+                            audiobook=audiobook_for_chapter,
+                            chapter_name=new_chapter_title_val,
+                            audio_file=final_audio_file_for_db,
+                            chapter_order=max_order + 1,
+                            is_tts_generated=is_tts_generated_for_db,
+                            tts_voice_id=tts_voice_id_for_db,
+                            text_content=text_content_for_db
                         )
-                        messages.success(request, f"Chapter '{chapter_title}' added successfully.")
+                        messages.success(request, f"Chapter '{new_chapter_title_val}' added successfully.")
                         return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook.slug)
+                except ValidationError as ve:
+                    logger.error(f"Validation error saving new chapter: {ve}", exc_info=True)
+                    add_chapter_errors_local['add_chapter_general'] = str(ve.message_dict if hasattr(ve, 'message_dict') else ve)
                 except Exception as e:
-                    messages.error(request, f"Error adding chapter: {e}")
-                    form_errors['add_chapter_general'] = f"An unexpected error: {e}"
-            else:
+                    logger.error(f"Error saving new chapter: {e}", exc_info=True)
+                    add_chapter_errors_local['add_chapter_general'] = f"Unexpected error: {e}"
+            
+            if add_chapter_errors_local:
+                view_form_errors['add_chapter_errors'] = add_chapter_errors_local
+                view_form_errors['add_chapter_active_with_errors'] = True 
                 messages.error(request, "Please correct errors in the new chapter form.")
 
-        elif action.startswith('edit_chapter_'):
+        # --- Action: Edit Chapter ---
+        elif action and action.startswith('edit_chapter_'):
+            chapter_id_str = action.split('edit_chapter_')[-1]
+            logger.info(f"Processing 'edit_chapter_{chapter_id_str}' for audiobook '{audiobook.slug}'")
             try:
-                chapter_id_str = action.split('edit_chapter_')[-1]
-                chapter_id = int(chapter_id_str)
-                chapter_to_edit = get_object_or_404(Chapter, chapter_id=chapter_id, audiobook=audiobook)
+                chapter_to_edit = Chapter.objects.get(pk=chapter_id_str, audiobook=audiobook)
+                
+                edit_chapter_title = view_submitted_values.get(f'chapter_title_{chapter_id_str}', '').strip()
+                edit_effective_input_type = view_submitted_values.get(f'edit_chapter_input_type_hidden_{chapter_id_str}', 'file')
+                edit_audio_file = request.FILES.get(f'chapter_audio_{chapter_id_str}')
+                edit_text_content = view_submitted_values.get(f'chapter_text_content_{chapter_id_str}', '').strip()
+                edit_tts_voice_id = view_submitted_values.get(f'chapter_tts_voice_{chapter_id_str}', 'default')
+                edit_generated_tts_url = view_submitted_values.get(f'edit_chapter_generated_tts_url_{chapter_id_str}', '').strip()
 
-                updated_title = submitted_values.get(f'chapter_title_{chapter_id}', '').strip()
-                updated_audio_file = request.FILES.get(f'chapter_audio_{chapter_id}')
+                current_edit_errors_local = {}
+                if not edit_chapter_title:
+                    current_edit_errors_local['title'] = "Chapter title is required."
 
-                edit_error_key_title = f'chapter_edit_{chapter_id_str}_title'
-                edit_error_key_audio = f'chapter_edit_{chapter_id_str}_audio'
+                update_audio_file_path = chapter_to_edit.audio_file.name if chapter_to_edit.audio_file else None
+                update_is_tts = chapter_to_edit.is_tts_generated
+                update_tts_voice = chapter_to_edit.tts_voice_id
+                update_text_content = chapter_to_edit.text_content
+                made_audio_change = False
 
-                if not updated_title: form_errors[edit_error_key_title] = "Chapter title cannot be empty."
+                if edit_effective_input_type == 'file':
+                    if edit_audio_file: 
+                        max_audio_size = 50 * 1024 * 1024
+                        allowed_audio_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/m4a']
+                        if edit_audio_file.size > max_audio_size:
+                             current_edit_errors_local['audio'] = f"Audio file too large (Max {filesizeformat(max_audio_size)})."
+                        elif edit_audio_file.content_type not in allowed_audio_types:
+                             current_edit_errors_local['audio'] = "Invalid audio file type."
+                        else:
+                            if chapter_to_edit.audio_file and chapter_to_edit.audio_file.name and default_storage.exists(chapter_to_edit.audio_file.name):
+                                default_storage.delete(chapter_to_edit.audio_file.name)
+                            update_audio_file_path = edit_audio_file
+                            update_is_tts = False
+                            update_tts_voice = 'default'
+                            update_text_content = None 
+                            made_audio_change = True
+                    elif chapter_to_edit.is_tts_generated: 
+                        if chapter_to_edit.audio_file and chapter_to_edit.audio_file.name and default_storage.exists(chapter_to_edit.audio_file.name):
+                            default_storage.delete(chapter_to_edit.audio_file.name)
+                        update_audio_file_path = None
+                        update_is_tts = False
+                        update_tts_voice = 'default'
+                        update_text_content = None
+                        made_audio_change = True
 
-                if updated_audio_file:
-                    max_audio_size = 50 * 1024 * 1024
-                    allowed_audio_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg']
-                    if updated_audio_file.size > max_audio_size:
-                        form_errors[edit_error_key_audio] = "Audio file too large (Max 50MB)."
-                    if updated_audio_file.content_type not in allowed_audio_types:
-                        form_errors[edit_error_key_audio] = "Invalid audio file type."
 
-                if not form_errors.get(edit_error_key_title) and not form_errors.get(edit_error_key_audio):
+                elif edit_effective_input_type == 'generated_tts':
+                    if not edit_generated_tts_url:
+                         current_edit_errors_local['generated_tts'] = "Confirmed TTS audio URL is missing."
+                    elif edit_tts_voice_id == 'default' or edit_tts_voice_id not in TTS_VOICE_MAPPING:
+                         current_edit_errors_local['voice'] = "A valid narrator voice for the confirmed audio is missing."
+                    else:
+                        is_new_temp_preview = False
+                        temp_preview_dir = getattr(settings, 'TEMP_TTS_PREVIEWS_DIR_NAME', 'temp_tts_previews')
+                        temp_preview_url_segment = f"{settings.MEDIA_URL}{temp_preview_dir}/"
+                        
+                        if edit_generated_tts_url.startswith(temp_preview_url_segment):
+                            is_new_temp_preview = True
+                        
+                        current_chapter_audio_url = None
+                        if chapter_to_edit.audio_file and chapter_to_edit.audio_file.name and default_storage.exists(chapter_to_edit.audio_file.name):
+                            try:
+                                current_chapter_audio_url = chapter_to_edit.audio_file.url
+                            except Exception: # Handle cases where URL might not be generatable
+                                logger.warning(f"Could not get URL for existing audio file of chapter {chapter_id_str}")
+                        
+                        if is_new_temp_preview and edit_generated_tts_url != current_chapter_audio_url:
+                            logger.info(f"Processing new temporary TTS preview URL for chapter {chapter_id_str}: {edit_generated_tts_url}")
+                            try:
+                                relative_path_to_media_root = edit_generated_tts_url.replace(settings.MEDIA_URL, '', 1).lstrip('/')
+                                full_temp_file_path = os.path.join(settings.MEDIA_ROOT, relative_path_to_media_root)
+
+                                # Security check: Ensure the path is within the expected temp directory
+                                expected_temp_dir_abs = os.path.abspath(os.path.join(settings.MEDIA_ROOT, temp_preview_dir))
+                                if not os.path.abspath(full_temp_file_path).startswith(expected_temp_dir_abs):
+                                    logger.error(f"Path traversal attempt or invalid temp path for chapter {chapter_id_str}: {full_temp_file_path}")
+                                    raise FileNotFoundError("Path is not a valid temporary preview path.")
+
+                                if default_storage.exists(full_temp_file_path):
+                                    if chapter_to_edit.audio_file and chapter_to_edit.audio_file.name and default_storage.exists(chapter_to_edit.audio_file.name):
+                                        default_storage.delete(chapter_to_edit.audio_file.name)
+                                    
+                                    chapter_audio_dir = os.path.join('chapters_audio', audiobook.slug)
+                                    new_filename_base = slugify(edit_chapter_title) if edit_chapter_title else f"chapter-{chapter_to_edit.chapter_order}"
+                                    new_filename = f"ch_{chapter_to_edit.chapter_order}_{new_filename_base}_tts_{uuid.uuid4().hex[:6]}.mp3"
+                                    new_path_rel_media = os.path.join(chapter_audio_dir, new_filename)
+                                    
+                                    with default_storage.open(full_temp_file_path, 'rb') as temp_f:
+                                        saved_name = default_storage.save(new_path_rel_media, ContentFile(temp_f.read()))
+                                    
+                                    update_audio_file_path = saved_name
+                                    update_is_tts = True
+                                    update_tts_voice = edit_tts_voice_id
+                                    update_text_content = edit_text_content 
+                                    made_audio_change = True
+                                    default_storage.delete(full_temp_file_path)
+                                else:
+                                     current_edit_errors_local['general'] = "Confirmed TTS audio file (new preview) not found. Please regenerate."
+                            except FileNotFoundError as fnf_err:
+                                logger.error(f"FileNotFoundError while processing new TTS preview for chapter {chapter_id_str}: {fnf_err}", exc_info=True)
+                                current_edit_errors_local['general'] = "Error accessing temporary TTS audio file."
+                            except Exception as e_move_edit:
+                                logger.error(f"Error processing new confirmed TTS preview for chapter {chapter_id_str}: {e_move_edit}", exc_info=True)
+                                current_edit_errors_local['general'] = f"Error processing confirmed TTS audio: {e_move_edit}"
+                        elif edit_generated_tts_url == current_chapter_audio_url: 
+                            logger.info(f"TTS URL for chapter {chapter_id_str} is existing. Audio file unchanged. Checking text/voice.")
+                            if chapter_to_edit.text_content != edit_text_content or chapter_to_edit.tts_voice_id != edit_tts_voice_id:
+                                update_text_content = edit_text_content
+                                update_tts_voice = edit_tts_voice_id
+                                update_is_tts = True 
+                                made_audio_change = True 
+                        else: 
+                             logger.warning(f"Ambiguous 'generated_tts' URL for chapter {chapter_id_str}: {edit_generated_tts_url}. Current: {current_chapter_audio_url}. This URL is not a recognized temporary preview and does not match the current audio. If you intended to use a new preview, please regenerate and confirm. If you intended to keep existing audio, ensure the URL matches or switch to 'file' mode if the audio was not originally TTS.")
+                             # If the URL is different and not a temp preview, it's ambiguous.
+                             # We will only update text/voice if they changed, assuming the user might have manually pasted a URL.
+                             # The audio file itself won't be changed unless it was a temp preview.
+                             if chapter_to_edit.text_content != edit_text_content or chapter_to_edit.tts_voice_id != edit_tts_voice_id:
+                                update_text_content = edit_text_content
+                                update_tts_voice = edit_tts_voice_id
+                                update_is_tts = True # Assume it's still meant to be TTS if voice/text changed
+                                made_audio_change = True
+
+
+                elif edit_effective_input_type == 'tts': 
+                    if not edit_text_content:
+                         current_edit_errors_local['text'] = "Text content is required for TTS."
+                    elif len(edit_text_content) < 10: current_edit_errors_local['text'] = "Text too short (min 10 chars)."
+                    elif len(edit_text_content) > 20000: current_edit_errors_local['text'] = "Text too long (max 20000 chars)."
+
+                    if edit_tts_voice_id == 'default' or edit_tts_voice_id not in TTS_VOICE_MAPPING:
+                         current_edit_errors_local['voice'] = "Please select a valid narrator voice."
+                    if not google_tts_available:
+                         current_edit_errors_local['general'] = "TTS service unavailable."
+
+                    if not current_edit_errors_local:
+                        try:
+                            logger.info(f"Generating TTS on submit for edited chapter: {edit_chapter_title}, voice: {edit_tts_voice_id}")
+                            tts_client = texttospeech.TextToSpeechClient()
+                            synthesis_input = texttospeech.SynthesisInput(text=edit_text_content)
+                            selected_voice_params = TTS_VOICE_MAPPING.get(edit_tts_voice_id, DEFAULT_TTS_VOICE_PARAMS)
+                            voice_params_gcp = texttospeech.VoiceSelectionParams(language_code=selected_voice_params['language_code'], name=selected_voice_params['name'])
+                            audio_config_gcp = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+                            tts_response = tts_client.synthesize_speech(request={"input": synthesis_input, "voice": voice_params_gcp, "audio_config": audio_config_gcp})
+                            
+                            if chapter_to_edit.audio_file and chapter_to_edit.audio_file.name and default_storage.exists(chapter_to_edit.audio_file.name):
+                                default_storage.delete(chapter_to_edit.audio_file.name)
+
+                            tts_audio_dir = os.path.join('chapters_audio', audiobook.slug)
+                            new_filename_base = slugify(edit_chapter_title) if edit_chapter_title else f"chapter-{chapter_to_edit.chapter_order}"
+                            tts_filename = f"ch_{chapter_to_edit.chapter_order}_{new_filename_base}_tts_{uuid.uuid4().hex[:6]}.mp3"
+                            tts_path_rel_media = os.path.join(tts_audio_dir, tts_filename)
+                            saved_name = default_storage.save(tts_path_rel_media, ContentFile(tts_response.audio_content))
+
+                            update_audio_file_path = saved_name
+                            update_is_tts = True
+                            update_tts_voice = edit_tts_voice_id
+                            update_text_content = edit_text_content
+                            made_audio_change = True
+                        except Exception as e_gen_edit:
+                             current_edit_errors_local['general'] = f"TTS generation failed: {e_gen_edit}"
+                
+                if not current_edit_errors_local:
                     with transaction.atomic():
-                        chapter_to_edit.chapter_name = updated_title
-                        if updated_audio_file:
-                            if chapter_to_edit.audio_file and hasattr(chapter_to_edit.audio_file, 'name') and chapter_to_edit.audio_file.name:
-                               if default_storage.exists(chapter_to_edit.audio_file.name):
-                                    default_storage.delete(chapter_to_edit.audio_file.name)
-                            chapter_to_edit.audio_file = updated_audio_file
-                        chapter_to_edit.save()
-                        messages.success(request, f"Chapter '{chapter_to_edit.chapter_name}' updated.")
+                        chapter_to_edit_locked = Chapter.objects.select_for_update().get(pk=chapter_to_edit.pk)
+                        chapter_to_edit_locked.chapter_name = edit_chapter_title
+                        if made_audio_change: 
+                            chapter_to_edit_locked.audio_file = update_audio_file_path
+                            chapter_to_edit_locked.is_tts_generated = update_is_tts
+                            chapter_to_edit_locked.tts_voice_id = update_tts_voice
+                            chapter_to_edit_locked.text_content = update_text_content
+                        
+                        chapter_to_edit_locked.save() 
+                        messages.success(request, f"Chapter '{edit_chapter_title}' updated successfully.")
                         return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook.slug)
                 else:
-                    messages.error(request, f"Please correct errors for chapter '{chapter_to_edit.chapter_name}'.")
-            except (ValueError, Http404):
-                messages.error(request, "Invalid chapter specified for editing.")
-            except Exception as e:
-                messages.error(request, f"Error editing chapter: {e}")
-                form_errors[f'chapter_edit_{chapter_id_str}_general'] = f"Unexpected error: {e}"
+                    view_chapter_form_errors[f'edit_chapter_{chapter_id_str}'].update(current_edit_errors_local)
+                    messages.error(request, f"Could not update chapter '{chapter_to_edit.chapter_name}'. Please correct errors.")
+
+            except Chapter.DoesNotExist:
+                messages.error(request, "Chapter not found for editing.")
+            except Exception as e_edit_chapter:
+                logger.error(f"Error editing chapter {chapter_id_str}: {e_edit_chapter}", exc_info=True)
+                messages.error(request, f"An unexpected error occurred while editing chapter: {e_edit_chapter}")
+                view_chapter_form_errors[f'edit_chapter_{chapter_id_str}']['general'] = f"Unexpected error: {e_edit_chapter}"
 
 
-        elif action.startswith('delete_chapter_'):
+        # --- Action: Delete Chapter ---
+        elif action and action.startswith('delete_chapter_'):
+            chapter_id_to_delete_str = action.split('delete_chapter_')[-1]
+            logger.info(f"Processing 'delete_chapter_{chapter_id_to_delete_str}' for audiobook '{audiobook.slug}'")
             try:
-                chapter_id_str = action.split('delete_chapter_')[-1]
-                chapter_id = int(chapter_id_str)
-                chapter_to_delete = get_object_or_404(Chapter, chapter_id=chapter_id, audiobook=audiobook)
-                chapter_name = chapter_to_delete.chapter_name
-
                 with transaction.atomic():
-                    if chapter_to_delete.audio_file and hasattr(chapter_to_delete.audio_file, 'name') and chapter_to_delete.audio_file.name:
-                        if default_storage.exists(chapter_to_delete.audio_file.name):
-                            default_storage.delete(chapter_to_delete.audio_file.name)
+                    chapter_to_delete = Chapter.objects.get(pk=chapter_id_to_delete_str, audiobook=audiobook)
+                    chapter_name_deleted = chapter_to_delete.chapter_name
+                    
+                    if chapter_to_delete.audio_file and chapter_to_delete.audio_file.name and default_storage.exists(chapter_to_delete.audio_file.name):
+                        default_storage.delete(chapter_to_delete.audio_file.name)
+                        logger.info(f"Deleted audio file {chapter_to_delete.audio_file.name} for chapter '{chapter_name_deleted}'.")
+                    
                     chapter_to_delete.delete()
-
-                    remaining_chapters = audiobook.chapters.order_by('chapter_order')
-                    for i, chap in enumerate(remaining_chapters):
-                        if chap.chapter_order != i + 1:
-                            chap.chapter_order = i + 1
-                            chap.save(update_fields=['chapter_order'])
-
-                messages.success(request, f"Chapter '{chapter_name}' deleted successfully.")
-                return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook.slug)
-            except ValueError:
-                messages.error(request, "Invalid chapter ID for deletion.")
-            except Http404:
+                    
+                    remaining_chapters = Chapter.objects.filter(audiobook=audiobook).order_by('chapter_order')
+                    for i, ch_instance in enumerate(remaining_chapters): # Renamed ch to ch_instance
+                        ch_instance.chapter_order = i + 1
+                        ch_instance.save(update_fields=['chapter_order'])
+                    
+                    messages.success(request, f"Chapter '{chapter_name_deleted}' deleted successfully.")
+                    return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook.slug)
+            except Chapter.DoesNotExist:
                 messages.error(request, "Chapter not found for deletion.")
-            except Exception as e:
-                messages.error(request, f"Error deleting chapter: {e}")
+            except Exception as e_delete:
+                logger.error(f"Error deleting chapter {chapter_id_to_delete_str}: {e_delete}", exc_info=True)
+                messages.error(request, f"An error occurred while deleting chapter: {e_delete}")
+                view_form_errors['general_error_chapter'] = f"Error deleting chapter: {e_delete}"
 
+
+        # --- Action: Update Status Only ---
         elif action == 'update_status_only':
-            new_status = submitted_values.get('status_only_select')
-            allowed_status_values = [choice[0] for choice in creator_allowed_statuses_for_toggle]
+            logger.info(f"Processing 'update_status_only' for audiobook '{audiobook.slug}'")
+            new_status = view_submitted_values.get('status_only_select')
+            allowed_statuses = [s[0] for s in creator_allowed_statuses_for_toggle]
 
             if not can_creator_change_status:
-                messages.error(request, "This audiobook's status was set by an administrator and cannot be changed by you.")
-            elif new_status and new_status in allowed_status_values:
-                if audiobook.status != new_status:
-                    audiobook.status = new_status
-                    audiobook.save(update_fields=['status'])
-                    messages.success(request, f"Audiobook status updated to '{audiobook.get_status_display()}'.")
-                else:
-                    messages.info(request, "Status is already set to the selected value.")
-            else:
-                form_errors['status_update_status'] = "Invalid status selected."
+                messages.error(request, "You are not allowed to change the status of this audiobook currently.")
+            elif new_status not in allowed_statuses:
+                view_form_errors['status_update_status'] = "Invalid status selected."
                 messages.error(request, "Invalid status selected.")
+            elif new_status == audiobook.status:
+                messages.info(request, "No change in audiobook status.")
+            else:
+                try:
+                    with transaction.atomic():
+                        audiobook_to_update_status = Audiobook.objects.select_for_update().get(pk=audiobook.pk)
+                        audiobook_to_update_status.status = new_status
+                        audiobook_to_update_status.updated_at = timezone.now()
+                        audiobook_to_update_status.save(update_fields=['status', 'updated_at'])
+                        messages.success(request, f"Audiobook status updated to '{audiobook_to_update_status.get_status_display()}'.")
+                except Exception as e_status:
+                    logger.error(f"Error updating status for '{audiobook.slug}': {e_status}", exc_info=True)
+                    messages.error(request, f"An error occurred while updating status: {e_status}")
+                    view_form_errors['status_update_status'] = f"Error: {e_status}"
+        else:
+            if action: 
+                 logger.warning(f"Unhandled POST action: {action} for audiobook '{audiobook.slug}'")
+                 messages.warning(request, f"Unknown action: {action}")
 
-            if not form_errors.get('status_update_status'):
-                return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook.slug)
-
-        audiobook.refresh_from_db()
-
-    else: # GET Request
-        submitted_values['title'] = audiobook.title
-        submitted_values['author'] = audiobook.author
-        submitted_values['narrator'] = audiobook.narrator
-        submitted_values['genre'] = audiobook.genre
-        submitted_values['language'] = audiobook.language
-        submitted_values['description'] = audiobook.description
-        submitted_values['status_only_select'] = audiobook.status
-
+    # --- Prepare context for GET or after POST (if not redirected) ---
+    audiobook = Audiobook.objects.prefetch_related('chapters').get(pk=audiobook.pk) 
     db_chapters = audiobook.chapters.order_by('chapter_order')
+    chapters_context_list = []
+
     for chapter_instance in db_chapters:
-        chapter_id_str = str(chapter_instance.chapter_id)
-        submitted_title_for_this_chapter = submitted_values.get(f'chapter_title_{chapter_id_str}', chapter_instance.chapter_name)
+        chapter_id_str_ctx = str(chapter_instance.chapter_id)
+        current_chapter_edit_errors = view_chapter_form_errors.get(f'edit_chapter_{chapter_id_str_ctx}', {})
+        
+        tts_voice_display_name_existing = ""
+        if chapter_instance.is_tts_generated and chapter_instance.tts_voice_id and chapter_instance.tts_voice_id != 'default':
+            voice_str_existing = str(chapter_instance.tts_voice_id)
+            tts_voice_display_name_existing = capfirst(voice_str_existing.replace("_narrator", ""))
+
+        input_type_for_template = 'file' 
+        if chapter_instance.is_tts_generated:
+            input_type_for_template = 'generated_tts' if chapter_instance.audio_file and chapter_instance.audio_file.name and default_storage.exists(chapter_instance.audio_file.name) else 'tts'
+        
+        chapter_file_size_display = None
+        existing_audio_file_url = None
+        if chapter_instance.audio_file and hasattr(chapter_instance.audio_file, 'name') and chapter_instance.audio_file.name:
+            try:
+                if default_storage.exists(chapter_instance.audio_file.name):
+                    chapter_file_size_display = filesizeformat(chapter_instance.audio_file.size)
+                    existing_audio_file_url = chapter_instance.audio_file.url
+                else:
+                    logger.warning(f"Audio file for chapter '{chapter_instance.chapter_name}' (ID: {chapter_instance.pk}) not found at path: {chapter_instance.audio_file.name}. Size and URL will not be displayed accurately.")
+            except Exception as e_file_details: 
+                logger.warning(f"Could not get details for chapter '{chapter_instance.chapter_name}' audio file {chapter_instance.audio_file.name}: {e_file_details}")
 
         chapters_context_list.append({
             'instance': chapter_instance,
-            'submitted_title_value': submitted_title_for_this_chapter,
-            'errors': {
-                'title': form_errors.get(f'chapter_edit_{chapter_id_str}_title'),
-                'audio': form_errors.get(f'chapter_edit_{chapter_id_str}_audio'),
-                'general': form_errors.get(f'chapter_edit_{chapter_id_str}_general')
-            }
+            'tts_voice_display_name': tts_voice_display_name_existing,
+            'errors': current_chapter_edit_errors, 
+            'input_type_for_template': input_type_for_template,
+            'file_size_display': chapter_file_size_display,
+            'existing_audio_file_url': existing_audio_file_url
         })
+
+    add_chapter_specific_errors = view_form_errors.get('add_chapter_errors', {}) 
+    if any(k.startswith('new_') or k == 'add_chapter_general' for k in add_chapter_specific_errors): 
+        view_form_errors['add_chapter_active_with_errors'] = True 
+
+    if view_form_errors.get('add_chapter_active_with_errors') and view_submitted_values.get('new_chapter_tts_voice'):
+        raw_new_voice = view_submitted_values.get('new_chapter_tts_voice')
+        if raw_new_voice and raw_new_voice != 'default':
+            view_submitted_values['new_chapter_tts_voice_display_name'] = capfirst(str(raw_new_voice).replace("_narrator", ""))
+        else:
+            view_submitted_values['new_chapter_tts_voice_display_name'] = ""
 
     django_messages_list = []
     for msg in get_messages(request):
         django_messages_list.append({'message': str(msg), 'tags': msg.tags})
 
-    context = _get_full_context(request)
-    context.update({
-        'creator': creator,
+    final_context = _get_full_context(request)
+    
+    final_context.pop('form_errors', None)
+    final_context.pop('submitted_values', None)
+    
+    final_context.update({
         'audiobook': audiobook,
         'chapters_context_list': chapters_context_list,
-        'available_balance': creator.available_balance,
-        'form_errors': form_errors,
-        'submitted_values': submitted_values,
+        'form_errors': view_form_errors, 
+        'submitted_values': view_submitted_values, 
         'creator_allowed_status_choices_for_toggle': creator_allowed_statuses_for_toggle,
         'can_creator_change_status': can_creator_change_status,
         'django_messages_json': json.dumps(django_messages_list),
+        'google_tts_available': google_tts_available,
+        'TTS_VOICE_CHOICES_FOR_JS': Chapter.TTS_VOICE_CHOICES, 
+        'creator': creator,
+        'available_balance': creator.available_balance
     })
-    return render(request, 'creator/creator_manage_uploads.html', context)
+    
+    logger.debug(f"Rendering manage_upload_detail. Context form_errors: {final_context.get('form_errors')}")
+    logger.debug(f"Context submitted_values: {final_context.get('submitted_values')}")
 
+    return render(request, 'creator/creator_manage_uploads.html', final_context)
 
 @creator_required
 def creator_my_earnings_view(request):
@@ -1607,6 +2283,7 @@ def mark_welcome_popup_shown(request):
                 return JsonResponse({'status': 'ignored', 'message': 'Popup status not applicable or already updated.'})
     except Creator.DoesNotExist: return JsonResponse({'status': 'error', 'message': 'Creator profile not found.'}, status=404)
     except Exception as e:
+        logger.error(f"Error marking welcome popup shown for {request.user.username}: {e}", exc_info=True) # Used logger
         return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred.'}, status=500)
 
 @login_required
@@ -1624,6 +2301,7 @@ def mark_rejection_popup_shown(request):
                 return JsonResponse({'status': 'ignored', 'message': 'Popup status not applicable or already updated.'})
     except Creator.DoesNotExist: return JsonResponse({'status': 'error', 'message': 'Creator profile not found.'}, status=404)
     except Exception as e:
+        logger.error(f"Error marking rejection popup shown for {request.user.username}: {e}", exc_info=True) # Used logger
         return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred.'}, status=500)
 
 @admin_role_required('manage_creators')
@@ -1664,8 +2342,11 @@ def admin_approve_creator(request, user_id):
             latest_log.processed_by = admin_user
             latest_log.rejection_reason = None
             latest_log.save(update_fields=['status', 'processed_at', 'processed_by', 'rejection_reason'])
-        except CreatorApplicationLog.DoesNotExist: messages.warning(request, f"Could not find matching application log for creator {creator.user.username} to mark as approved.")
+        except CreatorApplicationLog.DoesNotExist:
+            logger.warning(f"Could not find matching application log for creator {creator.user.username} to mark as approved.") # Used logger
+            messages.warning(request, f"Could not find matching application log for creator {creator.user.username} to mark as approved.")
         except Exception as log_e:
+            logger.error(f"Error updating application log for approval: {log_e}", exc_info=True) # Used logger
             messages.error(request, f"Error updating application log for approval: {log_e}")
         messages.success(request, f"Creator '{creator.creator_name}' approved successfully by {admin_user.username} with CID: {creator_cid}.")
     else: messages.warning(request, f"Creator '{creator.creator_name}' is not pending approval (Status: {creator.get_verification_status_display()}).")
@@ -1705,8 +2386,11 @@ def admin_reject_creator(request, user_id):
             latest_log.processed_by = admin_user
             latest_log.rejection_reason = rejection_reason_input
             latest_log.save(update_fields=['status', 'processed_at', 'processed_by', 'rejection_reason'])
-        except CreatorApplicationLog.DoesNotExist: messages.warning(request, f"Could not find matching application log for creator {creator.user.username} to mark as rejected.")
+        except CreatorApplicationLog.DoesNotExist:
+            logger.warning(f"Could not find matching application log for creator {creator.user.username} to mark as rejected.") # Used logger
+            messages.warning(request, f"Could not find matching application log for creator {creator.user.username} to mark as rejected.")
         except Exception as log_e:
+            logger.error(f"Error updating application log for rejection: {log_e}", exc_info=True) # Used logger
             messages.error(request, f"Error updating application log for rejection: {log_e}")
         messages.success(request, f"Creator '{creator.creator_name}' application rejected by {admin_user.username}.")
     else: messages.warning(request, f"Creator '{creator.creator_name}' is not pending rejection (Status: {creator.get_verification_status_display()}).")
@@ -1790,13 +2474,18 @@ def get_audiobook_chapters_json(request, audiobook_slug):
                     audio_filename = os.path.basename(chapter.audio_file.name)
                     if hasattr(chapter.audio_file, 'size') and chapter.audio_file.size is not None:
                         file_size = filesizeformat(chapter.audio_file.size)
-            except Exception as e: pass # Silently fail on file detail error
+            except Exception as e:
+                 logger.warning(f"Error getting file details for chapter {chapter.chapter_id} in get_audiobook_chapters_json: {e}") # Used logger
+                 pass # Silently fail on file detail error
             chapter_data = {
                 'id': chapter.chapter_id, 'name': chapter.chapter_name, 'order': chapter.chapter_order,
                 'audio_filename': audio_filename, 'file_size': file_size,
             }
             chapters_list.append(chapter_data)
         return JsonResponse({'chapters': chapters_list}, status=200)
-    except Http404: return JsonResponse({'error': 'Audiobook not found or permission denied.'}, status=404)
+    except Http404:
+        logger.warning(f"Audiobook not found or permission denied in get_audiobook_chapters_json for slug {audiobook_slug}, user {request.user.username}") # Used logger
+        return JsonResponse({'error': 'Audiobook not found or permission denied.'}, status=404)
     except Exception as e:
+        logger.error(f"Error in get_audiobook_chapters_json for slug {audiobook_slug}: {e}", exc_info=True) # Used logger
         return JsonResponse({'error': 'An internal server error occurred.'}, status=500)

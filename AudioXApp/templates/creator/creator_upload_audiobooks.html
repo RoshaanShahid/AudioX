@@ -7,6 +7,51 @@
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    .input-type-toggle-btn.active {
+        background-color: #091e65; /* theme-primary */
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .input-type-toggle-btn {
+        background-color: #e2e8f0; /* slate-200 */
+        color: #475569; /* slate-600 */
+    }
+    .input-type-toggle-btn:hover:not(.active) {
+        background-color: #cbd5e1; /* slate-300 */
+    }
+
+    .chapter-card .tts-generation-controls,
+    .chapter-card .file-upload-controls,
+    .chapter-card .locked-generated-audio-display {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .chapter-card .chapter-tts-preview-player {
+        width: 100%;
+        margin-top: 0.75rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .chapter-card .chapter-tts-preview-player-container.hidden {
+        display: none;
+    }
+    .chapter-card .confirm-use-generated-audio-btn.hidden {
+        display: none;
+    }
+    .generate-chapter-tts-preview-btn {
+        background-color: #091e65; 
+    }
+    .generate-chapter-tts-preview-btn:hover {
+        background-color: #071852; 
+    }
+
+    .locked-generated-audio-display .info-box {
+        background-color: #e0f2fe; 
+        border-color: #7dd3fc; 
+        color: #0c4a6e; 
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -167,10 +212,10 @@
                             </button>
                         </div>
 
-                        <div id="chaptersListContainer" class="space-y-5 max-h-[70vh] overflow-y-auto pr-2 -mr-2">
+                        <div id="chaptersListContainer" class="space-y-6 max-h-[90vh] overflow-y-auto pr-2 -mr-2">
                             {% if submitted_values.chapters %}
                                 {% for chapter_data in submitted_values.chapters %}
-                                    <div class="chapter-card border border-slate-200 p-5 rounded-xl bg-white shadow-lg relative mb-5" data-chapter-id-js="repop_{{ forloop.counter0 }}" data-index-js="{{ forloop.counter0 }}">
+                                    <div class="chapter-card border border-slate-200 p-5 rounded-xl bg-slate-50 shadow-lg relative mb-5" data-chapter-id-js="repop_{{ forloop.counter0 }}" data-index-js="{{ chapter_data.original_index }}">
                                         <button type="button" class="remove-chapter-btn absolute top-3.5 right-3.5 p-2 rounded-full leading-none text-red-400 bg-transparent hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-red-500 transition-all duration-150 ease-in-out opacity-50 hover:opacity-100 transform scale-90 hover:scale-100" title="Remove Chapter">
                                             <i class="fas fa-times w-3.5 h-3.5"></i><span class="sr-only">Remove Chapter</span>
                                         </button>
@@ -178,28 +223,93 @@
                                             <span class="chapter-number-js flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#091e65]/10 text-[#091e65] rounded-full text-sm font-semibold mr-3.5">{{ chapter_data.order|default:forloop.counter }}</span>
                                             <h3 class="chapter-title-display-js text-lg font-medium text-gray-800 flex-grow">{{ chapter_data.title|default:"New Chapter" }}</h3>
                                         </div>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
-                                            <div>
-                                                <label for="chapter_title_repop_{{ forloop.counter0 }}" class="block text-xs font-medium text-slate-600 mb-1">Chapter Title <span class="text-red-600">*</span></label>
-                                                <input type="text" name="chapters[{{ chapter_data.original_index|default:forloop.counter0 }}][title]" id="chapter_title_repop_{{ forloop.counter0 }}" required value="{{ chapter_data.title|default:'' }}"
-                                                       class="chapter-title-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm"
-                                                       placeholder="e.g., The Discovery">
-                                                {% if chapter_data.errors.title %}<p class="text-red-500 text-sm mt-1 chapter-title-error-js">{{ chapter_data.errors.title }}</p>{% endif %}
+                                        
+                                        <div class="mb-4">
+                                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Chapter Audio Source:</label>
+                                            <div class="flex rounded-lg p-0.5 bg-slate-200 border border-slate-300">
+                                                <button type="button" class="input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if chapter_data.input_type == 'file' or not chapter_data.input_type %}active{% endif %}" data-type="file">Upload Audio File</button>
+                                                <button type="button" class="input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if chapter_data.input_type == 'tts' or chapter_data.input_type == 'generated_tts' %}active{% endif %}" data-type="tts">Use AudioX TTS</button>
                                             </div>
-                                            <div>
-                                                <label for="chapter_audio_repop_{{ forloop.counter0 }}" class="block text-xs font-medium text-slate-600 mb-1">Audio File <span class="text-red-600">*</span></label>
-                                                <label class="block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg bg-slate-50 hover:border-[#091e65]/50 transition duration-150 ease-in-out cursor-pointer group/file shadow-sm">
-                                                    <input type="file" name="chapters[{{ chapter_data.original_index|default:forloop.counter0 }}][audio]" id="chapter_audio_repop_{{ forloop.counter0 }}" accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg" class="chapter-audio-input-js hidden">
-                                                    <div class="flex items-center justify-between text-xs text-slate-500 group-hover/file:text-[#091e65]">
-                                                        <span class="chapter-filename-js truncate pr-2">{{ chapter_data.audio_filename|default:"Choose audio file..." }}</span>
-                                                        <i class="fas fa-upload opacity-60"></i>
-                                                    </div>
-                                                </label>
-                                                <p class="text-xs text-slate-500/80 mt-1">MP3, WAV, OGG (Max 50MB)</p>
-                                                {% if chapter_data.errors.audio %}<p class="text-red-500 text-sm mt-1 chapter-audio-error-js">{{ chapter_data.errors.audio }}</p>{% endif %}
-                                            </div>
+                                            <input type="hidden" name="chapters[{{ chapter_data.original_index }}][input_type]" value="{{ chapter_data.input_type|default:'file' }}" class="chapter-input-type-hidden-js">
+                                            {% if chapter_data.errors.input_type %}<p class="text-red-500 text-sm mt-1">{{ chapter_data.errors.input_type }}</p>{% endif %}
                                         </div>
-                                        <input type="hidden" name="chapters[{{ chapter_data.original_index|default:forloop.counter0 }}][order]" value="{{ chapter_data.order|default:forloop.counter }}" class="chapter-order-input-js">
+
+                                        <div>
+                                            <label for="chapter_title_{{ chapter_data.original_index }}" class="block text-xs font-medium text-slate-600 mb-1">Chapter Title <span class="text-red-600">*</span></label>
+                                            <input type="text" name="chapters[{{ chapter_data.original_index }}][title]" id="chapter_title_{{ chapter_data.original_index }}" required value="{{ chapter_data.title|default:'' }}"
+                                                   class="chapter-title-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm"
+                                                   placeholder="e.g., The Discovery">
+                                            {% if chapter_data.errors.title %}<p class="text-red-500 text-sm mt-1 chapter-title-error-js">{{ chapter_data.errors.title }}</p>{% endif %}
+                                        </div>
+                                        
+                                        <div class="file-upload-controls mt-4 {% if chapter_data.input_type == 'tts' or chapter_data.input_type == 'generated_tts' %}hidden{% endif %}">
+                                            <label for="chapter_audio_{{ chapter_data.original_index }}" class="block text-xs font-medium text-slate-600 mb-1">Audio File <span class="text-red-600">*</span></label>
+                                            <label class="block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg bg-white hover:border-[#091e65]/50 transition duration-150 ease-in-out cursor-pointer group/file shadow-sm">
+                                                <input type="file" name="chapters[{{ chapter_data.original_index }}][audio_file]" id="chapter_audio_{{ chapter_data.original_index }}" accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg, audio/x-m4a, audio/m4a" class="chapter-audio-input-js hidden">
+                                                <div class="flex items-center justify-between text-xs text-slate-500 group-hover/file:text-[#091e65]">
+                                                    <span class="chapter-filename-js truncate pr-2">{{ chapter_data.audio_filename|default:"Choose audio file..." }}</span>
+                                                    <i class="fas fa-upload opacity-60"></i>
+                                                </div>
+                                            </label>
+                                            <p class="text-xs text-slate-500/80 mt-1">MP3, WAV, OGG, M4A (Max 50MB)</p>
+                                            {% if chapter_data.errors.audio_file %}<p class="text-red-500 text-sm mt-1 chapter-audio-error-js">{{ chapter_data.errors.audio_file }}</p>{% endif %}
+                                        </div>
+
+                                        <div class="tts-generation-controls mt-4 {% if chapter_data.input_type == 'file' or not chapter_data.input_type %}hidden{% endif %}">
+                                            <div class="mb-3">
+                                                <label for="chapter_text_content_{{ chapter_data.original_index }}" class="block text-xs font-medium text-slate-600 mb-1">Text for TTS <span class="text-red-600">*</span></label>
+                                                <textarea name="chapters[{{ chapter_data.original_index }}][text_content]" id="chapter_text_content_{{ chapter_data.original_index }}" rows="4" 
+                                                          class="chapter-text-content-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm"
+                                                          placeholder="Enter text for this chapter's audio...">{{ chapter_data.text_content|default:'' }}</textarea>
+                                                {% if chapter_data.errors.text_content %}<p class="text-red-500 text-sm mt-1 chapter-text-error-js">{{ chapter_data.errors.text_content }}</p>{% endif %}
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="chapter_tts_voice_{{ chapter_data.original_index }}" class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
+                                                <div class="relative">
+                                                    <select name="chapters[{{ chapter_data.original_index }}][tts_voice]" id="chapter_tts_voice_{{ chapter_data.original_index }}" class="chapter-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none pr-10 bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm">
+                                                        <option value="default" {% if chapter_data.tts_voice == 'default' or not chapter_data.tts_voice %}selected{% endif %}>Select Narrator...</option>
+                                                        <option value="ali_narrator" {% if chapter_data.tts_voice == 'ali_narrator' %}selected{% endif %}>Ali Narrator (Male)</option>
+                                                        <option value="aisha_narrator" {% if chapter_data.tts_voice == 'aisha_narrator' %}selected{% endif %}>Aisha Narrator (Female)</option>
+                                                    </select>
+                                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                                        <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+                                                    </div>
+                                                </div>
+                                                {% if chapter_data.errors.tts_voice %}<p class="text-red-500 text-sm mt-1 chapter-voice-error-js">{{ chapter_data.errors.tts_voice }}</p>{% endif %}
+                                            </div>
+                                            
+                                            <div class="chapter-tts-preview-player-container hidden my-3">
+                                                <audio controls class="chapter-tts-preview-player w-full"></audio>
+                                            </div>
+                                            <div class="chapter-tts-message text-xs my-2 min-h-[16px]"></div>
+                                            <div class="flex flex-wrap gap-2 items-center">
+                                                <button type="button" class="generate-chapter-tts-preview-btn text-xs py-2 px-4 rounded-lg text-white shadow-md transition-colors flex items-center gap-1.5">
+                                                    <span class="btn-text"><i class="fas fa-magic mr-1.5"></i>Generate & Preview Audio</span>
+                                                    <span class="spinner hidden"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
+                                                </button>
+                                                <button type="button" class="confirm-use-generated-audio-btn hidden text-xs py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow-md transition-colors flex items-center gap-1.5">
+                                                    <i class="fas fa-check-circle mr-1.5"></i>Use This Audio for Chapter
+                                                </button>
+                                            </div>
+                                            {% if chapter_data.errors.tts_general %}<p class="text-red-500 text-sm mt-1">{{ chapter_data.errors.tts_general }}</p>{% endif %}
+                                        </div>
+                                        
+                                        <div class="locked-generated-audio-display mt-4 {% if chapter_data.input_type != 'generated_tts' or not chapter_data.generated_tts_audio_url %}hidden{% endif %}">
+                                            <p class="text-xs font-medium text-slate-700 mb-1">Selected Audio for this Chapter:</p>
+                                            <div class="info-box p-3 border rounded-lg text-sm">
+                                                <i class="fas fa-volume-up mr-2 text-blue-600"></i>
+                                                <span class="chapter-generated-tts-filename-js font-medium">
+                                                    {{ chapter_data.audio_filename|default:"Generated Audio" }} 
+                                                    {% if chapter_data.tts_voice_display_name %} {# Use pre-processed display name #}
+                                                        (Voice: {{ chapter_data.tts_voice_display_name }})
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                            <input type="hidden" name="chapters[{{ chapter_data.original_index }}][generated_tts_audio_url]" value="{{ chapter_data.generated_tts_audio_url|default:'' }}" class="chapter-generated-tts-url-input-js">
+                                            {% if chapter_data.errors.generated_tts %}<p class="text-red-500 text-sm mt-1">{{ chapter_data.errors.generated_tts }}</p>{% endif %}
+                                        </div>
+
+                                        <input type="hidden" name="chapters[{{ chapter_data.original_index }}][order]" value="{{ chapter_data.order|default:forloop.counter }}" class="chapter-order-input-js">
                                     </div>
                                 {% endfor %}
                             {% endif %}
@@ -208,7 +318,7 @@
                         <div id="noChaptersMessage" class="text-center py-16 px-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 {% if submitted_values.chapters %}hidden{% endif %}">
                             <i class="fas fa-folder-open text-5xl text-slate-300"></i>
                             <p class="mt-4 text-base font-medium text-slate-600">No chapters yet.</p>
-                            <p class="mt-1 text-sm text-slate-500">Click 'Add Chapter' to upload audio files.</p>
+                            <p class="mt-1 text-sm text-slate-500">Click 'Add Chapter' to upload audio files or generate from text.</p>
                         </div>
                          {% if form_errors.chapters_general %}<p class="my-3 text-sm text-red-600 text-center bg-red-50 p-3 rounded-md border border-red-200">{{ form_errors.chapters_general }}</p>{% endif %}
                     </div>
@@ -253,36 +363,95 @@
     </div>
 
     <template id="chapterTemplate">
-        <div class="border border-slate-200 p-5 rounded-xl bg-white shadow-lg relative mb-5" data-chapter-id-js="" data-index-js=""> <button type="button" class="remove-chapter-btn absolute top-3.5 right-3.5 p-2 rounded-full leading-none text-red-400 bg-transparent hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-red-500 transition-all duration-150 ease-in-out opacity-50 hover:opacity-100 transform scale-90 hover:scale-100" title="Remove Chapter">
-                <i class="fas fa-times w-3.5 h-3.5"></i>
-                <span class="sr-only">Remove Chapter</span>
+        <div class="chapter-card border border-slate-200 p-5 rounded-xl bg-slate-50 shadow-lg relative mb-5" data-chapter-id-js="" data-index-js="">
+            <button type="button" class="remove-chapter-btn absolute top-3.5 right-3.5 p-2 rounded-full leading-none text-red-400 bg-transparent hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-red-500 transition-all duration-150 ease-in-out opacity-50 hover:opacity-100 transform scale-90 hover:scale-100" title="Remove Chapter">
+                <i class="fas fa-times w-3.5 h-3.5"></i><span class="sr-only">Remove Chapter</span>
             </button>
             <div class="flex items-center mb-4">
                 <span class="chapter-number-js flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#091e65]/10 text-[#091e65] rounded-full text-sm font-semibold mr-3.5"></span>
-                <h3 class="chapter-title-display-js text-lg font-medium text-gray-800 flex-grow">Chapter </h3>
+                <h3 class="chapter-title-display-js text-lg font-medium text-gray-800 flex-grow">New Chapter</h3>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Chapter Title <span class="text-red-600">*</span></label>
-                    <input type="text" name="" required
-                           class="chapter-title-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm"
-                           placeholder="e.g., The Discovery">
-                    <p class="text-red-500 text-sm mt-1 chapter-title-error-js"></p>
+
+            <div class="mb-4">
+                <label class="block text-xs font-medium text-slate-600 mb-1.5">Chapter Audio Source:</label>
+                <div class="flex rounded-lg p-0.5 bg-slate-200 border border-slate-300">
+                    <button type="button" class="input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors active" data-type="file">Upload Audio File</button>
+                    <button type="button" class="input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors" data-type="tts">Use AudioX TTS</button>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Audio File <span class="text-red-600">*</span></label>
-                    <label class="block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg bg-slate-50 hover:border-[#091e65]/50 transition duration-150 ease-in-out cursor-pointer group/file shadow-sm">
-                        <input type="file" name="" required accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg"
-                               class="chapter-audio-input-js hidden">
-                        <div class="flex items-center justify-between text-xs text-slate-500 group-hover/file:text-[#091e65]">
-                            <span class="chapter-filename-js truncate pr-2">Choose audio file...</span>
-                            <i class="fas fa-upload opacity-60"></i>
+                <input type="hidden" name="" value="file" class="chapter-input-type-hidden-js">
+                <p class="text-red-500 text-sm mt-1 chapter-input-type-error-js"></p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Chapter Title <span class="text-red-600">*</span></label>
+                <input type="text" name="" required
+                       class="chapter-title-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm"
+                       placeholder="e.g., The Discovery">
+                <p class="text-red-500 text-sm mt-1 chapter-title-error-js"></p>
+            </div>
+            
+            <div class="file-upload-controls mt-4">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Audio File <span class="text-red-600">*</span></label>
+                <label class="block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg bg-white hover:border-[#091e65]/50 transition duration-150 ease-in-out cursor-pointer group/file shadow-sm">
+                    <input type="file" name="" required accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg, audio/x-m4a, audio/m4a"
+                           class="chapter-audio-input-js hidden">
+                    <div class="flex items-center justify-between text-xs text-slate-500 group-hover/file:text-[#091e65]">
+                        <span class="chapter-filename-js truncate pr-2">Choose audio file...</span>
+                        <i class="fas fa-upload opacity-60"></i>
+                    </div>
+                </label>
+                <p class="text-xs text-slate-500/80 mt-1">MP3, WAV, OGG, M4A (Max 50MB)</p>
+                <p class="text-red-500 text-sm mt-1 chapter-audio-error-js"></p>
+            </div>
+
+            <div class="tts-generation-controls mt-4 hidden">
+                <div class="mb-3">
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Text for TTS <span class="text-red-600">*</span></label>
+                    <textarea name="" rows="4" 
+                              class="chapter-text-content-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm"
+                              placeholder="Enter text for this chapter's audio..."></textarea>
+                    <p class="text-red-500 text-sm mt-1 chapter-text-error-js"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
+                    <div class="relative">
+                        <select name="" class="chapter-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none pr-10 bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm">
+                            <option value="default" selected>Select Narrator...</option>
+                            <option value="ali_narrator">Ali Narrator (Male)</option>
+                            <option value="aisha_narrator">Aisha Narrator (Female)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                            <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
                         </div>
-                    </label>
-                    <p class="text-xs text-slate-500/80 mt-1">MP3, WAV, OGG (Max 50MB)</p>
-                    <p class="text-red-500 text-sm mt-1 chapter-audio-error-js"></p>
+                    </div>
+                    <p class="text-red-500 text-sm mt-1 chapter-voice-error-js"></p>
                 </div>
+                <div class="chapter-tts-preview-player-container hidden my-3">
+                    <audio controls class="chapter-tts-preview-player w-full"></audio>
+                </div>
+                <div class="chapter-tts-message text-xs my-2 min-h-[16px]"></div>
+                <div class="flex flex-wrap gap-2 items-center">
+                    <button type="button" class="generate-chapter-tts-preview-btn text-xs py-2 px-4 rounded-lg text-white shadow-md transition-colors flex items-center gap-1.5"> 
+                        <span class="btn-text"><i class="fas fa-magic mr-1.5"></i>Generate & Preview Audio</span>
+                        <span class="spinner hidden"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
+                    </button>
+                    <button type="button" class="confirm-use-generated-audio-btn hidden text-xs py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow-md transition-colors flex items-center gap-1.5">
+                        <i class="fas fa-check-circle mr-1.5"></i>Use This Audio for Chapter
+                    </button>
+                </div>
+                <p class="text-red-500 text-sm mt-1 chapter-tts-general-error-js"></p> 
             </div>
+            
+            <div class="locked-generated-audio-display mt-4 hidden">
+                <p class="text-xs font-medium text-slate-700 mb-1">Selected Audio for this Chapter:</p>
+                <div class="info-box p-3 border rounded-lg text-sm">
+                     <i class="fas fa-volume-up mr-2 text-blue-600"></i>
+                    <span class="chapter-generated-tts-filename-js font-medium">Generated Audio</span>
+                </div>
+                <input type="hidden" name="" class="chapter-generated-tts-url-input-js"> 
+                <p class="text-red-500 text-sm mt-1 chapter-generated-tts-error-js"></p>
+            </div>
+
             <input type="hidden" name="" class="chapter-order-input-js">
         </div>
     </template>
@@ -290,455 +459,10 @@
     <script id="form-errors-data-script" type="application/json">{{ form_errors|json_script:"form-errors-data-script" }}</script>
     <script id="submitted-values-data-script" type="application/json">{{ submitted_values|json_script:"submitted-values-data-script" }}</script>
     <div id="django-messages-data" style="display:none;">{{ django_messages_json|safe }}</div>
+    <script id="generate-tts-preview-url" type="text/plain">{% url 'AudioXApp:generate_tts_preview_audio' %}</script>
 
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const THEME_COLOR_PRIMARY = '#091e65';
-    const THEME_COLOR_PRIMARY_HOVER = '#071852';
-    const THEME_COLOR_ERROR = '#ef4444'; // Tailwind red-500
-    const THEME_COLOR_SUCCESS = '#10b981'; // Tailwind emerald-500
-    const THEME_COLOR_WARNING = '#f97316'; // Tailwind orange-500
-
-    const LOADER_MESSAGES = [
-        "Initializing upload sequence...", "Connecting to secure server...", "Compressing audio data...",
-        "Uploading cover art (looking sharp!)...", "Sending chapter files, one by one...",
-        "Almost there, just a few more bytes...", "Validating audiobook details...", "Processing metadata...",
-        "Finalizing publication...", "Your audiobook is getting ready for the world!",
-        "Patience, great things take time...", "Just a moment more, we're working on it!",
-        "Crafting the perfect listening experience...", "Dotting the i's and crossing the t's...",
-        "Synchronizing with the digital shelves..."
-    ];
-    let currentLoaderMessageIndex = 0;
-    let loaderMessageIntervalId = null;
-
-    const form = document.getElementById('audiobookUploadForm');
-    const coverImageInput = document.getElementById('cover_image');
-    const coverImagePreview = document.getElementById('coverImagePreview');
-    const coverImageNameDisplay = document.getElementById('coverImageNameDisplay');
-    const coverUploadPlaceholder = document.getElementById('coverUploadPlaceholder');
-    const coverUploadInitialText = document.getElementById('coverUploadInitialText');
-    const coverChangeText = document.getElementById('coverChangeText');
-    const coverPreviewContainer = document.getElementById('coverPreviewContainer');
-
-    const pricingTypeFreeBtn = document.getElementById('pricingTypeFreeBtn');
-    const pricingTypePaidBtn = document.getElementById('pricingTypePaidBtn');
-    const pricingTypeFreeRadio = document.getElementById('pricing_type_free_radio');
-    const pricingTypePaidRadio = document.getElementById('pricing_type_paid_radio');
-    const priceInputContainer = document.getElementById('priceInputContainer');
-    const priceInput = document.getElementById('price');
-
-    const addChapterBtn = document.getElementById('addChapterBtn');
-    const chaptersListContainer = document.getElementById('chaptersListContainer');
-    const chapterTemplate = document.getElementById('chapterTemplate');
-    const noChaptersMessage = document.getElementById('noChaptersMessage');
-    
-    const publishButton = document.getElementById('publishButton');
-    const publishButtonText = document.getElementById('publishButtonText');
-    const publishingSpinner = document.getElementById('publishingSpinner');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const loaderMessageElement = document.getElementById('loaderMessage');
-
-    let nextChapterIndex = 0;
-    let isSubmittingAfterDelay = false;
-
-    let formErrors = {};
-    let submittedValues = {};
-    try {
-        const errorsDataElement = document.getElementById('form-errors-data-script');
-        if (errorsDataElement) formErrors = JSON.parse(errorsDataElement.textContent || '{}');
-        const submittedDataElement = document.getElementById('submitted-values-data-script');
-        if (submittedDataElement) submittedValues = JSON.parse(submittedDataElement.textContent || '{}');
-    } catch (e) {
-        // Silently fail on parsing errors for context data
-    }
-
-    if (coverImageInput && coverImagePreview && coverImageNameDisplay && coverUploadInitialText && coverChangeText && coverPreviewContainer) {
-        coverImageInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                if (file.size > 2 * 1024 * 1024) { 
-                    Swal.fire({ title: 'Cover Image Too Large', html: `Cover image must be under <strong>2MB</strong>. <br/>Selected file is ${(file.size / (1024*1024)).toFixed(2)}MB.`, icon: 'error', iconColor: THEME_COLOR_ERROR, confirmButtonColor: THEME_COLOR_PRIMARY, customClass: { popup: 'rounded-xl shadow-2xl font-sans text-sm', title: 'text-lg font-semibold text-slate-800', htmlContainer: 'text-slate-600 pt-1 leading-normal' }});
-                    event.target.value = ''; 
-                    coverImagePreview.src = 'https://placehold.co/400x300/e2e8f0/64748b?text=Upload+Cover';
-                    coverImageNameDisplay.textContent = 'PNG, JPG, JPEG (Max 2MB)';
-                    coverUploadInitialText.style.display = 'block';
-                    coverChangeText.style.display = 'none';
-                    coverUploadPlaceholder.classList.remove('opacity-0', 'group-hover:opacity-100', 'bg-black/70', 'rounded-xl', 'text-white');
-                    coverPreviewContainer.classList.remove('border-solid', 'border-[#091e65]', 'ring-2', 'ring-[#091e65]/20');
-                    return;
-                }
-                if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-                    Swal.fire({ title: 'Invalid File Type', text: 'Please select a JPG, JPEG, or PNG image for the cover.', icon: 'error', iconColor: THEME_COLOR_ERROR, confirmButtonColor: THEME_COLOR_PRIMARY, customClass: { popup: 'rounded-xl shadow-2xl font-sans text-sm', title: 'text-lg font-semibold text-slate-800', htmlContainer: 'text-slate-600 pt-1 leading-normal' }});
-                    event.target.value = '';
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = (e) => { coverImagePreview.src = e.target.result; }
-                reader.readAsDataURL(file);
-                coverImageNameDisplay.textContent = file.name;
-                coverUploadInitialText.style.display = 'none';
-                coverChangeText.style.display = 'block';
-                coverUploadPlaceholder.classList.add('opacity-0', 'group-hover:opacity-100', 'bg-black/70', 'rounded-xl', 'text-white');
-                coverPreviewContainer.classList.add('border-solid', 'border-[#091e65]', 'ring-2', 'ring-[#091e65]/20');
-            } else { 
-                coverImagePreview.src = 'https://placehold.co/400x300/e2e8f0/64748b?text=Upload+Cover';
-                coverImageNameDisplay.textContent = 'PNG, JPG, JPEG (Max 2MB)';
-                coverUploadInitialText.style.display = 'block';
-                coverChangeText.style.display = 'none';
-                coverUploadPlaceholder.classList.remove('opacity-0', 'group-hover:opacity-100', 'bg-black/70', 'rounded-xl', 'text-white');
-                coverPreviewContainer.classList.remove('border-solid', 'border-[#091e65]', 'ring-2', 'ring-[#091e65]/20');
-            }
-        });
-        if (submittedValues.cover_image_filename && formErrors.cover_image) {
-            coverImageNameDisplay.textContent = submittedValues.cover_image_filename;
-        } else if (submittedValues.cover_image_filename) { 
-             coverImageNameDisplay.textContent = submittedValues.cover_image_filename;
-        }
-    }
-
-    function updatePricingUI(selectedType) {
-        if (pricingTypeFreeBtn && pricingTypePaidBtn && pricingTypeFreeRadio && pricingTypePaidRadio && priceInputContainer && priceInput) {
-            if (selectedType === 'free') {
-                pricingTypeFreeBtn.classList.add('bg-[#091e65]', 'text-white', 'shadow-md');
-                pricingTypeFreeBtn.classList.remove('text-slate-500', 'hover:text-[#091e65]');
-                pricingTypePaidBtn.classList.remove('bg-[#091e65]', 'text-white', 'shadow-md');
-                pricingTypePaidBtn.classList.add('text-slate-500', 'hover:text-[#091e65]');
-                pricingTypeFreeRadio.checked = true;
-                priceInputContainer.classList.add('hidden');
-                priceInput.required = false; 
-            } else if (selectedType === 'paid') {
-                pricingTypePaidBtn.classList.add('bg-[#091e65]', 'text-white', 'shadow-md');
-                pricingTypePaidBtn.classList.remove('text-slate-500', 'hover:text-[#091e65]');
-                pricingTypeFreeBtn.classList.remove('bg-[#091e65]', 'text-white', 'shadow-md');
-                pricingTypeFreeBtn.classList.add('text-slate-500', 'hover:text-[#091e65]');
-                pricingTypePaidRadio.checked = true;
-                priceInputContainer.classList.remove('hidden');
-                priceInput.required = true; 
-            }
-        }
-    }
-    if (pricingTypeFreeBtn) pricingTypeFreeBtn.addEventListener('click', () => updatePricingUI('free'));
-    if (pricingTypePaidBtn) pricingTypePaidBtn.addEventListener('click', () => updatePricingUI('paid'));
-    updatePricingUI(submittedValues.pricing_type || 'free');
-
-
-    function createChapterDOM(indexForNames, chapterData = {}) {
-        if (!chapterTemplate || !chaptersListContainer) return;
-        const templateNode = chapterTemplate.content.cloneNode(true);
-        const chapterDiv = templateNode.firstElementChild; 
-        if (!chapterDiv) return;
-        
-        chapterDiv.classList.add('chapter-card');
-        const visualOrder = chaptersListContainer.querySelectorAll('.chapter-card').length + 1; 
-        chapterDiv.dataset.indexJs = indexForNames; 
-        const chapterNumberSpan = chapterDiv.querySelector('.chapter-number-js');
-        if (chapterNumberSpan) chapterNumberSpan.textContent = visualOrder;
-        
-        const chapterTitleDisplay = chapterDiv.querySelector('.chapter-title-display-js');
-        const titleInput = chapterDiv.querySelector('.chapter-title-input-js');
-        if (chapterTitleDisplay) chapterTitleDisplay.textContent = chapterData.title || `Chapter ${visualOrder}`;
-        if (titleInput) {
-            titleInput.name = `chapters[${indexForNames}][title]`;
-            titleInput.id = `chapter_title_${indexForNames}`;
-            titleInput.value = chapterData.title || '';
-            titleInput.addEventListener('input', function() {
-                if (chapterTitleDisplay) chapterTitleDisplay.textContent = this.value || `Chapter ${visualOrder}`;
-            });
-        }
-        
-        const audioInput = chapterDiv.querySelector('.chapter-audio-input-js');
-        const fileNameSpan = chapterDiv.querySelector('.chapter-filename-js');
-        if (audioInput) {
-            audioInput.name = `chapters[${indexForNames}][audio]`;
-            audioInput.id = `chapter_audio_${indexForNames}`;
-        }
-        if (fileNameSpan) {
-            fileNameSpan.textContent = (chapterData.audio_filename && chapterData.audio_filename !== "No file chosen") ? chapterData.audio_filename : 'Choose audio file...';
-        }
-        if (audioInput && fileNameSpan) {
-            audioInput.addEventListener('change', function(e) {
-                if (e.target.files.length > 0) {
-                    const file = e.target.files[0];
-                     if (file.size > 50 * 1024 * 1024) { 
-                        Swal.fire({ title: 'Audio File Too Large', html: `Chapter audio file must be under <strong>50MB</strong>. <br/>Selected file is ${(file.size / (1024*1024)).toFixed(2)}MB.`, icon: 'error', iconColor: THEME_COLOR_ERROR, confirmButtonColor: THEME_COLOR_PRIMARY, customClass: { popup: 'rounded-xl shadow-2xl font-sans text-sm', title: 'text-lg font-semibold text-slate-800', htmlContainer: 'text-slate-600 pt-1 leading-normal' }});
-                        e.target.value = ''; 
-                        fileNameSpan.textContent = 'Choose audio file... (too large)';
-                        return;
-                    }
-                    if (!['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg'].includes(file.type)) {
-                         Swal.fire({ title: 'Invalid Audio Type', text: 'Please select an MP3, WAV, or OGG audio file.', icon: 'error', iconColor: THEME_COLOR_ERROR, confirmButtonColor: THEME_COLOR_PRIMARY, customClass: { popup: 'rounded-xl shadow-2xl font-sans text-sm', title: 'text-lg font-semibold text-slate-800', htmlContainer: 'text-slate-600 pt-1 leading-normal' }});
-                        e.target.value = ''; 
-                        fileNameSpan.textContent = 'Choose audio file... (invalid type)';
-                        return;
-                    }
-                    fileNameSpan.textContent = file.name;
-                } else {
-                    fileNameSpan.textContent = 'Choose audio file...';
-                }
-            });
-        }
-        
-        const orderInput = chapterDiv.querySelector('.chapter-order-input-js');
-        if (orderInput) {
-            orderInput.name = `chapters[${indexForNames}][order]`;
-            orderInput.value = chapterData.order || visualOrder; 
-        }
-        
-        const removeBtn = chapterDiv.querySelector('.remove-chapter-btn');
-        if (removeBtn) {
-            removeBtn.addEventListener('click', function() {
-                const chapterNameToConfirm = titleInput.value || `Chapter ${chapterNumberSpan ? chapterNumberSpan.textContent : 'this'}`;
-                Swal.fire({
-                    title: 'Remove Chapter?',
-                    html: `Are you sure you want to remove <strong>${chapterNameToConfirm}</strong>? <br/>This action cannot be undone.`,
-                    icon: 'warning', iconColor: THEME_COLOR_WARNING, showCancelButton: true,
-                    confirmButtonText: 'Yes, Remove It!', confirmButtonColor: THEME_COLOR_ERROR,
-                    cancelButtonText: 'Keep Chapter', reverseButtons: true,
-                    customClass: { popup: 'rounded-xl shadow-2xl font-sans text-sm', title: 'text-lg font-semibold text-slate-800', htmlContainer: 'text-slate-600 pt-1 leading-normal', confirmButton: 'px-5 py-2.5 rounded-lg text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow', cancelButton: 'px-5 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-colors'}
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        chapterDiv.remove();
-                        renumberChaptersInDOM(); 
-                        Swal.fire({ title: 'Chapter Removed!', icon: 'success', iconColor: THEME_COLOR_SUCCESS, timer: 1800, showConfirmButton: false, customClass: { popup: 'rounded-xl shadow-2xl font-sans text-sm', title: 'text-base font-semibold text-slate-800' }});
-                    }
-                });
-            });
-        }
-        
-        const titleErrorEl = chapterDiv.querySelector('.chapter-title-error-js');
-        const audioErrorEl = chapterDiv.querySelector('.chapter-audio-error-js');
-        if (chapterData.errors) {
-            if (titleErrorEl && chapterData.errors.title) titleErrorEl.textContent = chapterData.errors.title;
-            if (audioErrorEl && chapterData.errors.audio) audioErrorEl.textContent = chapterData.errors.audio;
-        }
-        
-        chaptersListContainer.appendChild(templateNode); 
-        updateNoChaptersMessage();
-        if (titleInput) titleInput.focus(); 
-        chapterDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    function renumberChaptersInDOM() {
-        if (!chaptersListContainer) return;
-        const existingChapterCards = chaptersListContainer.querySelectorAll('.chapter-card'); 
-        let currentGlobalIndex = 0; 
-        existingChapterCards.forEach((chapDiv, domOrder) => {
-            const visualOrder = domOrder + 1;
-            const chapterNumSpan = chapDiv.querySelector('.chapter-number-js');
-            if (chapterNumSpan) chapterNumSpan.textContent = visualOrder;
-            
-            const titleInput = chapDiv.querySelector('.chapter-title-input-js');
-            const titleDisplay = chapDiv.querySelector('.chapter-title-display-js');
-            if (titleDisplay && titleInput) {
-                 titleDisplay.textContent = titleInput.value || `Chapter ${visualOrder}`;
-            }
-            
-            const orderInput = chapDiv.querySelector('.chapter-order-input-js');
-            if (orderInput) {
-                orderInput.value = visualOrder;
-                const newNameIndex = currentGlobalIndex;
-                if (titleInput) {
-                    titleInput.name = `chapters[${newNameIndex}][title]`;
-                    titleInput.id = `chapter_title_${newNameIndex}`;
-                }
-                const audioInput = chapDiv.querySelector('.chapter-audio-input-js');
-                if (audioInput) {
-                    audioInput.name = `chapters[${newNameIndex}][audio]`;
-                    audioInput.id = `chapter_audio_${newNameIndex}`;
-                }
-                orderInput.name = `chapters[${newNameIndex}][order]`;
-                chapDiv.dataset.indexJs = newNameIndex; 
-                currentGlobalIndex++;
-            }
-        });
-        nextChapterIndex = currentGlobalIndex; 
-        updateNoChaptersMessage();
-    }
-    
-    function updateNoChaptersMessage() {
-        if (!chaptersListContainer || !noChaptersMessage) return;
-        if (chaptersListContainer.children.length === 0) {
-            noChaptersMessage.classList.remove('hidden');
-        } else {
-            noChaptersMessage.classList.add('hidden');
-        }
-    }
-
-    if (addChapterBtn) {
-        addChapterBtn.addEventListener('click', function() {
-            createChapterDOM(nextChapterIndex); 
-            renumberChaptersInDOM(); 
-        });
-    }
-
-    if (submittedValues && submittedValues.chapters && Array.isArray(submittedValues.chapters)) {
-        const sortedSubmittedChapters = [...submittedValues.chapters].sort((a, b) => (a.order || 0) - (b.order || 0));
-        sortedSubmittedChapters.forEach((chapterData) => {
-            createChapterDOM(chapterData.original_index, chapterData);
-        });
-        renumberChaptersInDOM(); 
-    }
-    updateNoChaptersMessage(); 
-
-    function validateFormClientSide() {
-        let isValid = true;
-        let firstErrorField = null;
-        const validationMessages = [];
-        function setFirstError(element) {
-            if (!firstErrorField) {
-                firstErrorField = element;
-            }
-        }
-        const requiredFields = [
-            { name: 'title', label: 'Audiobook Title', input: form.querySelector('#title') },
-            { name: 'author', label: 'Author Name', input: form.querySelector('#author') },
-            { name: 'narrator', label: 'Narrator Name', input: form.querySelector('#narrator') },
-            { name: 'genre', label: 'Genre', input: form.querySelector('#genre') },
-            { name: 'language', label: 'Language', input: form.querySelector('#language') },
-            { name: 'description', label: 'Description', input: form.querySelector('#description') },
-        ];
-        requiredFields.forEach(field => {
-            if (field.input && field.input.required && !field.input.value.trim()) {
-                isValid = false;
-                validationMessages.push(`Please provide the ${field.label}.`);
-                setFirstError(field.input);
-            }
-        });
-        const hasExistingCoverPreview = coverImagePreview && coverImagePreview.src && !coverImagePreview.src.includes('placehold.co');
-        if (coverImageInput && coverImageInput.required && coverImageInput.files.length === 0 && !hasExistingCoverPreview) {
-             isValid = false;
-             validationMessages.push('Please upload a Cover Image.');
-             setFirstError(coverImageInput);
-        }
-        const currentPricingType = pricingTypeFreeRadio.checked ? 'free' : 'paid';
-        if (currentPricingType === 'paid') {
-            if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
-                isValid = false;
-                validationMessages.push('Please enter a valid positive price for paid audiobooks.');
-                setFirstError(priceInput);
-            }
-        }
-        const chapterCards = chaptersListContainer.querySelectorAll('.chapter-card');
-        if (chapterCards.length === 0) {
-            isValid = false;
-            validationMessages.push('Your audiobook needs at least one chapter.');
-            setFirstError(addChapterBtn);
-        } else {
-            chapterCards.forEach((card, index) => {
-                const titleInput = card.querySelector('.chapter-title-input-js');
-                const audioInput = card.querySelector('.chapter-audio-input-js');
-                const fileNameDisplay = card.querySelector('.chapter-filename-js');
-                if (titleInput && !titleInput.value.trim()) {
-                    isValid = false;
-                    validationMessages.push(`Please enter a title for Chapter ${index + 1}.`);
-                    setFirstError(titleInput);
-                }
-                const hasAudioFileSelected = audioInput && audioInput.files.length > 0;
-                const hasExistingAudioFilename = fileNameDisplay && fileNameDisplay.textContent !== 'Choose audio file...' && !fileNameDisplay.textContent.includes('(too large)') && !fileNameDisplay.textContent.includes('(invalid type)');
-                if (!hasAudioFileSelected && !hasExistingAudioFilename) {
-                    isValid = false;
-                    validationMessages.push(`Please select an audio file for Chapter ${index + 1}.`);
-                    setFirstError(audioInput ? audioInput.closest('label') : card);
-                }
-            });
-        }
-        if (!isValid) {
-            Swal.fire({
-                title: 'Missing Information',
-                html: '<ul class="list-disc list-inside text-left text-sm">' + validationMessages.map(msg => `<li>${msg}</li>`).join('') + '</ul>',
-                icon: 'warning', iconColor: THEME_COLOR_WARNING, confirmButtonColor: THEME_COLOR_PRIMARY,
-                customClass: { popup: 'rounded-xl shadow-2xl font-sans', title: 'text-lg font-semibold text-slate-800', htmlContainer: 'text-slate-600 pt-1 leading-normal' }
-            });
-            if (firstErrorField) {
-                firstErrorField.focus({ preventScroll: true });
-                firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-        return isValid;
-    }
-
-    if (form) {
-        form.addEventListener('submit', function(event) {
-            if (isSubmittingAfterDelay) {
-                return; 
-            }
-            event.preventDefault(); 
-            renumberChaptersInDOM(); 
-
-            if (!validateFormClientSide()) {
-                if (publishButton) publishButton.disabled = false;
-                if (publishButtonText) publishButtonText.classList.remove('hidden');
-                if (publishingSpinner) {
-                    publishingSpinner.classList.add('hidden');
-                    publishingSpinner.classList.remove('inline-flex');
-                }
-                if (loadingOverlay) loadingOverlay.classList.add('hidden');
-                if (loaderMessageIntervalId) clearInterval(loaderMessageIntervalId);
-                return; 
-            }
-
-            if (publishButton) publishButton.disabled = true;
-            if (publishButtonText) publishButtonText.classList.add('hidden');
-            if (publishingSpinner) {
-                publishingSpinner.classList.remove('hidden');
-                publishingSpinner.classList.add('inline-flex');
-            }
-            if (loadingOverlay) loadingOverlay.classList.remove('hidden');
-
-            currentLoaderMessageIndex = 0;
-            if (loaderMessageElement) {
-                loaderMessageElement.textContent = LOADER_MESSAGES[currentLoaderMessageIndex];
-            }
-            if (loaderMessageIntervalId) clearInterval(loaderMessageIntervalId);
-            loaderMessageIntervalId = setInterval(() => {
-                currentLoaderMessageIndex = (currentLoaderMessageIndex + 1) % LOADER_MESSAGES.length;
-                if (loaderMessageElement) {
-                    loaderMessageElement.textContent = LOADER_MESSAGES[currentLoaderMessageIndex];
-                }
-            }, 1250); 
-
-            setTimeout(() => {
-                if (loaderMessageIntervalId) {
-                    clearInterval(loaderMessageIntervalId); 
-                }
-                isSubmittingAfterDelay = true; 
-                form.submit(); 
-            }, 5000); 
-        });
-    }
-
-    const djangoMessagesElement = document.getElementById('django-messages-data');
-    if (djangoMessagesElement && typeof Swal !== 'undefined') {
-        try {
-            const messages = JSON.parse(djangoMessagesElement.textContent || '[]');
-            if (messages.length > 0) {
-                const Toast = Swal.mixin({
-                    toast: true, position: 'top-end', showConfirmButton: false, timer: 5000, timerProgressBar: true,
-                    didOpen: (toast) => { toast.addEventListener('mouseenter', Swal.stopTimer); toast.addEventListener('mouseleave', Swal.resumeTimer); }
-                });
-                messages.forEach(message => {
-                    let iconType = message.tags;
-                    if (message.tags === 'debug') iconType = 'info';
-                    else if (message.tags === 'error') iconType = 'error';
-                    else if (message.tags === 'success') iconType = 'success';
-                    else if (message.tags === 'warning') iconType = 'warning';
-                    else iconType = 'info';
-                    
-                    let bgColor, textColor, progressBarClass;
-                    switch (message.tags) {
-                        case 'success': bgColor = '#ecfdf5'; textColor = '#059669'; progressBarClass = 'bg-green-500'; break; 
-                        case 'error': bgColor = '#fef2f2'; textColor = '#dc2626'; progressBarClass = 'bg-red-500'; break; 
-                        case 'warning': bgColor = '#fffbeb'; textColor = '#d97706'; progressBarClass = 'bg-amber-500'; break; // bg-amber-50, text-amber-700
-                        default: bgColor = '#eff6ff'; textColor = '#2563eb'; progressBarClass = 'bg-blue-500'; break; // bg-blue-50, text-blue-700
-                    }
-                    Toast.fire({ icon: iconType, title: message.message, background: bgColor, color: textColor, customClass: { timerProgressBar: progressBarClass } });
-                });
-            }
-        } catch (e) { /* Silently fail on parsing Django messages */ }
-    }
-});
-</script>
+<script src="{% static 'js/creator/creator_upload_audiobooks.js' %}"></script>
 {% endblock %}

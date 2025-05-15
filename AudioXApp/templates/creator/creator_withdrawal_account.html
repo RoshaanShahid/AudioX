@@ -14,6 +14,8 @@
 
 {% block extra_head %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 {% endblock %}
 
 
@@ -128,7 +130,7 @@
                             </div>
 
                             <div id="non_field_errors_container" class="pt-1">
-                            </div>
+                                </div>
 
                             <div class="pt-4 flex justify-end border-t border-gray-200 mt-8">
                                 <button type="submit"
@@ -228,7 +230,7 @@
                                                     <input type="hidden" name="action" value="set_primary">
                                                     <input type="hidden" name="account_id" value="{{ account.account_id }}">
                                                     <button type="submit" title="Set as Primary"
-                                                            class="inline-flex items-center justify-center gap-x-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-[#091e65] shadow-sm ring-1 ring-inset ring-[#091e65]/20 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#091e65]">
+                                                            class="inline-flex items-center justify-center gap-x-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-[#091e65] shadow-sm ring-1 ring-inset ring-[#091e65]/20 transition-all duration-150 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#091e65]">
                                                         <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd" /></svg>
                                                         <span class="hidden sm:inline">Set Primary</span>
                                                         <span class="sm:hidden">Primary</span>
@@ -243,7 +245,7 @@
                                                 <input type="hidden" name="action" value="delete_account">
                                                 <input type="hidden" name="account_id" value="{{ account.account_id }}">
                                                 <button type="submit" title="Delete Account"
-                                                        class="inline-flex items-center justify-center gap-x-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 shadow-sm ring-1 ring-inset ring-red-200 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
+                                                        class="inline-flex items-center justify-center gap-x-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 shadow-sm ring-1 ring-inset ring-red-200 transition-all duration-150 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
                                                     <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
                                                     <span class="hidden sm:inline">Delete</span>
                                                 </button>
@@ -257,7 +259,7 @@
                         <div class="px-6 py-20 text-center sm:px-8">
                              <div class="flex justify-center items-center h-16 w-16 rounded-full bg-gray-100 border border-gray-200 mx-auto mb-5">
                                  <svg class="h-8 w-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                                  </svg>
                              </div>
                              <p class="mt-4 text-base font-semibold text-gray-700">No Payout Methods Added Yet</p>
@@ -272,149 +274,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-    const swalLightConfig = (iconColorParam) => {
-        let iconColor = iconColorParam || '#6b7280'; // Default gray-500 (slate-500)
-        let confirmBgColor = 'bg-[#091e65]';
-        let confirmRingColor = 'focus-visible:ring-[#091e65]';
-
-        if (iconColor === '#ef4444') { // red-500 for warning/error
-            confirmBgColor = 'bg-red-600'; // red-600 for delete confirm
-            confirmRingColor = 'focus-visible:ring-red-600';
-        } else if (iconColor === '#f59e0b') { // amber for missing info
-             confirmBgColor = 'bg-[#091e65]'; // keep confirm as theme
-        }
-
-
-        return {
-            iconColor: iconColor, 
-            buttonsStyling: false,
-            showClass: { popup: 'animate__animated animate__fadeIn animate__faster' },
-            hideClass: { popup: 'animate__animated animate__fadeOut animate__faster' },
-            background: '#ffffff', 
-            customClass: {
-                 popup: 'bg-white text-gray-700 rounded-xl border border-gray-200 shadow-lg',
-                 title: 'text-gray-900 text-lg font-semibold',
-                 htmlContainer: 'text-gray-600 text-sm',
-                 confirmButton: `${confirmBgColor} text-white rounded-md px-4 py-2.5 text-sm font-medium transition-colors duration-150 ease-in-out shadow-sm ${confirmRingColor}`,
-                 cancelButton: 'bg-white text-gray-700 border border-gray-300 rounded-md px-4 py-2.5 text-sm font-medium transition-colors duration-150 ease-in-out shadow-sm',
-                 actions: 'space-x-3',
-                 icon: 'mt-2 mb-1 scale-95'
-            }
-        };
-    };
-
-    function handleDelete(event, formElement, accountDetails) {
-        event.preventDefault();
-        Swal.fire({
-            ...swalLightConfig('#ef4444'), 
-            title: 'Delete Payout Method?',
-            html: `Are you sure you want to delete the <strong>${accountDetails}</strong>?<br>This action cannot be undone.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                formElement.submit();
-            }
-        });
-    }
-
-    function handleSetPrimary(event, formElement, accountDetails) {
-        event.preventDefault();
-        Swal.fire({
-            ...swalLightConfig('#091e65'), 
-            title: 'Set as Primary?',
-            html: `Set the <strong>${accountDetails}</strong> as your primary payout method?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Yes, set as primary',
-            cancelButtonText: 'Cancel',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                formElement.submit();
-            }
-        });
-    }
-
-    function handleAddAccount(event, formElement) {
-        event.preventDefault();
-        let isValid = true;
-        formElement.querySelectorAll('.border-red-500').forEach(el => {
-            el.classList.remove('border-red-500', 'ring-red-500', 'ring-2');
-            el.classList.add('border-gray-300'); 
-            el.classList.remove('focus:ring-red-500'); 
-            el.classList.add('focus:ring-[#091e65]', 'focus:border-[#091e65]'); 
-        });
-        formElement.querySelectorAll('p[id^="error_"]').forEach(el => el.textContent = '');
-
-        const requiredInputs = formElement.querySelectorAll('[required]');
-        requiredInputs.forEach(input => {
-            const errorElement = formElement.querySelector(`#error_${input.name}`);
-            if (!input.disabled && input.offsetParent !== null && !input.value.trim()) {
-                isValid = false;
-                input.classList.remove('border-gray-300', 'focus:ring-[#091e65]', 'focus:border-[#091e65]');
-                input.classList.add('border-red-500', 'ring-red-500', 'ring-2'); 
-                input.classList.add('focus:ring-red-500'); 
-                if (errorElement) {
-                    errorElement.textContent = 'This field is required.';
-                }
-            }
-        });
-
-        if (!isValid) {
-             Swal.fire({
-                 ...swalLightConfig('#f59e0b'), 
-                 title: 'Missing Information',
-                 text: 'Please fill out all required fields (marked in red).',
-                 icon: 'warning',
-             });
-             return; 
-        }
-
-        const formData = new FormData(formElement);
-        const accountTypeSelect = formElement.querySelector('select[name="account_type"]');
-        const accountTypeText = accountTypeSelect.options[accountTypeSelect.selectedIndex].text;
-        const accountTitle = formData.get('account_title');
-        const accountIdentifier = formData.get('account_identifier');
-        const bankNameSelect = formElement.querySelector('select[name="bank_name"]');
-        let bankName = null;
-        if (formData.get('account_type') === 'bank' && !bankNameSelect.disabled && bankNameSelect.value) {
-             bankName = bankNameSelect.options[bankNameSelect.selectedIndex].text;
-        }
-        const isPrimary = formElement.querySelector('input[name="is_primary"]').checked;
-
-        let confirmationHtml = `
-            <p class="mb-4 text-center text-sm text-gray-500">Please review the details before adding:</p>
-            <ul class="space-y-2 text-sm text-left border border-gray-200 rounded-lg p-4 bg-gray-50 divide-y divide-gray-200">
-                <li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Type:</strong> <span class="text-gray-800 text-right">${accountTypeText}</span></li>
-                <li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Title:</strong> <span class="text-gray-800 text-right">${accountTitle}</span></li>
-                <li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Identifier:</strong> <span class="text-gray-800 font-mono text-right">${accountIdentifier}</span></li>
-        `;
-        if (bankName) {
-            confirmationHtml += `<li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Bank:</strong> <span class="text-gray-800 text-right">${bankName}</span></li>`;
-        }
-         confirmationHtml += `<li class="flex justify-between items-center py-1.5"><strong class="text-gray-600 pr-2">Set as Primary:</strong> <span class="text-gray-800 text-right">${isPrimary ? 'Yes' : 'No'}</span></li>`;
-        confirmationHtml += `</ul>`;
-
-        Swal.fire({
-            ...swalLightConfig('#091e65'), 
-            title: 'Confirm Payout Details',
-            html: confirmationHtml,
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonText: 'Confirm & Add Method',
-            cancelButtonText: 'Edit Details',
-            customClass: {
-                ...swalLightConfig('#091e65').customClass,
-                htmlContainer: 'text-sm mb-5', 
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                formElement.submit();
-            }
-        });
-    }
-</script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{% static 'js/creator/creator_withdrawal_account.js' %}"></script>
 {% endblock %}
