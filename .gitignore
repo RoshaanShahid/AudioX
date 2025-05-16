@@ -39,7 +39,7 @@ media/
 logs/
 *.log.*
 *.log.[0-9]
-*.log.[0-9][0-9]
+*.log.[0-9][0][0-9]
 
 # IDE files
 .vscode/
@@ -70,6 +70,9 @@ yarn-debug.log*
 
 # Generated Tailwind CSS output file
 static/css/output.css
+
+# Sensitive Files (should not be committed to Git)
+audiox-auth-e32bbe6bfa04.json
 
 # Other common ignores
 .python-version
