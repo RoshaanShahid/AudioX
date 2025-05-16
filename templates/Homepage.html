@@ -15,11 +15,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+    {# Assuming output.css is your Tailwind generated CSS file #}
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
+    {# CSRF token for AJAX requests #}
     <meta name="csrf-token" content="{{ csrf_token }}">
-    
-    
+
+    {# Django context data for JavaScript #}
     {% if creator_js_context %}
         {{ creator_js_context|json_script:"django-context-data" }}
     {% endif %}
@@ -33,11 +35,12 @@
     <header class="bg-white shadow-md sticky top-0 z-50 border-b-2 border-theme-primary">
         <div class="container mx-auto flex items-center justify-between px-4 h-16">
             <div class="flex items-center space-x-3 sm:space-x-4">
+                {# Hamburger Menu Toggle #}
                 <button id="menu-toggle" class="text-theme-text-secondary hover:text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 rounded-md p-2 -ml-2 transition duration-150 ease-in-out">
                     <i class="fas fa-bars text-xl"></i>
                     <span class="sr-only">Open Menu</span>
                 </button>
-                {# This link now correctly points to the English homepage (root URL) #}
+                {# Logo linking to English homepage (root) #}
                 <a href="{% url 'AudioXApp:home' %}" class="flex items-center shrink-0 group">
                     <span class="text-2xl font-extrabold text-theme-primary tracking-tighter group-hover:text-theme-primary-hover transition-colors">AUDIO</span>
                     <span class="text-2xl font-extrabold text-red-600 tracking-tighter">X</span>
@@ -45,22 +48,25 @@
                 </a>
             </div>
 
+            {# Desktop Search Bar #}
             <div class="flex-grow max-w-xl mx-4 hidden md:flex items-center">
                 <div class="relative w-full">
                     <input type="text" id="search-input" placeholder="Search audiobooks & stories..." class="w-full pl-11 pr-12 py-2.5 border border-theme-border rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-400 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
                     <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-11 text-theme-text-light hover:text-theme-primary focus:outline-none transition duration-150 ease-in-out" id="search-btn" title="Search">
                         <i class="fas fa-search text-base"></i>
                     </button>
-                    <button id="voice-search-btn" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-light hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none transition duration-150 ease-in-out group" title="Search by Voice">
+                    <button id="voice-search-btn" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-light hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none group" title="Search by Voice">
                         <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity">
                     </button>
                 </div>
             </div>
 
+            {# Right side: Language, Coins/Premium, Profile/Auth #}
             <div class="flex items-center space-x-2 sm:space-x-3">
+                {# Language Selector (Desktop) #}
                 <div class="relative hidden sm:block">
-                    <select 
-                        class="px-2 py-1 border border-[#091e65] rounded-full text-gray-700 focus-ring text-sm" 
+                    <select
+                        class="px-2 py-1 border border-[#091e65] rounded-full text-gray-700 focus-ring text-sm"
                         id="language-selector"
                         onchange="redirectToLanguage()">
                         <option value="English">English</option>
@@ -73,6 +79,7 @@
                     </div>
                 </div>
 
+                {# Coins/Premium Button #}
                 {% if user.is_authenticated %}
                     <a href="{% url 'AudioXApp:mywallet' %}" class="bg-theme-primary-lighter hover:bg-theme-primary-light text-theme-primary font-semibold px-3 h-9 rounded-full flex items-center border border-theme-primary/30 transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-theme-primary shadow-sm hover:shadow">
                         <i class="fas fa-coins mr-1.5 text-base text-theme-primary opacity-80"></i>
@@ -87,6 +94,7 @@
                     </a>
                 {% endif %}
 
+                {# Profile Dropdown / Auth Links #}
                 {% if user.is_authenticated %}
                 <div class="relative">
                     <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary group" id="profile-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
@@ -156,10 +164,10 @@
                             <a href="{% url 'AudioXApp:billing_history' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
                                 <i class="fas fa-history w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Billing History
                             </a>
-                            <a href="{% url 'AudioXApp:my_library' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                            <a href="{% url 'AudioXApp:my_library' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary">
                                 <i class="fas fa-bookmark w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Library
                             </a>
-                            <a href="{% url 'AudioXApp:my_downloads' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
+                            <a href="{% url 'AudioXApp:my_downloads' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary">
                                 <i class="fas fa-download w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Downloads
                             </a>
                         </div>
@@ -172,10 +180,12 @@
                     </div>
                 </div>
                 {% else %}
+                    {# Login/Signup links (Desktop) #}
                     <div class="hidden sm:flex items-center space-x-2">
                         <a href="{% url 'AudioXApp:login' %}" class="text-theme-primary hover:text-theme-primary-hover font-semibold px-4 h-9 flex items-center rounded-full text-sm transition duration-150 ease-in-out hover:bg-theme-primary-lighter focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Login</a>
                         <a href="{% url 'AudioXApp:signup' %}" class="bg-theme-primary hover:bg-theme-primary-hover text-white font-semibold px-4 h-9 flex items-center rounded-full shadow-sm text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Signup</a>
                     </div>
+                    {# Login/Signup icons (Mobile) #}
                     <div class="flex sm:hidden items-center space-x-1">
                         <a href="{% url 'AudioXApp:login' %}" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Login"><i class="fas fa-sign-in-alt text-lg"></i></a>
                         <a href="{% url 'AudioXApp:signup' %}" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Signup"><i class="fas fa-user-plus text-lg"></i></a>
@@ -184,6 +194,7 @@
             </div>
         </div>
 
+        {# Mobile Search Bar #}
         <div class="container mx-auto px-4 pb-3 md:hidden">
             <div class="relative w-full">
                 <input type="text" id="search-input-mobile" placeholder="Search..." class="w-full pl-10 pr-12 py-2 border border-theme-border rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-400 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
@@ -199,20 +210,27 @@
     {% endblock %}
 
     {% block slider-menu %}
+    {# Slide-out Menu Backdrop #}
     <div id="slide-menu-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[990] hidden transition-opacity duration-300 ease-in-out opacity-0"></div>
+    {# Slide-out Menu Content #}
     <div id="slide-menu" class="fixed top-0 left-0 w-80 h-full bg-theme-primary text-theme-text-inverted shadow-2xl z-[1000] flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out">
+        {# Menu Header (Logo and Close Button) #}
         <div class="flex items-center justify-between p-5 border-b border-white/10 h-18 shrink-0">
-            <a href="{% url 'AudioXApp:home' %}" class="flex items-center shrink-0 group"> {# This now correctly points to the English homepage URL (root) #}
+            {# Logo linking to English homepage (root) #}
+            <a href="{% url 'AudioXApp:home' %}" class="flex items-center shrink-0 group">
                 <span class="text-2xl font-extrabold text-white tracking-tighter">AUDIO</span>
                 <span class="text-2xl font-extrabold text-red-500 tracking-tighter">X</span>
                 <div class="w-2 h-2 bg-theme-secondary rounded-full ml-1.5 group-hover:bg-theme-secondary-hover transition-colors"></div>
             </a>
+            {# Close Menu Button #}
             <button id="close-menu" class="text-theme-text-inverted-muted hover:text-white transition-colors duration-150 ease-in-out p-2 -mr-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 <span class="sr-only">Close Menu</span>
             </button>
         </div>
+        {# Menu Body (User Info, Features, Navigation) #}
         <div class="flex-grow overflow-y-auto menu-content">
+            {# User Info Section (Logged In) #}
             <div class="p-6 border-b border-white/10">
                 {% if user.is_authenticated %}
                     <div class="flex items-center space-x-4">
@@ -245,6 +263,7 @@
                         </div>
                     </div>
                 {% else %}
+                    {# Welcome Section (Logged Out) #}
                     <div class="text-left py-4">
                         <p class="text-base font-medium text-white mb-2">Welcome to AudioX</p>
                         <p class="text-sm text-theme-text-inverted-muted mb-4">Login or sign up to personalize your experience.</p>
@@ -259,12 +278,15 @@
                     </div>
                 {% endif %}
             </div>
+            {# Features Section #}
             <div class="px-4 py-5 space-y-3">
                 <p class="px-3 text-xs font-semibold uppercase text-theme-text-inverted-subtle tracking-wider">Features</p>
+                 {# Link to Generate Audio from PDF (assuming a URL name exists or it's a static path) #}
                 <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-theme-secondary/10 to-amber-500/5 text-theme-secondary hover:from-theme-secondary/20 hover:to-amber-500/10 hover:text-amber-300 border border-theme-secondary/20 hover:border-theme-secondary/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-1 focus:ring-offset-theme-primary">
                     <i class="fas fa-file-audio mr-3 text-lg w-5 text-center text-theme-secondary/80 group-hover:text-theme-secondary transition-colors"></i>
                     <span>Generate Audio from PDF</span>
                 </a>
+                {# Creator Status Links/Buttons #}
                 {% if user.is_authenticated %}
                     {% if is_banned %}
                         <button id="sidemenu-view-ban-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-red-600/10 text-red-300 hover:bg-red-600/20 border border-red-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-theme-primary">
@@ -293,22 +315,24 @@
                                 <span>Application Limit Reached</span>
                             </span>
                         {% endif %}
-                    {% else %}
+                    {% else %} {# Status is None or something unexpected, user is not a creator #}
                         <a href="{% url 'AudioXApp:creator_apply' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/30 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-500/20 focus:text-blue-200">
                             <i class="fas fa-feather-alt mr-3 text-lg w-5 text-center opacity-80"></i>
                             <span>Become a Creator</span>
                         </a>
                     {% endif %}
-                {% else %}
+                {% else %} {# Logged Out Creator Portal Link #}
                     <a href="#" id="creator-portal-link-loggedout" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg text-theme-text-inverted-subtle hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all duration-150 ease-in-out focus:outline-none focus:bg-white/10 focus:text-white">
                         <i class="fas fa-users mr-3 text-lg w-5 text-center opacity-80"></i>
                         <span>Creator Portal</span>
                     </a>
                 {% endif %}
             </div>
+            {# Navigation Section #}
             <nav class="flex-grow px-4 pb-4 space-y-1">
                 <p class="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-theme-text-inverted-subtle tracking-wider">Navigation</p>
                 {% if user.is_authenticated %}
+                    {# Authenticated User Navigation #}
                     <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
                         <i class="fas fa-fire mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Trending Audiobooks
                     </a>
@@ -319,13 +343,15 @@
                         <i class="fas fa-download mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> My Downloads
                     </a>
                 {% else %}
-                    <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white"> {# This now correctly points to the English homepage URL (root) #}
+                    {# Logged Out User Navigation #}
+                    <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
                         <i class="fas fa-home mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Home
                     </a>
                     <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
                         <i class="fas fa-fire mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Trending Audiobooks
                     </a>
                 {% endif %}
+                {# About Submenu #}
                 <div class="has-submenu-container pt-2">
                     <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
                         <span class="inline-flex items-center">
@@ -336,8 +362,11 @@
                     <div class="submenu ml-5 mt-1 space-y-0.5 overflow-hidden max-h-0 opacity-0 transition-all duration-300 ease-out border-l border-white/20 pl-4">
                         <a href="{% url 'AudioXApp:ourteam' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Our Team</a>
                         <a href="{% url 'AudioXApp:aboutus' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">About Us</a>
+                        {# Assuming /careers is a static page or has a URL #}
+                        <a href="/careers" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Careers</a>
                     </div>
                 </div>
+                {# Legal Submenu #}
                 <div class="has-submenu-container">
                     <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
                         <span class="inline-flex items-center">
@@ -352,6 +381,7 @@
                         <a href="{% url 'AudioXApp:termsandconditions' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Terms & Conditions</a>
                     </div>
                 </div>
+                {# Contact Support Link #}
                 <div class="pt-4">
                     <a href="{% url 'AudioXApp:contactus' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white border border-white/10 hover:border-white/20">
                         <i class="fas fa-headset mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Contact Support
@@ -359,6 +389,7 @@
                 </div>
             </nav>
         </div>
+        {# Menu Footer (Logout and Copyright) #}
         <div class="p-5 mt-auto border-t border-white/10 shrink-0">
             {% if user.is_authenticated %}
                 <a href="{% url 'AudioXApp:logout' %}" class="group w-full flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-lg text-white bg-theme-error hover:bg-theme-error-hover transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-theme-primary shadow-md hover:shadow-lg">
@@ -375,97 +406,104 @@
     <main class="flex-grow">
         {# This is the main content area that child templates will override #}
         {% block content %}
-            {# Default content for the base template if no child overrides it. 
-               For your setup, English_Home.html (or other language homepages) will fill this.
-               The "Featured Audiobooks" section that was here is now part of English_Home.html
-            #}
+            {# Default content for the base template if no child overrides it. #}
+            {# For your setup, English_Home.html (or other language homepages) will fill this. #}
         {% endblock %}
     </main>
 
     {% block footer %}
     <footer class="bg-gradient-to-r from-theme-primary to-blue-900 text-indigo-100 py-12 mt-10">
         <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-                <div class="md:col-span-4 lg:col-span-4">
-                    <a href="{% url 'AudioXApp:home' %}" class="flex items-center audiotype-logo mb-4 group"> {# This now correctly points to the English homepage URL (root) #}
-                        <span class="text-3xl font-extrabold tracking-tighter text-white">AUDIO</span>
-                        <span class="text-3xl font-extrabold text-red-500 tracking-tighter">X</span>
-                        <div class="w-3 h-3 bg-theme-secondary rounded-full ml-1.5 group-hover:bg-theme-secondary-hover transition-colors"></div>
-                    </a>
-                    <p class="mb-5 text-sm leading-relaxed opacity-90">
-                        AudioX: Your gateway to audiobooks in English, Urdu, Punjabi, Sindhi, and more. Making literature accessible across Pakistan and beyond.
-                    </p>
-                    <hr class="border-t border-blue-700 my-4 opacity-50">
-                    <h3 class="font-semibold text-white text-xs uppercase tracking-wider mb-3">Follow Us</h3>
-                    <div class="flex space-x-4">
-                        <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Facebook"><i class="fab fa-facebook-f text-lg"></i></a>
-                        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Instagram"><i class="fab fa-instagram text-lg"></i></a>
-                        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Twitter"><i class="fab fa-twitter text-lg"></i></a>
-                        <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="LinkedIn"><i class="fab fa-linkedin-in text-lg"></i></a>
-                    </div>
-                </div>
-                <div class="md:col-span-8 lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8 md:pl-8">
-                    <div>
-                        <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Company</h3>
-                        <ul class="space-y-2">
-                            <li><a href="{% url 'AudioXApp:aboutus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">About Us</a></li>
-                            <li><a href="{% url 'AudioXApp:ourteam' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Our Team</a></li>
-                            <li><a href="/careers" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Careers</a></li> {# Assuming /careers is a static page or has a URL #}
-                        </ul>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">General</h3>
-                        <ul class="space-y-2">
-                            <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Browse</a></li> {# Assuming /browse has a URL #}
-                            {% if user.is_authenticated %}
-                                {% if is_banned %}
-                                    <li><span class="text-sm text-red-300 cursor-not-allowed opacity-70">Creator Portal</span></li>
-                                {% elif is_creator %}
-                                    <li><a href="{% url 'AudioXApp:creator_dashboard' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Dashboard</a></li>
-                                {% else %}
-                                    <li><a href="{% url 'AudioXApp:creator_apply' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Become a Creator</a></li>
-                                {% endif %}
-                            {% else %}
-                                <li><a href="#" id="creator-portal-link-footer-loggedout" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Portal</a></li>
-                            {% endif %}
-                            <li><a href="{% url 'AudioXApp:contactus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Contact Us</a></li>
-                            <li><a href="/faq" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">FAQ</a></li> {# Assuming /faq has a URL #}
-                        </ul>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Legal</h3>
-                        <ul class="space-y-2">
-                            <li><a href="{% url 'AudioXApp:paymentpolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Payment Policy</a></li>
-                            <li><a href="{% url 'AudioXApp:piracypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Piracy Policy</a></li>
-                            <li><a href="{% url 'AudioXApp:termsandconditions' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Terms & Conditions</a></li>
-                            <li><a href="{% url 'AudioXApp:privacypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Privacy Policy</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Genres</h3>
-                        <ul class="space-y-2">
-                            {# Updated these to use the new genre URL names from your urls.py #}
-                            <li><a href="{% url 'AudioXApp:genre_fiction' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fiction</a></li>
-                            <li><a href="{% url 'AudioXApp:genre_mystery' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Mystery</a></li>
-                            <li><a href="{% url 'AudioXApp:genre_thriller' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Thriller</a></li>
-                            <li><a href="{% url 'AudioXApp:genre_scifi' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Scifi</a></li>
-                            <li><a href="{% url 'AudioXApp:genre_fantasy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fantasy</a></li>
-                            <li><a href="{% url 'AudioXApp:genre_romance' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Romance</a></li>
-                            <li><a href="{% url 'AudioXApp:genre_biography' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Biography</a></li>
-                            <li><a href="{% url 'AudioXApp:genre_history' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">History</a></li>
-                            <li><a href="{% url 'AudioXApp:genre_selfhelp' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">SelfHelp</a></li>
-                            <li><a href="{% url 'AudioXApp:genre_business' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Business</a></li>
-                        </ul>
-                    </div>
-                </div>
+             <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                 <div class="md:col-span-4 lg:col-span-4">
+                     {# Footer Logo - Styled with Tailwind #}
+                     <a href="{% url 'AudioXApp:home' %}" class="flex items-center audiotype-logo mb-4 group">
+                         <span class="text-3xl font-extrabold tracking-tighter text-white">AUDIO</span>
+                         <span class="text-3xl font-extrabold text-red-500 tracking-tighter">X</span>
+                         <div class="w-3 h-3 bg-theme-secondary rounded-full ml-1.5 group-hover:bg-theme-secondary-hover transition-colors"></div>
+                     </a>
+                     <p class="mb-5 text-sm leading-relaxed opacity-90">
+                            AudioX: Your gateway to audiobooks in English, Urdu, Punjabi, Sindhi, and more. Making literature accessible across Pakistan and beyond.
+                     </p>
+                     <hr class="border-t border-blue-700 my-4 opacity-50">
+                     <h3 class="font-semibold text-white text-xs uppercase tracking-wider mb-3">Follow Us</h3>
+                     {# Social Links - Styled with Tailwind #}
+                     <div class="flex space-x-4">
+                         <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Facebook"><i class="fab fa-facebook-f text-lg"></i></a>
+                         <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Instagram"><i class="fab fa-instagram text-lg"></i></a>
+                         <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Twitter"><i class="fab fa-twitter text-lg"></i></a>
+                         <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="LinkedIn"><i class="fab fa-linkedin-in text-lg"></i></a>
+                     </div>
+                 </div>
+
+                 <div class="md:col-span-8 lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8 md:pl-8">
+                     {# Footer Links - Styled with Tailwind #}
+                     <div>
+                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Company</h3>
+                         <ul class="space-y-2">
+                             <li><a href="{% url 'AudioXApp:aboutus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">About Us</a></li>
+                             <li><a href="{% url 'AudioXApp:ourteam' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Our Team</a></li>
+                             {# Assuming /careers is a static page or has a URL #}
+                             <li><a href="/careers" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Careers</a></li>
+                         </ul>
+                     </div>
+                     <div>
+                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">General</h3>
+                         <ul class="space-y-2">
+                             {# Assuming /browse has a URL #}
+                             <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Browse</a></li>
+                             {# Footer Creator Link Logic - Styled with Tailwind #}
+                             {% if user.is_authenticated %}
+                                 {% if is_banned %}
+                                     <li><span class="text-sm text-red-300 cursor-not-allowed opacity-70">Creator Portal</span></li>
+                                 {% elif is_creator %}
+                                     <li><a href="{% url 'AudioXApp:creator_dashboard' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Dashboard</a></li>
+                                 {% else %} {# Covers pending, rejected, or None (and not banned) #}
+                                     <li><a href="{% url 'AudioXApp:creator_apply' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Become a Creator</a></li>
+                                 {% endif %}
+                             {% else %} {# Logged out #}
+                                 <li><a href="#" id="creator-portal-link-footer-loggedout" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Portal</a></li>
+                             {% endif %}
+                             <li><a href="{% url 'AudioXApp:contactus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Contact Us</a></li>
+                             {# Assuming /faq has a URL #}
+                             <li><a href="/faq" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">FAQ</a></li>
+                         </ul>
+                     </div>
+                     <div>
+                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Legal</h3>
+                         <ul class="space-y-2">
+                             <li><a href="{% url 'AudioXApp:paymentpolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Payment Policy</a></li>
+                             <li><a href="{% url 'AudioXApp:piracypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Piracy Policy</a></li>
+                             <li><a href="{% url 'AudioXApp:termsandconditions' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Terms & Conditions</a></li>
+                             <li><a href="{% url 'AudioXApp:privacypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Privacy Policy</a></li>
+                         </ul>
+                     </div>
+                     <div>
+                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Genres</h3>
+                         <ul class="space-y-2">
+                             {# Updated these to use the new genre URL names from your urls.py #}
+                             <li><a href="{% url 'AudioXApp:genre_fiction' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fiction</a></li>
+                             <li><a href="{% url 'AudioXApp:genre_mystery' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Mystery</a></li>
+                             <li><a href="{% url 'AudioXApp:genre_thriller' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Thriller</a></li>
+                             <li><a href="{% url 'AudioXApp:genre_scifi' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Scifi</a></li>
+                             <li><a href="{% url 'AudioXApp:genre_fantasy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fantasy</a></li>
+                             <li><a href="{% url 'AudioXApp:genre_romance' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Romance</a></li>
+                             <li><a href="{% url 'AudioXApp:genre_biography' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Biography</a></li>
+                             <li><a href="{% url 'AudioXApp:genre_history' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">History</a></li>
+                             <li><a href="{% url 'AudioXApp:genre_selfhelp' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">SelfHelp</a></li>
+                             <li><a href="{% url 'AudioXApp:genre_business' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Business</a></li>
+                         </ul>
+                     </div>
+                 </div>
             </div>
-            <div class="text-center mt-10 pt-8 border-t border-blue-700 border-opacity-50">
-                <p class="text-sm opacity-80">&copy; {% now "Y" %} AudioX. All Rights Reserved. Made with <span class="text-red-400">❤️</span> in Pakistan.</p>
-            </div>
+             <div class="text-center mt-10 pt-8 border-t border-blue-700 border-opacity-50">
+                 <p class="text-sm opacity-80">&copy; {% now "Y" %} AudioX. All Rights Reserved. Made with <span class="text-red-400">❤️</span> in Pakistan.</p>
+             </div>
         </div>
     </footer>
     {% endblock %}
 
+    {# Creator Portal Access Modal (Logged Out) #}
     <div id="creator-modal-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1040] hidden opacity-0 transition-opacity duration-300 ease-in-out pointer-events-none"></div>
     <div id="creator-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-95 bg-theme-primary text-theme-text-inverted rounded-xl shadow-2xl w-[90%] max-w-md z-[1050] opacity-0 transition-all duration-300 ease-in-out pointer-events-none overflow-hidden border border-white/10" role="dialog" aria-modal="true" aria-labelledby="creator-modal-title">
         <div class="p-6 sm:p-8 text-center relative">
@@ -492,10 +530,12 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Parse Django context data passed via json_script
         const contextDataElement = document.getElementById('django-context-data');
         const djangoContext = contextDataElement ? JSON.parse(contextDataElement.textContent || '{}') : {};
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
+        // --- Slide-out Menu Functionality ---
         const menuToggle = document.getElementById('menu-toggle');
         const slideMenu = document.getElementById('slide-menu');
         const closeMenu = document.getElementById('close-menu');
@@ -504,8 +544,8 @@
         function openSlideMenu() {
             if (!slideMenu || !menuBackdrop) return;
             menuBackdrop.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            requestAnimationFrame(() => {
+            document.body.style.overflow = 'hidden'; // Prevent scrolling body when menu is open
+            requestAnimationFrame(() => { // Use rAF for smooth transition
                 slideMenu.classList.remove('-translate-x-full');
                 menuBackdrop.classList.remove('opacity-0');
                 menuBackdrop.classList.add('opacity-100');
@@ -517,23 +557,25 @@
             slideMenu.classList.add('-translate-x-full');
             menuBackdrop.classList.remove('opacity-100');
             menuBackdrop.classList.add('opacity-0');
+            // Hide backdrop and restore body scroll after transition
             setTimeout(() => {
                 menuBackdrop.classList.add('hidden');
                 document.body.style.overflow = '';
-            }, 300);
+            }, 300); // Match transition duration
         }
 
         if (menuToggle && slideMenu && closeMenu && menuBackdrop) {
             menuToggle.addEventListener('click', (e) => { e.stopPropagation(); openSlideMenu(); });
             closeMenu.addEventListener('click', closeSlideMenu);
-            menuBackdrop.addEventListener('click', closeSlideMenu);
-            document.addEventListener('keydown', (event) => {
+            menuBackdrop.addEventListener('click', closeSlideMenu); // Close when clicking outside menu
+            document.addEventListener('keydown', (event) => { // Close with Escape key
                 if (event.key === 'Escape' && !slideMenu.classList.contains('-translate-x-full')) {
                     closeSlideMenu();
                 }
             });
         }
 
+        // --- Profile Dropdown Functionality ---
         const profileDropdownToggle = document.getElementById('profile-dropdown-toggle');
         const profileDropdown = document.getElementById('profile-dropdown');
 
@@ -541,7 +583,7 @@
             if (!profileDropdown || !profileDropdownToggle) return;
             profileDropdown.classList.remove('hidden');
             profileDropdownToggle.setAttribute('aria-expanded', 'true');
-            requestAnimationFrame(() => {
+            requestAnimationFrame(() => { // Use rAF for smooth transition
                 profileDropdown.classList.remove('opacity-0', 'scale-95');
                 profileDropdown.classList.add('opacity-100', 'scale-100');
             });
@@ -552,19 +594,25 @@
             profileDropdown.classList.remove('opacity-100', 'scale-100');
             profileDropdown.classList.add('opacity-0', 'scale-95');
             profileDropdownToggle.setAttribute('aria-expanded', 'false');
-            setTimeout(() => { profileDropdown.classList.add('hidden'); }, 100);
+            // Hide dropdown after transition
+            setTimeout(() => { profileDropdown.classList.add('hidden'); }, 100); // Match transition duration
         }
 
         if (profileDropdownToggle && profileDropdown) {
             profileDropdownToggle.addEventListener('click', (event) => {
-                event.stopPropagation();
+                event.stopPropagation(); // Prevent click from closing dropdown immediately
                 const isExpanded = profileDropdownToggle.getAttribute('aria-expanded') === 'true';
-                if (isExpanded) hideProfileDropdown();
-                else {
-                    if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) closeSlideMenu();
+                if (isExpanded) {
+                    hideProfileDropdown();
+                } else {
+                    // Close slide menu if open before showing profile dropdown
+                    if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) {
+                         closeSlideMenu();
+                    }
                     showProfileDropdown();
                 }
             });
+            // Close dropdown when clicking outside
             document.addEventListener('click', (event) => {
                 if (profileDropdown && !profileDropdown.classList.contains('hidden') &&
                     !profileDropdown.contains(event.target) &&
@@ -572,70 +620,98 @@
                     hideProfileDropdown();
                 }
             });
+            // Close dropdown with Escape key
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape' && profileDropdown && !profileDropdown.classList.contains('hidden')) {
                     hideProfileDropdown();
-                    if(profileDropdownToggle) profileDropdownToggle.focus();
+                    if(profileDropdownToggle) profileDropdownToggle.focus(); // Return focus to toggle button
                 }
             });
         }
 
+        // --- Search Functionality ---
+        // Placeholder for actual voice search implementation
         const setupVoiceSearch = (buttonId, inputId) => {
             const btn = document.getElementById(buttonId);
             const input = document.getElementById(inputId);
             if (!btn || !input) return;
             btn.addEventListener('click', () => {
-                // For now, using SweetAlert for placeholder
+                // Using SweetAlert for placeholder functionality
                 SwalStyled.fire({ title: 'Voice Search', text: 'Voice search functionality is not implemented yet.', icon: 'info', confirmButtonText: 'Got it!' });
             });
         };
         setupVoiceSearch('voice-search-btn', 'search-input');
         setupVoiceSearch('voice-search-btn-mobile', 'search-input-mobile');
 
+        // Setup search button and Enter key press
         const setupSearchButton = (buttonId, inputId) => {
             const btn = document.getElementById(buttonId);
             const input = document.getElementById(inputId);
             if (!btn || !input) return;
             const performSearch = () => {
                 const query = input.value.trim();
-                if (query) window.location.href = `/search?q=${encodeURIComponent(query)}`;
-                else input.focus();
+                if (query) {
+                    // Redirect to search results page (assuming '/search/' URL pattern)
+                    window.location.href = `/search/?q=${encodeURIComponent(query)}`;
+                } else {
+                    input.focus(); // Focus input if empty
+                }
             };
             btn.addEventListener('click', performSearch);
-            input.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Prevent default form submission if input is in a form
+                    performSearch();
+                }
+            });
         };
         setupSearchButton('search-btn', 'search-input');
         setupSearchButton('search-btn-mobile', 'search-input-mobile');
 
+
+        // --- Slide-out Menu Submenu Functionality ---
         const submenuToggles = document.querySelectorAll('#slide-menu .submenu-toggle');
         submenuToggles.forEach(toggle => {
             toggle.addEventListener('click', function(e) {
-                e.preventDefault();
+                e.preventDefault(); // Prevent default link behavior
                 const parentContainer = this.closest('.has-submenu-container');
                 if (!parentContainer) return;
                 const submenu = parentContainer.querySelector('.submenu');
                 const icon = this.querySelector('.submenu-icon');
                 if (!submenu || !icon) return;
+
                 const isOpen = parentContainer.classList.contains('submenu-open');
+
+                // Close any other open submenus
                 document.querySelectorAll('#slide-menu .has-submenu-container.submenu-open').forEach(openContainer => {
                     if (openContainer !== parentContainer) {
                         openContainer.classList.remove('submenu-open');
                         const otherSubmenu = openContainer.querySelector('.submenu');
                         const otherIcon = openContainer.querySelector('.submenu-icon');
-                        if(otherSubmenu) { otherSubmenu.style.maxHeight = null; otherSubmenu.classList.add('opacity-0'); }
+                        if(otherSubmenu) {
+                            otherSubmenu.style.maxHeight = null; // Collapse
+                            otherSubmenu.classList.add('opacity-0');
+                        }
                         if(otherIcon) otherIcon.classList.remove('rotate-180');
                     }
                 });
+
+                // Toggle the clicked submenu
                 if (isOpen) {
                     parentContainer.classList.remove('submenu-open');
-                    submenu.style.maxHeight = null; submenu.classList.add('opacity-0'); icon.classList.remove('rotate-180');
+                    submenu.style.maxHeight = null; // Collapse
+                    submenu.classList.add('opacity-0');
+                    icon.classList.remove('rotate-180');
                 } else {
                     parentContainer.classList.add('submenu-open');
-                    submenu.style.maxHeight = submenu.scrollHeight + "px"; submenu.classList.remove('opacity-0'); icon.classList.add('rotate-180');
+                    submenu.style.maxHeight = submenu.scrollHeight + "px"; // Expand to full height
+                    submenu.classList.remove('opacity-0');
+                    icon.classList.add('rotate-180');
                 }
             });
         });
 
+        // --- Creator Portal Modal for Logged Out Users ---
         const creatorPortalLinkLoggedOut = document.getElementById('creator-portal-link-loggedout');
         const creatorPortalLinkFooterLoggedOut = document.getElementById('creator-portal-link-footer-loggedout');
         const creatorModal = document.getElementById('creator-modal');
@@ -644,29 +720,56 @@
 
         function showCreatorModal() {
             if (!creatorModal || !creatorModalBackdrop) return;
-            if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) closeSlideMenu();
+            // Close slide menu if open
+            if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) {
+                 closeSlideMenu();
+            }
             creatorModalBackdrop.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            requestAnimationFrame(() => {
+            document.body.style.overflow = 'hidden'; // Prevent scrolling body when modal is open
+            creatorModal.classList.remove('pointer-events-none'); // Make modal interactive
+            requestAnimationFrame(() => { // Use rAF for smooth transition
                 creatorModalBackdrop.classList.remove('opacity-0'); creatorModalBackdrop.classList.add('opacity-100');
-                creatorModal.classList.remove('opacity-0', 'scale-95', 'pointer-events-none'); creatorModal.classList.add('opacity-100', 'scale-100');
+                creatorModal.classList.remove('opacity-0', 'scale-95'); creatorModal.classList.add('opacity-100', 'scale-100');
             });
         }
+
         function hideCreatorModal() {
             if (!creatorModal || !creatorModalBackdrop) return;
             creatorModal.classList.remove('opacity-100', 'scale-100'); creatorModal.classList.add('opacity-0', 'scale-95');
             creatorModalBackdrop.classList.remove('opacity-100'); creatorModalBackdrop.classList.add('opacity-0');
+            // Hide backdrop and restore body scroll after transition
             setTimeout(() => {
-                creatorModalBackdrop.classList.add('hidden'); creatorModal.classList.add('pointer-events-none'); document.body.style.overflow = '';
-            }, 300);
+                creatorModalBackdrop.classList.add('hidden');
+                creatorModal.classList.add('pointer-events-none'); // Make modal non-interactive when hidden
+                document.body.style.overflow = '';
+            }, 300); // Match transition duration
         }
-        const setupCreatorLink = (link) => { if (link) link.addEventListener('click', (e) => { e.preventDefault(); showCreatorModal(); }); };
+
+        // Attach click listeners to the creator portal links for logged out users
+        const setupCreatorLink = (link) => {
+            if (link) {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault(); // Prevent default link behavior (navigating to #)
+                    showCreatorModal();
+                });
+            }
+        };
         setupCreatorLink(creatorPortalLinkLoggedOut);
         setupCreatorLink(creatorPortalLinkFooterLoggedOut);
-        modalCloseBtns.forEach(btn => btn.addEventListener('click', hideCreatorModal));
-        if (creatorModalBackdrop) creatorModalBackdrop.addEventListener('click', hideCreatorModal);
-        document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && creatorModal && !creatorModal.classList.contains('opacity-0')) hideCreatorModal(); });
 
+        // Attach click listeners to modal close buttons
+        modalCloseBtns.forEach(btn => btn.addEventListener('click', hideCreatorModal));
+        // Close modal when clicking outside (on backdrop)
+        if (creatorModalBackdrop) creatorModalBackdrop.addEventListener('click', hideCreatorModal);
+        // Close modal with Escape key
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && creatorModal && !creatorModal.classList.contains('opacity-0')) {
+                hideCreatorModal();
+            }
+        });
+
+
+        // --- SweetAlert2 Custom Styling Mixin ---
         const SwalStyled = Swal.mixin({
             customClass: {
                 popup: 'rounded-xl shadow-lg font-sans border border-gray-100 bg-white',
@@ -678,119 +781,252 @@
                 actions: 'flex justify-end px-6 pb-2',
                 loader: 'border-theme-primary',
             },
-            buttonsStyling: false,
+            buttonsStyling: false, // Disable default button styling to use custom classes
         });
 
+
+        // --- Creator Status Popups and Actions (using djangoContext) ---
+
+        // Handle "Switch to Creator Mode" button in sidemenu
         const sidemenuSwitchBtn = document.getElementById('sidemenu-switch-creator-btn');
         if (sidemenuSwitchBtn) {
             sidemenuSwitchBtn.addEventListener('click', function(event) {
                 event.preventDefault();
-                const dashboardUrl = "{% url 'AudioXApp:creator_dashboard' %}";
+                const dashboardUrl = "{% url 'AudioXApp:creator_dashboard' %}"; // Use Django URL tag
                 SwalStyled.fire({
-                    title: 'Switching Modes', html: 'Redirecting to Creator Dashboard...', timer: 1500, allowOutsideClick: false,
-                    didOpen: () => { Swal.showLoading(); }, timerProgressBar: true,
-                    customClass: { title: 'text-xl sm:text-2xl font-semibold text-theme-primary pt-6 px-6 pb-2 text-center', htmlContainer: 'text-base text-theme-text-secondary text-center px-6 pb-6 leading-relaxed', }
-                }).then(() => { window.location.href = dashboardUrl; });
+                    title: 'Switching Modes',
+                    html: 'Redirecting to Creator Dashboard...',
+                    timer: 1500, // Auto-close after 1.5 seconds
+                    allowOutsideClick: false, // Prevent closing by clicking outside
+                    didOpen: () => { Swal.showLoading(); }, // Show loading spinner
+                    timerProgressBar: true,
+                    customClass: { // Center text for this specific popup
+                        title: 'text-xl sm:text-2xl font-semibold text-theme-primary pt-6 px-6 pb-2 text-center',
+                        htmlContainer: 'text-base text-theme-text-secondary text-center px-6 pb-6 leading-relaxed',
+                    }
+                }).then(() => {
+                    // Redirect after the timer or confirmation (if any)
+                    window.location.href = dashboardUrl;
+                });
             });
         }
 
+        // Handle "Application Rejected" button in sidemenu
         const viewRejectionBtn = document.getElementById('sidemenu-view-rejection-reason-btn');
+        // Ensure the button exists AND the context indicates a rejected status
         if (viewRejectionBtn && djangoContext && djangoContext.creator_status === 'rejected') {
+             // Note: If sidemenu-view-ban-reason-btn shares this ID, one listener will overwrite the other.
+             // It's best to use unique IDs if both scenarios are possible simultaneously.
             viewRejectionBtn.addEventListener('click', function(event) {
-                event.preventDefault(); closeSlideMenu();
+                event.preventDefault();
+                closeSlideMenu(); // Close the side menu
+
                 const reason = djangoContext.rejectionReason || 'No specific reason provided.';
                 const attemptsMade = djangoContext.applicationAttemptsCurrentMonth || 0;
-                const maxAttempts = djangoContext.maxApplicationAttempts || 3;
+                const maxAttempts = djangoContext.maxApplicationAttempts || 3; // Assuming a default max attempts
                 const remainingAttempts = Math.max(0, maxAttempts - attemptsMade);
-                const canApplyAgain = djangoContext.can_reapply ?? false;
-                let attemptsText = (remainingAttempts > 0 && canApplyAgain) ? `<i class="fas fa-redo mr-1.5 text-sm text-gray-500"></i> You have ${remainingAttempts} application attempt${remainingAttempts !== 1 ? 's' : ''} remaining this month.` : '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
-                const popupHtml = `<div class="space-y-4"><p class="text-theme-text-secondary"><i class="fas fa-info-circle mr-1.5 text-theme-primary"></i>Your previous application requires attention for the following reason:</p><div class="bg-theme-warning-light border-l-4 border-theme-warning text-orange-800 p-4 rounded-md shadow-sm" role="alert"><p class="font-medium">${reason}</p></div><p class="text-sm text-theme-text-light">${attemptsText}</p></div>`;
+                const canApplyAgain = djangoContext.can_reapply ?? false; // Use ?? for nullish coalescing
+
+                let attemptsText = (remainingAttempts > 0 && canApplyAgain) ?
+                                   `<i class="fas fa-redo mr-1.5 text-sm text-gray-500"></i> You have ${remainingAttempts} application attempt${remainingAttempts !== 1 ? 's' : ''} remaining this month.` :
+                                   '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
+
+                const popupHtml = `<div class="space-y-4">
+                                       <p class="text-theme-text-secondary"><i class="fas fa-info-circle mr-1.5 text-theme-primary"></i>Your previous application requires attention for the following reason:</p>
+                                       <div class="bg-theme-warning-light border-l-4 border-theme-warning text-orange-800 p-4 rounded-md shadow-sm" role="alert">
+                                           <p class="font-medium">${reason}</p>
+                                       </div>
+                                       <p class="text-sm text-theme-text-light">${attemptsText}</p>
+                                   </div>`;
+
                 SwalStyled.fire({
-                    title: 'Application Status', html: popupHtml, icon: 'warning', iconColor: djangoContext.tailwindColors ? djangoContext.tailwindColors.warning : '#F59E0B',
-                    showConfirmButton: canApplyAgain, confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i>Apply Again', showCancelButton: true, cancelButtonText: 'Close', width: '450px',
-                }).then((result) => { if (result.isConfirmed && canApplyAgain) window.location.href = "{% url 'AudioXApp:creator_apply' %}"; });
+                    title: 'Application Status',
+                    html: popupHtml,
+                    icon: 'warning',
+                    iconColor: djangoContext.tailwindColors ? djangoContext.tailwindColors.warning : '#F59E0B', // Use Tailwind color from context if available
+                    showConfirmButton: canApplyAgain, // Show "Apply Again" only if allowed
+                    confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i>Apply Again',
+                    showCancelButton: true,
+                    cancelButtonText: 'Close',
+                    width: '450px', // Set a fixed width for consistency
+                }).then((result) => {
+                    if (result.isConfirmed && canApplyAgain) {
+                        window.location.href = "{% url 'AudioXApp:creator_apply' %}"; // Use Django URL tag
+                    }
+                });
             });
         }
 
-        const viewBanReasonBtn = document.getElementById('sidemenu-view-ban-reason-btn'); // Note: This ID is the same as rejection button, might need unique ID if both can appear
-        if (viewBanReasonBtn && djangoContext && djangoContext.isBanned) { // Check if it's the ban button scenario
-                 viewBanReasonBtn.addEventListener('click', function(event) { // This listener might conflict if IDs are not unique
-                    event.preventDefault(); closeSlideMenu();
-                    const reason = djangoContext.banReason || 'No specific reason provided by the administrator.';
-                    const banPopupHtml = `<div class="space-y-4"><p class="text-theme-text-secondary"><i class="fas fa-exclamation-triangle mr-1.5 text-theme-error"></i> Your Creator Profile is currently blocked for the following reason:</p><div class="bg-theme-error-light border-l-4 border-theme-error text-red-800 p-4 rounded-md shadow-sm" role="alert"><p class="font-medium">${reason}</p></div><p class="text-sm text-theme-text-light">If you believe this is an error or wish to appeal this decision, please contact our support team.</p></div>`;
-                    SwalStyled.fire({
-                        title: 'Creator Profile Blocked', html: banPopupHtml, icon: 'error', iconColor: djangoContext.tailwindColors ? djangoContext.tailwindColors.error : '#EF4444',
-                        showConfirmButton: true, confirmButtonText: '<i class="fas fa-headset mr-2"></i> Contact Support', showCancelButton: true, cancelButtonText: 'Close', width: '480px',
-                    }).then((result) => { if (result.isConfirmed) window.location.href = "{% url 'AudioXApp:contactus' %}"; });
-                });
+        // Handle "Creator Profile Blocked" button in sidemenu
+        const viewBanReasonBtn = document.getElementById('sidemenu-view-ban-reason-btn');
+         // Ensure the button exists AND the context indicates a banned status
+        if (viewBanReasonBtn && djangoContext && djangoContext.isBanned) {
+             // Note: If sidemenu-view-rejection-reason-btn shares this ID, one listener will overwrite the other.
+             // It's best to use unique IDs if both scenarios are possible simultaneously.
+             viewBanReasonBtn.addEventListener('click', function(event) {
+                 event.preventDefault();
+                 closeSlideMenu(); // Close the side menu
+
+                 const reason = djangoContext.banReason || 'No specific reason provided by the administrator.';
+                 const banPopupHtml = `<div class="space-y-4">
+                                           <p class="text-theme-text-secondary"><i class="fas fa-exclamation-triangle mr-1.5 text-theme-error"></i> Your Creator Profile is currently blocked for the following reason:</p>
+                                           <div class="bg-theme-error-light border-l-4 border-theme-error text-red-800 p-4 rounded-md shadow-sm" role="alert">
+                                               <p class="font-medium">${reason}</p>
+                                           </div>
+                                           <p class="text-sm text-theme-text-light">If you believe this is an error or wish to appeal this decision, please contact our support team.</p>
+                                       </div>`;
+                 SwalStyled.fire({
+                     title: 'Creator Profile Blocked',
+                     html: banPopupHtml,
+                     icon: 'error',
+                     iconColor: djangoContext.tailwindColors ? djangoContext.tailwindColors.error : '#EF4444', // Use Tailwind color from context if available
+                     showConfirmButton: true,
+                     confirmButtonText: '<i class="fas fa-headset mr-2"></i> Contact Support',
+                     showCancelButton: true,
+                     cancelButtonText: 'Close',
+                     width: '480px', // Set a fixed width
+                 }).then((result) => {
+                     if (result.isConfirmed) {
+                         window.location.href = "{% url 'AudioXApp:contactus' %}"; // Use Django URL tag
+                     }
+                 });
+             });
         }
 
+
+        // Function to call API to mark popup as shown
         async function markPopupShown(apiUrl) {
-            if (!apiUrl || !csrfToken) { console.error('API URL or CSRF Token is missing for markPopupShown.'); return; }
+            if (!apiUrl || !csrfToken) {
+                console.error('API URL or CSRF Token is missing for markPopupShown.');
+                return;
+            }
             try {
                 const response = await fetch(apiUrl, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
-                    body: JSON.stringify({})
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken, // Include CSRF token
+                        'X-Requested-With': 'XMLHttpRequest' // Indicate it's an AJAX request
+                    },
+                    body: JSON.stringify({}) // Empty body for a simple POST request
                 });
-                if (!response.ok) { const errorData = await response.text(); console.error(`Failed to mark popup shown at ${apiUrl}. Status: ${response.status}. Response: ${errorData}`); }
-                else { const data = await response.json(); console.log(`Mark popup response for ${apiUrl}:`, data); }
-            } catch (error) { console.error(`Error calling API ${apiUrl}:`, error); }
+                if (!response.ok) {
+                    const errorData = await response.text(); // Get error response body
+                    console.error(`Failed to mark popup shown at ${apiUrl}. Status: ${response.status}. Response: ${errorData}`);
+                } else {
+                    const data = await response.json();
+                    console.log(`Mark popup response for ${apiUrl}:`, data);
+                }
+            } catch (error) {
+                console.error(`Error calling API ${apiUrl}:`, error);
+            }
         }
 
+        // Show "Welcome Creator" popup if context indicates it
         if (djangoContext && djangoContext.showWelcomePopup) {
-            const welcomeHtml = `<div class="text-center"><div class="text-6xl mb-4 text-theme-primary animate-bounce">🎉</div><h2 class="text-2xl font-bold text-theme-primary mb-3">Welcome Aboard!</h2><p class="text-theme-text-secondary mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p><p class="text-theme-text-secondary px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p></div>`;
+            const welcomeHtml = `<div class="text-center">
+                                     <div class="text-6xl mb-4 text-theme-primary animate-bounce">🎉</div>
+                                     <h2 class="text-2xl font-bold text-theme-primary mb-3">Welcome Aboard!</h2>
+                                     <p class="text-theme-text-secondary mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p>
+                                     <p class="text-theme-text-secondary px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p>
+                                 </div>`;
             SwalStyled.fire({
-                html: welcomeHtml, showConfirmButton: true, confirmButtonText: '<i class="fas fa-tachometer-alt mr-2"></i> Go to Dashboard', showCancelButton: true, cancelButtonText: 'Maybe Later', showCloseButton: true, width: '480px',
-                didOpen: () => { const confirmButton = Swal.getConfirmButton(); if (confirmButton) confirmButton.focus(); },
-                didClose: () => { if (djangoContext.markWelcomeUrl) markPopupShown(djangoContext.markWelcomeUrl); else console.warn("markWelcomeUrl not found in djangoContext"); }
-            }).then((result) => { if (result.isConfirmed) window.location.href = "{% url 'AudioXApp:creator_dashboard' %}"; });
+                html: welcomeHtml,
+                showConfirmButton: true,
+                confirmButtonText: '<i class="fas fa-tachometer-alt mr-2"></i> Go to Dashboard',
+                showCancelButton: true,
+                cancelButtonText: 'Maybe Later',
+                showCloseButton: true, // Allow closing with X button
+                width: '480px', // Set a fixed width
+                didOpen: () => {
+                    // Focus the confirm button when the modal opens
+                    const confirmButton = Swal.getConfirmButton();
+                    if (confirmButton) confirmButton.focus();
+                },
+                didClose: () => {
+                    // Call the API to mark popup as shown after it's closed
+                    if (djangoContext.markWelcomeUrl) {
+                        markPopupShown(djangoContext.markWelcomeUrl);
+                    } else {
+                        console.warn("markWelcomeUrl not found in djangoContext");
+                    }
+                }
+            }).then((result) => {
+                // Redirect to dashboard if confirm button is clicked
+                if (result.isConfirmed) {
+                    window.location.href = "{% url 'AudioXApp:creator_dashboard' %}"; // Use Django URL tag
+                }
+            });
         }
 
+        // Show "Application Rejected" popup if context indicates it
         if (djangoContext && djangoContext.showRejectionPopup) {
             SwalStyled.fire({
                 title: 'Creator Application Update',
-                html: `<div class="space-y-3"><p>Unfortunately, your recent creator application was not approved for the following reason:</p><p class="font-semibold p-3 bg-red-50 border border-red-200 rounded text-red-800">${djangoContext.rejectionReason || 'No specific reason provided.'}</p><p class="text-sm text-gray-600">Please review the requirements. You may be able to re-apply later or contact support if you have questions.</p></div>`,
-                icon: 'error', iconColor: djangoContext.tailwindColors ? djangoContext.tailwindColors.error : '#EF4444', confirmButtonText: 'Okay', showCloseButton: true, width: '450px',
-                didClose: () => { if (djangoContext.markRejectionUrl) markPopupShown(djangoContext.markRejectionUrl); else console.warn("markRejectionUrl not found in djangoContext"); }
+                html: `<div class="space-y-3">
+                           <p>Unfortunately, your recent creator application was not approved for the following reason:</p>
+                           <p class="font-semibold p-3 bg-red-50 border border-red-200 rounded text-red-800">${djangoContext.rejectionReason || 'No specific reason provided.'}</p>
+                           <p class="text-sm text-gray-600">Please review the requirements. You may be able to re-apply later or contact support if you have questions.</p>
+                       </div>`,
+                icon: 'error',
+                iconColor: djangoContext.tailwindColors ? djangoContext.tailwindColors.error : '#EF4444', // Use Tailwind color from context
+                confirmButtonText: 'Okay',
+                showCloseButton: true, // Allow closing with X button
+                width: '450px', // Set a fixed width
+                didClose: () => {
+                    // Call the API to mark popup as shown after it's closed
+                    if (djangoContext.markRejectionUrl) {
+                        markPopupShown(djangoContext.markRejectionUrl);
+                    } else {
+                        console.warn("markRejectionUrl not found in djangoContext");
+                    }
+                }
             });
         }
+
     }); // End DOMContentLoaded
 
+
+    // --- Language Selector Functionality ---
     function redirectToLanguage() {
         const selector = document.getElementById('language-selector');
         const selectedLang = selector.value;
+
+        // Use Django URL tags for correct URL generation
         if (selectedLang === 'English') {
             window.location.href = "{% url 'AudioXApp:home' %}"; // This will go to '/'
-        } else {
-            // Construct URL like /urdu/, /punjabi/, /sindhi/ based on your urls.py
-            // Ensure your Django urls.py has patterns that match this format
-            // Example: path('<str:language_code>/', views.language_home_view, name='language_home')
-            // Or specific paths as you've defined: path('urdu/', views.urdu_page, name='urdu_page')
-            if (selectedLang === 'Urdu') {
-                window.location.href = "{% url 'AudioXApp:urdu_page' %}";
-            } else if (selectedLang === 'Punjabi') {
-                window.location.href = "{% url 'AudioXApp:punjabi_page' %}";
-            } else if (selectedLang === 'Sindhi') {
-                window.location.href = "{% url 'AudioXApp:sindhi_page' %}";
-            }
+        } else if (selectedLang === 'Urdu') {
+            window.location.href = "{% url 'AudioXApp:urdu_page' %}";
+        } else if (selectedLang === 'Punjabi') {
+            window.location.href = "{% url 'AudioXApp:punjabi_page' %}";
+        } else if (selectedLang === 'Sindhi') {
+            window.location.href = "{% url 'AudioXApp:sindhi_page' %}";
         }
+         // Add more languages here if needed
     }
 
+    // Set the initial language selector value based on the current URL path
     window.addEventListener('DOMContentLoaded', () => {
-        const path = window.location.pathname.toLowerCase();
+        const path = window.location.pathname.toLowerCase(); // Use lowercase for path comparison
         const selector = document.getElementById('language-selector');
-        if (selector) {
+
+        if (selector) { // Check if the selector exists
+            // Check for specific language paths first
             if (path.startsWith('/urdu/')) {
                 selector.value = 'Urdu';
             } else if (path.startsWith('/punjabi/')) {
                 selector.value = 'Punjabi';
             } else if (path.startsWith('/sindhi/')) {
                 selector.value = 'Sindhi';
-            } else { // Default to English for root path or any other non-language specific path
-                selector.value = 'English'; 
+            }
+            // Default to English if none of the specific language paths match
+            // This also covers the root path '/'
+            else {
+                selector.value = 'English';
             }
         }
     });
+
     </script>
 
     {% block javascript_extra %}{% endblock %} {# Allow specific pages to add more JS #}

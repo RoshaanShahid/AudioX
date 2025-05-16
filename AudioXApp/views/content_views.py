@@ -1,13 +1,13 @@
-# content_views.py
+# AudioXApp/views/content_views.py
 
 import random
 import requests
 import feedparser
 import mimetypes
 import json
-from urllib.parse import urlparse # quote was unused
+from urllib.parse import urlparse, quote # Keep urlparse, add quote (used in fetch_cover_image)
 from decimal import Decimal
-from datetime import datetime 
+from datetime import datetime, timedelta # Keep datetime, add timedelta (used in Creator model logic)
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse, StreamingHttpResponse, Http404
@@ -18,19 +18,22 @@ from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch, Avg 
+from django.db.models import Prefetch, Avg # Keep both Prefetch and Avg
 from django.conf import settings
-from django.core.exceptions import SuspiciousOperation 
-from django.utils.timesince import timesince 
-from django.db import transaction # Added for atomic transaction in add_review
-import logging # Ensure logging is imported
+from django.core.exceptions import SuspiciousOperation # Keep SuspiciousOperation
+from django.utils.timesince import timesince # Keep timesince
+from django.db import transaction # Keep transaction for atomic operations
 
+import logging # Keep logging import
 # Custom logger for this view module
-# THIS IS THE CRUCIAL LINE FOR THE NameError. ENSURE IT'S PRESENT AND UNCOMMENTED.
-logger = logging.getLogger(__name__) 
+logger = logging.getLogger(__name__)
 
-from ..models import Audiobook, Chapter, Review, User, AudiobookPurchase, CreatorEarning # Assuming models are in parent directory
-from .utils import _get_full_context # Assuming utils.py is in the same directory (views/)
+# Assuming 'views' is a subfolder in your app, '..' is correct for models.
+# e.g., your_app/views/contentview.py and your_app/models.py
+# Ensure these imports are correct based on your project structure
+from ..models import Audiobook, Chapter, Review, User, AudiobookPurchase, CreatorEarning, Creator # Added Creator model import
+# Assuming utils.py is in the same directory as contentview.py (e.g., your_app/views/utils.py)
+from .utils import _get_full_context # Keep _get_full_context import
 
 def fetch_audiobooks_data():
     """
@@ -42,14 +45,14 @@ def fetch_audiobooks_data():
     cache_key = 'librivox_archive_audiobooks_data_v5'
     cached_data = cache.get(cache_key)
     if cached_data:
-        print(f"CACHE HIT: Using cached data for audiobooks (key: {cache_key}).")
+        logger.info(f"CACHE HIT: Using cached data for audiobooks (key: {cache_key}).")
         return cached_data
 
-    print(f"CACHE MISS: Fetching fresh data for audiobooks (key: {cache_key})...")
+    logger.info(f"CACHE MISS: Fetching fresh data for audiobooks (key: {cache_key})...")
     librivox_audiobooks = []
     archive_genre_audiobooks = {}
     archive_language_audiobooks = {}
-    fetch_successful = False
+    fetch_successful = False # Flag to indicate if any data was successfully fetched
 
     # --- Fetch from LibriVox RSS Feeds ---
     rss_feeds = [
@@ -59,22 +62,23 @@ def fetch_audiobooks_data():
         "https://librivox.org/rss/61", "https://librivox.org/rss/62"
     ]
     session = requests.Session()
-    user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "YourDomain.com"
+    # Use settings.ALLOWED_HOSTS for User-Agent if available, fallback to a generic name
+    user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "AudioXApp.com"
     headers = {'User-Agent': f'AudioXApp/1.0 (+http://{user_agent_host})'}
     rss_timeout = 45 # seconds
 
     for rss_url in rss_feeds:
         try:
-            print(f"Fetching LibriVox RSS feed: {rss_url} with timeout {rss_timeout}s")
+            logger.info(f"Fetching LibriVox RSS feed: {rss_url} with timeout {rss_timeout}s")
             response = session.get(rss_url, timeout=rss_timeout, headers=headers)
             response.raise_for_status()
             feed = feedparser.parse(response.content)
 
             if feed.bozo:
-                print(f"Bozo feed detected for {rss_url}: {feed.bozo_exception}")
+                logger.warning(f"Bozo feed detected for {rss_url}: {feed.bozo_exception}")
 
             if not feed.entries:
-                print(f"No entries found in RSS feed: {rss_url}")
+                logger.info(f"No entries found in RSS feed: {rss_url}")
                 continue
 
             chapters_data = []
@@ -92,28 +96,30 @@ def fetch_audiobooks_data():
                             audio_url = link.href
                             break
                 if not audio_url:
+                    # logger.debug(f"No audio URL found for entry in {rss_url}: {entry.title}")
                     continue
 
                 chapter_title = entry.title.replace('"', '').strip() if entry.title else 'Untitled Chapter'
                 chapters_data.append({"chapter_title": chapter_title, "audio_url": audio_url})
 
             if not chapters_data:
-                print(f"No chapters with audio found for audiobook in {rss_url}")
+                logger.info(f"No chapters with audio found for audiobook in {rss_url}")
                 continue
 
             title = feed.feed.get('title', 'Unknown Title').replace('LibriVox', '').strip()
             description = feed.feed.get('summary', feed.feed.get('itunes_summary', 'No description available.'))
 
             cover_image_original_url = None
+            # Prefer feed image, then entry image links/enclosures
             if hasattr(feed.feed, 'image') and hasattr(feed.feed.image, 'href'):
-                cover_image_original_url = feed.feed.image.href
+                 cover_image_original_url = feed.feed.image.href
             elif hasattr(feed.feed, 'image') and hasattr(feed.feed.image, 'url'):
-                cover_image_original_url = feed.feed.image.url
+                 cover_image_original_url = feed.feed.image.url
             elif 'itunes' in feed.feed and hasattr(feed.feed.itunes, 'image') and hasattr(feed.feed.itunes.image, 'href'):
-                cover_image_original_url = feed.feed.itunes.image.href
+                 cover_image_original_url = feed.feed.itunes.image.href
             elif 'image' in feed.feed and isinstance(feed.feed.image, str):
-                cover_image_original_url = feed.feed.image
-            
+                 cover_image_original_url = feed.feed.image
+            # Check entry links/enclosures as fallback
             if not cover_image_original_url:
                 for entry_img in feed.entries:
                     if hasattr(entry_img, 'links'):
@@ -128,18 +134,19 @@ def fetch_audiobooks_data():
                                 cover_image_original_url = enc.href
                                 break
                         if cover_image_original_url: break
-                    if cover_image_original_url: break
+                    if cover_image_original_url: break # Break outer loop if image found in any entry
 
             slug = slugify(title) if title and title != 'Unknown Title' else f'unknown-librivox-book-{random.randint(1000,9999)}'
-            
+
             cover_image_proxy_url = None
             if cover_image_original_url:
                 try:
-                    quoted_image_url = requests.utils.quote(cover_image_original_url, safe='')
+                    # Use urllib.parse.quote for safer URL quoting
+                    quoted_image_url = quote(cover_image_original_url, safe='')
                     # Ensure AudioXApp:fetch_cover_image is a valid reversible URL name
                     cover_image_proxy_url = reverse('AudioXApp:fetch_cover_image') + f'?url={quoted_image_url}'
                 except Exception as url_err:
-                    print(f"Error creating proxy URL for {cover_image_original_url}: {url_err}")
+                    logger.error(f"Error creating proxy URL for {cover_image_original_url}: {url_err}")
 
             first_chapter_original_audio_url = chapters_data[0]["audio_url"] if chapters_data else None
             first_chapter_title = chapters_data[0]["chapter_title"] if chapters_data else None
@@ -152,13 +159,13 @@ def fetch_audiobooks_data():
                 "is_creator_book": False, "total_views": 0, "average_rating": None,
                 "is_paid": False, "price": Decimal("0.00")
             })
-            fetch_successful = True
+            fetch_successful = True # Mark as successful if at least one feed yields data
         except requests.exceptions.Timeout as e:
-            print(f"TIMEOUT error fetching RSS feed {rss_url}: {e}")
+            logger.error(f"TIMEOUT error fetching RSS feed {rss_url}: {e}")
         except requests.exceptions.RequestException as e:
-            print(f"RequestException error fetching RSS feed {rss_url}: {e}")
+            logger.error(f"RequestException error fetching RSS feed {rss_url}: {e}")
         except Exception as e:
-            print(f"Generic error processing RSS feed {rss_url}: {e}")
+            logger.error(f"Generic error processing RSS feed {rss_url}: {e}", exc_info=True)
 
     # --- Fetch from Archive.org by Genre and Language ---
     base_url = "https://archive.org/advancedsearch.php"
@@ -168,7 +175,7 @@ def fetch_audiobooks_data():
         "Self-Help", "Business",
         "Urdu", "Punjabi", "Sindhi"
     ]
-    archive_timeout = 30
+    archive_timeout = 30 # Timeout for Archive.org API calls
 
     for term in search_terms:
         params = {
@@ -177,7 +184,7 @@ def fetch_audiobooks_data():
             "rows": 10, "output": "json"
         }
         try:
-            print(f"Fetching Archive.org term: '{term}' with timeout {archive_timeout}s")
+            logger.info(f"Fetching Archive.org term: '{term}' with timeout {archive_timeout}s")
             response = session.get(base_url, params=params, timeout=archive_timeout, headers=headers)
             response.raise_for_status()
             data = response.json()
@@ -194,6 +201,7 @@ def fetch_audiobooks_data():
                 if not identifier: continue
 
                 meta_url = f"https://archive.org/metadata/{identifier}"
+                # Using the same archive_timeout for metadata call
                 meta_resp = session.get(meta_url, timeout=archive_timeout, headers=headers)
                 meta_resp.raise_for_status()
                 meta_data = meta_resp.json()
@@ -201,25 +209,27 @@ def fetch_audiobooks_data():
                 chapters = []
 
                 for f_item in files:
+                    # Only include MP3 files
                     if f_item.get("format") in ["VBR MP3", "MP3"] and "name" in f_item:
                         chapter_title = f_item.get("title", f_item.get("name", 'Untitled Chapter')).replace('"', '').strip()
                         chapters.append({
                             "chapter_title": chapter_title,
-                            "audio_url": f"https://archive.org/download/{identifier}/{requests.utils.quote(f_item['name'])}"
+                            # Ensure filename is quoted for the URL
+                            "audio_url": f"https://archive.org/download/{identifier}/{quote(f_item['name'])}"
                         })
                 if not chapters: continue
 
                 slug = slugify(title) if title and title != 'Unknown Title' else f'unknown-archive-{term.lower().replace(" ", "-")}-book-{random.randint(1000,9999)}'
-                
+
                 book_data = {
                     "source": "archive", "title": title, "description": description,
-                    "author": creator, "cover_image": f"https://archive.org/services/img/{identifier}",
+                    "author": creator, "cover_image": f"https://archive.org/services/img/{identifier}", # Direct image URL from Archive.org
                     "chapters": chapters,
                     "first_chapter_audio_url": chapters[0]["audio_url"] if chapters else None,
                     "first_chapter_title": chapters[0]["chapter_title"] if chapters else None,
                     "slug": slug, "is_creator_book": False, "total_views": 0,
                     "average_rating": None, "is_paid": False, "price": Decimal("0.00"),
-                    "subjects": subjects
+                    "subjects": subjects, # Keep subjects for potential filtering/display
                 }
                 audiobooks_for_term.append(book_data)
 
@@ -228,13 +238,13 @@ def fetch_audiobooks_data():
                     archive_language_audiobooks[term] = audiobooks_for_term
                 else:
                     archive_genre_audiobooks[term] = audiobooks_for_term
-                fetch_successful = True
+                fetch_successful = True # Mark as successful if at least one term yields data
         except requests.exceptions.Timeout as e:
-            print(f"TIMEOUT error fetching term '{term}' from Archive.org: {e}")
+            logger.error(f"TIMEOUT error fetching term '{term}' from Archive.org: {e}")
         except requests.exceptions.RequestException as e:
-            print(f"RequestException error fetching term '{term}' from Archive.org: {e}")
+            logger.error(f"RequestException error fetching term '{term}' from Archive.org: {e}")
         except Exception as e:
-            print(f"Generic error processing term '{term}' data from Archive.org: {e}")
+            logger.error(f"Generic error processing term '{term}' data from Archive.org: {e}", exc_info=True)
 
     combined_data = {
         "librivox_audiobooks": librivox_audiobooks,
@@ -243,15 +253,16 @@ def fetch_audiobooks_data():
     }
 
     if fetch_successful:
-        print(f"CACHE SET: Storing fetched data in cache (key: {cache_key}, duration: 3600s).")
+        logger.info(f"CACHE SET: Storing fetched data in cache (key: {cache_key}, duration: 3600s).")
         cache.set(cache_key, combined_data, 3600) # Cache for 1 hour
         return combined_data
     else:
-        print(f"FETCH UNSUCCESSFUL: No new data to cache. Returning potentially partial or None.")
+        logger.warning(f"FETCH UNSUCCESSFUL: No new data to cache. Returning potentially partial or None.")
+        # Return whatever was fetched, even if partial, unless absolutely nothing was fetched.
         if librivox_audiobooks or archive_genre_audiobooks or archive_language_audiobooks:
             return combined_data
         else:
-            return None
+            return None # Indicate complete failure to fetch anything
 
 
 @require_GET
@@ -259,18 +270,21 @@ def api_audiobooks(request):
     """API endpoint to get cached audiobook data."""
     cache_key = 'librivox_archive_audiobooks_data_v5'
     data = cache.get(cache_key)
-    
+
     if data is not None:
         return JsonResponse(data, safe=False)
     else:
+        # Return a 202 Accepted status to indicate that the data is being processed
+        # or is not yet available, prompting the client to try again.
         return JsonResponse({"message": "Audiobook data is currently being updated or is not available. Please try again shortly."}, status=202)
+
 
 def home(request):
     """Renders the English home page with audiobooks."""
     context = _get_full_context(request)
     cache_key = 'librivox_archive_audiobooks_data_v5' # For external books
-    
-    audiobook_data = cache.get(cache_key)
+
+    audiobook_data = cache.get(cache_key) # Get data from cache
 
     context["librivox_audiobooks"] = []
     context["archive_genre_audiobooks"] = {} # For external English genre books
@@ -279,11 +293,20 @@ def home(request):
 
     # --- Populate external (LibriVox, Archive.org) audiobooks ---
     if audiobook_data is not None:
-        print(f"CACHE HIT for English homepage (external): Using cached data (key: {cache_key}).")
+        logger.info(f"CACHE HIT for English homepage (external): Using cached data (key: {cache_key}).")
         context["librivox_audiobooks"] = audiobook_data.get("librivox_audiobooks", [])
-        context["archive_genre_audiobooks"] = audiobook_data.get("archive_genre_audiobooks", {})
+        # Filter Archive.org genre books to only include those with 'English' in subjects or assume English if no language subjects
+        english_genres = {}
+        for genre, book_list in audiobook_data.get("archive_genre_audiobooks", {}).items():
+            english_genres[genre] = [
+                book for book in book_list
+                if 'English' in book.get('subjects', []) or not any(lang in book.get('subjects', []) for lang in ["Urdu", "Punjabi", "Sindhi"])
+            ]
+        context["archive_genre_audiobooks"] = english_genres
+
     else:
-        print(f"CACHE MISS for English homepage (external): No data in cache (key: {cache_key}).")
+        logger.warning(f"CACHE MISS for English homepage (external): No data in cache (key: {cache_key}).")
+        # Set a user-friendly message if external data is not available
         context["error_message"] = (
             "External audiobook listings are currently being updated. "
             "Please check back shortly. In the meantime, enjoy content from our creators!"
@@ -296,10 +319,10 @@ def home(request):
             queryset=Chapter.objects.order_by('chapter_order'),
             to_attr='first_chapter_list'
         )
-        
+
         # Fetch English audiobooks by creators
         creator_books_qs = Audiobook.objects.filter(
-            status='PUBLISHED', 
+            status='PUBLISHED',
             language__iexact='English' # Ensure filtering by English language
         ).select_related('creator').prefetch_related(
             first_chapter_prefetch,
@@ -315,39 +338,41 @@ def home(request):
                 first_chapter_title = first_chapter.chapter_name
                 if first_chapter.audio_file:
                     first_chapter_audio_url = first_chapter.audio_file.url
-            
+
             creator_books_list.append({
-                'source': 'creator', 
-                'title': book.title, 
+                'source': 'creator',
+                'title': book.title,
                 'slug': book.slug,
                 'cover_image': book.cover_image.url if book.cover_image else None,
-                'author': book.author, 
+                'author': book.author,
                 'creator': book.creator,
                 'first_chapter_audio_url': first_chapter_audio_url,
                 'first_chapter_title': first_chapter_title,
-                'is_creator_book': True, 
+                'is_creator_book': True,
                 'average_rating': book.average_rating,
-                'total_views': book.total_views, 
+                'total_views': book.total_views,
                 'is_paid': book.is_paid,
-                'price': book.price, 
+                'price': book.price,
                 'status': book.status,
                 # Add language and genre for potential use in template/JS, though this view is English-specific
                 'language': book.language,
-                'genre': book.genre 
+                'genre': book.genre
             })
         context["creator_audiobooks"] = creator_books_list
-        
+
+        # If no audiobooks are found from any source, set a general error message
         if not creator_books_list and not context["librivox_audiobooks"] and not context["archive_genre_audiobooks"]:
              if not context["error_message"]: # Avoid overwriting cache miss message
-                context["error_message"] = "No English audiobooks are currently available."
+                 context["error_message"] = "No English audiobooks are currently available from any source."
 
 
     except Exception as db_err:
-        print(f"Error fetching creator audiobooks for English homepage: {db_err}")
         logger.error(f"Error fetching creator audiobooks for English homepage: {db_err}", exc_info=True)
+        # If DB fetch fails and no external data was available, set a comprehensive error
         if not context["librivox_audiobooks"] and not context["archive_genre_audiobooks"] and not context["creator_audiobooks"]:
             context["error_message"] = "Failed to load any audiobooks at this time. Please try again later."
-            if not messages.get_messages(request) and not audiobook_data:
+            # Add a Django message as well if no other messages are present and external data wasn't found
+            if not messages.get_messages(request) and audiobook_data is None:
                 messages.error(request, "We encountered an issue loading audiobook data.")
 
     return render(request, "audiobooks/English/English_Home.html", context)
@@ -360,9 +385,9 @@ def _render_genre_or_language_page(request, page_type, display_name, template_na
     """
     context = _get_full_context(request)
     cache_key = 'librivox_archive_audiobooks_data_v5' # For external books
-    
+
     external_audiobook_data = cache.get(cache_key)
-    
+
     context["display_name"] = display_name
     context["audiobooks_list"] = [] # For external books
     context["creator_audiobooks"] = [] # For creator books
@@ -370,11 +395,12 @@ def _render_genre_or_language_page(request, page_type, display_name, template_na
 
     # --- Populate external (Archive.org) audiobooks for the specific genre/language ---
     if external_audiobook_data:
-        print(f"CACHE HIT for _render_genre_or_language_page (external): Using cached data (key: {cache_key}).")
+        logger.info(f"CACHE HIT for _render_genre_or_language_page (external): Using cached data (key: {cache_key}).")
         source_dict = external_audiobook_data.get(cache_key_segment, {})
         context["audiobooks_list"] = source_dict.get(query_term, [])
     else:
-        print(f"CACHE MISS for _render_genre_or_language_page (external): No data in cache (key: {cache_key}).")
+        logger.warning(f"CACHE MISS for _render_genre_or_language_page (external): No data in cache (key: {cache_key}).")
+        # Set a user-friendly message if external data is not available
         context["error_message"] = (
             f"External listings for {display_name} are currently being updated. "
             "Please check back shortly. In the meantime, enjoy content from our creators!"
@@ -390,16 +416,21 @@ def _render_genre_or_language_page(request, page_type, display_name, template_na
 
         creator_books_query = Audiobook.objects.filter(status='PUBLISHED')
 
-        if page_type == "genre": # English Genre pages
+        if page_type == "genre": # English Genre pages - ensure English language
             creator_books_query = creator_books_query.filter(
-                language__iexact='English', 
+                language__iexact='English',
                 genre__iexact=query_term # query_term is the specific genre name
             )
-        elif page_type == "language": # Urdu, Punjabi, Sindhi pages
+        elif page_type == "language": # Urdu, Punjabi, Sindhi pages - filter by language
             creator_books_query = creator_books_query.filter(
                 language__iexact=query_term # query_term is the language name
             )
-        
+        else:
+             # Handle unexpected page_type - should not happen with correct URL patterns
+             logger.error(f"Unexpected page_type '{page_type}' in _render_genre_or_language_page.")
+             # You might want to return a 404 or an error here
+             pass # Continue, but the queryset will likely be empty
+
         creator_books_qs = creator_books_query.select_related('creator').prefetch_related(
             first_chapter_prefetch,
             Prefetch('reviews', queryset=Review.objects.select_related('user').order_by('-created_at'))
@@ -414,41 +445,43 @@ def _render_genre_or_language_page(request, page_type, display_name, template_na
                 first_chapter_title = first_chapter.chapter_name
                 if first_chapter.audio_file:
                     first_chapter_audio_url = first_chapter.audio_file.url
-            
+
             creator_books_list.append({
-                'source': 'creator', 
-                'title': book.title, 
+                'source': 'creator',
+                'title': book.title,
                 'slug': book.slug,
                 'cover_image': book.cover_image.url if book.cover_image else None,
-                'author': book.author, 
+                'author': book.author,
                 'creator': book.creator,
                 'first_chapter_audio_url': first_chapter_audio_url,
                 'first_chapter_title': first_chapter_title,
-                'is_creator_book': True, 
+                'is_creator_book': True,
                 'average_rating': book.average_rating,
-                'total_views': book.total_views, 
+                'total_views': book.total_views,
                 'is_paid': book.is_paid,
-                'price': book.price, 
+                'price': book.price,
                 'status': book.status,
                 'language': book.language, # Include for consistency
-                'genre': book.genre 
+                'genre': book.genre
             })
         context["creator_audiobooks"] = creator_books_list
 
+        # If no audiobooks are found from any source, set a general error message
         if not creator_books_list and not context["audiobooks_list"]:
-            if not context["error_message"]:
+            if not context["error_message"]: # Avoid overwriting cache miss message
                  context["error_message"] = f"No audiobooks found for {display_name} at the moment."
 
 
     except Exception as db_err:
-        print(f"Error fetching creator audiobooks for {page_type} '{display_name}': {db_err}")
         logger.error(f"Error fetching creator audiobooks for {page_type} '{display_name}': {db_err}", exc_info=True)
+        # If DB fetch fails and no external data was available, set a comprehensive error
         if not context["audiobooks_list"] and not context["creator_audiobooks"]: # If both external and creator lists are empty
             context["error_message"] = f"Failed to load audiobooks for {display_name}. Please try again later."
             # Avoid duplicate messages if cache miss already set one
-            if not messages.get_messages(request) and not external_audiobook_data : 
-                messages.error(request, f"We encountered an issue loading data for {display_name}.")
-                
+            if not messages.get_messages(request) and external_audiobook_data is None:
+                 messages.error(request, f"We encountered an issue loading data for {display_name}.")
+
+
     return render(request, template_name, context)
 
 
@@ -458,17 +491,17 @@ def audiobook_detail(request, audiobook_slug):
     audiobook_data = None
     is_creator_book = False
     context = _get_full_context(request)
-    template_name = 'audiobook_detail.html' # Default for external
-    
+    template_name = 'audiobook_detail.html' # Default for external books
+
     reviews_list = [] # To store all reviews for display
     user_review_object = None # Stores the review object if the current user has reviewed
-    current_user_has_reviewed = False # NEW: Direct boolean flag
+    current_user_has_reviewed = False # Direct boolean flag
 
     # This dictionary is primarily for JS consumption via JSON, e.g., pre-filling an edit form
     user_review_data_for_json = {
-        "has_reviewed": False, 
-        "rating": 0, 
-        "comment": "", 
+        "has_reviewed": False,
+        "rating": 0,
+        "comment": "",
         "user_id": None
     }
     if request.user.is_authenticated and hasattr(request.user, 'user_id'):
@@ -486,7 +519,7 @@ def audiobook_detail(request, audiobook_slug):
             Audiobook.objects.prefetch_related(
                 Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order')),
                 Prefetch('reviews', queryset=Review.objects.select_related('user').order_by('-created_at'))
-            ).select_related('creator'),
+            ).select_related('creator'), # Select related creator for efficiency
             slug=audiobook_slug
         )
         is_creator_book = True
@@ -501,7 +534,7 @@ def audiobook_detail(request, audiobook_slug):
             try:
                 user_review_object = Review.objects.get(audiobook=audiobook_obj, user=request.user)
                 current_user_has_reviewed = True # Set the direct boolean flag
-                
+
                 # Populate the dictionary for JSON (e.g., for pre-filling an edit form via JS)
                 user_review_data_for_json["has_reviewed"] = True
                 user_review_data_for_json["rating"] = user_review_object.rating
@@ -523,31 +556,33 @@ def audiobook_detail(request, audiobook_slug):
         if audiobook_obj.is_paid:
             if request.user.is_authenticated and hasattr(request.user, 'has_purchased_audiobook'):
                 user_has_purchased = request.user.has_purchased_audiobook(audiobook_obj)
-            
+
             if not user_has_purchased:
                 # Check for premium subscription preview access
-                is_premium_subscriber = (request.user.is_authenticated and 
-                                         hasattr(request.user, 'subscription_type') and 
+                is_premium_subscriber = (request.user.is_authenticated and
+                                         hasattr(request.user, 'subscription_type') and
                                          request.user.subscription_type == 'PR')
 
-                if audiobook_obj.preview_chapters > 0 : # Check if any chapters are set for preview
-                    can_preview_chapters = True 
+                # Determine if preview chapters are available and the message
+                if audiobook_obj.preview_chapters > 0: # Check if any chapters are set for preview
+                    can_preview_chapters = True
                     preview_chapter_count = audiobook_obj.preview_chapters
                     plural_s = "s" if preview_chapter_count > 1 else ""
                     if is_premium_subscriber:
                          audiobook_lock_message = (
-                            f"This is a premium audiobook. Purchase for full access (PKR {audiobook_obj.price:.2f}). "
-                            f"As a premium member, you can preview the first {preview_chapter_count} chapter{plural_s}."
-                        )
+                             f"This is a premium audiobook. Purchase for full access (PKR {audiobook_obj.price:.2f}). "
+                             f"As a premium member, you can preview the first {preview_chapter_count} chapter{plural_s}."
+                         )
                     else:
-                        audiobook_lock_message = (
-                            f"This is a premium audiobook. Purchase for full access (PKR {audiobook_obj.price:.2f}). "
-                            f"You can preview the first {preview_chapter_count} chapter{plural_s}."
-                        )
+                         audiobook_lock_message = (
+                             f"This is a premium audiobook. Purchase for full access (PKR {audiobook_obj.price:.2f}). "
+                             f"You can preview the first {preview_chapter_count} chapter{plural_s}."
+                         )
                 else: # No chapters are set for preview
                     can_preview_chapters = False
                     audiobook_lock_message = f"This is a premium audiobook. Purchase for full access (PKR {audiobook_obj.price:.2f}). No preview chapters available."
-        
+
+        # Prepare chapters to display based on access
         all_db_chapters = audiobook_obj.chapters.all().order_by('chapter_order')
         preview_limit = audiobook_obj.preview_chapters if audiobook_obj.is_paid and not user_has_purchased and can_preview_chapters else 0
 
@@ -557,15 +592,15 @@ def audiobook_detail(request, audiobook_slug):
                 is_accessible = True
             elif can_preview_chapters and i < preview_limit: # Preview allowed chapters
                 is_accessible = True
-            
+
             chapters_to_display.append({
-                'object': chapter_obj, 
+                'object': chapter_obj, # Pass the actual chapter object
                 'is_accessible': is_accessible,
                 'audio_url': chapter_obj.audio_file.url if chapter_obj.audio_file else None,
                 'chapter_title': chapter_obj.chapter_name,
                 'is_preview_eligible': i < preview_limit if audiobook_obj.is_paid and not user_has_purchased else False,
-                'duration': getattr(chapter_obj, 'duration', None), 
-                'chapter_index': i 
+                'duration': getattr(chapter_obj, 'duration', None), # Use getattr for safety
+                'chapter_index': i # Include index for potential JS use
             })
 
     except Http404:
@@ -575,6 +610,7 @@ def audiobook_detail(request, audiobook_slug):
         found_external_book = None
 
         if external_audiobook_data_cache:
+            # Check all external sources in the cache
             for source_key in ["librivox_audiobooks", "archive_genre_audiobooks", "archive_language_audiobooks"]:
                 if source_key == "librivox_audiobooks":
                     item_list = external_audiobook_data_cache.get(source_key, [])
@@ -588,54 +624,67 @@ def audiobook_detail(request, audiobook_slug):
                             if book_dict.get('slug') == audiobook_slug:
                                 found_external_book = book_dict
                                 break
-                        if found_external_book: break
-                if found_external_book: break
-        
+                        if found_external_book: break # Break inner loop
+                if found_external_book: break # Break outer loop
+
         if found_external_book:
-            audiobook_data = found_external_book 
+            audiobook_data = found_external_book
             is_creator_book = False # It's an external book
-            template_name = 'audiobook_detail.html' 
-            
+            template_name = 'audiobook_detail.html' # Use generic detail template
+
             # For external books, reviews from our DB are not applicable, and user cannot have reviewed it in our system
-            reviews_list = [] 
+            reviews_list = []
             user_review_object = None
             current_user_has_reviewed = False # Explicitly false
             user_review_data_for_json["has_reviewed"] = False # Reset for external books
 
+            # Prepare chapters for display from the external data structure
             if 'chapters' in audiobook_data:
                 for i, ch_info in enumerate(audiobook_data.get('chapters', [])):
                     chapters_to_display.append({
-                        'object': None, 
+                        'object': None, # No Django object for external chapters
                         'chapter_title': ch_info.get('chapter_title'),
-                        'audio_url': ch_info.get('audio_url'), 
-                        'is_accessible': True, 
-                        'is_preview_eligible': False, 
-                        'duration': ch_info.get('duration'), 
-                        'chapter_index': i
+                        'audio_url': ch_info.get('audio_url'),
+                        'is_accessible': True, # External books are assumed free/accessible
+                        'is_preview_eligible': False, # N/A for external books
+                        'duration': ch_info.get('duration'), # Use duration from external data if available
+                        'chapter_index': i # Include index
                     })
+            else:
+                # If external book data was found but has no chapters, it's an issue
+                messages.error(request, "Audiobook found, but chapter data is missing.")
+                logger.error(f"External audiobook with slug '{audiobook_slug}' found in cache but has no chapter data.")
+                raise Http404("Audiobook chapters not available.") # Raise 404 as the content is incomplete
+
         else:
+            # If not found in DB or cache
             messages.error(request, "Audiobook not found or is not available.")
             logger.warning(f"Audiobook with slug '{audiobook_slug}' not found in DB or cache.")
             raise Http404("Audiobook not found or is not available.")
-    
+
+    # Add data to context
     context['audiobook'] = audiobook_data
     context['is_creator_book'] = is_creator_book
     context['reviews'] = reviews_list # Pass the list of all reviews
     context['user_review_object'] = user_review_object # The current user's review object (or None)
-    context['current_user_has_reviewed'] = current_user_has_reviewed # NEW: Direct boolean flag
+    context['current_user_has_reviewed'] = current_user_has_reviewed # Direct boolean flag
     context['user_review_data_json'] = json.dumps(user_review_data_for_json) # For JS (e.g. edit form)
     context['user_has_purchased'] = user_has_purchased
     context['chapters_to_display'] = chapters_to_display
     context['audiobook_lock_message'] = audiobook_lock_message
 
+    # Add Stripe key if available in settings
     if hasattr(settings, 'STRIPE_PUBLISHABLE_KEY'):
         context['STRIPE_PUBLISHABLE_KEY'] = settings.STRIPE_PUBLISHABLE_KEY
-    
+
+    # Ensure consistent data structure for external books in context if needed in template
     if not is_creator_book and isinstance(audiobook_data, dict):
         audiobook_data.setdefault('author', 'Unknown Author')
         audiobook_data.setdefault('source', 'External Source')
-        if isinstance(audiobook_data.get('cover_image'), dict): 
-            audiobook_data['cover_image'] = audiobook_data['cover_image'].get('url')
+        # Ensure cover_image is a URL string if it came in as a dict from some sources
+        if isinstance(audiobook_data.get('cover_image'), dict):
+             audiobook_data['cover_image'] = audiobook_data['cover_image'].get('url')
+
 
     return render(request, template_name, context)
 
@@ -686,16 +735,16 @@ def sindhi_page(request):
 def stream_audio(request):
     """Streams audio content from a given URL, handling local and external files."""
     # --- ADD THIS LINE FOR DEBUGGING ---
-    print(f"--- stream_audio VIEW HIT --- Request: {request.method} {request.get_full_path()}") 
-    
+    logger.info(f"--- stream_audio VIEW HIT --- Request: {request.method} {request.get_full_path()}")
+
     audio_url_param = request.GET.get("url")
     if not audio_url_param: # Handles empty string or None
-        print(f"stream_audio: No audio URL provided in query parameter. Path: {request.get_full_path()}")
+        logger.warning(f"stream_audio: No audio URL provided in query parameter. Path: {request.get_full_path()}")
         return JsonResponse({"error": "No audio URL provided"}, status=400)
 
     target_audio_url = audio_url_param # Django's request.GET already URL-decodes query params
     parsed_url = urlparse(target_audio_url)
-    
+
     # Check if it's a local media URL (relative path starting with MEDIA_URL)
     # This logic might need adjustment based on how you store/serve creator-uploaded audio
     is_local_media = target_audio_url.startswith(settings.MEDIA_URL) and not parsed_url.scheme and not parsed_url.netloc
@@ -705,27 +754,27 @@ def stream_audio(request):
             # If it's a relative media URL, build the full absolute URI
             if not target_audio_url.startswith(('http://', 'https://')):
                 target_audio_url = request.build_absolute_uri(target_audio_url)
-            print(f"Streaming local audio URL: {audio_url_param} -> {target_audio_url}")
+            logger.info(f"Streaming local audio URL: {audio_url_param} -> {target_audio_url}")
         except Exception as build_err:
-            print(f"Error building absolute URL for local audio {audio_url_param}: {build_err}")
+            logger.error(f"Error building absolute URL for local audio {audio_url_param}: {build_err}", exc_info=True)
             return HttpResponse("Error processing local audio URL", status=500)
-    elif not all([parsed_url.scheme, parsed_url.netloc]): 
+    elif not all([parsed_url.scheme, parsed_url.netloc]):
         # If it's not local and not a full external URL (e.g., missing scheme like 'http')
-        print(f"Invalid audio URL provided (not local media, not a full external URL): {audio_url_param}")
+        logger.warning(f"Invalid audio URL provided (not local media, not a full external URL): {audio_url_param}")
         return HttpResponse(f"Invalid audio URL provided: {audio_url_param}", status=400)
     else:
         # It's an external URL
-        print(f"Streaming external audio URL: {target_audio_url}") # target_audio_url is already decoded here
+        logger.info(f"Streaming external audio URL: {target_audio_url}") # target_audio_url is already decoded here
 
     try:
         range_header = request.headers.get('Range', None)
         # Use a generic user-agent or one specific to your app
         user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "audiox.com" # Fallback
         proxy_headers = {'User-Agent': f'AudioXApp Audio Proxy/1.0 (+http://{user_agent_host})'}
-        
+
         if range_header:
             proxy_headers['Range'] = range_header
-            print(f"Streaming with Range header: {range_header} for URL: {target_audio_url}")
+            logger.info(f"Streaming with Range header: {range_header} for URL: {target_audio_url}")
 
         audio_stream_timeout = 45 # seconds
         # Make the request to the actual audio source
@@ -740,21 +789,21 @@ def stream_audio(request):
                 content_type = guessed_type
             else:
                 content_type = 'audio/mpeg' # Default if unsure
-            print(f"Determined audio content type: {content_type} for URL {target_audio_url}")
+            logger.info(f"Determined audio content type: {content_type} for URL {target_audio_url}")
 
         # Stream the content
         def generate_audio_chunks():
             try:
                 for chunk in response.iter_content(chunk_size=8192):
-                    if chunk: 
+                    if chunk:
                         yield chunk
             except Exception as e_gen:
-                print(f"Error during audio streaming generation for {target_audio_url}: {e_gen}")
+                logger.error(f"Error during audio streaming generation for {target_audio_url}: {e_gen}", exc_info=True)
             finally:
                 response.close() # Ensure the response is closed
 
         streaming_response = StreamingHttpResponse(generate_audio_chunks(), content_type=content_type)
-        
+
         # Pass through relevant headers for seeking and content length
         if 'Content-Range' in response.headers:
             streaming_response['Content-Range'] = response.headers['Content-Range']
@@ -762,36 +811,37 @@ def stream_audio(request):
             streaming_response['Content-Length'] = response.headers['Content-Length']
         streaming_response['Accept-Ranges'] = 'bytes' # Important for seeking
         streaming_response.status_code = response.status_code # Usually 200 or 206 for ranged requests
-        
-        print(f"Successfully streaming {content_type} from {target_audio_url} with status {streaming_response.status_code}")
+
+        logger.info(f"Successfully streaming {content_type} from {target_audio_url} with status {streaming_response.status_code}")
         return streaming_response
 
     except requests.exceptions.Timeout:
-        print(f"Audio stream request TIMED OUT for {target_audio_url}")
+        logger.error(f"Audio stream request TIMED OUT for {target_audio_url}")
         return HttpResponse("Audio stream timed out from external source", status=408) # Request Timeout
     except requests.exceptions.HTTPError as e_http:
-        print(f"HTTP error {e_http.response.status_code} fetching audio from {target_audio_url}: {e_http.response.text[:200]}")
+        logger.error(f"HTTP error {e_http.response.status_code} fetching audio from {target_audio_url}: {e_http.response.text[:200]}", exc_info=True)
         # Return a more specific error to the client if possible
         return HttpResponse(f"Error fetching audio from external source: Status {e_http.response.status_code}", status=e_http.response.status_code)
     except requests.exceptions.RequestException as e_req:
-        print(f"Request error fetching audio from {target_audio_url}: {e_req}")
+        logger.error(f"Request error fetching audio from {target_audio_url}: {e_req}", exc_info=True)
         return HttpResponse("Error processing audio stream (could not connect to external source)", status=502) # Bad Gateway
-    except SuspiciousOperation as e_susp: 
-        print(f"Suspicious audio stream request for {target_audio_url}: {e_susp}")
+    except SuspiciousOperation as e_susp:
+        logger.warning(f"Suspicious audio stream request for {target_audio_url}: {e_susp}")
         return JsonResponse({"error": str(e_susp)}, status=400)
     except Exception as e_stream:
-        print(f"Unexpected error during audio streaming for {target_audio_url}: {e_stream}")
+        logger.error(f"Unexpected error during audio streaming for {target_audio_url}: {e_stream}", exc_info=True)
         # Log the full traceback here for better debugging in production
-        import traceback
-        traceback.print_exc()
+        # import traceback # Already imported logging, can use exc_info=True
+        # traceback.print_exc()
         return HttpResponse("Internal server error during audio streaming", status=500)
 
 
-@csrf_exempt 
+@csrf_exempt # Typically okay for a GET request that proxies content
 def fetch_cover_image(request):
     """Proxies external and local cover images."""
     image_url = request.GET.get("url")
     if not image_url:
+        logger.warning("fetch_cover_image: No image URL provided in query parameter.")
         return JsonResponse({"error": "No image URL provided"}, status=400)
 
     target_image_url = image_url
@@ -802,20 +852,23 @@ def fetch_cover_image(request):
         try:
             if not target_image_url.startswith(('http://', 'https://')):
                 target_image_url = request.build_absolute_uri(target_image_url)
-            print(f"Processing local image URL: {image_url} -> {target_image_url}")
+            logger.info(f"Processing local image URL: {image_url} -> {target_image_url}")
         except Exception as build_err:
-            print(f"Error building absolute URL for local image {image_url}: {build_err}")
+            logger.error(f"Error building absolute URL for local image {image_url}: {build_err}", exc_info=True)
             return HttpResponse("Error processing local image URL", status=500)
     elif not all([parsed_url.scheme, parsed_url.netloc]):
-        print(f"Invalid image URL provided (not local media, not a full external URL): {image_url}")
+        logger.warning(f"Invalid image URL provided (not local media, not a full external URL): {image_url}")
         return HttpResponse("Invalid image URL provided", status=400)
     else:
-        print(f"Processing external image URL: {image_url}")
+        logger.info(f"Processing external image URL: {image_url}")
 
     try:
-        proxy_headers = {'User-Agent': f'AudioXApp Image Proxy/1.0 (+http://{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "YourDomain.com"})'}
-        image_fetch_timeout = 30 
-        
+        # Set a general User-Agent for proxied requests
+        user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "AudioXApp.com" # Fallback
+        proxy_headers = {'User-Agent': f'AudioXApp Image Proxy/1.0 (+http://{user_agent_host})'}
+
+        image_fetch_timeout = 30 # seconds
+
         response = requests.get(target_image_url, stream=True, timeout=image_fetch_timeout, headers=proxy_headers)
         response.raise_for_status()
 
@@ -825,9 +878,9 @@ def fetch_cover_image(request):
             if guessed_type and guessed_type.startswith('image/'):
                 content_type = guessed_type
             else:
-                content_type = 'image/jpeg' 
-            print(f"Determined image content type: {content_type} for URL {target_image_url}")
-        
+                content_type = 'image/jpeg' # Default if unsure
+            logger.info(f"Determined image content type: {content_type} for URL {target_image_url}")
+
         streaming_response = StreamingHttpResponse(
             response.iter_content(chunk_size=8192), content_type=content_type
         )
@@ -837,38 +890,43 @@ def fetch_cover_image(request):
         return streaming_response
 
     except requests.exceptions.Timeout:
-        print(f"Image fetch TIMED OUT for {target_image_url}")
-        return HttpResponse("Image fetch timed out", status=408)
+        logger.error(f"Image fetch TIMED OUT for {target_image_url}")
+        return HttpResponse("Image fetch timed out", status=408) # Request Timeout
     except requests.exceptions.HTTPError as e_http:
-        print(f"HTTP error {e_http.response.status_code} fetching image from {target_image_url}")
+        logger.error(f"HTTP error {e_http.response.status_code} fetching image from {target_image_url}", exc_info=True)
         return HttpResponse(f"Error fetching image: {e_http.response.status_code}", status=e_http.response.status_code)
     except requests.exceptions.RequestException as e_req:
-        print(f"Request error fetching image from {target_image_url}: {e_req}")
-        return HttpResponse("Failed to fetch image", status=502) 
+        logger.error(f"Request error fetching image from {target_image_url}: {e_req}", exc_info=True)
+        return HttpResponse("Failed to fetch image", status=502) # Bad Gateway
     except SuspiciousOperation as e_susp:
-        print(f"Suspicious image request for {target_image_url}: {e_susp}")
+        logger.warning(f"Suspicious image request for {target_image_url}: {e_susp}")
         return JsonResponse({"error": str(e_susp)}, status=400)
     except Exception as e_img:
-        print(f"Unexpected error during image fetch for {target_image_url}: {e_img}")
+        logger.error(f"Unexpected error during image fetch for {target_image_url}: {e_img}", exc_info=True)
         return HttpResponse("Internal server error", status=500)
 
 
 @login_required
 @require_POST
-@csrf_protect 
+@csrf_protect
 def add_review(request, audiobook_slug):
     """
-    Handles adding or updating a review for an audiobook.
+    Handles adding or updating a review for a creator-uploaded audiobook.
     Expects a JSON payload with 'rating' and 'comment'.
     """
     logger.info(f"add_review attempt for slug: {audiobook_slug} by user: {request.user.username}")
     try:
-        # Fetch the audiobook. Allow reviews for any published audiobook.
+        # Fetch the audiobook. Allow reviews only for published creator audiobooks.
         audiobook = get_object_or_404(
-            Audiobook, 
+            Audiobook,
             slug=audiobook_slug,
             status='PUBLISHED' # Ensure reviews are only for published audiobooks
         )
+        # Also ensure it's a creator book, not an external one
+        if not hasattr(audiobook, 'creator') or not audiobook.creator:
+             logger.warning(f"Attempted to add review to non-creator audiobook '{audiobook.title}' (slug: {audiobook_slug}) by user {request.user.username}.")
+             return JsonResponse({'status': 'error', 'message': 'Reviews are only supported for creator-uploaded audiobooks.'}, status=400)
+
         logger.debug(f"Audiobook found: {audiobook.title} (ID: {audiobook.audiobook_id})")
 
         # Check if the user is allowed to review this audiobook.
@@ -883,16 +941,16 @@ def add_review(request, audiobook_slug):
                 logger.debug(f"User {request.user.username} has purchased '{audiobook.title}'. Allowing review.")
             else:
                 logger.warning(f"User {request.user.username} has NOT purchased paid audiobook '{audiobook.title}'. Denying review.")
-        
+
         if not can_review:
             return JsonResponse({
-                'status': 'error', 
+                'status': 'error',
                 'message': 'You must purchase this audiobook or it must be free to leave a review.'
             }, status=403) # Forbidden
 
         try:
             data = json.loads(request.body)
-            rating_str = data.get('rating') 
+            rating_str = data.get('rating')
             comment = data.get('comment', '').strip() # Default to empty string if not provided
             logger.debug(f"Review submission data from user {request.user.username}: rating='{rating_str}', comment length={len(comment)}")
         except json.JSONDecodeError:
@@ -900,11 +958,11 @@ def add_review(request, audiobook_slug):
             return JsonResponse({'status': 'error', 'message': 'Invalid JSON format in request body.'}, status=400)
 
         try:
-            rating = int(rating_str) 
+            rating = int(rating_str)
             if not 1 <= rating <= 5:
                 # This validation should ideally also be in a Django Form if you were using one.
                 raise ValueError("Rating must be between 1 and 5.")
-        except (ValueError, TypeError) as e_rating: 
+        except (ValueError, TypeError) as e_rating:
             logger.warning(f"Invalid rating value '{rating_str}' from user {request.user.username} for slug {audiobook_slug}: {e_rating}")
             return JsonResponse({'status': 'error', 'message': 'Invalid rating value. Please provide a whole number between 1 and 5.'}, status=400)
 
@@ -912,22 +970,23 @@ def add_review(request, audiobook_slug):
         with transaction.atomic():
             review, created = Review.objects.update_or_create(
                 audiobook=audiobook,
-                user=request.user, 
+                user=request.user,
                 defaults={'rating': rating, 'comment': comment}
             )
             logger.info(f"Review {'created' if created else 'updated'} (ID: {review.review_id}) for audiobook ID {audiobook.audiobook_id} by user {request.user.username}.")
-        
+
         # The audiobook.average_rating property will calculate the new average on next access.
         # No explicit refresh of audiobook instance is strictly needed for this property if it's well-defined.
-        new_average_rating = audiobook.average_rating 
+        new_average_rating = audiobook.average_rating
 
         message = "Review updated successfully!" if not created else "Review added successfully!"
-        
+
+        # Prepare review data for the JSON response, including user info
         user_profile_pic_url = None
         if hasattr(review.user, 'profile_pic') and review.user.profile_pic:
             try:
                 user_profile_pic_url = review.user.profile_pic.url
-            except ValueError: 
+            except ValueError:
                 logger.warning(f"Could not get profile_pic URL for user {review.user.username} during review response.")
                 pass # Silently ignore if URL cannot be generated
 
@@ -935,19 +994,19 @@ def add_review(request, audiobook_slug):
             'review_id': review.review_id,
             'rating': review.rating,
             'comment': review.comment or "", # Ensure comment is a string
-            'user_id': review.user.user_id, 
-            'user_name': getattr(review.user, 'full_name', review.user.username) or review.user.username,
+            'user_id': getattr(review.user, 'user_id', getattr(review.user, 'id', None)), # Use user_id if available, fallback to id
+            'user_name': getattr(review.user, 'full_name', review.user.username) or review.user.username, # Prefer full_name, fallback to username
             'user_profile_pic': user_profile_pic_url,
-            'created_at': review.created_at.isoformat(), 
-            'timesince': timesince(review.created_at) + " ago", 
+            'created_at': review.created_at.isoformat(), # Use ISO format for easy parsing in JS
+            'timesince': timesince(review.created_at) + " ago", # Use timesince for display
         }
-        
+
         logger.info(f"Successfully processed review for '{audiobook.title}'. Average rating now: {new_average_rating}")
         return JsonResponse({
             'status': 'success',
             'message': message,
             'created': created,
-            'new_average_rating': str(new_average_rating) if new_average_rating is not None else "0.0", 
+            'new_average_rating': str(new_average_rating) if new_average_rating is not None else "0.0", # Ensure decimal is sent as string
             'review_data': review_data
         })
 
@@ -959,7 +1018,7 @@ def add_review(request, audiobook_slug):
         logger.error(f"Unexpected error in add_review for slug {audiobook_slug}, user {request.user.username}: {type(e_review).__name__} - {str(e_review)}", exc_info=True)
         return JsonResponse({'status': 'error', 'message': 'An unexpected server error occurred. Please try again.'}, status=500)
 
-# Static Pages
+# Static Pages (using the helper function for context)
 def ourteam(request): return render(request, 'company/ourteam.html', _get_full_context(request))
 def paymentpolicy(request): return render(request, 'legal/paymentpolicy.html', _get_full_context(request))
 def privacypolicy(request): return render(request, 'legal/privacypolicy.html', _get_full_context(request))

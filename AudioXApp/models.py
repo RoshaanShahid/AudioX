@@ -11,15 +11,14 @@ from django.utils.text import slugify
 from decimal import Decimal
 import os
 import uuid
-from django.conf import settings
-from datetime import timedelta
-from django.db.models import Avg, Sum, F, Prefetch, Q # Added Q for conditional unique constraint
-from django.db import transaction # Added for atomic transactions
-from django.core.files.storage import default_storage # Added for Audiobook first_chapter_audio_url
+from django.conf import settings # Keep this import
+from datetime import timedelta # Keep this import
+from django.db.models import Avg, Sum, F, Prefetch, Q # Combine Avg, Sum, F, Prefetch from incoming and Q from HEAD
+from django.db import transaction # Keep this import
+from django.core.files.storage import default_storage # Keep this import from HEAD
 
-import logging # Added for logging within models if needed
+import logging # Keep this import from HEAD
 logger = logging.getLogger(__name__)
-
 
 # Helper functions (creator_cnic_path, creator_profile_pic_path remain the same)
 def creator_cnic_path(instance, filename):

@@ -1,5 +1,5 @@
 # AudioXApp/urls.py
-from django.urls import path
+from django.urls import path, include # Ensure include is imported if you use it elsewhere
 from .views import auth_views, user_views, creator_views, admin_views, content_views
 from django.conf import settings
 from django.conf.urls.static import static # Keep this for DEBUG media serving
@@ -12,8 +12,9 @@ urlpatterns = [
     # The 'home' view now serves the English homepage, typically at the root.
     # If this app's urls are included under a prefix (e.g., 'app/'), this will be 'app/'
     # If this is the project's root urls.py, this will be the site root.
-    path('', content_views.home, name='home'),  # CHANGED: From 'Home/' to ''
+    path('', content_views.home, name='home'), # This correctly maps the root of this app's URLconf
 
+    # General Static Pages
     path('ourteam/', content_views.ourteam, name='ourteam'),
     path('paymentpolicy/', content_views.paymentpolicy, name='paymentpolicy'),
     path('privacypolicy/', content_views.privacypolicy, name='privacypolicy'),
@@ -21,8 +22,12 @@ urlpatterns = [
     path('termsandconditions/', content_views.termsandconditions, name='termsandconditions'),
     path('aboutus/', content_views.aboutus, name='aboutus'),
     path('contactus/', content_views.contactus, name='contactus'),
+
+    # Audio Streaming and Image Proxy
     path("stream_audio/", content_views.stream_audio, name="stream_audio"),
     path("fetch_cover_image/", content_views.fetch_cover_image, name="fetch_cover_image"),
+
+    # Audiobook Detail and Reviews
     path('audiobook/<slug:audiobook_slug>/', content_views.audiobook_detail, name='audiobook_detail'),
     path('audiobook/<slug:audiobook_slug>/add_review/', content_views.add_review, name='add_review'),
 
@@ -35,7 +40,7 @@ urlpatterns = [
     # --- English Genre Pages ---
     # These URLs will serve pages for English genres.
     # The views now point to templates inside 'audiobooks/English/'
-    path('genre/fiction/', content_views.genre_fiction, name='genre_fiction'), # Added genre/ prefix for clarity
+    path('genre/fiction/', content_views.genre_fiction, name='genre_fiction'),
     path('genre/mystery/', content_views.genre_mystery, name='genre_mystery'),
     path('genre/thriller/', content_views.genre_thriller, name='genre_thriller'),
     path('genre/scifi/', content_views.genre_scifi, name='genre_scifi'),
@@ -45,7 +50,7 @@ urlpatterns = [
     path('genre/history/', content_views.genre_history, name='genre_history'),
     path('genre/selfhelp/', content_views.genre_selfhelp, name='genre_selfhelp'),
     path('genre/business/', content_views.genre_business, name='genre_business'),
-    # path('genre/<slug:genre_slug>/', content_views.genre_detail, name='genre_detail'), # Original generic genre URL
+    # path('genre/<slug:genre_slug>/', content_views.genre_detail, name='genre_detail'), # Original generic genre URL - commented out as specific ones are defined
 
     # --- Auth Views ---
     path('logout/', auth_views.logout_view, name='logout'),
@@ -122,9 +127,15 @@ urlpatterns = [
     path('admin/creators/<int:user_id>/reject/', creator_views.admin_reject_creator, name='admin_reject_creator'),
     path('admin/creators/<int:user_id>/ban/', creator_views.admin_ban_creator, name='admin_ban_creator'),
     path('admin/creators/<int:user_id>/unban/', creator_views.admin_unban_creator, name='admin_unban_creator'),
+
+    # Removed duplicated language and genre paths that were at the end of the file.
+    # The correct paths are defined above (e.g., path('urdu/', ...), path('genre/fiction/', ...)).
+
 ]
 
-# Static and Media file serving
-urlpatterns += staticfiles_urlpatterns() # For serving static files
+# Static and Media file serving (for development)
+# Use staticfiles_urlpatterns for static files served by Django's dev server
+urlpatterns += staticfiles_urlpatterns()
+# Use static() for media files served by Django's dev server in DEBUG mode
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
