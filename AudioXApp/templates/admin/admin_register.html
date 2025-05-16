@@ -12,7 +12,6 @@
 <body class="min-h-screen bg-theme-bg-subtle font-inter">
 
     <div class="flex flex-col md:flex-row min-h-screen">
-
         <div class="w-full md:w-2/5 lg:w-1/3 bg-theme-primary text-white p-8 md:p-12 flex flex-col justify-between">
             <div>
                 <div class="flex items-center text-3xl font-extrabold tracking-tight mb-8">
@@ -55,7 +54,7 @@
                             <label for="email_prefix" class="block text-sm font-medium text-theme-text-secondary mb-1">
                                 Email Address <span class="text-red-500">*</span>
                             </label>
-                            <div class="flex mt-1 rounded-md shadow-sm">
+                            <div class="flex mt-1 rounded-md shadow-sm input-group">
                                 <div class="relative flex-grow focus-within:z-10">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fas fa-envelope text-gray-400 w-5 h-5"></i>
@@ -74,7 +73,7 @@
                             <label for="username_prefix" class="block text-sm font-medium text-theme-text-secondary mb-1">
                                 Username <span class="text-red-500">*</span>
                             </label>
-                            <div class="flex mt-1 rounded-md shadow-sm">
+                            <div class="flex mt-1 rounded-md shadow-sm input-group">
                                 <div class="relative flex-grow focus-within:z-10">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fas fa-user text-gray-400 w-5 h-5"></i>
@@ -182,6 +181,7 @@
     </div>
 
     <script>
+    // Get DOM elements
     const form = document.getElementById('admin-register-form');
     const generalErrorDiv = document.getElementById('form-error');
     const generalErrorText = document.getElementById('form-error-text');
@@ -192,20 +192,25 @@
     const successPopup = document.getElementById('success-popup');
     const successPopupBox = document.getElementById('success-popup-box');
 
-
+    /**
+     * Updates hidden email and username fields by combining prefix with domain/suffix.
+     */
     function updateHiddenFields() {
         emailHiddenInput.value = (emailPrefixInput.value.trim() ? emailPrefixInput.value.trim() + '@audiox.com' : '');
         usernameHiddenInput.value = (usernamePrefixInput.value.trim() ? usernamePrefixInput.value.trim() + '_audiox' : '');
     }
 
+    // Add event listeners for input fields to update hidden fields dynamically
     emailPrefixInput.addEventListener('input', updateHiddenFields);
     usernamePrefixInput.addEventListener('input', updateHiddenFields);
 
+    // Form submission event listener
     form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        updateHiddenFields();
-        let isValid = true;
+        event.preventDefault(); // Prevent default form submission
+        updateHiddenFields(); // Ensure hidden fields are up-to-date
+        let isValid = true; // Flag to track form validity
 
+        // Reset general and field-specific error messages and styles
         generalErrorDiv.classList.add('hidden');
         generalErrorText.textContent = '';
         document.querySelectorAll('p[id$="-error"]').forEach(el => {
@@ -214,38 +219,51 @@
         });
         document.querySelectorAll('.form-input, .form-checkbox').forEach(el => {
             el.classList.remove('border-red-500');
+            // Reset label color for non-input-group elements
             el.closest('div:not(.input-group)')?.querySelector('label')?.classList.remove('text-red-600');
         });
+        // Reset styles for input groups (email_prefix, username_prefix)
         document.querySelectorAll('.input-group').forEach(el => {
-            el.classList.remove('border-red-500');
-            el.querySelectorAll('input, span').forEach(child => child.classList.remove('border-red-500'));
-            el.closest('div').querySelector('label')?.classList.remove('text-red-600');
+            el.classList.remove('border-red-500'); // Remove border from the group div
+            el.querySelectorAll('input, span').forEach(child => child.classList.remove('border-red-500')); // Ensure children are also reset
+            el.closest('div').querySelector('label')?.classList.remove('text-red-600'); // Reset label color for the group
         });
 
+        // Reset styles for roles fieldset
         const rolesFieldset = form.querySelector('fieldset:has(input[name="roles"])');
         if (rolesFieldset) {
             rolesFieldset.querySelector('legend')?.classList.remove('text-red-600');
             rolesFieldset.querySelector('.grid')?.classList.remove('ring-2', 'ring-red-500');
         }
 
+        // Get form field values for validation
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('confirm-password');
         const rolesChecked = form.querySelectorAll('input[name="roles"]:checked').length;
 
+        // --- Client-side Validation ---
+
+        // Validate Email Prefix
         if (!emailPrefixInput.value.trim()) {
             document.getElementById('email_prefix-error').textContent = 'Email prefix is required.';
             document.getElementById('email_prefix-error').classList.remove('hidden');
-            emailPrefixInput.closest('.input-group')?.classList.add('border-red-500');
-            emailPrefixInput.classList.add('border-red-500');
+            // Highlight the input group for email
+            emailPrefixInput.closest('.input-group').classList.add('border-red-500'); // Add red border to the group
+            emailPrefixInput.classList.add('border-red-500'); // Also highlight the input itself for consistency
             isValid = false;
         }
+
+        // Validate Username Prefix
         if (!usernamePrefixInput.value.trim()) {
             document.getElementById('username_prefix-error').textContent = 'Username prefix is required.';
             document.getElementById('username_prefix-error').classList.remove('hidden');
-            usernamePrefixInput.closest('.input-group')?.classList.add('border-red-500');
-            usernamePrefixInput.classList.add('border-red-500');
+            // Highlight the input group for username
+            usernamePrefixInput.closest('.input-group').classList.add('border-red-500'); // Add red border to the group
+            usernamePrefixInput.classList.add('border-red-500'); // Also highlight the input itself
             isValid = false;
         }
+
+        // Validate Password
         if (!passwordInput.value) {
             document.getElementById('password-error').textContent = 'Password is required.';
             document.getElementById('password-error').classList.remove('hidden');
@@ -258,6 +276,7 @@
             isValid = false;
         }
 
+        // Validate Confirm Password
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
         const confirmPasswordError = document.getElementById('confirm-password-error');
@@ -270,111 +289,141 @@
             confirmPasswordError.textContent = 'Passwords do not match.';
             confirmPasswordError.classList.remove('hidden');
             confirmPasswordInput.classList.add('border-red-500');
-            passwordInput.classList.add('border-red-500');
+            passwordInput.classList.add('border-red-500'); // Also highlight original password if mismatch
             isValid = false;
         }
 
+        // Validate Roles
         const rolesError = document.getElementById('roles-error');
         const rolesGrid = rolesFieldset?.querySelector('.grid');
         if (rolesChecked === 0) {
             rolesError.textContent = 'Please select at least one role.';
             rolesError.classList.remove('hidden');
-            if (rolesGrid) rolesGrid.classList.add('ring-2', 'ring-red-500', 'rounded-lg');
-            rolesFieldset?.querySelector('legend')?.classList.add('text-red-600');
+            if (rolesGrid) rolesGrid.classList.add('ring-2', 'ring-red-500', 'rounded-lg'); // Add ring to the grid container
+            rolesFieldset?.querySelector('legend')?.classList.add('text-red-600'); // Highlight legend
             isValid = false;
         }
 
+        // If form is not valid, display general error and stop submission
         if (!isValid) {
             generalErrorText.textContent = 'Please correct the errors highlighted below.';
-            generalErrorDiv.classList.remove('hidden');
-            return;
+            generalErrorDiv.classList.remove('hidden'); // Show general error message
+            return; // Stop form submission
         }
 
+        // --- Prepare FormData for Submission ---
         const formData = new FormData(form);
+        // Remove prefix fields as full email/username are in hidden fields
         formData.delete('email_prefix');
         formData.delete('username_prefix');
-        formData.delete('confirm_password');
+        // *** IMPORTANT FIX: DO NOT DELETE confirm_password from FormData ***
+        // The backend needs it for validation.
+        // formData.delete('confirm_password'); // This line was causing the issue.
 
         const url = form.action;
         const submitButton = form.querySelector('button[type="submit"]');
         const originalButtonText = submitButton.innerHTML;
 
+        // Disable button and show loading state
         submitButton.disabled = true;
         submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Creating Account...`;
 
+        // --- Asynchronous Form Submission ---
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }, // For Django to identify AJAX
             });
-            const data = await response.json();
+            const data = await response.json(); // Expect JSON response
 
             if (data.status === 'success') {
+                // Show success popup
                 successPopup.classList.remove('hidden');
-                successPopup.classList.add('flex');
-                requestAnimationFrame(() => {
+                successPopup.classList.add('flex'); // Use flex to center content
+                // Trigger animation for popup box
+                requestAnimationFrame(() => { // Ensures the 'hidden' class is removed before animation starts
                     successPopupBox.classList.remove('scale-95', 'opacity-0');
                     successPopupBox.classList.add('scale-100', 'opacity-100');
                 });
 
-
+                // Redirect after a delay
                 setTimeout(() => {
                     if (data.redirect_url) {
                         window.location.href = data.redirect_url;
                     } else {
+                        // Fallback redirect URL if not provided
                         window.location.href = "{% url 'AudioXApp:adminlogin' %}";
                     }
-                }, 3000);
+                }, 3000); // 3-second delay
             } else {
+                // Handle registration failure (e.g., validation errors from backend)
                 generalErrorText.textContent = data.message || 'Registration failed. Please review the form.';
                 generalErrorDiv.classList.remove('hidden');
 
                 if (data.errors) {
                     for (const field in data.errors) {
+                        // Map backend field names (email, username) to frontend prefix field names for error display
                         const frontendFieldName = (field === 'email') ? 'email_prefix' : (field === 'username') ? 'username_prefix' : field;
                         const errorElement = document.getElementById(`${frontendFieldName}-error`);
-                        const inputElement = document.getElementById(frontendFieldName);
+                        const inputElement = document.getElementById(frontendFieldName) || document.getElementsByName(frontendFieldName)[0];
+
 
                         if (errorElement) {
                             errorElement.textContent = data.errors[field].join ? data.errors[field].join(' ') : data.errors[field];
                             errorElement.classList.remove('hidden');
                         }
+
                         if (inputElement) {
                             inputElement.classList.add('border-red-500');
+                            // Special handling for input groups
                             if (inputElement.closest('.input-group')) {
                                 inputElement.closest('.input-group').classList.add('border-red-500');
+                            } else if (inputElement.type === 'checkbox' && field === 'roles' && rolesFieldset) {
+                                // Handle roles error styling
+                                rolesFieldset.querySelector('.grid')?.classList.add('ring-2', 'ring-red-500', 'rounded-lg');
+                                rolesFieldset.querySelector('legend')?.classList.add('text-red-600');
                             } else {
-                                inputElement.closest('div')?.querySelector('label')?.classList.add('text-red-600');
+                                // For other inputs, highlight their labels if applicable
+                                inputElement.closest('div:not(.input-group)')?.querySelector('label')?.classList.add('text-red-600');
                             }
-                        } else if (field === 'roles' && rolesFieldset) {
+                        } else if (field === 'roles' && rolesFieldset) { // Explicitly handle roles field if inputElement is not found directly
                             rolesFieldset.querySelector('.grid')?.classList.add('ring-2', 'ring-red-500', 'rounded-lg');
                             rolesFieldset.querySelector('legend')?.classList.add('text-red-600');
-                        } else if (field === '__all__') {
+                             if (errorElement) { // Ensure roles-error p tag is also populated
+                                errorElement.textContent = data.errors[field].join ? data.errors[field].join(' ') : data.errors[field];
+                                errorElement.classList.remove('hidden');
+                            }
+                        } else if (field === '__all__') { // Handle general non-field errors
                             generalErrorText.textContent = data.errors[field].join ? data.errors[field].join(' ') : data.errors[field];
                             generalErrorDiv.classList.remove('hidden');
                         }
                     }
                 }
+                // Re-enable button and restore original text
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalButtonText;
             }
         } catch (error) {
+            // Handle network or unexpected server errors
             console.error('Registration Error:', error);
             generalErrorText.textContent = 'A network or server error occurred. Please try again.';
             generalErrorDiv.classList.remove('hidden');
+            // Re-enable button and restore original text
             submitButton.disabled = false;
             submitButton.innerHTML = originalButtonText;
         }
     });
 
+    // Add event listeners to input fields to clear errors on input
     form.querySelectorAll('input[type="text"], input[type="password"]').forEach(input => {
         input.addEventListener('input', () => {
             input.classList.remove('border-red-500');
             const inputGroup = input.closest('.input-group');
             if (inputGroup) {
-                inputGroup.classList.remove('border-red-500');
+                inputGroup.classList.remove('border-red-500'); // Remove border from group
             }
+            // Reset label color for non-input-group elements
             input.closest('div:not(.input-group)')?.querySelector('label')?.classList.remove('text-red-600');
             const errorP = document.getElementById(`${input.id}-error`);
             if (errorP) {
@@ -383,6 +432,8 @@
             }
         });
     });
+
+    // Add event listener to role checkboxes to clear roles error on change
     form.querySelectorAll('input[type="checkbox"][name="roles"]').forEach(checkbox => {
         checkbox.addEventListener('change', () => {
             const rolesError = document.getElementById('roles-error');

@@ -9,7 +9,11 @@ app_name = 'AudioXApp'
 
 urlpatterns = [
     # --- Content Views ---
-    path('Home/', content_views.home, name='home'),
+    # The 'home' view now serves the English homepage, typically at the root.
+    # If this app's urls are included under a prefix (e.g., 'app/'), this will be 'app/'
+    # If this is the project's root urls.py, this will be the site root.
+    path('', content_views.home, name='home'),  # CHANGED: From 'Home/' to ''
+
     path('ourteam/', content_views.ourteam, name='ourteam'),
     path('paymentpolicy/', content_views.paymentpolicy, name='paymentpolicy'),
     path('privacypolicy/', content_views.privacypolicy, name='privacypolicy'),
@@ -21,6 +25,27 @@ urlpatterns = [
     path("fetch_cover_image/", content_views.fetch_cover_image, name="fetch_cover_image"),
     path('audiobook/<slug:audiobook_slug>/', content_views.audiobook_detail, name='audiobook_detail'),
     path('audiobook/<slug:audiobook_slug>/add_review/', content_views.add_review, name='add_review'),
+
+    # --- Language Specific Home Pages ---
+    # These paths should match the JavaScript redirection logic (e.g., /urdu/)
+    path('urdu/', content_views.urdu_page, name='urdu_page'),
+    path('punjabi/', content_views.punjabi_page, name='punjabi_page'),
+    path('sindhi/', content_views.sindhi_page, name='sindhi_page'),
+
+    # --- English Genre Pages ---
+    # These URLs will serve pages for English genres.
+    # The views now point to templates inside 'audiobooks/English/'
+    path('genre/fiction/', content_views.genre_fiction, name='genre_fiction'), # Added genre/ prefix for clarity
+    path('genre/mystery/', content_views.genre_mystery, name='genre_mystery'),
+    path('genre/thriller/', content_views.genre_thriller, name='genre_thriller'),
+    path('genre/scifi/', content_views.genre_scifi, name='genre_scifi'),
+    path('genre/fantasy/', content_views.genre_fantasy, name='genre_fantasy'),
+    path('genre/biography/', content_views.genre_biography, name='genre_biography'),
+    path('genre/romance/', content_views.genre_romance, name='genre_romance'),
+    path('genre/history/', content_views.genre_history, name='genre_history'),
+    path('genre/selfhelp/', content_views.genre_selfhelp, name='genre_selfhelp'),
+    path('genre/business/', content_views.genre_business, name='genre_business'),
+    # path('genre/<slug:genre_slug>/', content_views.genre_detail, name='genre_detail'), # Original generic genre URL
 
     # --- Auth Views ---
     path('logout/', auth_views.logout_view, name='logout'),
@@ -39,7 +64,7 @@ urlpatterns = [
     path('myprofile/', user_views.myprofile, name='myprofile'),
     path('update_profile/', user_views.update_profile, name='update_profile'),
     path('change_password/', user_views.change_password, name='change_password'),
-    path('complete-profile/', user_views.complete_profile, name='complete_profile'), # ADDED THIS LINE
+    path('complete-profile/', user_views.complete_profile, name='complete_profile'),
 
     # --- Wallet & Subscription Views ---
     path('subscribe/', user_views.subscribe, name='subscribe'),
@@ -66,8 +91,6 @@ urlpatterns = [
     path('creator/withdrawal-accounts/', creator_views.creator_manage_withdrawal_accounts_view, name='creator_manage_withdrawal_accounts'),
     path('creator/withdrawals/request/', creator_views.creator_request_withdrawal_list_view, name='creator_request_withdrawal_list'),
     path('creator/upload/', creator_views.creator_upload_audiobook, name='creator_upload_audiobook'),
-    # New URL pattern for TTS preview generation
-    path('creator/upload/generate-tts-preview/', creator_views.generate_tts_preview_audio, name='generate_tts_preview_audio'),
     path('creator/my-audiobooks/', creator_views.creator_my_audiobooks_view, name='creator_my_audiobooks'),
     path('creator/manage-upload/<slug:audiobook_slug>/', creator_views.creator_manage_upload_detail_view, name='creator_manage_upload_detail'),
     path('creator/my-earnings/', creator_views.creator_my_earnings_view, name='creator_my_earnings'),
@@ -77,6 +100,7 @@ urlpatterns = [
     path('api/creator/mark-rejection-popup/', creator_views.mark_rejection_popup_shown, name='api_mark_rejection_popup'),
     path('api/audiobook/<slug:audiobook_slug>/chapters/', creator_views.get_audiobook_chapters_json, name='get_audiobook_chapters'),
     path('api/audiobook/log-view/', creator_views.log_audiobook_view, name='log_audiobook_view'),
+    path('api/creator/generate-tts-preview/', creator_views.generate_tts_preview_audio, name='generate_tts_preview_audio'),
 
     # --- Admin Area Views ---
     path('admin/welcome/', admin_views.admin_welcome_view, name='admin_welcome'),
@@ -101,8 +125,6 @@ urlpatterns = [
 ]
 
 # Static and Media file serving
-# It's generally better to let Django handle static files with `staticfiles_urlpatterns()`
-# and conditionally serve media files in DEBUG mode.
 urlpatterns += staticfiles_urlpatterns() # For serving static files
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) # For serving media files
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

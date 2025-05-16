@@ -175,12 +175,26 @@ elif not all([EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD]) and
     # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # Uncomment to test emails in console
 
 # --- Caching ---
+CACHE_LOCATION_PATH = os.path.join(BASE_DIR, 'django_cache_data')
+logger.info(f"DJANGO CACHE: Using FileBasedCache. Location set to: {CACHE_LOCATION_PATH}")
+
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'audiox-local-cache', # Unique name for this cache
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': CACHE_LOCATION_PATH,
+        'TIMEOUT': 3600,  # Cache timeout in seconds (e.g., 1 hour)
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000  # Optional: Max number of cache entries
+        }
     }
 }
+# Ensure the cache directory exists. Django will try to create it, but it's good practice.
+try:
+    os.makedirs(CACHE_LOCATION_PATH, exist_ok=True)
+    logger.info(f"DJANGO CACHE: Ensured cache directory exists at {CACHE_LOCATION_PATH}")
+except OSError as e:
+    logger.error(f"DJANGO CACHE: Could not create/access cache directory {CACHE_LOCATION_PATH}: {e}")
+
 
 # --- Stripe Configuration ---
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
@@ -251,7 +265,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'none' # Change as per your requirements
 # ACCOUNT_AUTHENTICATION_METHOD = 'email' # Replaced by ACCOUNT_LOGIN_METHODS
 # ACCOUNT_EMAIL_REQUIRED = True # Email is implicitly required if 'email' is in ACCOUNT_LOGIN_METHODS.
 # ACCOUNT_USERNAME_REQUIRED = False # Username requirement is now primarily handled by its presence
-                                    # in ACCOUNT_SIGNUP_FIELDS and your User model definition.
+                                     # in ACCOUNT_SIGNUP_FIELDS and your User model definition.
 # ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True # This is default behavior for signup forms.
 
 # Specifies additional fields to be collected during user signup.
@@ -399,4 +413,3 @@ else:
 # Creator Application Settings
 MAX_CREATOR_APPLICATION_ATTEMPTS = int(os.getenv('MAX_CREATOR_APPLICATION_ATTEMPTS', 3))
 WITHDRAWAL_REQUEST_COOLDOWN_DAYS = int(os.getenv('WITHDRAWAL_REQUEST_COOLDOWN_DAYS', 15))
-

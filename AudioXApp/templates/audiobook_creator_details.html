@@ -5,17 +5,37 @@
 
 {% block title %}{{ audiobook.title }} - Audiobook Details{% endblock %}
 
-{% block extra_head %}
-    {# Font Awesome for icons #}
+{% block head_extra %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    {# SweetAlert2 for notifications #}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    {# Include Stripe.js - Ensure this is loaded before your custom JS if needed #}
     <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        .star-rating-input .fa-star:hover,
+        .star-rating-input .fa-star.selected,
+        .star-rating-input .fa-star.hovered {
+            color: #FACC15; /* Tailwind yellow-400 */
+        }
+        .star-rating-input .fa-star {
+             transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+        .tab-button.active {
+            border-color: #4f46e5; /* indigo-600 */
+            color: #4f46e5; /* indigo-600 */
+            font-weight: 600;
+        }
+        .tab-button {
+            border-color: transparent;
+        }
+        .chapter-item.playing {
+            background-color: #e0e7ff; /* indigo-100 */
+            border-left-width: 4px;
+            border-left-color: #4f46e5; /* indigo-600 */
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-{% csrf_token %} {# CSRF token for AJAX requests in JS #}
+{% csrf_token %}
 
 <div class="bg-gradient-to-b from-indigo-50 via-white to-white min-h-screen font-sans antialiased text-gray-800 pb-28">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
@@ -38,12 +58,22 @@
 
             <div class="md:col-span-1 flex flex-col items-center md:items-start space-y-6">
                 <div class="w-full max-w-xs sm:max-w-sm md:max-w-full shadow-2xl rounded-xl overflow-hidden border-4 border-white transform hover:scale-[1.02] transition-transform duration-300 ease-out">
-                    {% if audiobook.cover_image %}
-                        <img id="main-cover-image" src="{{ audiobook.cover_image.url }}" alt="{{ audiobook.title }}" class="w-full h-auto object-cover aspect-[4/3]">
+                    {% if is_creator_book %}
+                        {% if audiobook.cover_image and audiobook.cover_image.url %}
+                            <img id="main-cover-image" src="{{ audiobook.cover_image.url }}" alt="{{ audiobook.title }}" class="w-full h-auto object-cover aspect-[4/3]">
+                        {% else %}
+                            <div id="main-cover-image" class="w-full aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-gray-200 rounded-xl">
+                                <span class="text-gray-400 italic text-lg">No Cover</span>
+                            </div>
+                        {% endif %}
                     {% else %}
-                        <div id="main-cover-image" class="w-full aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-gray-200 rounded-xl">
-                            <span class="text-gray-400 italic text-lg">No Cover</span>
-                        </div>
+                        {% if audiobook.cover_image %}
+                            <img id="main-cover-image" src="{{ audiobook.cover_image }}" alt="{{ audiobook.title }}" class="w-full h-auto object-cover aspect-[4/3]">
+                        {% else %}
+                            <div id="main-cover-image" class="w-full aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-gray-200 rounded-xl">
+                                <span class="text-gray-400 italic text-lg">No Cover</span>
+                            </div>
+                        {% endif %}
                     {% endif %}
                 </div>
 
@@ -54,15 +84,13 @@
                             <strong class="font-bold block mb-1"><i class="fas fa-gem mr-2 opacity-80"></i>Premium Audiobook</strong>
                             <span class="block sm:inline">Price: <span class="font-semibold">PKR {{ audiobook.price|floatformat:2 }}</span></span>
                         </div>
-
                         {% if user.is_authenticated %}
                             {% if user_has_purchased %}
                                 <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 text-green-900 px-4 py-3 rounded-lg relative text-center text-sm shadow-sm font-medium" role="alert">
                                     <i class="fas fa-check-circle mr-2 text-green-600"></i> Purchased & Unlocked
                                 </div>
                             {% else %}
-                                <button id="purchase-button"
-                                        data-audiobook-slug="{{ audiobook.slug }}"
+                                <button id="purchase-button" data-audiobook-slug="{{ audiobook.slug }}"
                                         class="w-full bg-gradient-to-r from-[#091e65] to-[#1031a3] hover:from-[#071852] hover:to-[#091e65] text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 ease-in-out transform hover:-translate-y-1 active:translate-y-0">
                                     <i class="fas fa-shopping-cart mr-2"></i> Purchase Now (PKR {{ audiobook.price|floatformat:2 }})
                                 </button>
@@ -85,7 +113,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                         <span>Save</span>
                     </button>
-                    <button onclick="scrollToReviews()" class="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-lg shadow-sm hover:shadow-md hover:from-gray-100 hover:to-gray-200 transition-all duration-200 ease-in-out text-sm text-gray-700 hover:text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#6366f1] transform hover:-translate-y-0.5 active:translate-y-0">
+                    <button id="rate-button" class="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-lg shadow-sm hover:shadow-md hover:from-gray-100 hover:to-gray-200 transition-all duration-200 ease-in-out text-sm text-gray-700 hover:text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#6366f1] transform hover:-translate-y-0.5 active:translate-y-0">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                         <span>Rate</span>
                     </button>
@@ -105,31 +133,35 @@
 
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 mb-4 border-b border-gray-200 pb-4">
                     <div class="flex items-center star-rating-display text-base">
-                        {% with rating=audiobook.average_rating %}
-                            {% if rating is not None and rating > 0 %}
-                                {% with full_stars=rating|floatformat:0|add:"0" %}
-                                {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                    {% if decimal_part_int >= 5 %} {# Check for half star #}
-                                        {% with has_half_star=1 %}
-                                            {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                            <i class="fas fa-star-half-alt text-yellow-400"></i>
-                                            {% with current_stars=full_stars|add:has_half_star %}
-                                            {% with empty_stars=5|sub:current_stars %}
-                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                            {% endwith %}{% endwith %}
+                        {% with rating_value=audiobook.average_rating %}
+                            {% if rating_value is not None and rating_value > 0 %}
+                                {% with full_stars_count=rating_value|floatformat:0|add:"0" %}
+                                {% with decimal_part_str_val=rating_value|stringformat:".1f"|slice:"-1:" %}
+                                {% with decimal_part_int_val=decimal_part_str_val|add:"0" %}
+                                    {% for i in ""|center:full_stars_count %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+                                    {% if decimal_part_int_val >= 3 and decimal_part_int_val <= 7 %}
+                                        <i class="fas fa-star-half-alt text-yellow-400"></i>
+                                        {% with current_stars_display_count=full_stars_count|add:1 %}
+                                        {% with empty_stars_count=5|sub:current_stars_display_count %}
+                                            {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                        {% endwith %}{% endwith %}
+                                    {% elif decimal_part_int_val > 7 %}
+                                        {# This case means it was rounded up, so one less full star was printed initially. Add it. #}
+                                        {# This logic is tricky when full_stars_count is based on floor. Let's adjust. #}
+                                        {% with effectively_full_stars=full_stars_count|add:1 %}
+                                            {# We already printed full_stars_count. If effectively_full_stars > full_stars_count, print one more full star #}
+                                            {% if effectively_full_stars > full_stars_count %}<i class="fas fa-star text-yellow-400"></i>{% endif %}
+                                            {% with empty_stars_count=5|sub:effectively_full_stars %}
+                                                {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                            {% endwith %}
                                         {% endwith %}
-                                    {% else %} {# No half star #}
-                                        {% with has_half_star=0 %}
-                                            {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                            {% with current_stars=full_stars|add:has_half_star %}
-                                            {% with empty_stars=5|sub:current_stars %}
-                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                            {% endwith %}{% endwith %}
+                                    {% else %} {# decimal_part_int_val < 3 #}
+                                        {% with empty_stars_count=5|sub:full_stars_count %}
+                                            {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
                                         {% endwith %}
                                     {% endif %}
                                 {% endwith %}{% endwith %}{% endwith %}
-                                <span class="font-semibold text-gray-700 ml-1.5">{{ rating|floatformat:1 }}</span>
+                                <span class="font-semibold text-gray-700 ml-1.5">{{ rating_value|floatformat:1 }}</span>
                                 <span class="ml-1">({{ reviews|length|default:0 }} rating{{ reviews|length|pluralize }})</span>
                             {% else %}
                                 {% for i in ""|center:5 %}<i class="far fa-star text-gray-300"></i>{% endfor %}
@@ -140,22 +172,27 @@
                     <span class="text-gray-300 hidden sm:inline">|</span>
                     <div class="flex items-center space-x-1 text-gray-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
-                        <span>{{ audiobook.total_views|intcomma }} Views</span>
+                        <span id="audiobook-total-views-span">{{ audiobook.total_views|intcomma }} Views</span>
                     </div>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-gray-500 mb-6">
                     {% if audiobook.genre %}<span class="inline-flex items-center bg-[#eef2ff] text-[#091e65] px-3 py-1 rounded-full text-xs font-semibold shadow-sm border border-indigo-200"><i class="fas fa-tag mr-1.5 opacity-70"></i>{{ audiobook.genre }}</span>{% endif %}
                     {% if audiobook.language %}<span class="inline-flex items-center bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-semibold shadow-sm border border-gray-200"><i class="fas fa-language mr-1.5 opacity-70"></i>{{ audiobook.language }}</span>{% endif %}
-                    {% if audiobook.creator.creator_name %}<span class="text-xs text-gray-600"><i class="fas fa-cloud-upload-alt mr-1 opacity-70"></i>Uploaded by <span class="font-medium text-[#091e65]">{{ audiobook.creator.creator_name }}</span>{% if audiobook.publish_date %} on {{ audiobook.publish_date|date:"M d, Y" }}{% endif %}</span>{% endif %}
+                    {% if is_creator_book and audiobook.creator.creator_name %}<span class="text-xs text-gray-600"><i class="fas fa-cloud-upload-alt mr-1 opacity-70"></i>Uploaded by <span class="font-medium text-[#091e65]">{{ audiobook.creator.creator_name }}</span>{% if audiobook.publish_date %} on {{ audiobook.publish_date|date:"M d, Y" }}{% endif %}</span>
+                    {% elif not is_creator_book and audiobook.source == "librivox" %}<span class="text-xs text-gray-600"><i class="fab fa-creative-commons mr-1 opacity-70"></i>Source: LibriVox</span>
+                    {% elif not is_creator_book and audiobook.source == "archive" %}<span class="text-xs text-gray-600"><i class="fas fa-archive mr-1 opacity-70"></i>Source: Archive.org</span>
+                    {% endif %}
                 </div>
 
                 <div class="border-b border-gray-300 mb-6">
                     <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
-                        <button onclick="showTab('about')" id="tab-about" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm" aria-current="page">ABOUT</button>
-                        <button onclick="showTab('episodes')" id="tab-episodes" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm">EPISODES ({{ chapters_to_display|length|default:"0" }})</button>
-                        <button onclick="showTab('reviews')" id="tab-reviews" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm">REVIEWS (<span id="review-count-tab">{{ reviews|length|default:0 }}</span>)</button>
-                        <button onclick="showTab('recommendations')" id="tab-recommendations" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm">RECOMMENDATIONS</button>
+                        <button id="tab-about" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-semibold text-sm active" aria-current="page">ABOUT</button>
+                        <button id="tab-episodes" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm">EPISODES ({{ chapters_to_display|length|default:"0" }})</button>
+                        {% if is_creator_book %}
+                        <button id="tab-reviews" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm">REVIEWS (<span id="review-count-tab">{{ reviews|length|default:0 }}</span>)</button>
+                        {% endif %}
+                        <button id="tab-recommendations" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm">RECOMMENDATIONS</button>
                     </nav>
                 </div>
 
@@ -163,12 +200,12 @@
                     <div id="content-about" class="tab-content">
                         <h3 class="text-xl font-semibold text-gray-800 mb-4">Description</h3>
                         <div class="prose prose-sm sm:prose-base max-w-none text-gray-600 leading-relaxed space-y-3">
-                            {{ audiobook.description|linebreaksbr|default:"<p class='italic text-gray-500'>No description provided.</p>" }}
+                            {{ audiobook.description|linebreaksbr|default:"<p class='italic text-gray-500'>No description provided.</p>"|safe }}
                         </div>
                     </div>
 
                     <div id="content-episodes" class="tab-content hidden">
-                        {% if audiobook_lock_message %}
+                        {% if audiobook_lock_message and not user_has_purchased %}
                             <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg text-sm flex items-center space-x-2 shadow-sm">
                                 <i class="fas fa-lock text-yellow-600"></i>
                                 <span>{{ audiobook_lock_message }}</span>
@@ -177,56 +214,50 @@
 
                         <div class="space-y-3 relative">
                             {% if chapters_to_display %}
-                                {% for chapter_data in chapters_to_display %}
-                                    {% url 'AudioXApp:stream_audio' as stream_base_url %}
-                                    {% with audio_url_to_proxy=chapter_data.object.audio_file.url %}
-                                    {% if audio_url_to_proxy %}
-                                        {% with encoded_audio_url=audio_url_to_proxy|urlencode %}
-                                        {% with full_audio_url=stream_base_url|add:"?url="|add:encoded_audio_url %}
-                                            {# Chapter Item - Accessible #}
-                                            <div class="chapter-item bg-white p-3.5 rounded-lg border flex items-center space-x-4 group {% if not chapter_data.is_accessible %}opacity-60 cursor-not-allowed bg-gray-100 border-gray-200 hover:bg-gray-100{% else %}border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 shadow-sm hover:shadow-md{% endif %} transition-all duration-200 ease-in-out"
-                                                 data-chapter-title="{{ chapter_data.object.chapter_name|escapejs }}"
-                                                 data-chapter-index="{{ forloop.counter0 }}"
-                                                 {% if chapter_data.is_accessible %}data-audio-url="{{ full_audio_url }}"{% endif %}>
-
-                                                <div class="flex-shrink-0">
-                                                    {% if chapter_data.is_accessible %}
-                                                        <button onclick="playChapter(this)"
-                                                                title="Play Episode {{ chapter_data.object.chapter_order }}"
-                                                                class="play-button cursor-pointer flex items-center justify-center w-10 h-10 bg-[#eef2ff] hover:bg-[#e0e7ff] text-[#091e65] rounded-full transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65] transform active:scale-90 shadow hover:shadow-md">
-                                                            {# Play Icon #}
-                                                            <svg class="w-5 h-5 play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" ><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                                                            {# Pause Icon #}
-                                                            <svg class="w-5 h-5 pause-icon hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" ><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>
-                                                            {# Loading Icon #}
-                                                            <svg class="w-5 h-5 loading-icon hidden animate-spin text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                        </button>
-                                                    {% else %}
-                                                        {# Lock Icon for inaccessible chapters #}
-                                                        <span class="lock-icon flex items-center justify-center w-10 h-10 bg-gray-200 text-gray-500 rounded-full shadow-inner" title="Purchase required">
-                                                            <i class="fas fa-lock"></i>
-                                                        </span>
-                                                    {% endif %}
+                                {% for chapter_data_item in chapters_to_display %} {# Renamed to avoid conflict with outer loop var if any #}
+                                    {% url 'AudioXApp:stream_audio' as stream_base_url_val %}
+                                    {% with current_chapter_data=chapter_data_item forloop_counter_val=forloop.counter0 %}
+                                        {% with chapter_title_val=current_chapter_data.chapter_title chapter_audio_url_val=current_chapter_data.audio_url chapter_is_accessible_val=current_chapter_data.is_accessible chapter_duration_val=current_chapter_data.duration chapter_order_val=current_chapter_data.chapter_index|add:1 %}
+                                            {% if chapter_audio_url_val %}
+                                                {% with encoded_audio_url_val=chapter_audio_url_val|urlencode %}
+                                                {% with full_audio_url_val=stream_base_url_val|add:"?url="|add:encoded_audio_url_val %}
+                                                <div class="chapter-item bg-white p-3.5 rounded-lg border flex items-center space-x-4 group {% if not chapter_is_accessible_val %}opacity-60 cursor-not-allowed bg-gray-100 border-gray-200 hover:bg-gray-100{% else %}border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 shadow-sm hover:shadow-md{% endif %} transition-all duration-200 ease-in-out"
+                                                     data-chapter-title="{{ chapter_title_val|escapejs }}"
+                                                     data-chapter-index="{{ forloop_counter_val }}"
+                                                     {% if chapter_is_accessible_val %}data-audio-url="{{ full_audio_url_val }}"{% endif %}>
+                                                    <div class="flex-shrink-0">
+                                                        {% if chapter_is_accessible_val %}
+                                                            <button onclick="playChapter(this)"
+                                                                    title="Play Episode {{ chapter_order_val }}"
+                                                                    class="play-button cursor-pointer flex items-center justify-center w-10 h-10 bg-[#eef2ff] hover:bg-[#e0e7ff] text-[#091e65] rounded-full transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65] transform active:scale-90 shadow hover:shadow-md">
+                                                                <svg class="w-5 h-5 play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" ><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
+                                                                <svg class="w-5 h-5 pause-icon hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" ><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>
+                                                                <svg class="w-5 h-5 loading-icon hidden animate-spin text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                            </button>
+                                                        {% else %}
+                                                            <span class="lock-icon flex items-center justify-center w-10 h-10 bg-gray-200 text-gray-500 rounded-full shadow-inner" title="Purchase required or preview limit reached">
+                                                                <i class="fas fa-lock"></i>
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="flex-grow min-w-0">
+                                                        <p class="text-sm font-medium {% if not chapter_is_accessible_val %}text-gray-500{% else %}text-gray-800 group-hover:text-[#091e65]{% endif %} truncate transition" title="{{ chapter_title_val }}">
+                                                            <span class="text-xs {% if not chapter_is_accessible_val %}text-gray-400{% else %}text-gray-500 group-hover:text-indigo-700{% endif %} mr-1.5 font-mono">{{ chapter_order_val }}.</span> {{ chapter_title_val|default:"Untitled Episode" }}
+                                                        </p>
+                                                    </div>
+                                                    <div class="flex-shrink-0 text-xs {% if not chapter_is_accessible_val %}text-gray-400{% else %}text-gray-500 group-hover:text-gray-700{% endif %} font-mono pr-2">
+                                                        <i class="far fa-clock mr-1 opacity-70"></i>{{ chapter_duration_val|default:"--:--" }}
+                                                    </div>
                                                 </div>
-
-                                                <div class="flex-grow min-w-0">
-                                                    <p class="text-sm font-medium {% if not chapter_data.is_accessible %}text-gray-500{% else %}text-gray-800 group-hover:text-[#091e65]{% endif %} truncate transition" title="{{ chapter_data.object.chapter_name }}">
-                                                        <span class="text-xs {% if not chapter_data.is_accessible %}text-gray-400{% else %}text-gray-500 group-hover:text-indigo-700{% endif %} mr-1.5 font-mono">{{ chapter_data.object.chapter_order }}.</span> {{ chapter_data.object.chapter_name|default:"Untitled Episode" }}
-                                                    </p>
+                                                {% endwith %}{% endwith %}
+                                            {% else %} {# Fallback if chapter_audio_url_val is missing for some reason #}
+                                                <div class="chapter-item bg-gray-50 p-3.5 rounded-lg border border-gray-200 flex items-center space-x-4 opacity-60 cursor-not-allowed shadow-inner">
+                                                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
+                                                    <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5 font-mono">{{ chapter_order_val }}.</span> {{ chapter_title_val|default:"Untitled Episode" }}</p></div>
+                                                    <div class="flex-shrink-0 text-xs text-gray-400 font-mono pr-2"><i class="far fa-clock mr-1 opacity-70"></i>N/A</div>
                                                 </div>
-                                                <div class="flex-shrink-0 text-xs {% if not chapter_data.is_accessible %}text-gray-400{% else %}text-gray-500 group-hover:text-gray-700{% endif %} font-mono pr-2">
-                                                    <i class="far fa-clock mr-1 opacity-70"></i>{{ chapter_data.object.duration|default:"--:--" }}
-                                                </div>
-                                            </div>
-                                        {% endwith %}{% endwith %}
-                                    {% else %}
-                                        {# Chapter Item - Missing Audio URL #}
-                                        <div class="chapter-item bg-gray-50 p-3.5 rounded-lg border border-gray-200 flex items-center space-x-4 opacity-60 cursor-not-allowed shadow-inner">
-                                            <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
-                                            <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5 font-mono">{{ chapter_data.object.chapter_order }}.</span> {{ chapter_data.object.chapter_name|default:"Untitled Episode" }}</p></div>
-                                            <div class="flex-shrink-0 text-xs text-gray-400 font-mono pr-2"><i class="far fa-clock mr-1 opacity-70"></i>N/A</div>
-                                        </div>
-                                    {% endif %}
+                                            {% endif %}
+                                        {% endwith %}
                                     {% endwith %}
                                 {% endfor %}
                             {% else %}
@@ -235,35 +266,43 @@
                         </div>
                     </div>
 
+                    {% if is_creator_book %}
                     <div id="content-reviews" class="tab-content hidden">
                          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 border-b border-gray-200 pb-4">
                             <h3 class="text-xl font-semibold text-gray-800 mb-2 sm:mb-0">Reviews (<span id="review-count">{{ reviews|length|default:0 }}</span>)</h3>
                             <div class="flex items-center star-rating-display text-sm">
-                                {% with rating=audiobook.average_rating %}
-                                    {% if rating is not None and rating > 0 %}
-                                        {% with full_stars=rating|floatformat:0|add:"0" %}
-                                        {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                        {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                            {% if decimal_part_int >= 5 %} {# Half star #}
-                                                {% with has_half_star=1 %}
-                                                    {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                                    <i class="fas fa-star-half-alt text-yellow-400"></i>
-                                                    {% with current_stars=full_stars|add:has_half_star %}
-                                                    {% with empty_stars=5|sub:current_stars %}
-                                                        {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                    {% endwith %}{% endwith %}
+                                {% with rating_value=audiobook.average_rating %}
+                                    {% if rating_value is not None and rating_value > 0 %}
+                                        {% with full_stars_count=rating_value|floatformat:0|add:"0" %}
+                                        {% with decimal_part_str_val=rating_value|stringformat:".1f"|slice:"-1:" %}
+                                        {% with decimal_part_int_val=decimal_part_str_val|add:"0" %}
+                                            {% for i in ""|center:full_stars_count %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+                                            {% if decimal_part_int_val >= 3 and decimal_part_int_val <= 7 %} {# .3 to .7 is half star #}
+                                                <i class="fas fa-star-half-alt text-yellow-400"></i>
+                                                {% with current_stars_display_count=full_stars_count|add:1 %}
+                                                {% with empty_stars_count=5|sub:current_stars_display_count %}
+                                                    {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                {% endwith %}{% endwith %}
+                                            {% elif decimal_part_int_val > 7 %} {# .8 or .9 rounds up, effectively adding a star if not already 5 #}
+                                                {% with effective_full_stars=full_stars_count|add:1 %}
+                                                    {% if effective_full_stars > full_stars_count and full_stars_count < 5 %} {# Print the additional star if it makes sense #}
+                                                        <i class="fas fa-star text-yellow-400"></i>
+                                                        {% with empty_stars_count=5|sub:effective_full_stars %}
+                                                            {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                        {% endwith %}
+                                                    {% else %} {# Already printed max or no rounding up needed #}
+                                                        {% with empty_stars_count=5|sub:full_stars_count %}
+                                                             {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                        {% endwith %}
+                                                    {% endif %}
                                                 {% endwith %}
-                                            {% else %} {# No half star #}
-                                                {% with has_half_star=0 %}
-                                                    {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                                    {% with current_stars=full_stars|add:has_half_star %}
-                                                    {% with empty_stars=5|sub:current_stars %}
-                                                        {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                    {% endwith %}{% endwith %}
+                                            {% else %} {# .0, .1, .2 - no half or rounding up #}
+                                                {% with empty_stars_count=5|sub:full_stars_count %}
+                                                    {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
                                                 {% endwith %}
                                             {% endif %}
                                         {% endwith %}{% endwith %}{% endwith %}
-                                        <span class="font-semibold text-gray-700 ml-1.5">{{ rating|floatformat:1 }} avg</span>
+                                        <span class="font-semibold text-gray-700 ml-1.5">{{ rating_value|floatformat:1 }} avg</span>
                                     {% else %}
                                         {% for i in ""|center:5 %}<i class="far fa-star text-gray-300"></i>{% endfor %}
                                         <span class="text-gray-400 italic ml-1.5">No ratings yet</span>
@@ -274,50 +313,55 @@
 
                         {% if user.is_authenticated %}
                             {% if not audiobook.is_paid or user_has_purchased %}
-                                {# Add/Edit Review Form - Initially hidden if user has reviewed #}
-                                <form id="review-form" class="mb-6 p-5 border border-indigo-100 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm {% if user_review %}hidden{% endif %}" data-add-url="{% url 'AudioXApp:add_review' audiobook_slug=audiobook.slug %}">
-                                    {% csrf_token %} {# Redundant if already at top, but safe #}
+                                <form id="review-form" class="mb-6 p-5 border border-indigo-100 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm {% if current_user_has_reviewed %}hidden{% endif %}" data-add-url="{% url 'AudioXApp:add_review' audiobook_slug=audiobook.slug %}">
+                                    {% csrf_token %}
                                     <h4 class="text-lg font-semibold text-gray-700 mb-4">Leave Your Review</h4>
                                     <div class="mb-4">
-                                        <label for="rating" class="block text-sm font-medium text-gray-600 mb-2">Your Rating:</label>
+                                        <label for="rating-value-input" class="block text-sm font-medium text-gray-600 mb-2">Your Rating:</label>
                                         <div id="review-rating-input" class="star-rating-input text-2xl sm:text-3xl space-x-1.5 cursor-pointer text-gray-300 flex items-center">
-                                            {# Stars will be dynamically updated by JS #}
                                             <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="1"></i>
                                             <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="2"></i>
                                             <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="3"></i>
                                             <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="4"></i>
                                             <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="5"></i>
                                         </div>
-                                        <input type="hidden" name="rating" id="rating-value" value="0" required>
-                                        <div id="rating-error" class="text-red-600 text-xs mt-1 h-4"></div> {# Error message placeholder #}
+                                        <input type="hidden" name="rating" id="rating-value-input" value="0" required>
+                                        <div id="rating-error" class="text-red-600 text-xs mt-1 h-4"></div>
                                     </div>
                                     <div class="mb-4">
-                                        <label for="comment" class="block text-sm font-medium text-gray-600 mb-1">Your Comment (Optional):</label>
-                                        <textarea name="comment" id="comment" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm placeholder-gray-400" placeholder="Share your thoughts..."></textarea>
+                                        <label for="comment-input" class="block text-sm font-medium text-gray-600 mb-1">Your Comment (Optional):</label>
+                                        <textarea name="comment" id="comment-input" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm placeholder-gray-400" placeholder="Share your thoughts..."></textarea>
                                     </div>
                                     <div class="flex justify-end items-center space-x-3">
-                                        <div id="form-message" class="text-sm flex-grow"></div> {# Status message area #}
+                                        <div id="form-message" class="text-sm flex-grow"></div>
                                         <button type="submit" id="submit-review-btn" class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-[#091e65] to-[#1031a3] border border-transparent rounded-lg shadow-md text-sm font-medium text-white hover:from-[#071852] hover:to-[#091e65] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] disabled:opacity-50 transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 active:translate-y-0">
                                             <i class="fas fa-paper-plane mr-2"></i>Submit Review
                                         </button>
                                     </div>
                                 </form>
-
-                                {# Prompt to edit if user has already reviewed #}
-                                <div id="edit-review-prompt" class="mb-6 text-center p-4 bg-gray-50 rounded-lg border border-gray-200 {% if not user_review %}hidden{% endif %}">
+                                
+                                <div id="edit-review-prompt" class="mb-6 text-center p-4 bg-gray-50 rounded-lg border border-gray-200 {% if not current_user_has_reviewed %}hidden{% endif %}">
                                     <p class="text-sm text-gray-600 mb-2">You've already reviewed this audiobook.</p>
-                                    <button onclick="showReviewForm()" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded">
-                                       <i class="fas fa-edit mr-1"></i> Edit Your Review
+                                    {% if user_review_object %}
+                                    <p class="text-xs text-gray-500 mb-1">Your rating: 
+                                        {% with rating_value=user_review_object.rating %}
+                                            {% for i in ""|center:rating_value %}<i class="fas fa-star text-yellow-400 text-xs"></i>{% endfor %}{% with empty_stars_count=5|sub:rating_value %}{% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300 text-xs"></i>{% endfor %}{% endwith %}
+                                        {% endwith %}
+                                        </p>
+                                    {% if user_review_object.comment %}
+                                    <p class="text-xs text-gray-500 mb-2 italic">"{{ user_review_object.comment|truncatewords:15 }}"</p>
+                                    {% endif %}
+                                    {% endif %}
+                                    <button id="edit-my-review-button" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded">
+                                        <i class="fas fa-edit mr-1"></i> Edit Your Review
                                     </button>
                                 </div>
                             {% else %}
-                                {# Message if user needs to purchase first #}
                                 <div class="mb-6 p-4 bg-gray-100 border border-gray-200 text-gray-700 rounded-lg text-sm text-center shadow-sm">
                                     <i class="fas fa-lock mr-2 text-gray-500"></i> Purchase this audiobook to leave a review.
                                 </div>
                             {% endif %}
                         {% else %}
-                            {# Message if user needs to log in #}
                             <p class="text-sm text-gray-600 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm text-center">
                                 <a href="{% url 'AudioXApp:login' %}?next={{ request.path }}#content-reviews" class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">Log in</a> or <a href="{% url 'AudioXApp:signup' %}?next={{ request.path }}#content-reviews" class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">Sign up</a> to leave a review.
                             </p>
@@ -326,11 +370,11 @@
                         <h4 class="text-lg font-semibold text-gray-700 mb-4 mt-6 pt-4 border-t border-gray-200">Listener Feedback</h4>
                         <div id="reviews-list" class="space-y-5">
                             {% if reviews %}
-                                {% for review in reviews %}
-                                    <div class="review-item flex space-x-4 py-4 border-b border-gray-100 last:border-b-0" id="review-{{ review.review_id }}">
+                                {% for review_item_loop in reviews %} {# Renamed to avoid conflict #}
+                                    <div class="review-item flex space-x-4 py-4 border-b border-gray-100 last:border-b-0" id="review-{{ review_item_loop.review_id }}">
                                         <div class="flex-shrink-0 pt-1">
-                                            {% if review.user.profile_pic %}
-                                                <img class="h-10 w-10 rounded-full object-cover shadow-sm" src="{{ review.user.profile_pic.url }}" alt="{{ review.user.username }}">
+                                            {% if review_item_loop.user.profile_pic %}
+                                                <img class="h-10 w-10 rounded-full object-cover shadow-sm" src="{{ review_item_loop.user.profile_pic.url }}" alt="{{ review_item_loop.user.username }}">
                                             {% else %}
                                                 <span class="h-10 w-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-500 shadow-sm">
                                                     <i class="fas fa-user text-lg"></i>
@@ -339,48 +383,42 @@
                                         </div>
                                         <div class="flex-grow">
                                             <div class="flex items-center justify-between mb-1">
-                                                <h5 class="text-sm font-semibold text-gray-800">{{ review.user.full_name|default:review.user.username }}</h5>
-                                                <time datetime="{{ review.created_at|date:"c" }}" class="flex-shrink-0 ml-4 text-xs text-gray-400">{{ review.created_at|timesince }} ago</time>
+                                                <h5 class="text-sm font-semibold text-gray-800">{{ review_item_loop.user.full_name|default:review_item_loop.user.username }}</h5>
+                                                <time datetime="{{ review_item_loop.created_at|date:"c" }}" class="flex-shrink-0 ml-4 text-xs text-gray-400">{{ review_item_loop.created_at|timesince }} ago</time>
                                             </div>
-                                            {# Individual Review Rating #}
                                             <div class="mb-1 flex items-center star-rating-display text-xs">
-                                                {% with review_rating=review.rating %}
-                                                    {% for i in ""|center:review_rating %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                                    {% with empty_stars=5|sub:review_rating %}
-                                                        {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                    {% endwith %}
+                                                {% with rating_value=review_item_loop.rating %}
+                                                    {% for i in ""|center:rating_value %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}{% with empty_stars_count=5|sub:rating_value %}{% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}{% endwith %}
                                                 {% endwith %}
                                             </div>
-                                            {% if review.comment %}
+                                            {% if review_item_loop.comment %}
                                                 <div class="mt-2 text-sm text-gray-600 prose prose-sm max-w-none leading-relaxed">
-                                                    <p>{{ review.comment|linebreaksbr }}</p>
+                                                    <p>{{ review_item_loop.comment|linebreaksbr }}</p>
                                                 </div>
                                             {% endif %}
-                                            {% if review.user == user %}
+                                            {% if review_item_loop.user == request.user %}
                                                 <div class="mt-2 text-xs">
-                                                    <button onclick="handleEditClick(this)"
-                                                            data-review-id="{{ review.review_id }}"
-                                                            data-rating="{{ review.rating }}"
-                                                            data-comment="{{ review.comment|default:''|escapejs }}"
-                                                            class="text-indigo-600 hover:text-indigo-800 hover:underline font-medium focus:outline-none focus:ring-1 focus:ring-indigo-300 rounded px-1 py-0.5">
+                                                    <button data-review-id="{{ review_item_loop.review_id }}"
+                                                            data-rating="{{ review_item_loop.rating }}"
+                                                            data-comment="{{ review_item_loop.comment|default:''|escapejs }}"
+                                                            class="edit-user-review-button text-indigo-600 hover:text-indigo-800 hover:underline font-medium focus:outline-none focus:ring-1 focus:ring-indigo-300 rounded px-1 py-0.5">
                                                         <i class="fas fa-pencil-alt mr-1 text-xs"></i>Edit
                                                     </button>
                                                 </div>
                                             {% endif %}
                                         </div>
                                     </div>
-                                {% endfor %}
+                                    {% endfor %}
                             {% else %}
                                 <p id="no-reviews-message" class="text-center text-gray-500 py-8 italic">Be the first to share your thoughts on this audiobook!</p>
                             {% endif %}
                         </div>
                     </div>
+                    {% endif %}
 
                     <div id="content-recommendations" class="tab-content hidden">
                         <h3 class="text-xl font-semibold text-gray-800 mb-4">You Might Also Like</h3>
-                        {# Placeholder - Add recommendation logic here #}
                         <p class="text-gray-600 italic">Recommendations are not available at this time.</p>
-                         {# Example Recommendation Card Structure (Hidden for now) #}
                     </div>
                 </div>
             </div>
@@ -388,41 +426,40 @@
     </div>
 
     <div id="bottom-player-bar" class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-gray-50/95 backdrop-blur-sm border-t border-gray-200/80 shadow-[0_-6px_15px_-3px_rgba(0,0,0,0.08)] p-3 z-50 transform translate-y-full transition-transform duration-300 ease-in-out">
-        {# Audio element is hidden, controls are custom #}
-        <audio id="audioPlayer" class="hidden" preload="metadata" data-audiobook-id="{{ audiobook.audiobook_id }}"></audio>
-
+        <audio id="audioPlayer" class="hidden" preload="metadata" 
+               data-audiobook-slug="{{ audiobook.slug }}"
+               {% if is_creator_book %}data-audiobook-db-id="{{ audiobook.audiobook_id }}"{% endif %}>
+        </audio>
         <div class="max-w-7xl mx-auto flex items-center space-x-3 sm:space-x-4">
             <div class="flex items-center space-x-3 flex-shrink-0 min-w-0 max-w-[150px] sm:max-w-[200px] md:max-w-xs">
-                <img id="player-cover-image" src="https://placehold.co/80x80/e5e7eb/4b5563?text=N/A" alt="Now Playing" class="flex-shrink-0 w-12 h-12 rounded-md object-cover shadow-md border border-gray-100">
+                <img id="player-cover-image" 
+                     src="{% if is_creator_book and audiobook.cover_image %}{{ audiobook.cover_image.url }}{% elif not is_creator_book and audiobook.cover_image %}{{ audiobook.cover_image }}{% else %}https://placehold.co/80x80/e5e7eb/4b5563?text=N/A{% endif %}" 
+                     alt="Now Playing" class="flex-shrink-0 w-12 h-12 rounded-md object-cover shadow-md border border-gray-100">
                 <div class="overflow-hidden">
                     <p id="player-episode-title" class="text-sm font-semibold text-gray-800 truncate" title="Select an episode">Select an episode</p>
                     <p id="player-episode-number" class="text-xs text-gray-500 truncate">Episode N/A</p>
                 </div>
             </div>
-
             <div class="flex-grow flex justify-center items-center space-x-3 sm:space-x-4">
-                <button id="player-prev-button" onclick="playPreviousChapter()" title="Previous Episode" class="p-2 text-gray-500 hover:text-[#091e65] disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full hover:bg-[#eef2ff] focus:outline-none focus:ring-1 focus:ring-[#091e65]">
+                <button id="player-prev-button" title="Previous Episode" class="p-2 text-gray-500 hover:text-[#091e65] disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full hover:bg-[#eef2ff] focus:outline-none focus:ring-1 focus:ring-[#091e65]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 3.5A.5.5 0 0 1 1 4v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m3.5 0a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m4.904 8.697l-6-4.5a.5.5 0 0 1 0-.894l6-4.5a.5.5 0 0 1 .796.447v9a.5.5 0 0 1-.796.447"/></svg>
                 </button>
-                <button id="player-play-pause-button" onclick="togglePlayPause()" title="Play/Pause" class="p-2.5 bg-gradient-to-br from-[#091e65] to-[#1031a3] text-white rounded-full shadow-lg hover:shadow-xl hover:from-[#071852] hover:to-[#091e65] transition transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-white">
+                <button id="player-play-pause-button" title="Play/Pause" class="p-2.5 bg-gradient-to-br from-[#091e65] to-[#1031a3] text-white rounded-full shadow-lg hover:shadow-xl hover:from-[#071852] hover:to-[#091e65] transition transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-white">
                     <svg id="player-play-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7" fill="currentColor" viewBox="0 0 16 16"><path d="M10.804 8 5 4.633v6.734zm.792-.696a.803.803 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/></svg>
                     <svg id="player-pause-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 hidden" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/></svg>
                 </button>
-                <button id="player-next-button" onclick="playNextChapter()" title="Next Episode" class="p-2 text-gray-500 hover:text-[#091e65] disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full hover:bg-[#eef2ff] focus:outline-none focus:ring-1 focus:ring-[#091e65]">
+                <button id="player-next-button" title="Next Episode" class="p-2 text-gray-500 hover:text-[#091e65] disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full hover:bg-[#eef2ff] focus:outline-none focus:ring-1 focus:ring-[#091e65]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 16 16"><path d="M12.5 4a.5.5 0 0 0-1 0v8a.5.5 0 0 0 1 0zM15.5 3.5a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 1 0V4a.5.5 0 0 0-.5-.5M4.904 3.303l6 4.5a.5.5 0 0 1 0 .894l-6 4.5a.5.5 0 0 1-.796-.447v-9a.5.5 0 0 1 .796-.447"/></svg>
                 </button>
             </div>
-
             <div class="hidden md:flex flex-grow items-center space-x-2 sm:space-x-3 min-w-0 max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg">
                 <span id="player-current-time" class="text-xs text-gray-500 font-mono w-10 text-right tabular-nums">0:00</span>
-                {# Style the range input track and thumb using accent color #}
                 <input type="range" id="player-seek-bar" value="0" max="100" step="0.1" class="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer range-sm hover:opacity-90 accent-[#091e65] focus:outline-none focus:ring-1 focus:ring-[#091e65]">
                 <span id="player-duration" class="text-xs text-gray-500 font-mono w-10 text-left tabular-nums">0:00</span>
             </div>
-
             <div class="flex items-center space-x-2 sm:space-x-3">
-                <button id="player-speed-button" onclick="cyclePlaybackSpeed()" title="Playback Speed" class="p-1.5 text-gray-500 hover:text-[#091e65] hover:bg-[#eef2ff] rounded-full transition text-xs font-semibold w-8 h-8 flex items-center justify-center tabular-nums focus:outline-none focus:ring-1 focus:ring-[#091e65]">1x</button>
-                <button onclick="closePlayer()" title="Close Player" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-full transition focus:outline-none focus:ring-1 focus:ring-red-500">
+                <button id="player-speed-button" title="Playback Speed" class="p-1.5 text-gray-500 hover:text-[#091e65] hover:bg-[#eef2ff] rounded-full transition text-xs font-semibold w-8 h-8 flex items-center justify-center tabular-nums focus:outline-none focus:ring-1 focus:ring-[#091e65]">1x</button>
+                <button id="player-close-button" title="Close Player" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-full transition focus:outline-none focus:ring-1 focus:ring-red-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
@@ -430,9 +467,7 @@
     </div>
 </div>
 
-{# Pass data to JavaScript #}
-{{ user_review_data|json_script:"user-review-data" }}
-{# MODIFIED: Ensure the Stripe key is output as a valid JSON string by adding quotes #}
+<script id="user-review-data" type="application/json">{{ user_review_data_json|safe }}</script>
 <script id="stripe-key-data" type="application/json">"{{ STRIPE_PUBLISHABLE_KEY|escapejs }}"</script>
 <script id="django-urls-data" type="application/json">
 {
@@ -444,16 +479,15 @@
 <script id="page-context-data" type="application/json">
 {
     "isAuthenticated": {{ request.user.is_authenticated|yesno:"true,false" }},
+    "isCreatorBook": {{ is_creator_book|yesno:"true,false" }},
     "audiobookSlug": "{{ audiobook.slug|escapejs }}",
     "audiobookPrice": "{{ audiobook.price|floatformat:2|escapejs }}",
     "csrfToken": "{{ csrf_token }}"
-    {# Removed audiobookTitle as we can get it from the H1 #}
 }
 </script>
 
-{% endblock %}
+{% endblock content %}
 
-{% block extra_scripts %}
-    {# Link to the external JS file #}
-    <script src="{% static 'js/audiobook/audiobook_creator_details.js' %}" defer></script>
-{% endblock %}
+{% block javascript_extra %}
+    <script src="{% static 'js/audiobook_creator_details.js' %}" defer></script>
+{% endblock javascript_extra %}

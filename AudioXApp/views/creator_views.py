@@ -1,7 +1,7 @@
 import json
 import uuid
 from decimal import Decimal, InvalidOperation
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta # Corrected import for timedelta
 import os
 from collections import defaultdict, OrderedDict
 import logging # Added logging import
@@ -12,7 +12,7 @@ from django.http import JsonResponse, HttpResponseForbidden, Http404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST, require_http_methods, require_GET
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect # csrf_protect for views that modify data
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, FieldError
 from django.core.validators import RegexValidator
 from django.db import transaction, IntegrityError
@@ -54,23 +54,21 @@ except Exception as e:
     google_tts_available = False
 
 # --- Google Cloud Text-to-Speech (TTS) Voice Mapping ---
-# Testing Aisha with a US Female voice to diagnose the issue.
 TTS_VOICE_MAPPING = {
     'ali_narrator': { # Male
-        'name': "en-US-Wavenet-D", # US Male voice (currently working)
+        'name': "en-US-Wavenet-D", 
         'language_code': "en-US"
     },
     'aisha_narrator': { # Female
-        'name': "en-US-Wavenet-E", # Switched to US Female Wavenet voice for testing
+        'name': "en-US-Wavenet-E", 
         'language_code': "en-US"
     },
 }
-DEFAULT_TTS_VOICE_PARAMS = { 
-    'name': "en-US-Wavenet-A", 
+DEFAULT_TTS_VOICE_PARAMS = {    
+    'name': "en-US-Wavenet-A",    
     'language_code': "en-US"
 }
 # --- End Google Cloud TTS Setup ---
-
 
 
 def creator_required(view_func):
@@ -91,29 +89,48 @@ def creator_required(view_func):
             return redirect('AudioXApp:creator_welcome')
         except Exception as e:
             user_identifier = request.user.user_id if hasattr(request.user, 'user_id') else "Unknown User"
-            logger.error(f"An error occurred accessing creator information for user {user_identifier}: {type(e).__name__} - {e}") # Used logger
+            logger.error(f"An error occurred accessing creator information for user {user_identifier}: {type(e).__name__} - {e}")
             messages.error(request, f"An error occurred accessing creator information for user {user_identifier}: {type(e).__name__} - {e}")
             return redirect('AudioXApp:home')
     return _wrapped_view
 
 @login_required
 @require_POST
-@csrf_protect
+@csrf_protect # Ensure CSRF protection for POST requests
 def log_audiobook_view(request):
-    audiobook_id = request.POST.get('audiobook_id')
-
-    if not request.user.is_authenticated:
+    """
+    Logs a view for an audiobook.
+    Ensures a user's view for the same audiobook is only counted for earnings/total_views once per 24 hours.
+    Expects a JSON payload with 'audiobook_id'.
+    """
+    if not request.user.is_authenticated: # Should be redundant due to @login_required but good for clarity
         return JsonResponse({'status': 'error', 'message': 'User not authenticated.'}, status=401)
 
+    try:
+        data = json.loads(request.body)
+        audiobook_id = data.get('audiobook_id')
+    except json.JSONDecodeError:
+        logger.warning(f"log_audiobook_view: Invalid JSON payload from user {request.user.username}.")
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON payload.'}, status=400)
+
     if not audiobook_id:
+        logger.warning(f"log_audiobook_view: Audiobook ID missing in payload from user {request.user.username}.")
         return JsonResponse({'status': 'error', 'message': 'Audiobook ID is required.'}, status=400)
 
     try:
+        # Ensure audiobook_id is an integer or can be cast to one if your PK is integer
+        audiobook_id = int(audiobook_id) 
+    except ValueError:
+        logger.warning(f"log_audiobook_view: Invalid Audiobook ID format '{audiobook_id}' from user {request.user.username}.")
+        return JsonResponse({'status': 'error', 'message': 'Invalid Audiobook ID format.'}, status=400)
+
+    try:
         audiobook = get_object_or_404(
-            Audiobook.objects.select_related('creator'),
+            Audiobook.objects.select_related('creator'), # Select related creator for earnings logic
             pk=audiobook_id
         )
 
+        # Check if this user has viewed this audiobook in the last 24 hours
         twenty_four_hours_ago = timezone.now() - timedelta(hours=24)
         recent_view_exists = AudiobookViewLog.objects.filter(
             audiobook=audiobook,
@@ -122,9 +139,17 @@ def log_audiobook_view(request):
         ).exists()
 
         if recent_view_exists:
-            return JsonResponse({'status': 'success', 'message': 'View already logged recently for earnings and view count purposes.'})
+            # View already logged for this user/audiobook within 24 hours.
+            # Still return current total_views for UI consistency if needed.
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'View already logged recently.',
+                'total_views': audiobook.total_views # Return current total_views
+            })
 
+        # If no recent view, proceed to log it and update counts/earnings
         with transaction.atomic():
+            # Lock the audiobook row to prevent race conditions when updating total_views
             audiobook_locked = Audiobook.objects.select_for_update().get(pk=audiobook.pk)
 
             AudiobookViewLog.objects.create(
@@ -132,19 +157,23 @@ def log_audiobook_view(request):
                 user=request.user
             )
 
+            # Increment total views
             audiobook_locked.total_views = F('total_views') + 1
             audiobook_locked.save(update_fields=['total_views'])
-            audiobook_locked.refresh_from_db(fields=['total_views'])
+            audiobook_locked.refresh_from_db(fields=['total_views']) # Get the updated value
 
+            # Handle earnings for free audiobooks
             if not audiobook_locked.is_paid:
                 creator = audiobook_locked.creator
-                earned_amount_for_view = EARNING_PER_VIEW
+                earned_amount_for_view = EARNING_PER_VIEW # Defined constant
 
+                # Update creator's balances
                 Creator.objects.filter(pk=creator.pk).update(
                     available_balance=F('available_balance') + earned_amount_for_view,
                     total_earning=F('total_earning') + earned_amount_for_view
                 )
 
+                # Log the earning event
                 CreatorEarning.objects.create(
                     creator=creator,
                     audiobook=audiobook_locked,
@@ -154,13 +183,22 @@ def log_audiobook_view(request):
                     audiobook_title_at_transaction=audiobook_locked.title,
                     notes=f"Earning from 1 view on '{audiobook_locked.title}' (24hr rule applied)."
                 )
-        return JsonResponse({'status': 'success', 'message': 'View logged, total views updated, and earnings updated (if applicable).'})
+                logger.info(f"View logged and earning processed for user {request.user.username}, audiobook ID {audiobook_id}.")
+            else:
+                logger.info(f"View logged for user {request.user.username}, audiobook ID {audiobook_id} (paid book, no view earning).")
 
-    except Http404:
-        logger.warning(f"Audiobook not found for view logging: ID {audiobook_id}") # Used logger
+
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'View logged successfully.',
+                'total_views': audiobook_locked.total_views # Return the new total_views
+            })
+
+    except Audiobook.DoesNotExist: # Changed from Http404 to Audiobook.DoesNotExist for more specific catch
+        logger.warning(f"log_audiobook_view: Audiobook not found for ID {audiobook_id}, user {request.user.username}.")
         return JsonResponse({'status': 'error', 'message': 'Audiobook not found.'}, status=404)
     except Exception as e:
-        logger.error(f"Internal error in log_audiobook_view: {e}", exc_info=True) # Used logger
+        logger.error(f"log_audiobook_view: Internal error for user {request.user.username}, audiobook ID {audiobook_id}. Error: {e}", exc_info=True)
         return JsonResponse({'status': 'error', 'message': 'An internal error occurred.'}, status=500)
 
 

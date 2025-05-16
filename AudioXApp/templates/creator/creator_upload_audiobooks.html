@@ -51,6 +51,17 @@
         border-color: #7dd3fc; 
         color: #0c4a6e; 
     }
+    /* Style for the select dropdown arrow */
+    select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding-right: 2.5rem; /* Ensure space for arrow */
+    }
 </style>
 {% endblock %}
 
@@ -164,17 +175,10 @@
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
-                                    <label for="genre" class="block text-sm font-medium text-slate-700 mb-1.5">Genre <span class="text-red-600">*</span></label>
-                                    <input type="text" name="genre" id="genre" required
-                                           class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm"
-                                           placeholder="e.g., Fantasy, Thriller, Sci-Fi" value="{{ submitted_values.genre|default_if_none:'' }}">
-                                     {% if form_errors.genre %}<p class="text-red-500 text-sm mt-1">{{ form_errors.genre }}</p>{% endif %}
-                                </div>
-                                <div>
                                     <label for="language" class="block text-sm font-medium text-slate-700 mb-1.5">Language <span class="text-red-600">*</span></label>
                                     <div class="relative">
                                         <select name="language" id="language" required
-                                                class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none pr-10 bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm">
+                                                class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm">
                                             <option value="" disabled {% if not submitted_values.language %}selected{% endif %} class="text-slate-400">Select Language...</option>
                                             {% with current_lang=submitted_values.language %}
                                             <option value="English" {% if current_lang == "English" %}selected{% endif %}>English</option>
@@ -183,11 +187,19 @@
                                             <option value="Sindhi" {% if current_lang == "Sindhi" %}selected{% endif %}>Sindhi (سنڌي)</option>
                                             {% endwith %}
                                         </select>
-                                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                                            <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
                                         </div>
-                                    </div>
                                     {% if form_errors.language %}<p class="text-red-500 text-sm mt-1">{{ form_errors.language }}</p>{% endif %}
+                                </div>
+                                
+                                <div id="genreInputContainer">
+                                    <div>
+                                        <label for="genre" class="block text-sm font-medium text-slate-700 mb-1.5">Genre <span class="text-red-600">*</span></label>
+                                        <input type="text" name="genre" id="genre" 
+                                               class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-slate-50 cursor-not-allowed"
+                                               placeholder="Select language first" value="{{ submitted_values.genre|default_if_none:'' }}" disabled>
+                                        {% if form_errors.genre %}<p class="text-red-500 text-sm mt-1" id="genre_error_message_placeholder">{{ form_errors.genre }}</p>{% endif %}
+                                        <p class="text-xs text-slate-500 mt-1" id="genre_helper_text_placeholder">Please select a language to see genre options.</p>
+                                    </div>
                                 </div>
                             </div>
                             <div>
@@ -227,7 +239,7 @@
                                         <div class="mb-4">
                                             <label class="block text-xs font-medium text-slate-600 mb-1.5">Chapter Audio Source:</label>
                                             <div class="flex rounded-lg p-0.5 bg-slate-200 border border-slate-300">
-                                                <button type="button" class="input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if chapter_data.input_type == 'file' or not chapter_data.input_type %}active{% endif %}" data-type="file">Upload Audio File</button>
+                                                <button type="button" class="input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if chapter_data.input_type == 'file' or not chapter_data.input_type or chapter_data.input_type == 'None' %}active{% endif %}" data-type="file">Upload Audio File</button>
                                                 <button type="button" class="input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if chapter_data.input_type == 'tts' or chapter_data.input_type == 'generated_tts' %}active{% endif %}" data-type="tts">Use AudioX TTS</button>
                                             </div>
                                             <input type="hidden" name="chapters[{{ chapter_data.original_index }}][input_type]" value="{{ chapter_data.input_type|default:'file' }}" class="chapter-input-type-hidden-js">
@@ -255,7 +267,7 @@
                                             {% if chapter_data.errors.audio_file %}<p class="text-red-500 text-sm mt-1 chapter-audio-error-js">{{ chapter_data.errors.audio_file }}</p>{% endif %}
                                         </div>
 
-                                        <div class="tts-generation-controls mt-4 {% if chapter_data.input_type == 'file' or not chapter_data.input_type %}hidden{% endif %}">
+                                        <div class="tts-generation-controls mt-4 {% if chapter_data.input_type == 'file' or not chapter_data.input_type or chapter_data.input_type == 'None' %}hidden{% endif %}">
                                             <div class="mb-3">
                                                 <label for="chapter_text_content_{{ chapter_data.original_index }}" class="block text-xs font-medium text-slate-600 mb-1">Text for TTS <span class="text-red-600">*</span></label>
                                                 <textarea name="chapters[{{ chapter_data.original_index }}][text_content]" id="chapter_text_content_{{ chapter_data.original_index }}" rows="4" 
@@ -266,15 +278,12 @@
                                             <div class="mb-3">
                                                 <label for="chapter_tts_voice_{{ chapter_data.original_index }}" class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
                                                 <div class="relative">
-                                                    <select name="chapters[{{ chapter_data.original_index }}][tts_voice]" id="chapter_tts_voice_{{ chapter_data.original_index }}" class="chapter-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none pr-10 bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm">
+                                                    <select name="chapters[{{ chapter_data.original_index }}][tts_voice]" id="chapter_tts_voice_{{ chapter_data.original_index }}" class="chapter-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm">
                                                         <option value="default" {% if chapter_data.tts_voice == 'default' or not chapter_data.tts_voice %}selected{% endif %}>Select Narrator...</option>
                                                         <option value="ali_narrator" {% if chapter_data.tts_voice == 'ali_narrator' %}selected{% endif %}>Ali Narrator (Male)</option>
                                                         <option value="aisha_narrator" {% if chapter_data.tts_voice == 'aisha_narrator' %}selected{% endif %}>Aisha Narrator (Female)</option>
                                                     </select>
-                                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                                                        <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
                                                     </div>
-                                                </div>
                                                 {% if chapter_data.errors.tts_voice %}<p class="text-red-500 text-sm mt-1 chapter-voice-error-js">{{ chapter_data.errors.tts_voice }}</p>{% endif %}
                                             </div>
                                             
@@ -300,7 +309,7 @@
                                                 <i class="fas fa-volume-up mr-2 text-blue-600"></i>
                                                 <span class="chapter-generated-tts-filename-js font-medium">
                                                     {{ chapter_data.audio_filename|default:"Generated Audio" }} 
-                                                    {% if chapter_data.tts_voice_display_name %} {# Use pre-processed display name #}
+                                                    {% if chapter_data.tts_voice_display_name %} 
                                                         (Voice: {{ chapter_data.tts_voice_display_name }})
                                                     {% endif %}
                                                 </span>
@@ -415,15 +424,12 @@
                 <div class="mb-3">
                     <label class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
                     <div class="relative">
-                        <select name="" class="chapter-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none pr-10 bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm">
+                        <select name="" class="chapter-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm">
                             <option value="default" selected>Select Narrator...</option>
                             <option value="ali_narrator">Ali Narrator (Male)</option>
                             <option value="aisha_narrator">Aisha Narrator (Female)</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                            <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
                         </div>
-                    </div>
                     <p class="text-red-500 text-sm mt-1 chapter-voice-error-js"></p>
                 </div>
                 <div class="chapter-tts-preview-player-container hidden my-3">
@@ -445,7 +451,7 @@
             <div class="locked-generated-audio-display mt-4 hidden">
                 <p class="text-xs font-medium text-slate-700 mb-1">Selected Audio for this Chapter:</p>
                 <div class="info-box p-3 border rounded-lg text-sm">
-                     <i class="fas fa-volume-up mr-2 text-blue-600"></i>
+                       <i class="fas fa-volume-up mr-2 text-blue-600"></i>
                     <span class="chapter-generated-tts-filename-js font-medium">Generated Audio</span>
                 </div>
                 <input type="hidden" name="" class="chapter-generated-tts-url-input-js"> 

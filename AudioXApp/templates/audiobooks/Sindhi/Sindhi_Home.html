@@ -1,0 +1,288 @@
+{% extends "homepage.html" %}
+{% load static %}
+{% load humanize %}
+{% load mathfilters %}
+
+{% block title %}{{ display_name|default:"سنڌي" }} آڊيو ڪتابون - آڊيو ايڪس{% endblock %}
+
+{% block extra_head %}
+{# Font for Sindhi Script (Arabic-based) #}
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sindhi:wght@400;700&display=swap" rel="stylesheet">
+
+
+<style>
+    /* Styles for Sindhi Script text (using Noto Nastaliq Urdu as a base for Arabic script rendering) */
+    .sindhi-script-text {
+        font-family: 'Noto Sans Sindhi', 'Noto Nastaliq Urdu', serif; /* Primary Sindhi, fallback Urdu */
+        direction: rtl;
+        text-align: right;
+    }
+    .sindhi-script-text-center {
+        font-family: 'Noto Sans Sindhi', 'Noto Nastaliq Urdu', serif;
+        direction: rtl;
+        text-align: center;
+    }
+    /* Styles for Roman Sindhi text */
+    .roman-sindhi-text-center {
+        text-align: center;
+    }
+    .roman-sindhi-genre-link {
+        text-align: center;
+    }
+    .roman-sindhi-heading {
+        text-align: center;
+    }
+
+    /* Marquee styles */
+    @keyframes marquee_scroll_left {
+        from { transform: translateX(0%); }
+        to { transform: translateX(-50%); }
+    }
+    .marquee-container {
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+    .marquee-content {
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        will-change: transform;
+    }
+    /* Star rating card specific styles */
+    .star-rating-card .fa-star,
+    .star-rating-card .fa-star-half-alt,
+    .star-rating-card .far.fa-star {
+        font-size: 0.8rem;
+        margin-right: 1px;
+    }
+    .star-rating-card .text-yellow-400 { color: #facc15; }
+    .star-rating-card .text-gray-300 { color: #d1d5db; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen font-sans antialiased pb-16">
+
+    {# Hero Section - Sindhi and Roman Sindhi text #}
+    <div class="relative overflow-hidden">
+        <div class="absolute inset-0">
+            <video autoplay muted loop class="w-full h-full object-cover">
+                <source src="https://cdn.coverr.co/videos/coverr-reading-a-book-7883/1080p.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-[#091e65]/70 to-[#091e65]/20"></div>
+        </div>
+
+        <div class="relative flex flex-col items-center justify-center h-[700px] md:h-[800px] px-6 md:px-12 text-center">
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight tracking-tighter sindhi-script-text-center"
+                style="text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);">
+                آڊيو ڪتابن جي توهان جي دنيا منتظر آهي
+            </h1>
+            <p class="text-xl md:text-2xl lg:text-3xl text-white mb-10 max-w-4xl mx-auto leading-relaxed sindhi-script-text-center"
+               style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);">
+                دلڪش ڪهاڻيون دريافت ڪريو، جيڪي فن جي ماهرن بيان ڪيون آهن.
+            </p>
+            <a href="{% url 'AudioXApp:subscribe' %}"
+               class="inline-block bg-[#091e65] hover:bg-[#071852] text-white font-bold py-4 px-12 rounded-full text-lg tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl roman-sindhi-text-center">
+                Hane Subscribe Kayo
+            </a>
+            <div class="mt-12 w-full overflow-hidden">
+                <div class="marquee-container"> 
+                    <div class="marquee-content flex items-center whitespace-nowrap space-x-8">
+                        {# Roman Sindhi Genres #}
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Shayiri" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Shayiri</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Kahani" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Kahani</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Novel" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Novel</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Mazmoon" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Mazmoon</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Lok-Adab" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Lok Adab</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Drama" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Drama</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Safarname" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Safarname</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Bachran-Lai-Adab" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Bachran Lai Adab</a>
+                        {# Duplicate for seamless scrolling #}
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Shayiri" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Shayiri</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Kahani" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Kahani</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Novel" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Novel</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Mazmoon" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Mazmoon</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Lok-Adab" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Lok Adab</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Drama" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Drama</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Safarname" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Safarname</a>
+                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Bachran-Lai-Adab" class="text-lg md:text-xl font-bold text-white flex-shrink-0 roman-sindhi-genre-link px-2">Bachran Lai Adab</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# --- Main Content Area for Audiobooks --- #}
+    <div class="container mx-auto px-4 py-12">
+        <h1 class="text-4xl font-bold text-center text-[#091e65] mb-12 tracking-tight roman-sindhi-heading">
+            Sindhi Audio Kitaboon
+        </h1>
+
+        {% if error_message and not audiobooks_list and not creator_audiobooks %}
+            <div class="text-center text-gray-600 bg-yellow-50 p-6 rounded-xl shadow-sm border border-yellow-200 sindhi-script-text">
+                <i class="fas fa-exclamation-triangle text-3xl text-yellow-500 mb-3"></i>
+                <p class="text-lg">{{ error_message }}</p>
+            </div>
+        {% endif %}
+
+        {# --- External Audiobooks Section (e.g., Archive.org) --- #}
+        {% if audiobooks_list %}
+            <div class="mb-16">
+                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300 sindhi-script-text">
+                    عوامي آرڪائيوز مان
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+                    {% for book in audiobooks_list %}
+                        <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" class="block group relative">
+                            <div class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out group-hover:shadow-2xl hover:-translate-y-1 h-full flex flex-col">
+                                <div class="relative h-72 w-full">
+                                    <img src="{{ book.cover_image|default:'https://placehold.co/300x288/e2e8f0/64748b?text=ڪوور+ناهي' }}"
+                                         alt="{{ book.title }} Cover"
+                                         class="w-full h-full object-cover"
+                                         loading="lazy"
+                                         onerror="this.onerror=null; this.src='https://placehold.co/300x288/e2e8f0/64748b?text=ڪوور+غلطي';">
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60">
+                                        <button type="button" title="View Details" class="bg-white/80 text-[#091e65] rounded-full p-3.5 shadow-md transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="p-5 flex-grow flex flex-col sindhi-script-text"> {# Assuming titles/authors might be in Sindhi script #}
+                                    <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ book.title }}">{{ book.title }}</h3>
+                                    <p class="text-sm text-gray-600 truncate mb-2" title="{{ book.author|default:'اڻڄاتل ليکڪ' }}">
+                                        ليکڪ: {{ book.author|default:"اڻڄاتل ليکڪ" }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-auto">ذريعو: {{ book.source|capfirst|default:"آرڪائيو" }}</p>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% elif not error_message and not creator_audiobooks %}
+            <p class="text-center text-gray-500 py-8 sindhi-script-text">هن وقت هن ٻوليءَ ۾ عوامي آرڪائيوز مان ڪا به آڊيو ڪتاب دستياب ناهي.</p>
+        {% endif %}
+
+        {# --- Creator Audiobooks Section --- #}
+        {% if creator_audiobooks %}
+            <div class="mb-16">
+                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300 roman-sindhi-heading">
+                    Asaanje Takhleeqkaran Joon
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+                    {% for creator_book in creator_audiobooks %}
+                        <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=creator_book.slug %}" class="block group relative">
+                            <div class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out group-hover:shadow-2xl hover:-translate-y-1 h-full flex flex-col">
+                                <div class="relative h-72 w-full">
+                                    {% if creator_book.cover_image %}
+                                    <img src="{{ creator_book.cover_image }}"
+                                         alt="{{ creator_book.title }} Cover"
+                                         class="w-full h-full object-cover"
+                                         loading="lazy"
+                                         onerror="this.onerror=null; this.src='https://placehold.co/300x288/e2e8f0/64748b?text=ڪوور+غلطي';">
+                                    {% else %}
+                                    <img src="https://placehold.co/300x288/e2e8f0/64748b?text=ڪوور+ناهي"
+                                         alt="No Cover Available"
+                                         class="w-full h-full object-cover bg-gray-200">
+                                    {% endif %}
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60">
+                                        <button type="button" title="View Details" class="bg-white/80 text-[#091e65] rounded-full p-3.5 shadow-md transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    {% if creator_book.is_paid %}
+                                        <span class="absolute top-3 right-3 bg-[#091e65] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow sindhi-script-text">قيمت: {{ creator_book.price|floatformat:2 }}</span>
+                                    {% else %}
+                                         <span class="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow sindhi-script-text">مفت</span>
+                                    {% endif %}
+                                </div>
+                                <div class="p-5 flex-grow flex flex-col sindhi-script-text"> {# Card content can use Sindhi script if titles are in Sindhi #}
+                                    <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ creator_book.title }}">{{ creator_book.title }}</h3>
+                                    <p class="text-sm text-gray-600 truncate" title="{{ creator_book.author|default:'اڻڄاتل ليکڪ' }}">
+                                        ليکڪ: {{ creator_book.author|default:"اڻڄاتل ليکڪ" }}
+                                    </p>
+                                    {% if creator_book.creator.creator_name %}
+                                        <p class="text-xs text-[#091e65] mt-1 font-medium">آواز: {{ creator_book.creator.creator_name }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="mt-auto pt-3 flex justify-between items-center text-xs text-gray-500">
+                                        <div class="flex items-center space-x-1 star-rating-card">
+                                            {% with rating=creator_book.average_rating %}
+                                                {% if rating is not None %}
+                                                    {% with full_stars=rating|floatformat:0|add:"0" decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
+                                                    {% with decimal_part_int=decimal_part_str|add:"0" %}
+                                                        {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+                                                        {% if decimal_part_int >= 5 %}
+                                                            <i class="fas fa-star-half-alt text-yellow-400"></i>
+                                                            {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
+                                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                            {% endwith %}
+                                                        {% else %}
+                                                            {% with empty_stars=5|sub:full_stars %}
+                                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                            {% endwith %}
+                                                        {% endif %}
+                                                    {% endwith %}{# end decimal_part_int #}
+                                                    {% endwith %}{# end full_stars & decimal_part_str #}
+                                                    <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
+                                                {% else %}
+                                                    <span class="text-gray-400 italic">ڪا به درجه بندي ناهي</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span>{{ creator_book.total_views|intcomma }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% elif not error_message and not audiobooks_list %}
+            <p class="text-center text-gray-500 py-8 sindhi-script-text">هن وقت اسان جي تخليقڪارن وٽان هن ٻوليءَ ۾ ڪا به آڊيو ڪتاب دستياب ناهي.</p>
+        {% endif %}
+
+        {% if not audiobooks_list and not creator_audiobooks and not error_message %}
+            <div class="text-center text-gray-600 bg-blue-50 p-8 rounded-xl shadow sindhi-script-text">
+                <i class="fas fa-book-open text-4xl text-blue-400 mb-4"></i>
+                <p class="text-xl font-semibold">ڪا به {{ display_name|default:"سنڌي" }} آڊيو ڪتاب نه ملي</p>
+                <p class="mt-2">اسان کي هن وقت هن ٻوليءَ ۾ ڪا به آڊيو ڪتاب نه ملي سگهي. مهرباني ڪري بعد ۾ ٻيهر چيڪ ڪريو يا ٻيون ٻوليون ڳوليو!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Marquee animation setup
+    window.addEventListener('load', () => {
+        const marqueeContainer = document.querySelector('.marquee-container'); 
+        const marqueeContent = document.querySelector('.marquee-content'); 
+        if (marqueeContainer && marqueeContent) {
+            // FORCED ANIMATION FOR DEBUGGING - REMOVE OR REVERT THE CONDITION BELOW FOR PRODUCTION
+            if (!marqueeContent.dataset.initialized) { // Force animation if not already initialized
+            // Original condition: if (marqueeContent.scrollWidth > marqueeContainer.clientWidth && !marqueeContent.dataset.initialized) {
+                marqueeContent.dataset.initialized = 'true';
+                let actualContentWidth = marqueeContent.scrollWidth / 2; 
+                let animationDuration = actualContentWidth / 50; 
+                
+                if (actualContentWidth > 0 && animationDuration > 0) {
+                    marqueeContent.style.animation = `marquee_scroll_left ${animationDuration}s linear infinite`;
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
