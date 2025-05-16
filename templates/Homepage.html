@@ -278,14 +278,18 @@
                     </div>
                 {% endif %}
             </div>
-            {# Features Section #}
-            <div class="px-4 py-5 space-y-3">
-                <p class="px-3 text-xs font-semibold uppercase text-theme-text-inverted-subtle tracking-wider">Features</p>
-                 {# Link to Generate Audio from PDF (assuming a URL name exists or it's a static path) #}
-                <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-theme-secondary/10 to-amber-500/5 text-theme-secondary hover:from-theme-secondary/20 hover:to-amber-500/10 hover:text-amber-300 border border-theme-secondary/20 hover:border-theme-secondary/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-1 focus:ring-offset-theme-primary">
-                    <i class="fas fa-file-audio mr-3 text-lg w-5 text-center text-theme-secondary/80 group-hover:text-theme-secondary transition-colors"></i>
-                    <span>Generate Audio from PDF</span>
-                </a>
+
+              {# Core Features Section #}
+        <div class="px-4 py-5 space-y-3">
+            <p class="px-3 text-xs font-semibold uppercase text-theme-text-inverted-subtle tracking-wider">Features</p>
+            {# --- RESTYLED CORE FEATURE: Generate Audio from PDF --- #}
+            {# Updated href to point to the 'upload_pdf' URL within the 'AudioXApp' namespace #}
+            <a href="{% url 'AudioXApp:upload_pdf' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-theme-secondary/10 to-amber-500/5 text-theme-secondary hover:from-theme-secondary/20 hover:to-amber-500/10 hover:text-amber-300 border border-theme-secondary/20 hover:border-theme-secondary/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-1 focus:ring-offset-theme-primary">
+                <i class="fas fa-file-audio mr-3 text-lg w-5 text-center text-theme-secondary/80 group-hover:text-theme-secondary transition-colors"></i>
+                <span>Generate Audio from PDF</span>
+            </a>
+
+
                 {# Creator Status Links/Buttons #}
                 {% if user.is_authenticated %}
                     {% if is_banned %}

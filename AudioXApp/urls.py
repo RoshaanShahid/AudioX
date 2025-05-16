@@ -1,6 +1,6 @@
 # AudioXApp/urls.py
 from django.urls import path, include # Ensure include is imported if you use it elsewhere
-from .views import auth_views, user_views, creator_views, admin_views, content_views
+from .views import auth_views, user_views, creator_views, admin_views, content_views, audio_views
 from django.conf import settings
 from django.conf.urls.static import static # Keep this for DEBUG media serving
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -50,6 +50,7 @@ urlpatterns = [
     path('genre/history/', content_views.genre_history, name='genre_history'),
     path('genre/selfhelp/', content_views.genre_selfhelp, name='genre_selfhelp'),
     path('genre/business/', content_views.genre_business, name='genre_business'),
+    path('upload/', audio_views.upload_pdf, name='upload_pdf'),
     # path('genre/<slug:genre_slug>/', content_views.genre_detail, name='genre_detail'), # Original generic genre URL - commented out as specific ones are defined
 
     # --- Auth Views ---
