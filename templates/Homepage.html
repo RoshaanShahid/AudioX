@@ -165,7 +165,7 @@
                             <a href="{% url 'AudioXApp:billing_history' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
                                 <i class="fas fa-history w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> Billing History
                             </a>
-                             <a href="{% url 'AudioXApp:my_library' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out focus:outline-none focus:bg-blue-100 focus:text-[#091e65]">
+                                <a href="{% url 'AudioXApp:my_library' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out focus:outline-none focus:bg-blue-100 focus:text-[#091e65]">
                                 <i class="fas fa-bookmark w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> My Library
                             </a>
                             <a href="{% url 'AudioXApp:my_downloads' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out focus:outline-none focus:bg-blue-100 focus:text-[#091e65]">
@@ -281,7 +281,7 @@
                 {% endif %}
             </div>
 
-             {# Core Features Section #}
+                {# Core Features Section #}
             <div class="px-4 py-5 space-y-3">
                 <p class="px-3 text-xs font-semibold uppercase text-indigo-200 tracking-wider">Features</p>
                 {# Generate Audio from PDF #}
@@ -291,7 +291,7 @@
                 </a>
 
 
-                 {# Creator Status Links/Buttons #}
+                    {# Creator Status Links/Buttons #}
                 {% if user.is_authenticated %}
                     {% if is_banned %}
                         <button id="sidemenu-view-ban-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-red-600/10 text-red-300 hover:bg-red-600/20 border border-red-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
@@ -417,88 +417,88 @@
     {% block footer %}
     <footer class="bg-gradient-to-r from-[#091e65] to-blue-900 text-indigo-100 py-12 mt-10">
         <div class="container mx-auto px-4">
-             <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
-                 <div class="md:col-span-4 lg:col-span-4">
-                     {# Footer Logo #}
-                     <a href="{% url 'AudioXApp:home' %}" class="flex items-center mb-4 group">
-                         <span class="text-3xl font-extrabold tracking-tighter text-white">AUDIO</span>
-                         <span class="text-3xl font-extrabold text-red-500 tracking-tighter">X</span>
-                         <div class="w-3 h-3 bg-teal-500 rounded-full ml-1.5 group-hover:bg-teal-600 transition-colors"></div>
-                     </a>
-                     <p class="mb-5 text-sm leading-relaxed opacity-90">
-                         AudioX: Your gateway to audiobooks in English, Urdu, Punjabi, Sindhi, and more. Making literature accessible across Pakistan and beyond.
-                     </p>
-                     <hr class="border-t border-blue-700 my-4 opacity-50">
-                     <h3 class="font-semibold text-white text-xs uppercase tracking-wider mb-3">Follow Us</h3>
-                     {# Social Links #}
-                     <div class="flex space-x-4">
-                         <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Facebook"><i class="fab fa-facebook-f text-lg"></i></a>
-                         <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Instagram"><i class="fab fa-instagram text-lg"></i></a>
-                         <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Twitter"><i class="fab fa-twitter text-lg"></i></a>
-                         <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="LinkedIn"><i class="fab fa-linkedin-in text-lg"></i></a>
-                     </div>
-                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                    <div class="md:col-span-4 lg:col-span-4">
+                        {# Footer Logo #}
+                        <a href="{% url 'AudioXApp:home' %}" class="flex items-center mb-4 group">
+                            <span class="text-3xl font-extrabold tracking-tighter text-white">AUDIO</span>
+                            <span class="text-3xl font-extrabold text-red-500 tracking-tighter">X</span>
+                            <div class="w-3 h-3 bg-teal-500 rounded-full ml-1.5 group-hover:bg-teal-600 transition-colors"></div>
+                        </a>
+                        <p class="mb-5 text-sm leading-relaxed opacity-90">
+                            AudioX: Your gateway to audiobooks in English, Urdu, Punjabi, Sindhi, and more. Making literature accessible across Pakistan and beyond.
+                        </p>
+                        <hr class="border-t border-blue-700 my-4 opacity-50">
+                        <h3 class="font-semibold text-white text-xs uppercase tracking-wider mb-3">Follow Us</h3>
+                        {# Social Links #}
+                        <div class="flex space-x-4">
+                            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Facebook"><i class="fab fa-facebook-f text-lg"></i></a>
+                            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Instagram"><i class="fab fa-instagram text-lg"></i></a>
+                            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Twitter"><i class="fab fa-twitter text-lg"></i></a>
+                            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="LinkedIn"><i class="fab fa-linkedin-in text-lg"></i></a>
+                        </div>
+                    </div>
 
-                 <div class="md:col-span-8 lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8 md:pl-8">
-                     {# Footer Links #}
-                     <div>
-                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Company</h3>
-                         <ul class="space-y-2">
-                             <li><a href="{% url 'AudioXApp:aboutus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">About Us</a></li>
-                             <li><a href="{% url 'AudioXApp:ourteam' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Our Team</a></li>
-                             <li><a href="/careers" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Careers</a></li>
-                         </ul>
-                     </div>
-                     <div>
-                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">General</h3>
-                         <ul class="space-y-2">
-                             <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Browse</a></li>
-                             {# Footer Creator Link Logic #}
-                             {% if user.is_authenticated %}
-                                 {% if is_banned %}
-                                     <li><span class="text-sm text-red-300 cursor-not-allowed opacity-70">Creator Portal</span></li>
-                                 {% elif is_creator %}
-                                     <li><a href="{% url 'AudioXApp:creator_dashboard' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Dashboard</a></li>
-                                 {% else %} {# Covers pending, rejected, or None (and not banned) #}
-                                     <li><a href="{% url 'AudioXApp:creator_apply' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Become a Creator</a></li>
-                                 {% endif %}
-                             {% else %} {# Logged out #}
-                                 <li><a href="#" id="creator-portal-link-footer-loggedout" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Portal</a></li>
-                             {% endif %}
-                             <li><a href="{% url 'AudioXApp:contactus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Contact Us</a></li>
-                             <li><a href="/faq" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">FAQ</a></li>
-                         </ul>
-                     </div>
-                     <div>
-                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Legal</h3>
-                         <ul class="space-y-2">
-                             <li><a href="{% url 'AudioXApp:paymentpolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Payment Policy</a></li>
-                             <li><a href="{% url 'AudioXApp:piracypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Piracy Policy</a></li>
-                             <li><a href="{% url 'AudioXApp:termsandconditions' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Terms & Conditions</a></li>
-                             <li><a href="{% url 'AudioXApp:privacypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Privacy Policy</a></li>
-                         </ul>
-                     </div>
-                     <div>
-                         <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Genres</h3>
-                         <ul class="space-y-2">
-                             {# Updated these to use the new genre URL names from your urls.py #}
-                             <li><a href="{% url 'AudioXApp:genre_fiction' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fiction</a></li>
-                             <li><a href="{% url 'AudioXApp:genre_mystery' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Mystery</a></li>
-                             <li><a href="{% url 'AudioXApp:genre_thriller' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Thriller</a></li>
-                             <li><a href="{% url 'AudioXApp:genre_scifi' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Scifi</a></li>
-                             <li><a href="{% url 'AudioXApp:genre_fantasy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fantasy</a></li>
-                             <li><a href="{% url 'AudioXApp:genre_romance' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Romance</a></li>
-                             <li><a href="{% url 'AudioXApp:genre_biography' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Biography</a></li>
-                             <li><a href="{% url 'AudioXApp:genre_history' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">History</a></li>
-                             <li><a href="{% url 'AudioXApp:genre_selfhelp' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">SelfHelp</a></li>
-                             <li><a href="{% url 'AudioXApp:genre_business' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Business</a></li>
-                         </ul>
-                     </div>
-                 </div>
-             </div>
-             <div class="text-center mt-10 pt-8 border-t border-blue-700 border-opacity-50">
-                 <p class="text-sm opacity-80">&copy; {% now "Y" %} AudioX. All Rights Reserved. Made with <span class="text-red-400">❤️</span> in Pakistan.</p>
-             </div>
+                    <div class="md:col-span-8 lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8 md:pl-8">
+                        {# Footer Links #}
+                        <div>
+                            <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Company</h3>
+                            <ul class="space-y-2">
+                                <li><a href="{% url 'AudioXApp:aboutus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">About Us</a></li>
+                                <li><a href="{% url 'AudioXApp:ourteam' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Our Team</a></li>
+                                <li><a href="/careers" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Careers</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">General</h3>
+                            <ul class="space-y-2">
+                                <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Browse</a></li>
+                                {# Footer Creator Link Logic #}
+                                {% if user.is_authenticated %}
+                                    {% if is_banned %}
+                                        <li><span class="text-sm text-red-300 cursor-not-allowed opacity-70">Creator Portal</span></li>
+                                    {% elif is_creator %}
+                                        <li><a href="{% url 'AudioXApp:creator_dashboard' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Dashboard</a></li>
+                                    {% else %} {# Covers pending, rejected, or None (and not banned) #}
+                                        <li><a href="{% url 'AudioXApp:creator_apply' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Become a Creator</a></li>
+                                    {% endif %}
+                                {% else %} {# Logged out #}
+                                    <li><a href="#" id="creator-portal-link-footer-loggedout" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Portal</a></li>
+                                {% endif %}
+                                <li><a href="{% url 'AudioXApp:contactus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Contact Us</a></li>
+                                <li><a href="/faq" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">FAQ</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Legal</h3>
+                            <ul class="space-y-2">
+                                <li><a href="{% url 'AudioXApp:paymentpolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Payment Policy</a></li>
+                                <li><a href="{% url 'AudioXApp:piracypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Piracy Policy</a></li>
+                                <li><a href="{% url 'AudioXApp:termsandconditions' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Terms & Conditions</a></li>
+                                <li><a href="{% url 'AudioXApp:privacypolicy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Privacy Policy</a></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Genres</h3>
+                            <ul class="space-y-2">
+                                {# Updated these to use the new genre URL names from your urls.py #}
+                                <li><a href="{% url 'AudioXApp:genre_fiction' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fiction</a></li>
+                                <li><a href="{% url 'AudioXApp:genre_mystery' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Mystery</a></li>
+                                <li><a href="{% url 'AudioXApp:genre_thriller' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Thriller</a></li>
+                                <li><a href="{% url 'AudioXApp:genre_scifi' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Scifi</a></li>
+                                <li><a href="{% url 'AudioXApp:genre_fantasy' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Fantasy</a></li>
+                                <li><a href="{% url 'AudioXApp:genre_romance' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Romance</a></li>
+                                <li><a href="{% url 'AudioXApp:genre_biography' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Biography</a></li>
+                                <li><a href="{% url 'AudioXApp:genre_history' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">History</a></li>
+                                <li><a href="{% url 'AudioXApp:genre_selfhelp' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">SelfHelp</a></li>
+                                <li><a href="{% url 'AudioXApp:genre_business' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Business</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-10 pt-8 border-t border-blue-700 border-opacity-50">
+                    <p class="text-sm opacity-80">&copy; {% now "Y" %} AudioX. All Rights Reserved. Made with <span class="text-red-400">❤️</span> in Pakistan.</p>
+                </div>
         </div>
     </footer>
     {% endblock %}
@@ -537,6 +537,22 @@
         const djangoContext = contextDataElement ? JSON.parse(contextDataElement.textContent || '{}') : {};
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
+        // --- SweetAlert2 Custom Styling Mixin ---
+        const SwalStyled = Swal.mixin({
+            customClass: {
+                popup: 'rounded-xl shadow-lg font-sans border border-gray-100 bg-white',
+                title: 'text-xl sm:text-2xl font-bold text-[#091e65] pt-6 px-6 pb-2 text-left',
+                htmlContainer: 'text-base text-gray-700 text-left px-6 pb-6 leading-relaxed',
+                icon: 'mt-6 mx-auto',
+                confirmButton: 'inline-flex items-center justify-center gap-2 rounded-lg bg-[#091e65] px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
+                cancelButton: 'inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
+                actions: 'flex justify-end px-6 pb-2',
+                loader: 'border-[#091e65]',
+            },
+            buttonsStyling: false,
+        });
+
+
         // --- Slide-out Menu Functionality ---
         const menuToggle = document.getElementById('menu-toggle');
         const slideMenu = document.getElementById('slide-menu');
@@ -546,8 +562,8 @@
         function openSlideMenu() {
             if (!slideMenu || !menuBackdrop) return;
             menuBackdrop.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Prevent scrolling body when menu is open
-            requestAnimationFrame(() => { // Use rAF for smooth transition
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => {
                 slideMenu.classList.remove('-translate-x-full');
                 menuBackdrop.classList.remove('opacity-0');
                 menuBackdrop.classList.add('opacity-100');
@@ -559,18 +575,17 @@
             slideMenu.classList.add('-translate-x-full');
             menuBackdrop.classList.remove('opacity-100');
             menuBackdrop.classList.add('opacity-0');
-            // Hide backdrop and restore body scroll after transition
             setTimeout(() => {
                 menuBackdrop.classList.add('hidden');
                 document.body.style.overflow = '';
-            }, 300); // Match transition duration
+            }, 300);
         }
 
         if (menuToggle && slideMenu && closeMenu && menuBackdrop) {
             menuToggle.addEventListener('click', (e) => { e.stopPropagation(); openSlideMenu(); });
             closeMenu.addEventListener('click', closeSlideMenu);
-            menuBackdrop.addEventListener('click', closeSlideMenu); // Close when clicking outside menu
-            document.addEventListener('keydown', (event) => { // Close with Escape key
+            menuBackdrop.addEventListener('click', closeSlideMenu);
+            document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape' && !slideMenu.classList.contains('-translate-x-full')) {
                     closeSlideMenu();
                 }
@@ -585,7 +600,7 @@
             if (!profileDropdown || !profileDropdownToggle) return;
             profileDropdown.classList.remove('hidden');
             profileDropdownToggle.setAttribute('aria-expanded', 'true');
-            requestAnimationFrame(() => { // Use rAF for smooth transition
+            requestAnimationFrame(() => {
                 profileDropdown.classList.remove('opacity-0', 'scale-95');
                 profileDropdown.classList.add('opacity-100', 'scale-100');
             });
@@ -596,25 +611,22 @@
             profileDropdown.classList.remove('opacity-100', 'scale-100');
             profileDropdown.classList.add('opacity-0', 'scale-95');
             profileDropdownToggle.setAttribute('aria-expanded', 'false');
-            // Hide dropdown after transition
-            setTimeout(() => { profileDropdown.classList.add('hidden'); }, 100); // Match transition duration
+            setTimeout(() => { profileDropdown.classList.add('hidden'); }, 100);
         }
 
         if (profileDropdownToggle && profileDropdown) {
             profileDropdownToggle.addEventListener('click', (event) => {
-                event.stopPropagation(); // Prevent click from closing dropdown immediately
+                event.stopPropagation();
                 const isExpanded = profileDropdownToggle.getAttribute('aria-expanded') === 'true';
                 if (isExpanded) {
                     hideProfileDropdown();
                 } else {
-                    // Close slide menu if open before showing profile dropdown
                     if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) {
-                         closeSlideMenu();
+                        closeSlideMenu();
                     }
                     showProfileDropdown();
                 }
             });
-            // Close dropdown when clicking outside
             document.addEventListener('click', (event) => {
                 if (profileDropdown && !profileDropdown.classList.contains('hidden') &&
                     !profileDropdown.contains(event.target) &&
@@ -622,47 +634,38 @@
                     hideProfileDropdown();
                 }
             });
-            // Close dropdown with Escape key
             document.addEventListener('keydown', (event) => {
                 if (event.key === 'Escape' && profileDropdown && !profileDropdown.classList.contains('hidden')) {
                     hideProfileDropdown();
-                    if(profileDropdownToggle) profileDropdownToggle.focus(); // Return focus to toggle button
+                    if(profileDropdownToggle) profileDropdownToggle.focus();
                 }
             });
         }
 
         // --- Search Functionality ---
-        // Placeholder for actual voice search implementation
-        const setupVoiceSearch = (buttonId, inputId) => {
-            const btn = document.getElementById(buttonId);
-            const input = document.getElementById(inputId);
-            if (!btn || !input) return;
-            btn.addEventListener('click', () => {
-                // Using SweetAlert for placeholder functionality
-                SwalStyled.fire({ title: 'Voice Search', text: 'Voice search functionality is not implemented yet.', icon: 'info', confirmButtonText: 'Got it!' });
-            });
+        const performSearchQuery = (query, inputElement) => {
+            if (query) {
+                // Make sure the search URL is correct for your setup
+                window.location.href = `/search/?q=${encodeURIComponent(query)}`;
+            } else {
+                if (inputElement) inputElement.focus();
+            }
         };
-        setupVoiceSearch('voice-search-btn', 'search-input');
-        setupVoiceSearch('voice-search-btn-mobile', 'search-input-mobile');
 
-        // Setup search button and Enter key press
         const setupSearchButton = (buttonId, inputId) => {
             const btn = document.getElementById(buttonId);
             const input = document.getElementById(inputId);
             if (!btn || !input) return;
+
             const performSearch = () => {
                 const query = input.value.trim();
-                if (query) {
-                    // Redirect to search results page (assuming '/search/' URL pattern)
-                    window.location.href = `/search/?q=${encodeURIComponent(query)}`;
-                } else {
-                    input.focus(); // Focus input if empty
-                }
+                performSearchQuery(query, input);
             };
+
             btn.addEventListener('click', performSearch);
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
-                    e.preventDefault(); // Prevent default form submission if input is in a form
+                    e.preventDefault();
                     performSearch();
                 }
             });
@@ -671,11 +674,145 @@
         setupSearchButton('search-btn-mobile', 'search-input-mobile');
 
 
+        // --- Voice Search Functionality ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                const voiceBtnDesktop = document.getElementById('voice-search-btn');
+                const voiceBtnMobile = document.getElementById('voice-search-btn-mobile');
+                const currentActiveButton = recognition.currentVoiceButtonId === 'voice-search-btn' ? voiceBtnDesktop : voiceBtnMobile;
+
+                if (currentActiveButton) {
+                    // Example: Add a visual cue like a red border or pulsing animation
+                    currentActiveButton.classList.add('is-listening'); // Add a class for styling
+                    // Or change icon if you have an alternative listening icon
+                    // currentActiveButton.querySelector('img').src = "{% static 'img/microphone-listening-icon.png' %}";
+                }
+
+                SwalStyled.fire({
+                    title: 'Listening...',
+                    imageUrl: "{% static 'img/microphone-icon.png' %}",
+                    imageWidth: 60,
+                    imageHeight: 60,
+                    imageAlt: 'Microphone listening',
+                    showConfirmButton: false,
+                    allowOutsideClick: false, // User must speak or an error/timeout will occur
+                    customClass: {
+                        popup: 'rounded-xl shadow-lg font-sans border border-gray-100 bg-white w-auto max-w-xs',
+                        title: 'text-lg font-semibold text-[#091e65] pt-5 px-5 pb-4 text-center',
+                        image: 'mx-auto mb-2 animate-pulse'
+                    },
+                    timer: 10000, // Stop listening after 10 seconds if no speech
+                    timerProgressBar: true,
+                });
+            };
+
+            recognition.onresult = (event) => {
+                Swal.close();
+                const transcript = event.results[0][0].transcript;
+                const currentSearchInputId = recognition.currentSearchInputId;
+                const searchInput = document.getElementById(currentSearchInputId);
+
+                if (searchInput) {
+                    searchInput.value = transcript;
+                    performSearchQuery(transcript, searchInput); // Perform search with the transcript
+                }
+            };
+
+            recognition.onerror = (event) => {
+                Swal.close();
+                let errorMessage = 'An unknown voice search error occurred. Please try again.';
+                if (event.error === 'no-speech') {
+                    errorMessage = 'No speech was detected. Please ensure your microphone is working and try again.';
+                } else if (event.error === 'audio-capture') {
+                    errorMessage = 'Microphone problem. Please ensure it is connected and enabled.';
+                } else if (event.error === 'not-allowed') {
+                    errorMessage = 'Permission to use the microphone was denied or is not available. Please allow microphone access in your browser settings and ensure you are on a secure (HTTPS) connection.';
+                } else if (event.error === 'network') {
+                    errorMessage = 'A network error occurred during voice search. Please check your internet connection.';
+                } else if (event.error === 'aborted') {
+                    errorMessage = 'Voice search was aborted. Please try again.';
+                }
+                SwalStyled.fire({ title: 'Voice Search Failed', text: errorMessage, icon: 'error', confirmButtonText: 'Okay' });
+            };
+
+            recognition.onend = () => {
+                if (Swal.isVisible() && Swal.getTitle().textContent.includes('Listening...')) {
+                    Swal.close(); // Ensure listening popup is closed
+                }
+                const voiceBtnDesktop = document.getElementById('voice-search-btn');
+                const voiceBtnMobile = document.getElementById('voice-search-btn-mobile');
+                if (voiceBtnDesktop) voiceBtnDesktop.classList.remove('is-listening');
+                if (voiceBtnMobile) voiceBtnMobile.classList.remove('is-listening');
+                // Reset icon if changed:
+                // if (voiceBtnDesktop) voiceBtnDesktop.querySelector('img').src = "{% static 'img/microphone-icon.png' %}";
+                // if (voiceBtnMobile) voiceBtnMobile.querySelector('img').src = "{% static 'img/microphone-icon.png' %}";
+            };
+        }
+
+        const initiateVoiceSearch = (buttonId, inputId) => {
+            const btn = document.getElementById(buttonId);
+            const input = document.getElementById(inputId);
+
+            if (!btn || !input) return;
+
+            btn.addEventListener('click', () => {
+                if (!SpeechRecognition) {
+                    SwalStyled.fire({
+                        title: 'Voice Search Not Supported',
+                        text: 'Sorry, your browser does not support voice input, or you are not on a secure (HTTPS) connection.',
+                        icon: 'warning',
+                        confirmButtonText: 'Okay'
+                    });
+                    return;
+                }
+
+                // Store the current input and button IDs for the recognition event handlers
+                recognition.currentSearchInputId = inputId;
+                recognition.currentVoiceButtonId = buttonId;
+
+                // Set language for recognition based on site's language selector
+                const langSelector = document.getElementById('language-selector');
+                let recognitionLang = navigator.language || 'en-US'; // Fallback
+                if (langSelector) {
+                    const selectedLang = langSelector.value;
+                    if (selectedLang === 'English') recognitionLang = 'en-US';
+                    else if (selectedLang === 'Urdu') recognitionLang = 'ur-PK';
+                    else if (selectedLang === 'Punjabi') recognitionLang = 'pa-PK'; // Assuming Shahmukhi for Pakistan
+                    else if (selectedLang === 'Sindhi') recognitionLang = 'sd-PK';
+                }
+                recognition.lang = recognitionLang;
+
+                try {
+                    recognition.start();
+                } catch (e) {
+                    // Handle cases where recognition might already be active or other errors
+                    console.error("Error starting speech recognition:", e);
+                    if (e.name === 'InvalidStateError') {
+                         // recognition.stop(); // Optionally stop and restart, or just inform the user
+                         SwalStyled.fire({title: 'Voice Search Busy', text: 'Voice search is already active or processing. Please wait.', icon: 'info', confirmButtonText: 'Okay'});
+                    } else {
+                        SwalStyled.fire({title: 'Voice Search Error', text: 'Could not start voice input. Please try again.', icon: 'error', confirmButtonText: 'Okay'});
+                    }
+                }
+            });
+        };
+
+        initiateVoiceSearch('voice-search-btn', 'search-input');
+        initiateVoiceSearch('voice-search-btn-mobile', 'search-input-mobile');
+
+
         // --- Slide-out Menu Submenu Functionality ---
         const submenuToggles = document.querySelectorAll('#slide-menu .submenu-toggle');
         submenuToggles.forEach(toggle => {
             toggle.addEventListener('click', function(e) {
-                e.preventDefault(); // Prevent default link behavior
+                e.preventDefault();
                 const parentContainer = this.closest('.has-submenu-container');
                 if (!parentContainer) return;
                 const submenu = parentContainer.querySelector('.submenu');
@@ -684,29 +821,27 @@
 
                 const isOpen = parentContainer.classList.contains('submenu-open');
 
-                // Close any other open submenus
                 document.querySelectorAll('#slide-menu .has-submenu-container.submenu-open').forEach(openContainer => {
                     if (openContainer !== parentContainer) {
                         openContainer.classList.remove('submenu-open');
                         const otherSubmenu = openContainer.querySelector('.submenu');
                         const otherIcon = openContainer.querySelector('.submenu-icon');
                         if(otherSubmenu) {
-                            otherSubmenu.style.maxHeight = null; // Collapse
+                            otherSubmenu.style.maxHeight = null;
                             otherSubmenu.classList.add('opacity-0');
                         }
                         if(otherIcon) otherIcon.classList.remove('rotate-180');
                     }
                 });
 
-                // Toggle the clicked submenu
                 if (isOpen) {
                     parentContainer.classList.remove('submenu-open');
-                    submenu.style.maxHeight = null; // Collapse
+                    submenu.style.maxHeight = null;
                     submenu.classList.add('opacity-0');
                     icon.classList.remove('rotate-180');
                 } else {
                     parentContainer.classList.add('submenu-open');
-                    submenu.style.maxHeight = submenu.scrollHeight + "px"; // Expand to full height
+                    submenu.style.maxHeight = submenu.scrollHeight + "px";
                     submenu.classList.remove('opacity-0');
                     icon.classList.add('rotate-180');
                 }
@@ -722,14 +857,13 @@
 
         function showCreatorModal() {
             if (!creatorModal || !creatorModalBackdrop) return;
-            // Close slide menu if open
             if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) {
-                 closeSlideMenu();
+                   closeSlideMenu();
             }
             creatorModalBackdrop.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Prevent scrolling body when modal is open
-            creatorModal.classList.remove('pointer-events-none'); // Make modal interactive
-            requestAnimationFrame(() => { // Use rAF for smooth transition
+            document.body.style.overflow = 'hidden';
+            creatorModal.classList.remove('pointer-events-none');
+            requestAnimationFrame(() => {
                 creatorModalBackdrop.classList.remove('opacity-0'); creatorModalBackdrop.classList.add('opacity-100');
                 creatorModal.classList.remove('opacity-0', 'scale-95'); creatorModal.classList.add('opacity-100', 'scale-100');
             });
@@ -739,19 +873,17 @@
             if (!creatorModal || !creatorModalBackdrop) return;
             creatorModal.classList.remove('opacity-100', 'scale-100'); creatorModal.classList.add('opacity-0', 'scale-95');
             creatorModalBackdrop.classList.remove('opacity-100'); creatorModalBackdrop.classList.add('opacity-0');
-            // Hide backdrop and restore body scroll after transition
             setTimeout(() => {
                 creatorModalBackdrop.classList.add('hidden');
-                creatorModal.classList.add('pointer-events-none'); // Make modal non-interactive when hidden
+                creatorModal.classList.add('pointer-events-none');
                 document.body.style.overflow = '';
-            }, 300); // Match transition duration
+            }, 300);
         }
 
-        // Attach click listeners to the creator portal links for logged out users
         const setupCreatorLink = (link) => {
             if (link) {
                 link.addEventListener('click', (e) => {
-                    e.preventDefault(); // Prevent default link behavior (navigating to #)
+                    e.preventDefault();
                     showCreatorModal();
                 });
             }
@@ -759,11 +891,8 @@
         setupCreatorLink(creatorPortalLinkLoggedOut);
         setupCreatorLink(creatorPortalLinkFooterLoggedOut);
 
-        // Attach click listeners to modal close buttons
         modalCloseBtns.forEach(btn => btn.addEventListener('click', hideCreatorModal));
-        // Close modal when clicking outside (on backdrop)
         if (creatorModalBackdrop) creatorModalBackdrop.addEventListener('click', hideCreatorModal);
-        // Close modal with Escape key
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && creatorModal && !creatorModal.classList.contains('opacity-0')) {
                 hideCreatorModal();
@@ -771,128 +900,103 @@
         });
 
 
-        // --- SweetAlert2 Custom Styling Mixin ---
-        const SwalStyled = Swal.mixin({
-            customClass: {
-                popup: 'rounded-xl shadow-lg font-sans border border-gray-100 bg-white',
-                title: 'text-xl sm:text-2xl font-bold text-[#091e65] pt-6 px-6 pb-2 text-left',
-                htmlContainer: 'text-base text-gray-700 text-left px-6 pb-6 leading-relaxed',
-                icon: 'mt-6 mx-auto',
-                confirmButton: 'inline-flex items-center justify-center gap-2 rounded-lg bg-[#091e65] px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
-                cancelButton: 'inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
-                actions: 'flex justify-end px-6 pb-2',
-                loader: 'border-[#091e65]',
-            },
-            buttonsStyling: false, // Disable default button styling to use custom classes
-        });
-
-
-        // --- Creator Status Popups and Actions (using djangoContext) ---
-
-        // Handle "Switch to Creator Mode" button in sidemenu
+        // --- Creator Status Popups and Actions ---
         const sidemenuSwitchBtn = document.getElementById('sidemenu-switch-creator-btn');
         if (sidemenuSwitchBtn) {
             sidemenuSwitchBtn.addEventListener('click', function(event) {
                 event.preventDefault();
-                const dashboardUrl = "{% url 'AudioXApp:creator_dashboard' %}"; // Use Django URL tag
+                const dashboardUrl = "{% url 'AudioXApp:creator_dashboard' %}";
                 SwalStyled.fire({
                     title: 'Switching Modes',
                     html: 'Redirecting to Creator Dashboard...',
-                    timer: 1500, // Auto-close after 1.5 seconds
-                    allowOutsideClick: false, // Prevent closing by clicking outside
-                    didOpen: () => { Swal.showLoading(); }, // Show loading spinner
+                    timer: 1500,
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); },
                     timerProgressBar: true,
-                    customClass: { // Center text for this specific popup
+                    customClass: {
                         title: 'text-xl sm:text-2xl font-semibold text-[#091e65] pt-6 px-6 pb-2 text-center',
                         htmlContainer: 'text-base text-gray-700 text-center px-6 pb-6 leading-relaxed',
                     }
                 }).then(() => {
-                    // Redirect after the timer or confirmation (if any)
                     window.location.href = dashboardUrl;
                 });
             });
         }
 
-        // Handle "Application Rejected" button in sidemenu
         const viewRejectionBtn = document.getElementById('sidemenu-view-rejection-reason-btn');
-        // Ensure the button exists AND the context indicates a rejected status
         if (viewRejectionBtn && djangoContext && djangoContext.creator_status === 'rejected') {
-             viewRejectionBtn.addEventListener('click', function(event) {
-                 event.preventDefault();
-                 closeSlideMenu(); // Close the side menu
+            viewRejectionBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                closeSlideMenu();
 
-                 const reason = djangoContext.rejectionReason || 'No specific reason provided.';
-                 const attemptsMade = djangoContext.applicationAttemptsCurrentMonth || 0;
-                 const maxAttempts = djangoContext.maxApplicationAttempts || 3; // Assuming a default max attempts
-                 const remainingAttempts = Math.max(0, maxAttempts - attemptsMade);
-                 const canApplyAgain = djangoContext.can_reapply ?? false; // Use ?? for nullish coalescing
+                const reason = djangoContext.rejectionReason || 'No specific reason provided.';
+                const attemptsMade = djangoContext.applicationAttemptsCurrentMonth || 0;
+                const maxAttempts = djangoContext.maxApplicationAttempts || 3;
+                const remainingAttempts = Math.max(0, maxAttempts - attemptsMade);
+                const canApplyAgain = djangoContext.can_reapply ?? false;
 
-                 let attemptsText = (remainingAttempts > 0 && canApplyAgain) ?
-                                     `<i class="fas fa-redo mr-1.5 text-sm text-gray-500"></i> You have ${remainingAttempts} application attempt${remainingAttempts !== 1 ? 's' : ''} remaining this month.` :
-                                     '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
+                let attemptsText = (remainingAttempts > 0 && canApplyAgain) ?
+                                    `<i class="fas fa-redo mr-1.5 text-sm text-gray-500"></i> You have ${remainingAttempts} application attempt${remainingAttempts !== 1 ? 's' : ''} remaining this month.` :
+                                    '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
 
-                 const popupHtml = `<div class="space-y-4">
-                                     <p class="text-gray-700"><i class="fas fa-info-circle mr-1.5 text-[#091e65]"></i>Your previous application requires attention for the following reason:</p>
-                                     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md shadow-sm" role="alert">
-                                         <p class="font-medium">${reason}</p>
-                                     </div>
-                                     <p class="text-sm text-gray-600">${attemptsText}</p>
+                const popupHtml = `<div class="space-y-4">
+                                        <p class="text-gray-700"><i class="fas fa-info-circle mr-1.5 text-[#091e65]"></i>Your previous application requires attention for the following reason:</p>
+                                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md shadow-sm" role="alert">
+                                            <p class="font-medium">${reason}</p>
+                                        </div>
+                                        <p class="text-sm text-gray-600">${attemptsText}</p>
                                     </div>`;
 
-                 SwalStyled.fire({
-                     title: 'Application Status',
-                     html: popupHtml,
-                     icon: 'warning',
-                     iconColor: '#F59E0B', // Tailwind yellow-500
-                     showConfirmButton: canApplyAgain, // Show "Apply Again" only if allowed
-                     confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i>Apply Again',
-                     showCancelButton: true,
-                     cancelButtonText: 'Close',
-                     width: '450px', // Set a fixed width for consistency
-                 }).then((result) => {
-                     if (result.isConfirmed && canApplyAgain) {
-                         window.location.href = "{% url 'AudioXApp:creator_apply' %}"; // Use Django URL tag
-                     }
-                 });
-             });
+                SwalStyled.fire({
+                    title: 'Application Status',
+                    html: popupHtml,
+                    icon: 'warning',
+                    iconColor: '#F59E0B',
+                    showConfirmButton: canApplyAgain,
+                    confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i>Apply Again',
+                    showCancelButton: true,
+                    cancelButtonText: 'Close',
+                    width: '450px',
+                }).then((result) => {
+                    if (result.isConfirmed && canApplyAgain) {
+                        window.location.href = "{% url 'AudioXApp:creator_apply' %}";
+                    }
+                });
+            });
         }
 
-        // Handle "Creator Profile Blocked" button in sidemenu
         const viewBanReasonBtn = document.getElementById('sidemenu-view-ban-reason-btn');
-         // Ensure the button exists AND the context indicates a banned status
         if (viewBanReasonBtn && djangoContext && djangoContext.isBanned) {
-             viewBanReasonBtn.addEventListener('click', function(event) {
-                 event.preventDefault();
-                 closeSlideMenu(); // Close the side menu
+            viewBanReasonBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                closeSlideMenu();
 
-                 const reason = djangoContext.banReason || 'No specific reason provided by the administrator.';
-                 const banPopupHtml = `<div class="space-y-4">
+                const reason = djangoContext.banReason || 'No specific reason provided by the administrator.';
+                const banPopupHtml = `<div class="space-y-4">
                                         <p class="text-gray-700"><i class="fas fa-exclamation-triangle mr-1.5 text-red-600"></i> Your Creator Profile is currently blocked for the following reason:</p>
                                         <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 rounded-md shadow-sm" role="alert">
                                             <p class="font-medium">${reason}</p>
                                         </div>
                                         <p class="text-sm text-gray-600">If you believe this is an error or wish to appeal this decision, please contact our support team.</p>
-                                       </div>`;
-                 SwalStyled.fire({
-                     title: 'Creator Profile Blocked',
-                     html: banPopupHtml,
-                     icon: 'error',
-                     iconColor: '#DC2626', // Tailwind red-600
-                     showConfirmButton: true,
-                     confirmButtonText: '<i class="fas fa-headset mr-2"></i> Contact Support',
-                     showCancelButton: true,
-                     cancelButtonText: 'Close',
-                     width: '480px', // Set a fixed width
-                 }).then((result) => {
-                     if (result.isConfirmed) {
-                         window.location.href = "{% url 'AudioXApp:contactus' %}"; // Use Django URL tag
-                     }
-                 });
-             });
+                                    </div>`;
+                SwalStyled.fire({
+                    title: 'Creator Profile Blocked',
+                    html: banPopupHtml,
+                    icon: 'error',
+                    iconColor: '#DC2626',
+                    showConfirmButton: true,
+                    confirmButtonText: '<i class="fas fa-headset mr-2"></i> Contact Support',
+                    showCancelButton: true,
+                    cancelButtonText: 'Close',
+                    width: '480px',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{% url 'AudioXApp:contactus' %}";
+                    }
+                });
+            });
         }
 
-
-        // Function to call API to mark popup as shown
         async function markPopupShown(apiUrl) {
             if (!apiUrl || !csrfToken) {
                 console.error('API URL or CSRF Token is missing for markPopupShown.');
@@ -903,46 +1007,40 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken, // Include CSRF token
-                        'X-Requested-With': 'XMLHttpRequest' // Indicate it's an AJAX request
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({}) // Empty body for a simple POST request
+                    body: JSON.stringify({})
                 });
                 if (!response.ok) {
-                     const errorData = await response.text(); // Get error response body
-                     console.error(`Failed to mark popup shown at ${apiUrl}. Status: ${response.status}. Response: ${errorData}`);
-                } else {
-                     // const data = await response.json(); // No need to process response data if not used
-                     // console.log(`Mark popup response for ${apiUrl}:`, data);
+                    const errorData = await response.text();
+                    console.error(`Failed to mark popup shown at ${apiUrl}. Status: ${response.status}. Response: ${errorData}`);
                 }
             } catch (error) {
                 console.error(`Error calling API ${apiUrl}:`, error);
             }
         }
 
-        // Show "Welcome Creator" popup if context indicates it
         if (djangoContext && djangoContext.showWelcomePopup) {
             const welcomeHtml = `<div class="text-center">
                                     <div class="text-6xl mb-4 text-teal-500 animate-bounce">🎉</div>
                                     <h2 class="text-2xl font-bold text-[#091e65] mb-3">Welcome Aboard!</h2>
                                     <p class="text-gray-700 mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p>
                                     <p class="text-gray-700 px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p>
-                                 </div>`;
+                                </div>`;
             SwalStyled.fire({
                 html: welcomeHtml,
                 showConfirmButton: true,
                 confirmButtonText: '<i class="fas fa-tachometer-alt mr-2"></i> Go to Dashboard',
                 showCancelButton: true,
                 cancelButtonText: 'Maybe Later',
-                showCloseButton: true, // Allow closing with X button
-                width: '480px', // Set a fixed width
+                showCloseButton: true,
+                width: '480px',
                 didOpen: () => {
-                    // Focus the confirm button when the modal opens
                     const confirmButton = Swal.getConfirmButton();
                     if (confirmButton) confirmButton.focus();
                 },
                 didClose: () => {
-                    // Call the API to mark popup as shown after it's closed
                     if (djangoContext.markWelcomeUrl) {
                         markPopupShown(djangoContext.markWelcomeUrl);
                     } else {
@@ -950,29 +1048,26 @@
                     }
                 }
             }).then((result) => {
-                // Redirect to dashboard if confirm button is clicked
                 if (result.isConfirmed) {
-                    window.location.href = "{% url 'AudioXApp:creator_dashboard' %}"; // Use Django URL tag
+                    window.location.href = "{% url 'AudioXApp:creator_dashboard' %}";
                 }
             });
         }
 
-        // Show "Application Rejected" popup if context indicates it
         if (djangoContext && djangoContext.showRejectionPopup) {
             SwalStyled.fire({
                 title: 'Creator Application Update',
                 html: `<div class="space-y-3">
-                           <p>Unfortunately, your recent creator application was not approved for the following reason:</p>
-                           <p class="font-semibold p-3 bg-red-50 border border-red-200 rounded text-red-800">${djangoContext.rejectionReason || 'No specific reason provided.'}</p>
-                           <p class="text-sm text-gray-600">Please review the requirements. You may be able to re-apply later or contact support if you have questions.</p>
-                       </div>`,
+                            <p>Unfortunately, your recent creator application was not approved for the following reason:</p>
+                            <p class="font-semibold p-3 bg-red-50 border border-red-200 rounded text-red-800">${djangoContext.rejectionReason || 'No specific reason provided.'}</p>
+                            <p class="text-sm text-gray-600">Please review the requirements. You may be able to re-apply later or contact support if you have questions.</p>
+                        </div>`,
                 icon: 'error',
-                iconColor: '#DC2626', // Tailwind red-600
+                iconColor: '#DC2626',
                 confirmButtonText: 'Okay',
-                showCloseButton: true, // Allow closing with X button
-                width: '450px', // Set a fixed width
+                showCloseButton: true,
+                width: '450px',
                 didClose: () => {
-                    // Call the API to mark popup as shown after it's closed
                     if (djangoContext.markRejectionUrl) {
                         markPopupShown(djangoContext.markRejectionUrl);
                     } else {
@@ -981,7 +1076,6 @@
                 }
             });
         }
-
     }); // End DOMContentLoaded
 
 
@@ -990,9 +1084,8 @@
         const selector = document.getElementById('language-selector');
         const selectedLang = selector.value;
 
-        // Use Django URL tags for correct URL generation
         if (selectedLang === 'English') {
-            window.location.href = "{% url 'AudioXApp:home' %}"; // This will go to '/'
+            window.location.href = "{% url 'AudioXApp:home' %}";
         } else if (selectedLang === 'Urdu') {
             window.location.href = "{% url 'AudioXApp:urdu_page' %}";
         } else if (selectedLang === 'Punjabi') {
@@ -1000,16 +1093,13 @@
         } else if (selectedLang === 'Sindhi') {
             window.location.href = "{% url 'AudioXApp:sindhi_page' %}";
         }
-         // Add more languages here if needed
     }
 
-    // Set the initial language selector value based on the current URL path
     window.addEventListener('DOMContentLoaded', () => {
-        const path = window.location.pathname.toLowerCase(); // Use lowercase for path comparison
+        const path = window.location.pathname.toLowerCase();
         const selector = document.getElementById('language-selector');
 
-        if (selector) { // Check if the selector exists
-            // Check for specific language paths first
+        if (selector) {
             if (path.startsWith('/urdu/')) {
                 selector.value = 'Urdu';
             } else if (path.startsWith('/punjabi/')) {
@@ -1017,14 +1107,11 @@
             } else if (path.startsWith('/sindhi/')) {
                 selector.value = 'Sindhi';
             }
-            // Default to English if none of the specific language paths match
-            // This also covers the root path '/'
             else {
                 selector.value = 'English';
             }
         }
     });
-
     </script>
 
     {% block javascript_extra %}{% endblock %}
