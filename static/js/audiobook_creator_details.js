@@ -1,11 +1,3 @@
-/**
- * Audiobook Creator Details Page Script
- *
- * Handles audio playback, tab navigation, review submission/editing,
- * Stripe purchase flow, view logging, and other interactions
- * for the audiobook details page.
- */
-
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- Constants and Global Variables ---

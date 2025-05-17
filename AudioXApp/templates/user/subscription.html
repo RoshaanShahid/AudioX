@@ -7,8 +7,8 @@
 {# Tailwind CSS and JS libraries are inherited from Homepage.html #}
 {# Font Awesome is loaded in Homepage.html or via the script block below if needed #}
 <script src="https://cdn.tailwindcss.com"></script> {# Ensure Tailwind is loaded #}
-{# *** ADD Stripe.js SCRIPT HERE *** #}
-<script src="https://js.stripe.com/v3/"></script>
+{# Stripe.js is loaded in Homepage.html, no need to load again if block inheritance is correct #}
+{# <script src="https://js.stripe.com/v3/"></script> #}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"> {# Load Inter font #}
 <style>
   body { font-family: 'Inter', sans-serif; }
@@ -70,7 +70,7 @@
                         <span class="text-xl align-top">PKR</span> 350 <span class="text-lg text-gray-500">/ month</span> {# UPDATED PRICE #}
                     </div>
                 </div>
-                {# *** ADDED data-item-type and data-item-id *** #}
+                {# *** ADDED data-item-type, data-item-id and data-plan-display *** #}
                 <button type="button" data-item-type="subscription" data-item-id="monthly" data-plan-display="Monthly" class="subscribe-btn block w-full py-4 px-8 bg-[#091e65] hover:bg-indigo-700 text-white font-bold rounded-full text-lg transition-colors duration-200 mt-auto"> {# Added mt-auto #}
                     Subscribe Monthly
                 </button>
@@ -79,7 +79,7 @@
 
             <div class="bg-white rounded-3xl shadow-xl p-8 hover:scale-105 transition-transform duration-300 relative border-4 border-green-500 flex flex-col"> {# Added flex flex-col #}
                 <div class="absolute top-0 right-0 bg-green-500 text-white px-4 py-2 rounded-br-3xl rounded-tl-md text-sm font-bold"> {# Adjusted size #}
-                   Best Value
+                    Best Value
                 </div>
                  <div class="flex-grow"> {# Added flex-grow #}
                     <h3 class="text-4xl font-bold text-[#091e65] text-center mb-4">Annually</h3>
@@ -91,7 +91,7 @@
                         Save PKR 700! {# UPDATED SAVING (12 * 350 = 4200; 4200 - 3500 = 700) #}
                     </p>
                 </div>
-                 {# *** ADDED data-item-type and data-item-id *** #}
+                 {# *** ADDED data-item-type, data-item-id and data-plan-display *** #}
                 <button type="button" data-item-type="subscription" data-item-id="annual" data-plan-display="Annual" class="subscribe-btn block w-full py-4 px-8 bg-[#091e65] hover:bg-indigo-700 text-white font-bold rounded-full text-lg transition-colors duration-200 mt-auto"> {# Added mt-auto #}
                     Subscribe Annually
                 </button>
@@ -181,14 +181,14 @@
                 </div>
             </div>
              <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                {# *** REMOVED form tag, button type changed to button *** #}
+                {# Button type is 'button' to prevent form submission if it were inside a form #}
                 <button type="button" id="proceed-to-payment-btn" class="w-full inline-flex justify-center rounded-full border border-transparent shadow-sm px-6 py-3 bg-[#091e65] text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed">
                     Proceed to Payment
                 </button>
                 <button type="button" id="cancel-modal" class="mt-3 w-full inline-flex justify-center rounded-full border border-gray-300 shadow-sm px-6 py-3 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                     Cancel
                 </button>
-                 {# Hidden input to store plan details for JS #}
+                {# Hidden inputs to store plan details for JS when modal is confirmed #}
                 <input type="hidden" id="selected-item-type" value="">
                 <input type="hidden" id="selected-item-id" value="">
             </div>
@@ -198,14 +198,18 @@
 
 {% endblock %}
 
-{% block javascript %}
-{# Load Font Awesome if not already loaded in base template #}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js" integrity="sha512-yFjZbTYRCJodnuyGlsKamNE/LlEaEAxSUk5Y+D00/SaPMPwoYDA+uSBUH/NwXmJdlwVTbWzP/WfUqLhO7RI/wA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-{# Load SweetAlert2 if not already loaded in base template #}
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% block javascript_extra %} {# <<< CORRECTED BLOCK NAME HERE #}
+{# Font Awesome JS and SweetAlert2 are loaded in Homepage.html (base template) #}
+{# Stripe.js is also loaded in Homepage.html #}
 
 <script>
+// DEBUG LINE 1: Check if this script block is even being parsed and executed.
+console.log('DEBUG SubscribersPage: JavaScript block started.');
+
 document.addEventListener('DOMContentLoaded', function() {
+    // DEBUG LINE 2: Check if DOMContentLoaded event is firing.
+    console.log('DEBUG SubscribersPage: DOMContentLoaded event fired.');
+
     // --- Element Selectors ---
     const subscribeButtons = document.querySelectorAll('.subscribe-btn');
     const confirmModal = document.getElementById('confirm-modal');
@@ -215,73 +219,157 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedItemTypeInput = document.getElementById('selected-item-type');
     const selectedItemIdInput = document.getElementById('selected-item-id');
 
+    // DEBUG LINE 3: Log before Stripe key processing.
+    console.log('DEBUG SubscribersPage: About to process Stripe key.');
+
     // --- Get Stripe Instance ---
-    const stripePublishableKey = "{{ STRIPE_PUBLISHABLE_KEY|escapejs }}"; // Get key from context
-    let stripe;
-    if (stripePublishableKey && stripePublishableKey !== 'None') {
-         try {
-            stripe = Stripe(stripePublishableKey);
-         } catch (error) {
+    // The STRIPE_PUBLISHABLE_KEY is passed from the Django view context.
+    const stripePublishableKey = "{{ STRIPE_PUBLISHABLE_KEY|escapejs }}";
+    let stripe; // Declare stripe instance variable
+
+    // DEBUG LINE 4: Log the retrieved Stripe key.
+    console.log('DEBUG SubscribersPage: stripePublishableKey from template = ', stripePublishableKey);
+
+    if (stripePublishableKey && stripePublishableKey !== 'None' && stripePublishableKey.startsWith('pk_')) {
+        // DEBUG LINE 5: Log before attempting to initialize Stripe.
+        console.log('DEBUG SubscribersPage: Valid Stripe key format detected. Attempting to initialize Stripe.');
+        try {
+            // Check if Stripe object is available (it should be, as it's loaded in Homepage.html)
+            if (typeof Stripe === 'function') {
+                stripe = Stripe(stripePublishableKey);
+                // DEBUG LINE 6: Log if Stripe initialized successfully.
+                console.log('DEBUG SubscribersPage: Stripe initialized successfully.', stripe);
+            } else {
+                console.error('DEBUG SubscribersPage: Stripe function not found. Stripe.js might not be loaded correctly from Homepage.html.');
+                showGenericError("Payment system script (Stripe.js) not loaded. Please contact support.");
+                subscribeButtons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                });
+            }
+        } catch (error) {
             console.error("Error initializing Stripe:", error);
-            showGenericError("Payment system could not be initialized. Please contact support.");
-            subscribeButtons.forEach(btn => btn.disabled = true);
-         }
+            showGenericError("Payment system could not be initialized. Please check the console or contact support.");
+            subscribeButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+        }
     } else {
-        console.error("Stripe Publishable Key not found in context.");
-        showGenericError("Payment configuration error. Please contact support.");
-        subscribeButtons.forEach(btn => btn.disabled = true);
+        console.error("Stripe Publishable Key not found, is invalid, or not set in Django context. Key Value:", stripePublishableKey);
+        showGenericError("Payment configuration error. Subscription buttons are disabled. Please contact support.");
+        subscribeButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
     }
 
     // --- Modal Handling ---
     function showModal(itemType, itemId, planDisplay) {
-        if (modalPlanName) modalPlanName.textContent = planDisplay; // Use display name
+        console.log('DEBUG SubscribersPage: showModal called with', itemType, itemId, planDisplay);
+        if (modalPlanName) modalPlanName.textContent = planDisplay;
         if (selectedItemTypeInput) selectedItemTypeInput.value = itemType;
         if (selectedItemIdInput) selectedItemIdInput.value = itemId;
         if (confirmModal) confirmModal.classList.remove('hidden');
+        
+        if (proceedToPaymentBtn && stripe) {
+            proceedToPaymentBtn.disabled = false;
+            proceedToPaymentBtn.innerHTML = 'Proceed to Payment';
+        } else if (proceedToPaymentBtn) {
+             proceedToPaymentBtn.disabled = true; 
+             proceedToPaymentBtn.innerHTML = 'Payment Unavailable';
+             console.warn('DEBUG SubscribersPage: Proceed to payment button disabled as Stripe object is not available.');
+        }
+        if (cancelModalBtn) cancelModalBtn.disabled = false;
     }
 
     function hideModal() {
+        console.log('DEBUG SubscribersPage: hideModal called.');
         if (confirmModal) confirmModal.classList.add('hidden');
         if (selectedItemTypeInput) selectedItemTypeInput.value = ""; // Clear hidden inputs
         if (selectedItemIdInput) selectedItemIdInput.value = "";
     }
 
     // --- CSRF Token Helper ---
-    function getCookie(name) { /* ... (getCookie function - no changes needed) ... */
-        let cookieValue = null; if (document.cookie && document.cookie !== '') { const cookies = document.cookie.split(';'); for (let i = 0; i < cookies.length; i++) { const cookie = cookies[i].trim(); if (cookie.substring(0, name.length + 1) === (name + '=')) { cookieValue = decodeURIComponent(cookie.substring(name.length + 1)); break; } } } return cookieValue;
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 
-    // --- Error Notification ---
+    // --- Error Notification (uses SweetAlert2 loaded in Homepage.html) ---
     function showGenericError(message) {
-        // Use SweetAlert2 for consistency
+        console.error('DEBUG SubscribersPage: showGenericError called with message:', message);
+        // Check if Swal is defined (it should be from Homepage.html)
+        if (typeof Swal === 'undefined') {
+            console.error('DEBUG SubscribersPage: SweetAlert (Swal) is not defined!');
+            alert('Error: ' + message); // Fallback to basic alert
+            return;
+        }
         Swal.fire({
             title: 'Error',
             text: message,
             icon: 'error',
-            confirmButtonColor: '#091e65' // Use your theme color
+            confirmButtonColor: '#091e65' // Theme color
         });
     }
 
     // --- Subscribe Button Listeners ---
-    subscribeButtons.forEach(button => {
-        button.addEventListener('click', (event) => {
-            const itemType = event.currentTarget.dataset.itemType; // 'subscription'
-            const itemId = event.currentTarget.dataset.itemId;     // 'monthly' or 'annual'
-            const planDisplay = event.currentTarget.dataset.planDisplay; // 'Monthly' or 'Annual'
-            showModal(itemType, itemId, planDisplay);
+    console.log('DEBUG SubscribersPage: Setting up subscribe button listeners. Stripe object:', stripe);
+    // Add listeners only if Stripe was initialized (or at least a valid key was present to attempt init)
+    // This ensures we don't add listeners to buttons that are meant to be non-functional.
+    if (stripe || (stripePublishableKey && stripePublishableKey !== 'None' && stripePublishableKey.startsWith('pk_'))) {
+        subscribeButtons.forEach(button => {
+            // Check if button is already disabled by Stripe init failure
+            if (!button.disabled) {
+                button.addEventListener('click', (event) => {
+                    console.log('DEBUG SubscribersPage: Subscribe button clicked.');
+                    const itemType = event.currentTarget.dataset.itemType;
+                    const itemId = event.currentTarget.dataset.itemId;
+                    const planDisplay = event.currentTarget.dataset.planDisplay;
+                    showModal(itemType, itemId, planDisplay);
+                });
+            } else {
+                console.warn('DEBUG SubscribersPage: Subscribe button was already disabled, listener not added.', button);
+            }
         });
-    });
+    } else {
+         console.warn('DEBUG SubscribersPage: Stripe not available, subscribe button listeners not added.');
+    }
+
 
     // --- Modal Close/Cancel Listeners ---
     if(cancelModalBtn){ cancelModalBtn.addEventListener('click', hideModal); }
-    if(confirmModal){ /* ... (click outside/escape key logic - no changes needed) ... */
-        confirmModal.addEventListener('click', (event) => { if (event.target === confirmModal) hideModal(); });
-        document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !confirmModal.classList.contains('hidden')) hideModal(); });
+    if(confirmModal){
+        // Close modal if user clicks outside of it
+        confirmModal.addEventListener('click', (event) => {
+            if (event.target === confirmModal) {
+                hideModal();
+            }
+        });
+        // Close modal if user presses Escape key
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !confirmModal.classList.contains('hidden')) {
+                hideModal();
+            }
+        });
     }
 
     // --- Proceed to Payment Logic ---
+    console.log('DEBUG SubscribersPage: Setting up "Proceed to Payment" button listener. Stripe object:', stripe);
+    // Add listener only if Stripe object is available
     if (proceedToPaymentBtn && stripe) {
         proceedToPaymentBtn.addEventListener('click', function() {
+            console.log('DEBUG SubscribersPage: "Proceed to Payment" button clicked.');
             // Get selected plan details from hidden inputs
             const itemType = selectedItemTypeInput.value;
             const itemId = selectedItemIdInput.value;
@@ -298,34 +386,47 @@ document.addEventListener('DOMContentLoaded', function() {
             proceedToPaymentBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
 
             const sessionData = { item_type: itemType, item_id: itemId };
+            console.log('DEBUG SubscribersPage: Fetching create_checkout_session with data:', sessionData);
 
             // Call backend to create checkout session
             fetch("{% url 'AudioXApp:create_checkout_session' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-CSRFToken': getCookie('csrftoken'), // Ensure this function works
+                    'X-Requested-With': 'XMLHttpRequest' // Often useful for Django to identify AJAX
                 },
                 body: JSON.stringify(sessionData)
             })
             .then(response => {
+                console.log('DEBUG SubscribersPage: create_checkout_session response received:', response);
                 if (!response.ok) {
-                    return response.json().then(errData => { throw new Error(errData.error || `Server error: ${response.status}`); })
-                                       .catch(() => { throw new Error(`Server error: ${response.status}`); });
+                    // Try to parse error from backend if available
+                    return response.json().then(errData => {
+                        console.error('DEBUG SubscribersPage: create_checkout_session error response data:', errData);
+                        throw new Error(errData.error || `Server error: ${response.status}`);
+                    }).catch((initialError) => { // Catches if response.json() fails or if errData.error is not set
+                        console.error('DEBUG SubscribersPage: create_checkout_session error (non-JSON or no errData.error):', initialError, 'Status:', response.status, response.statusText);
+                        throw new Error(`Server error: ${response.status} - ${response.statusText}`); // Provide more context
+                    });
                 }
                 return response.json();
             })
             .then(session => {
+                console.log('DEBUG SubscribersPage: create_checkout_session success data:', session);
                 if (session.sessionId) {
-                    // Redirect to Stripe Checkout
                     console.log("Redirecting to Stripe Checkout with session ID:", session.sessionId);
+                    // Redirect to Stripe Checkout
                     return stripe.redirectToCheckout({ sessionId: session.sessionId });
                 } else {
+                    // If backend returns an error in JSON format like {error: "message"}
                     throw new Error(session.error || 'Failed to create checkout session (no session ID).');
                 }
             })
             .then(result => {
+                // This .then block is for the result of redirectToCheckout.
+                // If redirectToCheckout fails (e.g., network issue before redirect), result.error will be set.
+                // If successful, the user is redirected, and this code might not run.
                 if (result && result.error) {
                     console.error('Stripe redirectToCheckout error:', result.error);
                     showGenericError(result.error.message || 'Could not redirect to payment page.');
@@ -339,48 +440,74 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error creating checkout session or redirecting:', error);
                 hideModal(); // Hide the modal on error
                 showGenericError(error.message || 'An error occurred while preparing your subscription. Please try again.');
-                // Re-enable buttons
-                proceedToPaymentBtn.disabled = false;
+                // Re-enable buttons in the modal (they are hidden anyway, but good practice)
+                proceedToPaymentBtn.disabled = false; // Will be re-evaluated when modal is shown again
                 if(cancelModalBtn) cancelModalBtn.disabled = false;
                 proceedToPaymentBtn.innerHTML = 'Proceed to Payment';
             });
         });
-    } else if (!stripe) {
-         console.error("Stripe object not available, Proceed to Payment button listener not added.");
+    } else if (proceedToPaymentBtn && !stripe) {
+        // If Stripe is not initialized, ensure the proceed button is disabled and gives feedback
+        console.warn("Stripe object not available, Proceed to Payment button listener not fully functional or disabled.");
+        proceedToPaymentBtn.disabled = true;
+        proceedToPaymentBtn.innerHTML = 'Payment Unavailable';
+        proceedToPaymentBtn.classList.add('opacity-70', 'cursor-not-allowed');
     }
 
 
-    // --- Handle Redirect Status Messages (Optional) ---
+    // --- Handle Redirect Status Messages (Optional but good for UX) ---
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('status') === 'success' && urlParams.get('stripe_session_id')) {
-        // Payment was likely successful, confirmation relies on webhook.
-        console.log("Returned from Stripe with success status. Waiting for webhook confirmation.");
-        // Show a temporary success message using SweetAlert
-        Swal.fire({
-            title: 'Payment Submitted!',
-            text: 'Your subscription is being processed and will be active shortly.',
-            icon: 'info',
-            timer: 4000, // Show for 4 seconds
-            timerProgressBar: true,
-            showConfirmButton: false,
-            allowOutsideClick: false
-        });
-        // Clean the URL parameters
-        window.history.replaceState(null, null, window.location.pathname);
-    } else if (urlParams.get('status') === 'cancel') {
-        // User cancelled
-        showGenericError('Your subscription process was cancelled.');
-        // Clean the URL parameters
-        window.history.replaceState(null, null, window.location.pathname);
-    } else if (urlParams.get('success') === 'true') { // Handle old success param if needed
-         Swal.fire({ title: 'Subscription Successful!', text: 'Welcome to AudioX Premium!', icon: 'success', confirmButtonColor: '#091e65' });
-         window.history.replaceState(null, null, window.location.pathname);
-     } else if (urlParams.get('error')) { // Handle old error param
-          Swal.fire({ title: 'Subscription Error', text: decodeURIComponent(urlParams.get('error')), icon: 'error', confirmButtonColor: '#091e65' });
-        window.history.replaceState(null, null, window.location.pathname);
-     }
+    const paymentStatus = urlParams.get('status');
+    const stripeSessionId = urlParams.get('stripe_session_id'); // For new success status
+    const legacySuccess = urlParams.get('success'); // For old success param
+    const legacyError = urlParams.get('error'); // For old error param
 
+    if (paymentStatus === 'success' && stripeSessionId) {
+        console.log("DEBUG SubscribersPage: Returned from Stripe with success status.");
+        // Check if Swal is defined
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Payment Submitted!',
+                text: 'Your subscription is being processed and will be active shortly. Please check your account.',
+                icon: 'info',
+                timer: 5000, // Show for 5 seconds
+                timerProgressBar: true,
+                showConfirmButton: true, // Allow user to dismiss
+                confirmButtonColor: '#091e65',
+                allowOutsideClick: false
+            });
+        } else {
+            alert('Payment Submitted! Your subscription is being processed.'); // Fallback
+        }
+        // Clean the URL parameters to prevent re-showing message on refresh
+        window.history.replaceState(null, null, window.location.pathname);
+    } else if (paymentStatus === 'cancel') {
+        console.log("DEBUG SubscribersPage: Returned from Stripe with cancel status.");
+        showGenericError('Your subscription process was cancelled.'); // showGenericError checks for Swal
+        window.history.replaceState(null, null, window.location.pathname);
+    } else if (legacySuccess === 'true') { // Handle old success param if needed
+         console.log("DEBUG SubscribersPage: Legacy success param found.");
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ title: 'Subscription Successful!', text: 'Welcome to AudioX Premium!', icon: 'success', confirmButtonColor: '#091e65' });
+        } else {
+            alert('Subscription Successful! Welcome to AudioX Premium!'); // Fallback
+        }
+        window.history.replaceState(null, null, window.location.pathname);
+    } else if (legacyError) { // Handle old error param
+        console.log("DEBUG SubscribersPage: Legacy error param found:", decodeURIComponent(legacyError));
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ title: 'Subscription Error', text: decodeURIComponent(legacyError), icon: 'error', confirmButtonColor: '#091e65' });
+        } else {
+            alert('Subscription Error: ' + decodeURIComponent(legacyError)); // Fallback
+        }
+        window.history.replaceState(null, null, window.location.pathname);
+    }
+    // DEBUG LINE - End of DOMContentLoaded
+    console.log('DEBUG SubscribersPage: End of DOMContentLoaded execution.');
 
 }); // End DOMContentLoaded
+
+// DEBUG LINE - End of script block
+console.log('DEBUG SubscribersPage: JavaScript block finished parsing.');
 </script>
-{% endblock %}
+{% endblock javascript_extra %} 

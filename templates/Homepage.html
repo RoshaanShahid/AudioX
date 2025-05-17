@@ -26,36 +26,37 @@
         {{ creator_js_context|json_script:"django-context-data" }}
     {% endif %}
 
-    {% block head_extra %}{% endblock %} {# For additional head elements from child templates #}
+    {% block head_extra %}{% endblock %}
 </head>
 
-<body class="font-sans bg-theme-bg-subtle text-theme-text-primary flex flex-col min-h-screen">
+<body class="font-sans bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
+    {# --- Header Section --- #}
     {% block header %}
-    <header class="bg-white shadow-md sticky top-0 z-50 border-b-2 border-theme-primary">
+    <header class="bg-white shadow-md sticky top-0 z-50 border-b-2 border-[#091e65]">
         <div class="container mx-auto flex items-center justify-between px-4 h-16">
             <div class="flex items-center space-x-3 sm:space-x-4">
                 {# Hamburger Menu Toggle #}
-                <button id="menu-toggle" class="text-theme-text-secondary hover:text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 rounded-md p-2 -ml-2 transition duration-150 ease-in-out">
+                <button id="menu-toggle" class="text-gray-600 hover:text-[#091e65] focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 rounded-md p-2 -ml-2 transition duration-150 ease-in-out">
                     <i class="fas fa-bars text-xl"></i>
                     <span class="sr-only">Open Menu</span>
                 </button>
                 {# Logo linking to English homepage (root) #}
                 <a href="{% url 'AudioXApp:home' %}" class="flex items-center shrink-0 group">
-                    <span class="text-2xl font-extrabold text-theme-primary tracking-tighter group-hover:text-theme-primary-hover transition-colors">AUDIO</span>
+                    <span class="text-2xl font-extrabold text-[#091e65] tracking-tighter group-hover:text-blue-900 transition-colors">AUDIO</span>
                     <span class="text-2xl font-extrabold text-red-600 tracking-tighter">X</span>
-                    <div class="w-2 h-2 bg-theme-secondary rounded-full ml-1 group-hover:bg-theme-secondary-hover transition-colors"></div>
+                    <div class="w-2 h-2 bg-teal-500 rounded-full ml-1 group-hover:bg-teal-600 transition-colors"></div>
                 </a>
             </div>
 
             {# Desktop Search Bar #}
             <div class="flex-grow max-w-xl mx-4 hidden md:flex items-center">
                 <div class="relative w-full">
-                    <input type="text" id="search-input" placeholder="Search audiobooks & stories..." class="w-full pl-11 pr-12 py-2.5 border border-theme-border rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-400 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
-                    <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-11 text-theme-text-light hover:text-theme-primary focus:outline-none transition duration-150 ease-in-out" id="search-btn" title="Search">
+                    <input type="text" id="search-input" placeholder="Search audiobooks & stories..." class="w-full pl-11 pr-12 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none placeholder-gray-400 text-gray-800 text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
+                    <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-11 text-gray-500 hover:text-[#091e65] focus:outline-none transition duration-150 ease-in-out" id="search-btn" title="Search">
                         <i class="fas fa-search text-base"></i>
                     </button>
-                    <button id="voice-search-btn" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-light hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none group" title="Search by Voice">
+                    <button id="voice-search-btn" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-gray-500 hover:text-[#091e65] rounded-r-full hover:bg-gray-100 focus:outline-none group" title="Search by Voice">
                         <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity">
                     </button>
                 </div>
@@ -63,10 +64,10 @@
 
             {# Right side: Language, Coins/Premium, Profile/Auth #}
             <div class="flex items-center space-x-2 sm:space-x-3">
-                {# Language Selector (Desktop) #}
+                {# Language Selector (Desktop) - Enhanced Styling #}
                 <div class="relative hidden sm:block">
                     <select
-                        class="px-2 py-1 border border-[#091e65] rounded-full text-gray-700 focus-ring text-sm"
+                        class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-full leading-tight focus:outline-none focus:bg-white focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65] text-sm transition duration-150 ease-in-out"
                         id="language-selector"
                         onchange="redirectToLanguage()">
                         <option value="English">English</option>
@@ -74,20 +75,20 @@
                         <option value="Punjabi">پنجابی</option>
                         <option value="Sindhi">سنڌي</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-theme-text-light">
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
                         <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                     </div>
                 </div>
 
                 {# Coins/Premium Button #}
                 {% if user.is_authenticated %}
-                    <a href="{% url 'AudioXApp:mywallet' %}" class="bg-theme-primary-lighter hover:bg-theme-primary-light text-theme-primary font-semibold px-3 h-9 rounded-full flex items-center border border-theme-primary/30 transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-theme-primary shadow-sm hover:shadow">
-                        <i class="fas fa-coins mr-1.5 text-base text-theme-primary opacity-80"></i>
+                    <a href="{% url 'AudioXApp:mywallet' %}" class="bg-blue-100 hover:bg-blue-200 text-[#091e65] font-semibold px-3 h-9 rounded-full flex items-center border border-blue-300 transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 shadow-sm hover:shadow">
+                        <i class="fas fa-coins mr-1.5 text-base text-[#091e65] opacity-80"></i>
                         <span id="header-coin-balance">{{ user.coins|default:0 }}</span>
                         <span class="hidden sm:inline ml-1">Coins</span>
                     </a>
                 {% else %}
-                    <a href="{% url 'AudioXApp:subscribe' %}" class="bg-theme-secondary hover:bg-theme-secondary-hover text-white font-semibold px-3 h-9 rounded-full flex items-center shadow-sm transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-theme-secondary">
+                    <a href="{% url 'AudioXApp:subscribe' %}" class="bg-teal-500 hover:bg-teal-600 text-white font-semibold px-3 h-9 rounded-full flex items-center shadow-sm transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-teal-500">
                         <i class="fas fa-star mr-1.5 text-base"></i>
                         <span class="hidden sm:inline">GET PREMIUM</span>
                         <span class="sm:hidden">PREMIUM</span>
@@ -97,18 +98,18 @@
                 {# Profile Dropdown / Auth Links #}
                 {% if user.is_authenticated %}
                 <div class="relative">
-                    <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary group" id="profile-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
+                    <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] group" id="profile-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
                         <span class="sr-only">Open user menu</span>
                         {% if user.profile_pic %}
-                            <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="w-9 h-9 rounded-full object-cover border-2 border-transparent group-hover:border-theme-primary transition-colors">
+                            <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="w-9 h-9 rounded-full object-cover border-2 border-transparent group-hover:border-[#091e65] transition-colors">
                         {% else %}
-                            <span class="w-9 h-9 rounded-full bg-gray-200 text-theme-text-light flex items-center justify-center text-lg border-2 border-transparent group-hover:border-theme-primary group-hover:bg-theme-primary-lighter group-hover:text-theme-primary transition-all">
+                            <span class="w-9 h-9 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-lg border-2 border-transparent group-hover:border-[#091e65] group-hover:bg-blue-100 group-hover:text-[#091e65] transition-all">
                                 <i class="fas fa-user"></i>
                             </span>
                         {% endif %}
                     </button>
                     <div id="profile-dropdown"
-                            class="absolute right-0 mt-2 w-72 origin-top-right rounded-xl shadow-dropdown bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-60 overflow-hidden"
+                            class="absolute right-0 mt-2 w-72 origin-top-right rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-60 overflow-hidden"
                             role="menu" aria-orientation="vertical" aria-labelledby="profile-dropdown-toggle" tabindex="-1"
                             data-transition-enter="transition ease-out duration-100"
                             data-transition-enter-start="opacity-0 scale-95"
@@ -116,13 +117,13 @@
                             data-transition-leave="transition ease-in duration-75"
                             data-transition-leave-start="opacity-100 scale-100"
                             data-transition-leave-end="opacity-0 scale-95">
-                        <div class="px-5 py-4 bg-gradient-to-br from-theme-primary to-blue-800 text-white">
+                        <div class="px-5 py-4 bg-gradient-to-br from-[#091e65] to-blue-800 text-white">
                             <div class="flex items-center space-x-3">
                                 <div class="shrink-0">
                                     {% if user.profile_pic %}
                                         <img src="{{ user.profile_pic.url }}" alt="Profile Picture" class="h-11 w-11 rounded-full object-cover ring-2 ring-white/50 shadow-md">
                                     {% else %}
-                                        <span class="h-11 w-11 rounded-full bg-white/20 text-indigo-200 flex items-center justify-center text-xl ring-1 ring-white/30 shadow-inner">
+                                        <span class="h-11 w-11 rounded-full bg-white/10 text-indigo-200 flex items-center justify-center text-xl ring-1 ring-white/30 shadow-inner">
                                             <i class="fas fa-user"></i>
                                         </span>
                                     {% endif %}
@@ -130,7 +131,7 @@
                                 <div class="min-w-0 flex-1">
                                     <p class="text-md font-semibold text-white truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
                                     {% if subscription_type == 'FR' %}
-                                        <p class="text-xs text-indigo-200">Free Plan</p>
+                                        <p class="text-xs text-yellow-300">Free Plan</p>
                                     {% elif subscription_type == 'PR' %}
                                         <p class="text-xs font-medium text-emerald-300 flex items-center">
                                             <i class="fas fa-star text-xs mr-1 text-yellow-300"></i> Premium Plan
@@ -141,40 +142,40 @@
                                 </div>
                             </div>
                             {% if subscription_type == 'FR' %}
-                                <a href="{% url 'AudioXApp:subscribe' %}" class="block w-full mt-4 py-1.5 px-3 text-center bg-theme-secondary hover:bg-theme-secondary-hover text-theme-primary text-xs font-bold rounded-full focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-2 focus:ring-offset-theme-primary transition duration-150 ease-in-out shadow-sm hover:shadow-md">
+                                <a href="{% url 'AudioXApp:subscribe' %}" class="block w-full mt-4 py-1.5 px-3 text-center bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-[#091e65] transition duration-150 ease-in-out shadow-sm hover:shadow-md">
                                     <i class="fas fa-arrow-up mr-1"></i> Upgrade to Premium
                                 </a>
                             {% endif %}
                         </div>
                         <div class="py-2" role="none">
-                            <a href="{% url 'AudioXApp:myprofile' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
-                                <i class="fas fa-user-circle w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Profile
+                            <a href="{% url 'AudioXApp:myprofile' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
+                                <i class="fas fa-user-circle w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> My Profile
                             </a>
                             {% if subscription_type == 'PR' %}
-                                <a href="{% url 'AudioXApp:managesubscription' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
-                                    <i class="fas fa-cog w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Manage Subscription
+                                <a href="{% url 'AudioXApp:managesubscription' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
+                                    <i class="fas fa-cog w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> Manage Subscription
                                 </a>
                             {% endif %}
-                            <a href="{% url 'AudioXApp:buycoins' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
-                                <i class="fas fa-coins w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Buy Coins
+                            <a href="{% url 'AudioXApp:buycoins' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
+                                <i class="fas fa-coins w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> Buy Coins
                             </a>
-                            <a href="{% url 'AudioXApp:mywallet' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
-                                <i class="fas fa-wallet w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Wallet
+                            <a href="{% url 'AudioXApp:mywallet' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
+                                <i class="fas fa-wallet w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> My Wallet
                             </a>
-                            <a href="{% url 'AudioXApp:billing_history' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary" role="menuitem" tabindex="-1">
-                                <i class="fas fa-history w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> Billing History
+                            <a href="{% url 'AudioXApp:billing_history' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
+                                <i class="fas fa-history w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> Billing History
                             </a>
-                            <a href="{% url 'AudioXApp:my_library' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary">
-                                <i class="fas fa-bookmark w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Library
+                             <a href="{% url 'AudioXApp:my_library' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out focus:outline-none focus:bg-blue-100 focus:text-[#091e65]">
+                                <i class="fas fa-bookmark w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> My Library
                             </a>
-                            <a href="{% url 'AudioXApp:my_downloads' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-theme-text-secondary hover:bg-theme-primary-lighter hover:text-theme-primary transition duration-150 ease-in-out focus:outline-none focus:bg-theme-primary-lighter focus:text-theme-primary">
-                                <i class="fas fa-download w-5 mr-3 text-lg text-theme-text-light group-hover:text-theme-primary transition-colors"></i> My Downloads
+                            <a href="{% url 'AudioXApp:my_downloads' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out focus:outline-none focus:bg-blue-100 focus:text-[#091e65]">
+                                <i class="fas fa-download w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> My Downloads
                             </a>
                         </div>
-                        <div class="border-t border-theme-border"></div>
+                        <div class="border-t border-gray-200"></div>
                         <div class="py-2" role="none">
-                            <a href="{% url 'AudioXApp:logout' %}" class="flex items-center px-5 py-2.5 text-sm text-theme-error hover:bg-theme-error-light hover:text-red-700 transition duration-150 ease-in-out group focus:outline-none focus:bg-theme-error-light focus:text-red-700" role="menuitem" tabindex="-1">
-                                <i class="fas fa-sign-out-alt w-5 mr-3 text-lg group-hover:text-red-600 transition-colors"></i> Logout
+                            <a href="{% url 'AudioXApp:logout' %}" class="flex items-center px-5 py-2.5 text-sm text-red-600 hover:bg-red-100 hover:text-red-800 transition duration-150 ease-in-out group focus:outline-none focus:bg-red-100 focus:text-red-800" role="menuitem" tabindex="-1">
+                                <i class="fas fa-sign-out-alt w-5 mr-3 text-lg group-hover:text-red-800 transition-colors"></i> Logout
                             </a>
                         </div>
                     </div>
@@ -182,13 +183,13 @@
                 {% else %}
                     {# Login/Signup links (Desktop) #}
                     <div class="hidden sm:flex items-center space-x-2">
-                        <a href="{% url 'AudioXApp:login' %}" class="text-theme-primary hover:text-theme-primary-hover font-semibold px-4 h-9 flex items-center rounded-full text-sm transition duration-150 ease-in-out hover:bg-theme-primary-lighter focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Login</a>
-                        <a href="{% url 'AudioXApp:signup' %}" class="bg-theme-primary hover:bg-theme-primary-hover text-white font-semibold px-4 h-9 flex items-center rounded-full shadow-sm text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-1">Signup</a>
+                        <a href="{% url 'AudioXApp:login' %}" class="text-[#091e65] hover:text-blue-900 font-semibold px-4 h-9 flex items-center rounded-full text-sm transition duration-150 ease-in-out hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1">Login</a>
+                        <a href="{% url 'AudioXApp:signup' %}" class="bg-[#091e65] hover:bg-blue-900 text-white font-semibold px-4 h-9 flex items-center rounded-full shadow-sm text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1">Signup</a>
                     </div>
                     {# Login/Signup icons (Mobile) #}
                     <div class="flex sm:hidden items-center space-x-1">
-                        <a href="{% url 'AudioXApp:login' %}" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Login"><i class="fas fa-sign-in-alt text-lg"></i></a>
-                        <a href="{% url 'AudioXApp:signup' %}" class="text-theme-text-secondary hover:text-theme-primary p-2 rounded-full hover:bg-gray-100" title="Signup"><i class="fas fa-user-plus text-lg"></i></a>
+                        <a href="{% url 'AudioXApp:login' %}" class="text-gray-600 hover:text-[#091e65] p-2 rounded-full hover:bg-gray-100" title="Login"><i class="fas fa-sign-in-alt text-lg"></i></a>
+                        <a href="{% url 'AudioXApp:signup' %}" class="text-gray-600 hover:text-[#091e65] p-2 rounded-full hover:bg-gray-100" title="Signup"><i class="fas fa-user-plus text-lg"></i></a>
                     </div>
                 {% endif %}
             </div>
@@ -197,11 +198,11 @@
         {# Mobile Search Bar #}
         <div class="container mx-auto px-4 pb-3 md:hidden">
             <div class="relative w-full">
-                <input type="text" id="search-input-mobile" placeholder="Search..." class="w-full pl-10 pr-12 py-2 border border-theme-border rounded-full focus:ring-2 focus:ring-theme-primary focus:border-theme-primary focus:outline-none placeholder-gray-400 text-theme-text-primary text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
-                <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-10 text-theme-text-light hover:text-theme-primary focus:outline-none" id="search-btn-mobile" title="Search">
+                <input type="text" id="search-input-mobile" placeholder="Search..." class="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none placeholder-gray-400 text-gray-800 text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
+                <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-10 text-gray-500 hover:text-[#091e65] focus:outline-none" id="search-btn-mobile" title="Search">
                     <i class="fas fa-search text-base"></i>
                 </button>
-                <button id="voice-search-btn-mobile" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-theme-text-light hover:text-theme-primary rounded-r-full hover:bg-gray-100 focus:outline-none group" title="Search by Voice">
+                <button id="voice-search-btn-mobile" class="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-gray-500 hover:text-[#091e65] rounded-r-full hover:bg-gray-100 focus:outline-none group" title="Search by Voice">
                     <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity">
                 </button>
             </div>
@@ -209,21 +210,22 @@
     </header>
     {% endblock %}
 
+    {# --- Slide-out Menu Section --- #}
     {% block slider-menu %}
     {# Slide-out Menu Backdrop #}
     <div id="slide-menu-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[990] hidden transition-opacity duration-300 ease-in-out opacity-0"></div>
     {# Slide-out Menu Content #}
-    <div id="slide-menu" class="fixed top-0 left-0 w-80 h-full bg-theme-primary text-theme-text-inverted shadow-2xl z-[1000] flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out">
+    <div id="slide-menu" class="fixed top-0 left-0 w-80 h-full bg-[#091e65] text-indigo-100 shadow-2xl z-[1000] flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out">
         {# Menu Header (Logo and Close Button) #}
         <div class="flex items-center justify-between p-5 border-b border-white/10 h-18 shrink-0">
             {# Logo linking to English homepage (root) #}
             <a href="{% url 'AudioXApp:home' %}" class="flex items-center shrink-0 group">
                 <span class="text-2xl font-extrabold text-white tracking-tighter">AUDIO</span>
                 <span class="text-2xl font-extrabold text-red-500 tracking-tighter">X</span>
-                <div class="w-2 h-2 bg-theme-secondary rounded-full ml-1.5 group-hover:bg-theme-secondary-hover transition-colors"></div>
+                <div class="w-2 h-2 bg-teal-500 rounded-full ml-1.5 group-hover:bg-teal-600 transition-colors"></div>
             </a>
             {# Close Menu Button #}
-            <button id="close-menu" class="text-theme-text-inverted-muted hover:text-white transition-colors duration-150 ease-in-out p-2 -mr-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
+            <button id="close-menu" class="text-indigo-200 hover:text-white transition-colors duration-150 ease-in-out p-2 -mr-2 rounded-full hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 <span class="sr-only">Close Menu</span>
             </button>
@@ -236,9 +238,9 @@
                     <div class="flex items-center space-x-4">
                         <div class="shrink-0">
                             {% if user.profile_pic %}
-                                <img src="{{ user.profile_pic.url }}" alt="Profile" class="h-14 w-14 rounded-full object-cover ring-2 ring-offset-2 ring-offset-theme-primary ring-white/50 shadow-md">
+                                <img src="{{ user.profile_pic.url }}" alt="Profile" class="h-14 w-14 rounded-full object-cover ring-2 ring-offset-2 ring-offset-[#091e65] ring-white/50 shadow-md">
                             {% else %}
-                                <span class="h-14 w-14 rounded-full bg-white/10 text-theme-text-inverted-muted flex items-center justify-center text-2xl ring-1 ring-white/20 shadow-inner">
+                                <span class="h-14 w-14 rounded-full bg-white/10 text-indigo-200 flex items-center justify-center text-2xl ring-1 ring-white/20 shadow-inner">
                                     <i class="fas fa-user"></i>
                                 </span>
                             {% endif %}
@@ -247,9 +249,9 @@
                             <div class="flex items-center justify-between">
                                 <p class="text-md font-semibold text-white truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
                                 <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium shadow-sm whitespace-nowrap
-                                    {% if subscription_type == 'FR' %} bg-yellow-500/10 text-yellow-300 ring-1 ring-inset ring-yellow-500/20
-                                    {% elif subscription_type == 'PR' %} bg-gradient-to-r from-green-500/10 via-emerald-600/10 to-teal-600/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/30
-                                    {% else %} bg-gray-500/10 text-gray-400 ring-1 ring-inset ring-gray-500/20 {% endif %}">
+                                {% if subscription_type == 'FR' %} bg-yellow-500/10 text-yellow-300 ring-1 ring-inset ring-yellow-500/20
+                                {% elif subscription_type == 'PR' %} bg-gradient-to-r from-green-500/10 via-emerald-600/10 to-teal-600/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/30
+                                {% else %} bg-gray-500/10 text-gray-400 ring-1 ring-inset ring-gray-500/20 {% endif %}">
                                     {% if subscription_type == 'FR' %}
                                         <i class="fas fa-user mr-1 opacity-70 text-xs"></i> Free
                                     {% elif subscription_type == 'PR' %}
@@ -259,19 +261,19 @@
                                     {% endif %}
                                 </span>
                             </div>
-                            <p class="text-sm text-theme-text-inverted-subtle truncate mt-1">{{ user.bio|default:"No bio yet."|truncatechars:35 }}</p>
+                            <p class="text-sm text-indigo-200 truncate mt-1">{{ user.bio|default:"No bio yet."|truncatechars:35 }}</p>
                         </div>
                     </div>
                 {% else %}
                     {# Welcome Section (Logged Out) #}
                     <div class="text-left py-4">
                         <p class="text-base font-medium text-white mb-2">Welcome to AudioX</p>
-                        <p class="text-sm text-theme-text-inverted-muted mb-4">Login or sign up to personalize your experience.</p>
+                        <p class="text-sm text-indigo-200 mb-4">Login or sign up to personalize your experience.</p>
                         <div class="flex flex-col gap-3">
-                            <a href="{% url 'AudioXApp:login' %}" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-md font-semibold bg-white/10 text-white hover:bg-white/20 transition-bg-color duration-150 ease-in-out border border-white/20 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white/50 text-sm">
+                            <a href="{% url 'AudioXApp:login' %}" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-md font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors duration-150 ease-in-out border border-white/20 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white/50 text-sm">
                                 <i class="fas fa-sign-in-alt mr-2"></i> Login
                             </a>
-                            <a href="{% url 'AudioXApp:signup' %}" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-md font-semibold bg-theme-secondary text-theme-primary hover:bg-theme-secondary-hover transition-bg-color duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-2 focus:ring-offset-theme-primary text-sm">
+                            <a href="{% url 'AudioXApp:signup' %}" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-md font-semibold bg-teal-500 text-white hover:bg-teal-600 transition-colors duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-[#091e65] text-sm">
                                 <i class="fas fa-user-plus mr-2"></i> Sign Up Free
                             </a>
                         </div>
@@ -279,26 +281,25 @@
                 {% endif %}
             </div>
 
-              {# Core Features Section #}
-        <div class="px-4 py-5 space-y-3">
-            <p class="px-3 text-xs font-semibold uppercase text-theme-text-inverted-subtle tracking-wider">Features</p>
-            {# --- RESTYLED CORE FEATURE: Generate Audio from PDF --- #}
-            {# Updated href to point to the 'upload_pdf' URL within the 'AudioXApp' namespace #}
-            <a href="{% url 'AudioXApp:upload_pdf' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-theme-secondary/10 to-amber-500/5 text-theme-secondary hover:from-theme-secondary/20 hover:to-amber-500/10 hover:text-amber-300 border border-theme-secondary/20 hover:border-theme-secondary/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-1 focus:ring-offset-theme-primary">
-                <i class="fas fa-file-audio mr-3 text-lg w-5 text-center text-theme-secondary/80 group-hover:text-theme-secondary transition-colors"></i>
-                <span>Generate Audio from PDF</span>
-            </a>
+             {# Core Features Section #}
+            <div class="px-4 py-5 space-y-3">
+                <p class="px-3 text-xs font-semibold uppercase text-indigo-200 tracking-wider">Features</p>
+                {# Generate Audio from PDF #}
+                <a href="{% url 'AudioXApp:upload_pdf' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-yellow-500/10 text-yellow-300 hover:bg-yellow-500/20 border border-yellow-500/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
+                    <i class="fas fa-file-audio mr-3 text-lg w-5 text-center text-yellow-300/80 group-hover:text-yellow-300 transition-colors"></i>
+                    <span>Generate Audio from PDF</span>
+                </a>
 
 
-                {# Creator Status Links/Buttons #}
+                 {# Creator Status Links/Buttons #}
                 {% if user.is_authenticated %}
                     {% if is_banned %}
-                        <button id="sidemenu-view-ban-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-red-600/10 text-red-300 hover:bg-red-600/20 border border-red-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-theme-primary">
+                        <button id="sidemenu-view-ban-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-red-600/10 text-red-300 hover:bg-red-600/20 border border-red-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
                             <i class="fas fa-microphone-slash mr-3 text-lg w-5 text-center opacity-80"></i>
                             <span>Creator Profile Blocked</span>
                         </button>
                     {% elif is_creator %}
-                        <button id="sidemenu-switch-creator-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-green-600/10 text-green-300 hover:bg-green-600/20 border border-green-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 focus:ring-offset-theme-primary">
+                        <button id="sidemenu-switch-creator-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-green-600/10 text-green-300 hover:bg-green-600/20 border border-green-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
                             <i class="fas fa-sliders-h mr-3 text-lg w-5 text-center opacity-80 group-hover:animate-pulse"></i>
                             <span>Switch to Creator Mode</span>
                         </button>
@@ -309,7 +310,7 @@
                         </span>
                     {% elif creator_status == 'rejected' %}
                         {% if can_reapply %}
-                            <button id="sidemenu-view-rejection-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-orange-600/10 text-orange-300 hover:bg-orange-600/20 border border-orange-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-1 focus:ring-offset-theme-primary">
+                            <button id="sidemenu-view-rejection-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-orange-600/10 text-orange-300 hover:bg-orange-600/20 border border-orange-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
                                 <i class="fas fa-exclamation-circle mr-3 text-lg w-5 text-center opacity-80"></i>
                                 <span>Application Rejected</span>
                             </button>
@@ -326,7 +327,7 @@
                         </a>
                     {% endif %}
                 {% else %} {# Logged Out Creator Portal Link #}
-                    <a href="#" id="creator-portal-link-loggedout" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg text-theme-text-inverted-subtle hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all duration-150 ease-in-out focus:outline-none focus:bg-white/10 focus:text-white">
+                    <a href="#" id="creator-portal-link-loggedout" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg text-indigo-200 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all duration-150 ease-in-out focus:outline-none focus:bg-white/10 focus:text-white">
                         <i class="fas fa-users mr-3 text-lg w-5 text-center opacity-80"></i>
                         <span>Creator Portal</span>
                     </a>
@@ -334,61 +335,60 @@
             </div>
             {# Navigation Section #}
             <nav class="flex-grow px-4 pb-4 space-y-1">
-                <p class="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-theme-text-inverted-subtle tracking-wider">Navigation</p>
+                <p class="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-indigo-200 tracking-wider">Navigation</p>
                 {% if user.is_authenticated %}
                     {# Authenticated User Navigation #}
-                    <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
-                        <i class="fas fa-fire mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Trending Audiobooks
+                    <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                        <i class="fas fa-fire mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Trending Audiobooks
                     </a>
-                    <a href="{% url 'AudioXApp:my_library' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
-                        <i class="fas fa-bookmark mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> My Library
+                    <a href="{% url 'AudioXApp:my_library' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                        <i class="fas fa-bookmark mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> My Library
                     </a>
-                    <a href="{% url 'AudioXApp:my_downloads' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
-                        <i class="fas fa-download mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> My Downloads
+                    <a href="{% url 'AudioXApp:my_downloads' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                        <i class="fas fa-download mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> My Downloads
                     </a>
                 {% else %}
                     {# Logged Out User Navigation #}
-                    <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
-                        <i class="fas fa-home mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Home
+                    <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                        <i class="fas fa-home mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Home
                     </a>
-                    <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
-                        <i class="fas fa-fire mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Trending Audiobooks
+                    <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                        <i class="fas fa-fire mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Trending Audiobooks
                     </a>
                 {% endif %}
                 {# About Submenu #}
                 <div class="has-submenu-container pt-2">
-                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
+                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-blue-700 focus:text-white">
                         <span class="inline-flex items-center">
-                            <i class="fas fa-info-circle mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> About
+                            <i class="fas fa-info-circle mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> About
                         </span>
-                        <i class="fas fa-chevron-down text-xs text-theme-text-inverted-subtle group-hover:text-white transition-transform duration-200 transform submenu-icon"></i>
+                        <i class="fas fa-chevron-down text-xs text-indigo-200 group-hover:text-white transition-transform duration-200 transform submenu-icon"></i>
                     </button>
                     <div class="submenu ml-5 mt-1 space-y-0.5 overflow-hidden max-h-0 opacity-0 transition-all duration-300 ease-out border-l border-white/20 pl-4">
-                        <a href="{% url 'AudioXApp:ourteam' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Our Team</a>
-                        <a href="{% url 'AudioXApp:aboutus' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">About Us</a>
-                        {# Assuming /careers is a static page or has a URL #}
-                        <a href="/careers" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Careers</a>
+                        <a href="{% url 'AudioXApp:ourteam' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Our Team</a>
+                        <a href="{% url 'AudioXApp:aboutus' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">About Us</a>
+                        <a href="/careers" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Careers</a>
                     </div>
                 </div>
                 {# Legal Submenu #}
                 <div class="has-submenu-container">
-                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-theme-bg-dark-active focus:text-white">
+                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-blue-700 focus:text-white">
                         <span class="inline-flex items-center">
-                            <i class="fas fa-gavel mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Legal
+                            <i class="fas fa-gavel mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Legal
                         </span>
-                        <i class="fas fa-chevron-down text-xs text-theme-text-inverted-subtle group-hover:text-white transition-transform duration-200 transform submenu-icon"></i>
+                        <i class="fas fa-chevron-down text-xs text-indigo-200 group-hover:text-white transition-transform duration-200 transform submenu-icon"></i>
                     </button>
                     <div class="submenu ml-5 mt-1 space-y-0.5 overflow-hidden max-h-0 opacity-0 transition-all duration-300 ease-out border-l border-white/20 pl-4">
-                        <a href="{% url 'AudioXApp:privacypolicy' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Privacy Policy</a>
-                        <a href="{% url 'AudioXApp:paymentpolicy' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Payment Policy</a>
-                        <a href="{% url 'AudioXApp:piracypolicy' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Piracy Policy</a>
-                        <a href="{% url 'AudioXApp:termsandconditions' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-theme-text-inverted-subtle hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Terms & Conditions</a>
+                        <a href="{% url 'AudioXApp:paymentpolicy' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Payment Policy</a>
+                        <a href="{% url 'AudioXApp:piracypolicy' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Piracy Policy</a>
+                        <a href="{% url 'AudioXApp:termsandconditions' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Terms & Conditions</a>
+                        <a href="{% url 'AudioXApp:privacypolicy' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Privacy Policy</a>
                     </div>
                 </div>
                 {# Contact Support Link #}
                 <div class="pt-4">
-                    <a href="{% url 'AudioXApp:contactus' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-theme-text-inverted-muted hover:text-white hover:bg-theme-bg-dark-hover transition-all duration-150 ease-in-out focus:outline-none focus:bg-theme-bg-dark-active focus:text-white border border-white/10 hover:border-white/20">
-                        <i class="fas fa-headset mr-3 text-lg w-5 text-center text-theme-text-inverted-subtle group-hover:text-white transition-colors"></i> Contact Support
+                    <a href="{% url 'AudioXApp:contactus' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white border border-white/10 hover:border-white/20">
+                        <i class="fas fa-headset mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Contact Support
                     </a>
                 </div>
             </nav>
@@ -396,42 +396,41 @@
         {# Menu Footer (Logout and Copyright) #}
         <div class="p-5 mt-auto border-t border-white/10 shrink-0">
             {% if user.is_authenticated %}
-                <a href="{% url 'AudioXApp:logout' %}" class="group w-full flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-lg text-white bg-theme-error hover:bg-theme-error-hover transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-theme-primary shadow-md hover:shadow-lg">
+                <a href="{% url 'AudioXApp:logout' %}" class="group w-full flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-[#091e65] shadow-md hover:shadow-lg">
                     <i class="fas fa-sign-out-alt mr-2"></i>Logout
                 </a>
             {% endif %}
-            <p class="mt-4 text-center text-xs text-theme-text-inverted-subtle">
+            <p class="mt-4 text-center text-xs text-indigo-200">
                 Made with <span class="text-red-500">❤️</span> in Pakistan<br>&copy; {% now "Y" %} AudioX
             </p>
         </div>
     </div>
     {% endblock %}
 
+    {# --- Main Content Area --- #}
     <main class="flex-grow">
-        {# This is the main content area that child templates will override #}
         {% block content %}
-            {# Default content for the base template if no child overrides it. #}
-            {# For your setup, English_Home.html (or other language homepages) will fill this. #}
         {% endblock %}
     </main>
 
+    {# --- Footer Section --- #}
     {% block footer %}
-    <footer class="bg-gradient-to-r from-theme-primary to-blue-900 text-indigo-100 py-12 mt-10">
+    <footer class="bg-gradient-to-r from-[#091e65] to-blue-900 text-indigo-100 py-12 mt-10">
         <div class="container mx-auto px-4">
              <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
                  <div class="md:col-span-4 lg:col-span-4">
-                     {# Footer Logo - Styled with Tailwind #}
-                     <a href="{% url 'AudioXApp:home' %}" class="flex items-center audiotype-logo mb-4 group">
+                     {# Footer Logo #}
+                     <a href="{% url 'AudioXApp:home' %}" class="flex items-center mb-4 group">
                          <span class="text-3xl font-extrabold tracking-tighter text-white">AUDIO</span>
                          <span class="text-3xl font-extrabold text-red-500 tracking-tighter">X</span>
-                         <div class="w-3 h-3 bg-theme-secondary rounded-full ml-1.5 group-hover:bg-theme-secondary-hover transition-colors"></div>
+                         <div class="w-3 h-3 bg-teal-500 rounded-full ml-1.5 group-hover:bg-teal-600 transition-colors"></div>
                      </a>
                      <p class="mb-5 text-sm leading-relaxed opacity-90">
-                            AudioX: Your gateway to audiobooks in English, Urdu, Punjabi, Sindhi, and more. Making literature accessible across Pakistan and beyond.
+                         AudioX: Your gateway to audiobooks in English, Urdu, Punjabi, Sindhi, and more. Making literature accessible across Pakistan and beyond.
                      </p>
                      <hr class="border-t border-blue-700 my-4 opacity-50">
                      <h3 class="font-semibold text-white text-xs uppercase tracking-wider mb-3">Follow Us</h3>
-                     {# Social Links - Styled with Tailwind #}
+                     {# Social Links #}
                      <div class="flex space-x-4">
                          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Facebook"><i class="fab fa-facebook-f text-lg"></i></a>
                          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="text-indigo-200 hover:text-white transition duration-150 ease-in-out" title="Instagram"><i class="fab fa-instagram text-lg"></i></a>
@@ -441,22 +440,20 @@
                  </div>
 
                  <div class="md:col-span-8 lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8 md:pl-8">
-                     {# Footer Links - Styled with Tailwind #}
+                     {# Footer Links #}
                      <div>
                          <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Company</h3>
                          <ul class="space-y-2">
                              <li><a href="{% url 'AudioXApp:aboutus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">About Us</a></li>
                              <li><a href="{% url 'AudioXApp:ourteam' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Our Team</a></li>
-                             {# Assuming /careers is a static page or has a URL #}
                              <li><a href="/careers" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Careers</a></li>
                          </ul>
                      </div>
                      <div>
                          <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">General</h3>
                          <ul class="space-y-2">
-                             {# Assuming /browse has a URL #}
                              <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Browse</a></li>
-                             {# Footer Creator Link Logic - Styled with Tailwind #}
+                             {# Footer Creator Link Logic #}
                              {% if user.is_authenticated %}
                                  {% if is_banned %}
                                      <li><span class="text-sm text-red-300 cursor-not-allowed opacity-70">Creator Portal</span></li>
@@ -469,7 +466,6 @@
                                  <li><a href="#" id="creator-portal-link-footer-loggedout" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Portal</a></li>
                              {% endif %}
                              <li><a href="{% url 'AudioXApp:contactus' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Contact Us</a></li>
-                             {# Assuming /faq has a URL #}
                              <li><a href="/faq" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">FAQ</a></li>
                          </ul>
                      </div>
@@ -499,7 +495,7 @@
                          </ul>
                      </div>
                  </div>
-            </div>
+             </div>
              <div class="text-center mt-10 pt-8 border-t border-blue-700 border-opacity-50">
                  <p class="text-sm opacity-80">&copy; {% now "Y" %} AudioX. All Rights Reserved. Made with <span class="text-red-400">❤️</span> in Pakistan.</p>
              </div>
@@ -507,22 +503,23 @@
     </footer>
     {% endblock %}
 
+    {# --- Modals Section --- #}
     {# Creator Portal Access Modal (Logged Out) #}
     <div id="creator-modal-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1040] hidden opacity-0 transition-opacity duration-300 ease-in-out pointer-events-none"></div>
-    <div id="creator-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-95 bg-theme-primary text-theme-text-inverted rounded-xl shadow-2xl w-[90%] max-w-md z-[1050] opacity-0 transition-all duration-300 ease-in-out pointer-events-none overflow-hidden border border-white/10" role="dialog" aria-modal="true" aria-labelledby="creator-modal-title">
+    <div id="creator-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-95 bg-[#091e65] text-indigo-100 rounded-xl shadow-2xl w-[90%] max-w-md z-[1050] opacity-0 transition-all duration-300 ease-in-out pointer-events-none overflow-hidden border border-white/10" role="dialog" aria-modal="true" aria-labelledby="creator-modal-title">
         <div class="p-6 sm:p-8 text-center relative">
-            <button type="button" class="modal-close-btn absolute top-4 right-4 text-theme-text-inverted-muted hover:text-white transition-colors duration-150 p-1 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50" aria-label="Close modal">
+            <button type="button" class="modal-close-btn absolute top-4 right-4 text-indigo-200 hover:text-white transition-colors duration-150 p-1 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50" aria-label="Close modal">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
-            <div class="text-5xl text-theme-secondary mb-5"><i class="fas fa-lock"></i></div>
+            <div class="text-5xl text-teal-500 mb-5"><i class="fas fa-lock"></i></div>
             <h2 id="creator-modal-title" class="text-xl font-bold text-white mb-4">Creator Portal Access</h2>
-            <p class="text-sm leading-relaxed text-theme-text-inverted-muted mb-6">
+            <p class="text-sm leading-relaxed text-indigo-200 mb-6">
                 To access the creator portal, you must first sign up or log in to AudioX, and then apply through your account to enjoy all the perks.
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-3">
-                <a href="{% url 'AudioXApp:signup' %}" class="modal-btn inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold bg-theme-secondary text-theme-primary hover:bg-theme-secondary-hover transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-theme-secondary focus:ring-offset-2 focus:ring-offset-theme-primary">
+                <a href="{% url 'AudioXApp:signup' %}" class="modal-btn inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold bg-teal-500 text-white hover:bg-teal-600 transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-[#091e65]">
                     <i class="fas fa-user-plus mr-2"></i> Sign Up Now
                 </a>
                 <a href="{% url 'AudioXApp:login' %}" class="modal-btn inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold bg-white/10 text-white hover:bg-white/20 transition duration-150 ease-in-out border border-white/20 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white/50">
@@ -532,6 +529,7 @@
         </div>
     </div>
 
+    {# --- Scripts Section --- #}
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Parse Django context data passed via json_script
@@ -777,13 +775,13 @@
         const SwalStyled = Swal.mixin({
             customClass: {
                 popup: 'rounded-xl shadow-lg font-sans border border-gray-100 bg-white',
-                title: 'text-xl sm:text-2xl font-bold text-theme-primary pt-6 px-6 pb-2 text-left',
-                htmlContainer: 'text-base text-theme-text-secondary text-left px-6 pb-6 leading-relaxed',
+                title: 'text-xl sm:text-2xl font-bold text-[#091e65] pt-6 px-6 pb-2 text-left',
+                htmlContainer: 'text-base text-gray-700 text-left px-6 pb-6 leading-relaxed',
                 icon: 'mt-6 mx-auto',
-                confirmButton: 'inline-flex items-center justify-center gap-2 rounded-lg bg-theme-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
+                confirmButton: 'inline-flex items-center justify-center gap-2 rounded-lg bg-[#091e65] px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
                 cancelButton: 'inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
                 actions: 'flex justify-end px-6 pb-2',
-                loader: 'border-theme-primary',
+                loader: 'border-[#091e65]',
             },
             buttonsStyling: false, // Disable default button styling to use custom classes
         });
@@ -805,8 +803,8 @@
                     didOpen: () => { Swal.showLoading(); }, // Show loading spinner
                     timerProgressBar: true,
                     customClass: { // Center text for this specific popup
-                        title: 'text-xl sm:text-2xl font-semibold text-theme-primary pt-6 px-6 pb-2 text-center',
-                        htmlContainer: 'text-base text-theme-text-secondary text-center px-6 pb-6 leading-relaxed',
+                        title: 'text-xl sm:text-2xl font-semibold text-[#091e65] pt-6 px-6 pb-2 text-center',
+                        htmlContainer: 'text-base text-gray-700 text-center px-6 pb-6 leading-relaxed',
                     }
                 }).then(() => {
                     // Redirect after the timer or confirmation (if any)
@@ -819,71 +817,67 @@
         const viewRejectionBtn = document.getElementById('sidemenu-view-rejection-reason-btn');
         // Ensure the button exists AND the context indicates a rejected status
         if (viewRejectionBtn && djangoContext && djangoContext.creator_status === 'rejected') {
-             // Note: If sidemenu-view-ban-reason-btn shares this ID, one listener will overwrite the other.
-             // It's best to use unique IDs if both scenarios are possible simultaneously.
-            viewRejectionBtn.addEventListener('click', function(event) {
-                event.preventDefault();
-                closeSlideMenu(); // Close the side menu
+             viewRejectionBtn.addEventListener('click', function(event) {
+                 event.preventDefault();
+                 closeSlideMenu(); // Close the side menu
 
-                const reason = djangoContext.rejectionReason || 'No specific reason provided.';
-                const attemptsMade = djangoContext.applicationAttemptsCurrentMonth || 0;
-                const maxAttempts = djangoContext.maxApplicationAttempts || 3; // Assuming a default max attempts
-                const remainingAttempts = Math.max(0, maxAttempts - attemptsMade);
-                const canApplyAgain = djangoContext.can_reapply ?? false; // Use ?? for nullish coalescing
+                 const reason = djangoContext.rejectionReason || 'No specific reason provided.';
+                 const attemptsMade = djangoContext.applicationAttemptsCurrentMonth || 0;
+                 const maxAttempts = djangoContext.maxApplicationAttempts || 3; // Assuming a default max attempts
+                 const remainingAttempts = Math.max(0, maxAttempts - attemptsMade);
+                 const canApplyAgain = djangoContext.can_reapply ?? false; // Use ?? for nullish coalescing
 
-                let attemptsText = (remainingAttempts > 0 && canApplyAgain) ?
-                                   `<i class="fas fa-redo mr-1.5 text-sm text-gray-500"></i> You have ${remainingAttempts} application attempt${remainingAttempts !== 1 ? 's' : ''} remaining this month.` :
-                                   '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
+                 let attemptsText = (remainingAttempts > 0 && canApplyAgain) ?
+                                     `<i class="fas fa-redo mr-1.5 text-sm text-gray-500"></i> You have ${remainingAttempts} application attempt${remainingAttempts !== 1 ? 's' : ''} remaining this month.` :
+                                     '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
 
-                const popupHtml = `<div class="space-y-4">
-                                       <p class="text-theme-text-secondary"><i class="fas fa-info-circle mr-1.5 text-theme-primary"></i>Your previous application requires attention for the following reason:</p>
-                                       <div class="bg-theme-warning-light border-l-4 border-theme-warning text-orange-800 p-4 rounded-md shadow-sm" role="alert">
-                                           <p class="font-medium">${reason}</p>
-                                       </div>
-                                       <p class="text-sm text-theme-text-light">${attemptsText}</p>
-                                   </div>`;
+                 const popupHtml = `<div class="space-y-4">
+                                     <p class="text-gray-700"><i class="fas fa-info-circle mr-1.5 text-[#091e65]"></i>Your previous application requires attention for the following reason:</p>
+                                     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md shadow-sm" role="alert">
+                                         <p class="font-medium">${reason}</p>
+                                     </div>
+                                     <p class="text-sm text-gray-600">${attemptsText}</p>
+                                    </div>`;
 
-                SwalStyled.fire({
-                    title: 'Application Status',
-                    html: popupHtml,
-                    icon: 'warning',
-                    iconColor: djangoContext.tailwindColors ? djangoContext.tailwindColors.warning : '#F59E0B', // Use Tailwind color from context if available
-                    showConfirmButton: canApplyAgain, // Show "Apply Again" only if allowed
-                    confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i>Apply Again',
-                    showCancelButton: true,
-                    cancelButtonText: 'Close',
-                    width: '450px', // Set a fixed width for consistency
-                }).then((result) => {
-                    if (result.isConfirmed && canApplyAgain) {
-                        window.location.href = "{% url 'AudioXApp:creator_apply' %}"; // Use Django URL tag
-                    }
-                });
-            });
+                 SwalStyled.fire({
+                     title: 'Application Status',
+                     html: popupHtml,
+                     icon: 'warning',
+                     iconColor: '#F59E0B', // Tailwind yellow-500
+                     showConfirmButton: canApplyAgain, // Show "Apply Again" only if allowed
+                     confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i>Apply Again',
+                     showCancelButton: true,
+                     cancelButtonText: 'Close',
+                     width: '450px', // Set a fixed width for consistency
+                 }).then((result) => {
+                     if (result.isConfirmed && canApplyAgain) {
+                         window.location.href = "{% url 'AudioXApp:creator_apply' %}"; // Use Django URL tag
+                     }
+                 });
+             });
         }
 
         // Handle "Creator Profile Blocked" button in sidemenu
         const viewBanReasonBtn = document.getElementById('sidemenu-view-ban-reason-btn');
          // Ensure the button exists AND the context indicates a banned status
         if (viewBanReasonBtn && djangoContext && djangoContext.isBanned) {
-             // Note: If sidemenu-view-rejection-reason-btn shares this ID, one listener will overwrite the other.
-             // It's best to use unique IDs if both scenarios are possible simultaneously.
              viewBanReasonBtn.addEventListener('click', function(event) {
                  event.preventDefault();
                  closeSlideMenu(); // Close the side menu
 
                  const reason = djangoContext.banReason || 'No specific reason provided by the administrator.';
                  const banPopupHtml = `<div class="space-y-4">
-                                           <p class="text-theme-text-secondary"><i class="fas fa-exclamation-triangle mr-1.5 text-theme-error"></i> Your Creator Profile is currently blocked for the following reason:</p>
-                                           <div class="bg-theme-error-light border-l-4 border-theme-error text-red-800 p-4 rounded-md shadow-sm" role="alert">
-                                               <p class="font-medium">${reason}</p>
-                                           </div>
-                                           <p class="text-sm text-theme-text-light">If you believe this is an error or wish to appeal this decision, please contact our support team.</p>
+                                        <p class="text-gray-700"><i class="fas fa-exclamation-triangle mr-1.5 text-red-600"></i> Your Creator Profile is currently blocked for the following reason:</p>
+                                        <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 rounded-md shadow-sm" role="alert">
+                                            <p class="font-medium">${reason}</p>
+                                        </div>
+                                        <p class="text-sm text-gray-600">If you believe this is an error or wish to appeal this decision, please contact our support team.</p>
                                        </div>`;
                  SwalStyled.fire({
                      title: 'Creator Profile Blocked',
                      html: banPopupHtml,
                      icon: 'error',
-                     iconColor: djangoContext.tailwindColors ? djangoContext.tailwindColors.error : '#EF4444', // Use Tailwind color from context if available
+                     iconColor: '#DC2626', // Tailwind red-600
                      showConfirmButton: true,
                      confirmButtonText: '<i class="fas fa-headset mr-2"></i> Contact Support',
                      showCancelButton: true,
@@ -915,11 +909,11 @@
                     body: JSON.stringify({}) // Empty body for a simple POST request
                 });
                 if (!response.ok) {
-                    const errorData = await response.text(); // Get error response body
-                    console.error(`Failed to mark popup shown at ${apiUrl}. Status: ${response.status}. Response: ${errorData}`);
+                     const errorData = await response.text(); // Get error response body
+                     console.error(`Failed to mark popup shown at ${apiUrl}. Status: ${response.status}. Response: ${errorData}`);
                 } else {
-                    const data = await response.json();
-                    console.log(`Mark popup response for ${apiUrl}:`, data);
+                     // const data = await response.json(); // No need to process response data if not used
+                     // console.log(`Mark popup response for ${apiUrl}:`, data);
                 }
             } catch (error) {
                 console.error(`Error calling API ${apiUrl}:`, error);
@@ -929,10 +923,10 @@
         // Show "Welcome Creator" popup if context indicates it
         if (djangoContext && djangoContext.showWelcomePopup) {
             const welcomeHtml = `<div class="text-center">
-                                     <div class="text-6xl mb-4 text-theme-primary animate-bounce">🎉</div>
-                                     <h2 class="text-2xl font-bold text-theme-primary mb-3">Welcome Aboard!</h2>
-                                     <p class="text-theme-text-secondary mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p>
-                                     <p class="text-theme-text-secondary px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p>
+                                    <div class="text-6xl mb-4 text-teal-500 animate-bounce">🎉</div>
+                                    <h2 class="text-2xl font-bold text-[#091e65] mb-3">Welcome Aboard!</h2>
+                                    <p class="text-gray-700 mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p>
+                                    <p class="text-gray-700 px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p>
                                  </div>`;
             SwalStyled.fire({
                 html: welcomeHtml,
@@ -973,7 +967,7 @@
                            <p class="text-sm text-gray-600">Please review the requirements. You may be able to re-apply later or contact support if you have questions.</p>
                        </div>`,
                 icon: 'error',
-                iconColor: djangoContext.tailwindColors ? djangoContext.tailwindColors.error : '#EF4444', // Use Tailwind color from context
+                iconColor: '#DC2626', // Tailwind red-600
                 confirmButtonText: 'Okay',
                 showCloseButton: true, // Allow closing with X button
                 width: '450px', // Set a fixed width
@@ -1033,6 +1027,6 @@
 
     </script>
 
-    {% block javascript_extra %}{% endblock %} {# Allow specific pages to add more JS #}
+    {% block javascript_extra %}{% endblock %}
 </body>
 </html>

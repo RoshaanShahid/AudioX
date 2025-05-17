@@ -1,28 +1,27 @@
+# AudioXApp/views/auth_views.py
+
 import json
 import random
-import logging # Import the logging module
 
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout as auth_logout, authenticate
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST, require_GET # For GET requests to render pages
+from django.views.decorators.http import require_POST, require_GET
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.utils import IntegrityError
-from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm # For password validation
-from django.contrib.auth.tokens import default_token_generator # For more secure tokens (optional for now, sticking to OTP)
-
+from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
+from django.contrib.auth.tokens import default_token_generator
 
 from ..models import User
-from .utils import _get_full_context # Assuming this utility exists
+from .utils import _get_full_context
 
-# Get an instance of a logger
-logger = logging.getLogger(__name__)
+# --- Authentication Views ---
 
 def signup(request):
     """
@@ -57,18 +56,18 @@ def signup(request):
                 validate_email(email)
             except ValidationError:
                 errors['email'] = 'Invalid email address format.'
-        
+
         if email and 'email' not in errors and User.objects.filter(email=email).exists():
             errors['email'] = "Email already exists."
         if username and 'username' not in errors and User.objects.filter(username=username).exists():
             errors['username'] = "Username already exists."
 
         if entered_otp:
-            stored_otp = request.session.get('otp') # For signup
-            stored_email_for_otp = request.session.get('otp_email') # For signup
+            stored_otp = request.session.get('otp')
+            stored_email_for_otp = request.session.get('otp_email')
             if not stored_otp or not stored_email_for_otp:
                 errors['otp'] = "OTP session expired or not found. Please request a new OTP."
-            elif email and email != stored_email_for_otp: 
+            elif email and email != stored_email_for_otp:
                 errors['otp'] = "OTP verification failed (email mismatch). Please request a new OTP."
             elif entered_otp != stored_otp:
                 errors['otp'] = "Incorrect OTP entered."
@@ -80,11 +79,11 @@ def signup(request):
             del request.session['otp']
             del request.session['otp_email']
         except KeyError:
-            pass 
+            pass
 
-        if not phone_number: 
+        if not phone_number:
             phone_number = ''
-        if not bio: 
+        if not bio:
             bio = ''
 
         try:
@@ -96,47 +95,44 @@ def signup(request):
                 phone_number=phone_number,
                 bio=bio
             )
-            user.subscription_type = 'FR' 
+            user.subscription_type = 'FR'
             user.save(update_fields=['subscription_type'])
             return JsonResponse({'status': 'success', 'message': 'Account created successfully! You can now log in.'})
 
         except IntegrityError as ie:
-            logger.error(f"IntegrityError during signup for {username}/{email}: {ie}")
             error_field = 'username' if 'username' in str(ie).lower() else 'email'
             return JsonResponse({'status': 'error', 'message': f'{error_field.capitalize()} already exists (database constraint).', 'errors': {error_field: f'{error_field.capitalize()} already exists.'}}, status=400)
-        except ValueError as ve: 
-            logger.error(f"ValueError during signup for {username}/{email}: {ve}")
+        except ValueError as ve:
             return JsonResponse({'status': 'error', 'message': str(ve)}, status=400)
-        except Exception as e:
-            logger.error(f"Unexpected error during signup for {username}/{email}: {e}", exc_info=True)
+        except Exception:
             return JsonResponse({'status': 'error', 'message': f"An unexpected error occurred during account creation. Please try again later or contact support."}, status=500)
 
     context = _get_full_context(request)
     return render(request, 'auth/signup.html', context)
 
 
-def send_otp(request): # Removed purpose from signature, will get from JSON
+def send_otp(request):
     """
     Sends an OTP to the provided email for a specified purpose (signup, login 2FA, or password_reset).
     - Validates email format.
-    - Checks for existing user if purpose is signup or if user must exist for password_reset.
+    - Checks for existing user based on purpose.
     - Generates, stores OTP in session, and emails it.
     - Returns JSON responses.
     """
     if request.method == 'POST':
         email = None
-        purpose = None # Initialize purpose
+        purpose = None
 
         if request.content_type == 'application/json':
             try:
                 data = json.loads(request.body)
                 email = data.get('email')
-                purpose = data.get('purpose') # Get purpose from JSON
+                purpose = data.get('purpose')
             except json.JSONDecodeError:
                 return JsonResponse({'status': 'error', 'message': 'Invalid JSON data.'}, status=400)
-        else: # Fallback for form data if not JSON (though frontend uses JSON)
+        else:
             email = request.POST.get('email')
-            purpose = request.POST.get('purpose', 'signup') # Default purpose if not specified
+            purpose = request.POST.get('purpose', 'signup')
 
         if not email:
             return JsonResponse({'status': 'error', 'message': 'Email address is required.'}, status=400)
@@ -156,32 +152,27 @@ def send_otp(request): # Removed purpose from signature, will get from JSON
         if purpose == 'signup':
             if User.objects.filter(email=email).exists():
                 return JsonResponse({'status': 'error', 'message': 'This email address is already registered.'}, status=400)
-            session_otp_key = 'otp' 
-            session_email_key = 'otp_email' 
+            session_otp_key = 'otp'
+            session_email_key = 'otp_email'
             subject = 'Your OTP for AudioX Signup'
             message_body_template = 'Your One-Time Password (OTP) for AudioX signup is: {otp}\n\nThis OTP is valid for 5 minutes.'
-        
+
         elif purpose == 'login':
             try:
                 user = User.objects.get(email=email)
                 if not user.is_2fa_enabled:
                     return JsonResponse({'status': 'error', 'message': '2FA is not enabled for this account.'}, status=400)
             except User.DoesNotExist:
-                # Generic message to prevent user enumeration for login 2FA OTP send.
-                # The main login view handles "user does not exist" before this.
                 return JsonResponse({'status': 'success', 'message': 'If an account with that email exists and requires 2FA, an OTP has been sent.'})
             session_otp_key = 'login_otp'
             session_email_key = 'login_email_pending_2fa'
             subject = 'Your AudioX Login Verification Code'
             message_body_template = 'Your One-Time Password (OTP) for AudioX login is: {otp}\n\nThis OTP is valid for 5 minutes.'
-        
+
         elif purpose == 'password_reset':
             try:
-                user = User.objects.get(email=email) # User must exist to reset password
+                User.objects.get(email=email)
             except User.DoesNotExist:
-                 # To prevent user enumeration, send a generic success-like message.
-                 # The frontend will proceed to OTP entry, but verification will fail if no OTP was actually stored.
-                logger.info(f"Password reset OTP requested for non-existent email: {email}")
                 return JsonResponse({'status': 'success', 'message': 'If your email address is registered, you will receive a password reset code.'})
 
             session_otp_key = 'password_reset_otp'
@@ -192,7 +183,7 @@ def send_otp(request): # Removed purpose from signature, will get from JSON
         otp_value = str(random.randint(100000, 999999))
         request.session[session_otp_key] = otp_value
         request.session[session_email_key] = email
-        request.session.set_expiry(300) # OTP valid for 5 minutes
+        request.session.set_expiry(300)
 
         try:
             send_mail(
@@ -205,16 +196,22 @@ def send_otp(request): # Removed purpose from signature, will get from JSON
             success_message = f'An OTP has been sent to {email}.'
             return JsonResponse({'status': 'success', 'message': success_message})
 
-        except Exception as e:
-            logger.error(f"Failed to send OTP email for {purpose} to {email}: {e}", exc_info=True)
+        except Exception:
             return JsonResponse({'status': 'error', 'message': 'Failed to send OTP email. Please try again later.'}, status=500)
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
 
 
 def login(request):
+    """
+    Handles user login.
+    - Authenticates user by email/username and password.
+    - Redirects to 2FA verification if enabled.
+    - Logs in user directly if 2FA is not enabled.
+    - Returns JSON responses.
+    """
     if request.method == 'POST':
-        login_identifier = request.POST.get('loginIdentifier') 
+        login_identifier = request.POST.get('loginIdentifier')
         password = request.POST.get('password')
 
         if not login_identifier or not password:
@@ -231,12 +228,12 @@ def login(request):
                 original_method = request.method
                 original_content_type = request.content_type
                 original_body = request.body
-                request.method = 'POST' 
+                request.method = 'POST'
                 request.content_type = 'application/json'
                 request.body = json_data_for_otp.encode('utf-8')
                 otp_response = None
                 try:
-                    otp_response = send_otp(request) # Purpose is now derived from JSON
+                    otp_response = send_otp(request)
                 finally:
                     request.method = original_method
                     request.content_type = original_content_type
@@ -246,9 +243,9 @@ def login(request):
                     try:
                         otp_data = json.loads(otp_response.content)
                         if otp_data.get('status') == 'success':
-                            request.session['2fa_user_email'] = user.email 
-                            request.session['2fa_user_id'] = user.pk 
-                            request.session.set_expiry(300) 
+                            request.session['2fa_user_email'] = user.email
+                            request.session['2fa_user_id'] = user.pk
+                            request.session.set_expiry(300)
                             return JsonResponse({'status': '2fa_required', 'email': user.email})
                         else:
                             return JsonResponse({'status': 'error', 'message': otp_data.get('message', 'Failed to send OTP for 2FA.')}, status=500)
@@ -258,10 +255,10 @@ def login(request):
                     status_code = otp_response.status_code if otp_response else 500
                     error_message = 'Failed to initiate 2FA verification.'
                     try:
-                        if otp_response: 
+                        if otp_response:
                             error_data = json.loads(otp_response.content)
-                            if error_data.get('message'): error_message = error_data['message'] # Corrected: was error
-                    except (json.JSONDecodeError, AttributeError): pass 
+                            if error_data.get('message'): error_message = error_data['message']
+                    except (json.JSONDecodeError, AttributeError): pass
                     return JsonResponse({'status': 'error', 'message': error_message}, status=status_code)
             else:
                 auth_login(request, user)
@@ -274,10 +271,15 @@ def login(request):
     return render(request, 'auth/login.html', context)
 
 
-@require_POST 
+@require_POST
 def verify_login_otp(request):
+    """
+    Verifies the OTP entered for 2FA login.
+    Logs the user in if verification is successful.
+    Returns JSON responses.
+    """
     is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
-    if not is_ajax: 
+    if not is_ajax:
         return JsonResponse({'status': 'error', 'message': 'Invalid request type. AJAX POST required.'}, status=400)
 
     try:
@@ -290,8 +292,8 @@ def verify_login_otp(request):
         return JsonResponse({'status': 'error', 'message': 'OTP is required.'}, status=400)
 
     stored_otp = request.session.get('login_otp')
-    user_email_for_2fa = request.session.get('2fa_user_email') 
-    user_id_for_2fa = request.session.get('2fa_user_id') 
+    user_email_for_2fa = request.session.get('2fa_user_email')
+    user_id_for_2fa = request.session.get('2fa_user_id')
 
     if not stored_otp or not user_email_for_2fa or not user_id_for_2fa:
         return JsonResponse({'status': 'error', 'message': 'Verification session expired or invalid. Please try logging in again.'}, status=400)
@@ -299,7 +301,7 @@ def verify_login_otp(request):
     if entered_otp == stored_otp:
         try:
             user = User.objects.get(pk=user_id_for_2fa, email=user_email_for_2fa)
-            auth_login(request, user) 
+            auth_login(request, user)
             for key in ['login_otp', 'login_email_pending_2fa', '2fa_user_email', '2fa_user_id']:
                 request.session.pop(key, None)
             redirect_url = reverse('AudioXApp:home')
@@ -308,10 +310,9 @@ def verify_login_otp(request):
             for key in ['login_otp', 'login_email_pending_2fa', '2fa_user_email', '2fa_user_id']:
                 request.session.pop(key, None)
             return JsonResponse({'status': 'error', 'message': 'User verification failed. Please try logging in again.'}, status=400)
-        except Exception as e:
-            logger.error(f"Error during final login step of 2FA: {e}", exc_info=True)
+        except Exception:
             for key in ['login_otp', 'login_email_pending_2fa', '2fa_user_email', '2fa_user_id']:
-                request.session.pop(key, None) 
+                request.session.pop(key, None)
             return JsonResponse({'status': 'error', 'message': 'An error occurred during login. Please try again.'}, status=500)
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid verification code.'}, status=400)
@@ -321,7 +322,7 @@ def verify_login_otp(request):
 def forgot_password_request(request):
     """
     Renders the forgot password page (email entry).
-    The actual OTP sending is handled by the existing 'send_otp' view with purpose='password_reset'.
+    The actual OTP sending is handled by the 'send_otp' view with purpose='password_reset'.
     """
     context = _get_full_context(request)
     return render(request, 'auth/forgotpassword.html', context)
@@ -330,7 +331,7 @@ def forgot_password_request(request):
 def verify_password_reset_otp(request):
     """
     Verifies the OTP entered for password reset.
-    If successful, it sets a session flag and prepares data for the reset_password_form view.
+    If successful, it sets a session flag and prepares for the reset_password_form view.
     """
     try:
         data = json.loads(request.body)
@@ -350,9 +351,9 @@ def verify_password_reset_otp(request):
 
     if entered_otp == stored_otp:
         request.session['password_reset_verified_email'] = email
-        request.session['password_reset_verified_otp'] = entered_otp 
-        request.session.set_expiry(300) 
-        
+        request.session['password_reset_verified_otp'] = entered_otp
+        request.session.set_expiry(300)
+
         return JsonResponse({'status': 'success', 'message': 'OTP verified successfully. Proceed to reset your password.'})
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid OTP entered.'}, status=400)
@@ -361,19 +362,18 @@ def verify_password_reset_otp(request):
 def reset_password_form(request):
     """
     Renders the page where the user can enter their new password.
-    This view expects 'email' and 'otp' (the verified OTP) as GET parameters.
+    Requires email and the verified OTP as GET parameters for session validation.
     """
     email = request.GET.get('email')
-    otp = request.GET.get('otp') 
+    otp = request.GET.get('otp')
 
     verified_email_in_session = request.session.get('password_reset_verified_email')
     verified_otp_in_session = request.session.get('password_reset_verified_otp')
 
     if not email or not otp or email != verified_email_in_session or otp != verified_otp_in_session:
         messages.error(request, "Invalid or expired password reset link/session. Please try again.")
-        return redirect('AudioXApp:forgot_password') 
+        return redirect('AudioXApp:forgot_password')
 
-    # Corrected context creation
     context = _get_full_context(request)
     context.update({'email': email, 'otp': otp})
     return render(request, 'auth/resetpassword.html', context)
@@ -382,28 +382,28 @@ def reset_password_form(request):
 @require_POST
 def reset_password_confirm(request):
     """
-    Processes the new password submission.
-    Requires email, the verified OTP (or a more secure token), and new passwords.
+    Processes the new password submission for password reset.
+    Requires email, the verified OTP, and new passwords.
     """
     try:
         data = json.loads(request.body)
         email = data.get('email')
-        otp = data.get('otp') 
+        otp = data.get('otp')
         new_password = data.get('new_password')
         confirm_new_password = data.get('confirm_new_password')
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON data.'}, status=400)
 
     errors = {}
-    if not email: errors['email'] = "Email is missing." 
-    if not otp: errors['otp'] = "OTP/Token is missing." 
+    if not email: errors['email'] = "Email is missing."
+    if not otp: errors['otp'] = "OTP/Token is missing."
     if not new_password: errors['new_password'] = "New password is required."
     if not confirm_new_password: errors['confirm_new_password'] = "Please confirm your new password."
 
     if new_password and confirm_new_password and new_password != confirm_new_password:
         errors['confirm_new_password'] = "Passwords do not match."
-    
-    if new_password and len(new_password) < 8: 
+
+    if new_password and len(new_password) < 8:
         errors['new_password'] = "Password must be at least 8 characters long."
 
     verified_email_in_session = request.session.get('password_reset_verified_email')
@@ -411,7 +411,6 @@ def reset_password_confirm(request):
 
     if not verified_email_in_session or not verified_otp_in_session or \
        email != verified_email_in_session or otp != verified_otp_in_session:
-        logger.warning(f"Password reset attempt for {email} failed session validation.")
         return JsonResponse({'status': 'error', 'message': 'Invalid or expired password reset session. Please start over.'}, status=403)
 
     if errors:
@@ -421,29 +420,29 @@ def reset_password_confirm(request):
         user = User.objects.get(email=email)
         user.set_password(new_password)
         user.save()
-        
+
         for key in ['password_reset_otp', 'password_reset_email', 'password_reset_verified_email', 'password_reset_verified_otp']:
             request.session.pop(key, None)
-        
+
         return JsonResponse({'status': 'success', 'message': 'Your password has been reset successfully. You can now login.'})
     except User.DoesNotExist:
-        logger.error(f"User not found during password reset confirm for email: {email}")
         return JsonResponse({'status': 'error', 'message': 'User not found. Password reset failed.'}, status=404)
-    except Exception as e:
-        logger.error(f"Error during password reset confirm for {email}: {e}", exc_info=True)
+    except Exception:
         return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred. Please try again.'}, status=500)
 
 
+# --- Logout View ---
+
 @login_required
 def logout_view(request):
+    """Logs out the current user and redirects to the home page."""
     try:
-        username = request.user.username 
+        username = request.user.username
         auth_logout(request)
         messages.success(request, f"User '{username}' has been successfully logged out.")
-    except AttributeError: 
-        auth_logout(request) 
+    except AttributeError:
+        auth_logout(request)
         messages.success(request, "You have been successfully logged out.")
-    except Exception as e:
-        logger.error(f"Error during logout: {e}", exc_info=True)
+    except Exception:
         messages.error(request, "An error occurred during logout. Please try again.")
     return redirect('AudioXApp:home')

@@ -1,16 +1,16 @@
 {% extends 'Homepage.html' %}
-{% load static %} {# Ensure static is loaded if needed for poster #}
-{% load humanize %} {# Optional: For formatting numbers, dates etc. #}
-{% load mathfilters %} {# *** IMPORTANT: Ensure mathfilters is loaded if using it *** #}
+{% load static %}
+{% load humanize %}
+{% load mathfilters %}
 
 
 {% block content %}
 <div class="bg-gray-50 min-h-screen font-sans antialiased pb-28">
 
-    {# Hero Section - Video poster attribute removed #}
+    {# Hero Section #}
     <div class="relative overflow-hidden">
         <div class="absolute inset-0">
-            <video autoplay muted loop class="w-full h-full object-cover"> {# Poster attribute removed from this line #}
+            <video autoplay muted loop class="w-full h-full object-cover">
                 <source src="https://cdn.coverr.co/videos/coverr-reading-a-book-7883/1080p.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
@@ -26,25 +26,16 @@
                style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);">
                 Discover captivating stories, narrated by masters of the craft.
             </p>
-            <a href="{% url 'AudioXApp:subscribe' %}" {# Use url tag for subscribe link #}
-               class="inline-block bg-[#091e65] hover:bg-[#071852] text-white font-bold py-4 px-12 rounded-full text-lg tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl">
+            <a href="{% url 'AudioXApp:subscribe' %}"
+               class="inline-block bg-[#091e65] hover:bg-[#071e65] text-white font-bold py-4 px-12 rounded-full text-lg tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl text-center">
                 Subscribe Now
             </a>
             <div class="mt-12 w-full overflow-hidden">
                 <div class="marquee-container">
-                    <div class="marquee-genre flex items-center whitespace-nowrap space-x-8">
-                        {# CORRECTED GENRE LINKS USING {% url %} TAG #}
-                        <a href="{% url 'AudioXApp:genre_fiction' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fiction</a>
-                        <a href="{% url 'AudioXApp:genre_mystery' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Mystery</a>
-                        <a href="{% url 'AudioXApp:genre_thriller' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Thriller</a>
-                        <a href="{% url 'AudioXApp:genre_scifi' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Sci-Fi</a>
-                        <a href="{% url 'AudioXApp:genre_fantasy' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fantasy</a>
-                        <a href="{% url 'AudioXApp:genre_romance' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Romance</a>
-                        <a href="{% url 'AudioXApp:genre_biography' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Biography</a>
-                        <a href="{% url 'AudioXApp:genre_history' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">History</a>
-                        <a href="{% url 'AudioXApp:genre_selfhelp' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Self-Help</a>
-                        <a href="{% url 'AudioXApp:genre_business' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Business</a>
-                        {# Duplicate for seamless scrolling - ALSO CORRECTED #}
+                    {# Added justify-center to center the items when not overflowing #}
+                    {# Marquee animation will not work without custom CSS @keyframes #}
+                    <div class="marquee-genre flex items-center whitespace-nowrap space-x-8 justify-center">
+                        {# All original genres kept, duplicates removed #}
                         <a href="{% url 'AudioXApp:genre_fiction' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fiction</a>
                         <a href="{% url 'AudioXApp:genre_mystery' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Mystery</a>
                         <a href="{% url 'AudioXApp:genre_thriller' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Thriller</a>
@@ -94,7 +85,7 @@
                             </div>
                             <div class="p-4 flex-grow">
                                 <h3 class="font-semibold text-lg text-gray-800 truncate" title="{{ book.title }}">{{ book.title }}</h3>
-                                <p class="text-sm text-gray-500">Source: LibriVox</p>
+                                {# Removed source information #}
                             </div>
                         </div>
                     </a>
@@ -134,27 +125,27 @@
                                                      onerror="this.onerror=null; this.src='https://placehold.co/300x320/eeeeee/999999?text=Cover+Error';">
                                                 <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
                                                     <button
-                                                        type="button"
-                                                        title="View Details"
-                                                        class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                                                        </svg>
-                                                    </button>
+                                                         type="button"
+                                                         title="View Details"
+                                                         class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
+                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                                                             <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                                         </svg>
+                                                     </button>
                                                 </div>
                                             </div>
-                                            <div class="p-4 flex-grow">
-                                                <h3 class="font-semibold text-lg text-gray-800 truncate" title="{{ book.title }}">{{ book.title }}</h3>
-                                                <p class="text-sm text-gray-600 truncate" title="{{ book.author|default:'Unknown Author' }}">By {{ book.author|default:'Unknown Author' }}</p>
-                                                <p class="text-sm text-gray-500 mt-1">Source: Archive.org</p>
-                                            </div>
+                                             <div class="p-4 flex-grow">
+                                                 <h3 class="font-semibold text-lg text-gray-800 truncate" title="{{ book.title }}">{{ book.title }}</h3>
+                                                 <p class="text-sm text-gray-600 truncate" title="{{ book.author|default:'Unknown Author' }}">By {{ book.author|default:'Unknown Author' }}</p>
+                                                 {# Removed source information #}
+                                             </div>
                                         </div>
                                     </a>
                                     {% endfor %}
                                 </div>
                             </div>
                         {% endif %}
-                    {% empty %} 
+                    {% empty %}
                         {% if error_message %}
                             <div class="text-center text-gray-600 bg-white p-6 rounded-xl shadow-sm">
                                 <h3 class="text-lg font-semibold mb-2 text-gray-700">Loading Genre Audiobooks...</h3>
@@ -188,9 +179,8 @@
                             <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=creator_book.slug %}" class="block group relative">
                                 <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl h-full flex flex-col">
                                     <div class="relative h-80 w-full">
-                                        {# MODIFIED: Changed creator_book.cover_image.url to creator_book.cover_image #}
                                         {% if creator_book.cover_image %}
-                                        <img src="{{ creator_book.cover_image }}" {# Corrected this line #}
+                                        <img src="{{ creator_book.cover_image }}"
                                              alt="{{ creator_book.title }}"
                                              class="w-full h-full object-cover rounded-t-3xl"
                                              loading="lazy"
@@ -204,52 +194,50 @@
                                         {% endif %}
                                         <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
                                             <button
-                                                type="button"
-                                                title="View Details"
-                                                class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                                     stroke="currentColor" class="w-8 h-8">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                          d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                                                </svg>
-                                            </button>
+                                                 type="button"
+                                                 title="View Details"
+                                                 class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
+                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                                 </svg>
+                                             </button>
                                         </div>
                                     </div>
                                     <div class="p-4 flex-grow flex flex-col">
                                         <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ creator_book.title }}">{{ creator_book.title }}</h3>
                                         {% if creator_book.author %}
-                                            <p class="text-sm text-gray-600 truncate" title="{{ creator_book.author }}">By {{ creator_book.author }}</p>
+                                             <p class="text-sm text-gray-600 truncate" title="{{ creator_book.author }}">By {{ creator_book.author }}</p>
                                         {% endif %}
                                         {% if creator_book.creator.creator_name %}
-                                            <p class="text-xs text-[#091e65] mt-1">By: {{ creator_book.creator.creator_name }}</p>
+                                             <p class="text-xs text-[#091e65] mt-1">By: {{ creator_book.creator.creator_name }}</p>
                                         {% endif %}
                                         <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500">
-                                            <div class="flex items-center space-x-1 star-rating-card">
+                                            <div class="flex items-center space-x-1"> {# Removed star-rating-card class #}
                                                 {% with rating=creator_book.average_rating %}
-                                                    {% if rating is not None %}
-                                                        {% with full_stars=rating|floatformat:0|add:"0" %}
-                                                        {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                                        {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                                            {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                                            {% if decimal_part_int >= 5 %}
-                                                                <i class="fas fa-star-half-alt text-yellow-400"></i>
-                                                                {% with current_stars=full_stars|add:1 %}
-                                                                {% with empty_stars=5|sub:current_stars %}
-                                                                    {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                                {% endwith %}
-                                                                {% endwith %}
-                                                            {% else %}
-                                                                {% with empty_stars=5|sub:full_stars %}
-                                                                    {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                                {% endwith %}
-                                                            {% endif %}
-                                                        {% endwith %}{# end decimal_part_int #}
-                                                        {% endwith %}{# end decimal_part_str #}
-                                                        {% endwith %}{# end full_stars #}
-                                                        <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
-                                                    {% else %}
-                                                        <span class="text-gray-400 italic text-xs">No ratings</span>
-                                                    {% endif %}
+                                                     {% if rating is not None %}
+                                                         {% with full_stars=rating|floatformat:0|add:"0" %}
+                                                         {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
+                                                         {% with decimal_part_int=decimal_part_str|add:"0" %}
+                                                              {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endfor %} {# Added Tailwind classes #}
+                                                              {% if decimal_part_int >= 5 %}
+                                                                  <i class="fas fa-star-half-alt text-yellow-400 text-sm mr-px"></i> {# Added Tailwind classes #}
+                                                                  {% with current_stars=full_stars|add:1 %}
+                                                                  {% with empty_stars=5|sub:current_stars %}
+                                                                       {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %} {# Added Tailwind classes #}
+                                                                  {% endwith %}
+                                                                  {% endwith %}
+                                                              {% else %}
+                                                                  {% with empty_stars=5|sub:full_stars %}
+                                                                       {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %} {# Added Tailwind classes #}
+                                                                  {% endwith %}
+                                                              {% endif %}
+                                                         {% endwith %}{# end decimal_part_int #}
+                                                         {% endwith %}{# end decimal_part_str #}
+                                                         {% endwith %}{# end full_stars #}
+                                                         <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
+                                                     {% else %}
+                                                         <span class="text-gray-400 italic text-xs">No ratings</span>
+                                                     {% endif %}
                                                 {% endwith %}
                                             </div>
                                             <div class="flex items-center space-x-1">
@@ -288,7 +276,7 @@
                 <button id="player-prev-button" disabled title="Previous Episode" class="p-2 text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 3.5A.5.5 0 0 1 1 4v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m3.5 0a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m4.904 8.697l-6-4.5a.5.5 0 0 1 0-.894l6-4.5a.5.5 0 0 1 .796.447v9a.5.5 0 0 1-.796.447"/></svg>
                 </button>
-                <button id="player-play-pause-button" onclick="togglePlayPause()" title="Play/Pause" class="p-2.5 bg-[#091e65] text-white rounded-full shadow-lg hover:bg-[#071852] transition transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-white">
+                <button id="player-play-pause-button" onclick="togglePlayPause()" title="Play/Pause" class="p-2.5 bg-[#091e65] text-white rounded-full shadow-lg hover:bg-[#071e65] transition transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-white">
                     <svg id="player-play-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7" fill="currentColor" viewBox="0 0 16 16"><path d="M10.804 8 5 4.633v6.734zm.792-.696a.803.803 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/></svg>
                     <svg id="player-pause-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 hidden" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/></svg>
                 </button>
@@ -298,7 +286,8 @@
             </div>
             <div class="flex-grow flex items-center space-x-2 sm:space-x-3 min-w-0 max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg">
                 <span id="player-current-time" class="text-xs text-gray-500 font-mono w-10 text-right">0:00</span>
-                <input type="range" id="player-seek-bar" value="0" max="100" step="0.1" class="player-seek-bar-theme w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer range-sm hover:opacity-90">
+                {# Removed custom-seek-bar class, styling will be basic #}
+                <input type="range" id="player-seek-bar" value="0" max="100" step="0.1" class="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer range-sm hover:opacity-90">
                 <span id="player-duration" class="text-xs text-gray-500 font-mono w-10 text-left">0:00</span>
             </div>
             <div class="flex items-center space-x-2 sm:space-x-3">
@@ -315,11 +304,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{# Added script tag for audiobook_creator_details.js #}
 <script src="{% static 'js/audiobook_creator_details.js' %}"></script>
 
 <script>
-    // --- DOM Elements ---
     const audioPlayer = document.getElementById("audioPlayer");
     const bottomPlayerBar = document.getElementById("bottom-player-bar");
     const playerCoverImage = document.getElementById("player-cover-image");
@@ -339,7 +326,7 @@
     let currentAudioUrl = null;
     const playbackSpeeds = [1, 1.5, 2];
     let currentSpeedIndex = 0;
-    const THEME_COLOR = '#091e65'; // Used for Swal confirm button
+    const THEME_COLOR = '#091e65'; // Used for Swal confirm button (will use default if Swal styles removed)
 
     function formatTime(seconds) {
         if (isNaN(seconds) || seconds < 0) return '0:00';
@@ -359,26 +346,23 @@
     function updatePlayerInfo(bookTitle, chapterTitle, coverUrl) {
         playerBookTitle.textContent = bookTitle || 'Unknown Book';
         playerBookTitle.title = bookTitle || 'Unknown Book';
-        playerEpisodeTitle.textContent = chapterTitle || 'Chapter 1'; // Default if no chapter title
+        playerEpisodeTitle.textContent = chapterTitle || 'Chapter 1';
         playerEpisodeTitle.title = chapterTitle || 'Chapter 1';
         playerCoverImage.src = (coverUrl && coverUrl !== 'None' && coverUrl !== '') ? coverUrl : placeholderCover;
         playerCoverImage.onerror = () => { playerCoverImage.src = placeholderCover; };
-        // Prev/Next buttons would be enabled based on playlist logic, not implemented here
-        playerPrevButton.disabled = true; 
+        playerPrevButton.disabled = true;
         playerNextButton.disabled = true;
     }
-    
-    // This function might be redundant if card clicks navigate to detail page
+
     function handlePlayClick(event, buttonElement) {
         console.log("handlePlayClick called, but card buttons now navigate to detail page.");
     }
 
-    // This function is intended to be called from the audiobook_detail.html or similar, not directly from homepage cards
-    // It can also be called by functions within audiobook_creator_details.js if that file needs to initiate playback
     function loadAndPlayAudio(audioUrl, bookTitle, chapterTitle, coverUrl) {
         if (!audioUrl || audioUrl.endsWith('?url=') || audioUrl.includes('?url=None')) {
             console.error("Invalid audio URL provided:", audioUrl);
-            Swal.fire({ icon: 'error', title: 'Audio Unavailable', text: 'Sorry, the audio sample is not available.', confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
+            // SweetAlert2 will use default styling here
+            Swal.fire({ icon: 'error', title: 'Audio Unavailable', text: 'Sorry, the audio sample is not available.', confirmButtonColor: THEME_COLOR });
             return;
         }
         currentAudioUrl = audioUrl;
@@ -386,25 +370,27 @@
         updatePlayerInfo(bookTitle, chapterTitle, coverUrl);
         showPlayerBar();
         audioPlayer.src = audioUrl;
-        audioPlayer.load(); // Good practice to call load() before play()
+        audioPlayer.load();
         audioPlayer.play().catch(e => {
             console.error("Error playing audio:", e);
             let errorTitle = 'Playback Error'; let errorText = 'Could not play audio.';
             if (e.name === 'NotAllowedError') { errorTitle = 'Autoplay Blocked'; errorText = 'Click play again.'; }
             else if (e.name === 'AbortError') { errorTitle = 'Load Interrupted'; errorText = 'Loading stopped.'; }
             else if (e.name === 'NotSupportedError') { errorTitle = 'Format Not Supported'; errorText = 'Audio format not supported.'; }
-            Swal.fire({ icon: 'error', title: errorTitle, text: errorText, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
+            // SweetAlert2 will use default styling here
+            Swal.fire({ icon: 'error', title: errorTitle, text: errorText, confirmButtonColor: THEME_COLOR });
             updatePlayerUIState('error');
         });
     }
 
     function togglePlayPause() {
-        if (!audioPlayer.src || audioPlayer.src === window.location.href || !currentAudioUrl) { // Check if a track is loaded
-            Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'Select a book to play', showConfirmButton: false, timer: 2000, timerProgressBar: true, background: '#f3f4f6', color: '#1f2937', customClass: { timerProgressBar: `bg-[${THEME_COLOR}]` }});
+        if (!audioPlayer.src || audioPlayer.src === window.location.href || !currentAudioUrl) {
+             // SweetAlert2 will use default styling here
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'Select a book to play', showConfirmButton: false, timer: 2000, timerProgressBar: true, background: '#f3f4f6', color: '#1f2937'});
             return;
         }
         if (audioPlayer.paused || audioPlayer.ended) {
-            audioPlayer.play().catch(e => { console.error("Error resuming play:", e); Swal.fire({ icon: 'error', title: 'Playback Error', text: 'Could not resume audio.', confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } }); });
+            audioPlayer.play().catch(e => { console.error("Error resuming play:", e); Swal.fire({ icon: 'error', title: 'Playback Error', text: 'Could not resume audio.', confirmButtonColor: THEME_COLOR }); });
         } else {
             audioPlayer.pause();
         }
@@ -413,7 +399,7 @@
     function closePlayer() {
         audioPlayer.pause();
         audioPlayer.src = '';
-        currentAudioUrl = null; // Reset current audio URL
+        currentAudioUrl = null;
         hidePlayerBar();
         playerSeekBar.value = 0;
         playerCurrentTime.textContent = '0:00';
@@ -421,10 +407,10 @@
         playerEpisodeTitle.textContent = 'Select an episode';
         playerBookTitle.textContent = 'Book Title';
         playerCoverImage.src = placeholderCover;
-        currentSpeedIndex = 0; // Reset speed
+        currentSpeedIndex = 0;
         audioPlayer.playbackRate = playbackSpeeds[currentSpeedIndex];
         playerSpeedButton.textContent = `${playbackSpeeds[currentSpeedIndex]}x`;
-        updatePlayerUIState('paused'); // Reflect player is not playing
+        updatePlayerUIState('paused');
     }
 
     function cyclePlaybackSpeed() {
@@ -434,97 +420,67 @@
         playerSpeedButton.textContent = `${newSpeed}x`;
     }
 
-    // Event Listeners for Audio Player
     audioPlayer.addEventListener('play', () => { updatePlayerUIState('playing'); });
     audioPlayer.addEventListener('pause', () => { updatePlayerUIState('paused'); });
-    audioPlayer.addEventListener('ended', () => { updatePlayerUIState('ended'); /* Optionally handle next track */ });
+    audioPlayer.addEventListener('ended', () => { updatePlayerUIState('ended'); });
     audioPlayer.addEventListener('error', (e) => { updatePlayerUIState('error'); console.error("Audio Player Error Event:", e); });
     audioPlayer.addEventListener('loadedmetadata', () => {
         if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
             playerDuration.textContent = formatTime(audioPlayer.duration); playerSeekBar.max = audioPlayer.duration;
-        } else { playerDuration.textContent = '--:--'; playerSeekBar.max = 0; } // Handle cases where duration is not available
+        } else { playerDuration.textContent = '--:--'; playerSeekBar.max = 0; }
         playerCurrentTime.textContent = '0:00'; playerSeekBar.value = 0;
     });
     audioPlayer.addEventListener('timeupdate', () => {
-        if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) { // Check if duration is valid
-            playerCurrentTime.textContent = formatTime(audioPlayer.currentTime); playerSeekBar.value = audioPlayer.currentTime;
+        if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
+             playerCurrentTime.textContent = formatTime(audioPlayer.currentTime); playerSeekBar.value = audioPlayer.currentTime;
         }
     });
 
-    playerSeekBar.addEventListener('input', () => { // Allow seeking only if audio is ready
-        if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration) && audioPlayer.readyState >= 1) { // readyState >=1 (HAVE_METADATA)
+    playerSeekBar.addEventListener('input', () => {
+        if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration) && audioPlayer.readyState >= 1) {
              audioPlayer.currentTime = playerSeekBar.value;
         }
     });
 
-    // Initialize Player UI on DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
-        bottomPlayerBar.classList.add('translate-y-full'); // Start hidden
-        playerPrevButton.disabled = true; // No playlist logic yet
-        playerNextButton.disabled = true; // No playlist logic yet
+        bottomPlayerBar.classList.add('translate-y-full');
+        playerPrevButton.disabled = true;
+        playerNextButton.disabled = true;
         playerSpeedButton.textContent = `${playbackSpeeds[currentSpeedIndex]}x`;
-        playerSeekBar.style.setProperty('--seek-accent-color', THEME_COLOR); // For custom styled range input
+        // Removed line setting --seek-accent-color
     });
 
-    // Marquee animation setup
+    // Marquee animation setup (will not animate without @keyframes)
     window.addEventListener('load', () => {
         const marqueeGenreContainer = document.querySelector('.marquee-container');
         const marqueeGenreContent = document.querySelector('.marquee-genre');
         if (marqueeGenreContainer && marqueeGenreContent) {
-            // Check if content actually overflows before applying animation
-            if (marqueeGenreContent.scrollWidth > marqueeGenreContainer.clientWidth && !marqueeGenreContent.dataset.initialized) {
-                marqueeGenreContent.dataset.initialized = 'true'; // Prevent re-initializing if already done
-                // Calculate duration based on the actual width of one set of items
-                let actualContentWidth = marqueeGenreContent.scrollWidth / 2; // Since content is duplicated
-                let animationDuration = actualContentWidth / 50; // Adjust 50 to control speed (lower is faster)
-                
-                if (actualContentWidth > 0 && animationDuration > 0) {
-                    marqueeGenreContent.style.animation = `marquee ${animationDuration}s linear infinite`;
-                } else {
-                    console.warn("Marquee width or calculated duration is zero for genres, animation not applied.");
-                }
+            // Check if content actually overflows
+            if (marqueeGenreContent.scrollWidth > marqueeGenreContainer.clientWidth) {
+                 // Animation is not applied as @keyframes are removed
+                 marqueeGenreContent.style.justifyContent = 'flex-start'; // Ensure left alignment if overflowing
+            } else {
+                 // If content does not overflow, ensure centering
+                 marqueeGenreContent.style.justifyContent = 'center';
             }
         }
     });
+
+     // Also handle resize events to adjust centering
+     window.addEventListener('resize', () => {
+         const marqueeGenreContainer = document.querySelector('.marquee-container');
+         const marqueeGenreContent = document.querySelector('.marquee-genre');
+         if (marqueeGenreContainer && marqueeGenreContent) {
+              // Recalculate and apply centering logic
+              if (marqueeGenreContent.scrollWidth > marqueeGenreContainer.clientWidth) {
+                   marqueeGenreContent.style.justifyContent = 'flex-start'; // Ensure left alignment if overflowing
+              } else {
+                   marqueeGenreContent.style.justifyContent = 'center';
+              }
+         }
+     });
 </script>
 
-<style>
-    @keyframes marquee {
-        from { transform: translateX(0%); }
-        to { transform: translateX(-50%); } /* Scroll one full width of the original content */
-    }
-    .tracking-tighter { letter-spacing: -0.075em; } /* Tailwind class if not already defined globally */
-    .marquee-container { width: 100%; overflow: hidden; position: relative; }
-    /* .marquee-genre will have display: flex; from Tailwind */
-
-    /* Custom styling for range input (seek bar) */
-    .player-seek-bar-theme { accent-color: var(--seek-accent-color, #4f46e5); /* Fallback color */ }
-    .player-seek-bar-theme::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: var(--seek-accent-color, #4f46e5); border-radius: 50%; cursor: pointer; margin-top: -5px; /* Adjust for vertical alignment */ }
-    .player-seek-bar-theme::-moz-range-thumb { width: 14px; height: 14px; background: var(--seek-accent-color, #4f46e5); border-radius: 50%; cursor: pointer; border: none; }
-    .player-seek-bar-theme::-webkit-slider-runnable-track { height: 6px; background: #e5e7eb; border-radius: 9999px; }
-    .player-seek-bar-theme::-moz-range-track { height: 6px; background: #e5e7eb; border-radius: 9999px; }
-
-    /* SweetAlert2 Customizations (ensure these don't conflict with Tailwind's !important if used) */
-    .swal2-popup.rounded-xl { border-radius: 0.75rem !important; }
-    .swal2-confirm { background-color: #091e65 !important; border-radius: 0.5rem !important; }
-    .swal2-confirm:hover { background-color: #071852 !important; }
-    .swal2-icon.swal2-error { border-color: #fca5a5 !important; } /* Light red */
-    .swal2-icon.swal2-error [class^=swal2-x-mark-line] { background-color: #ef4444 !important; } /* Red */
-    .swal2-icon.swal2-info { border-color: #93c5fd !important; color: #3b82f6 !important; } /* Light blue / Blue */
-    .swal2-toast { box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important; }
-    .swal2-toast .swal2-title { font-size: 0.875rem !important; font-weight: 500 !important; }
-    .swal2-timer-progress-bar.bg-\[\#091e65\] { background-color: #091e65 !important; } /* Ensure this matches your theme color */
-
-    /* Star rating card specific styles */
-    .star-rating-card .fa-star,
-    .star-rating-card .fa-star-half-alt,
-    .star-rating-card .far.fa-star {
-        font-size: 0.8rem; /* Adjust size as needed */
-    }
-    .star-rating-card .text-yellow-400 { color: #facc15; } /* Tailwind yellow-400 */
-    .star-rating-card .text-gray-300 { color: #d1d5db; } /* Tailwind gray-300 */
-</style>
-
-<div class="py-8"></div> {# Added padding at the bottom to ensure content above player is not hidden #}
+<div class="py-8"></div>
 
 {% endblock %}

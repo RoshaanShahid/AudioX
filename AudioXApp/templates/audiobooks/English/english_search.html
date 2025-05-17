@@ -1,0 +1,133 @@
+{% extends 'Homepage.html' %}
+{% load static %}
+{% load humanize %} 
+{% load mathfilters %}
+
+{% block title %}
+    {% if query %}
+        Search Results for "{{ query }}" - AudioX
+    {% else %}
+        Search - AudioX
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen font-sans antialiased pb-16">
+    <div class="container mx-auto px-4 py-12 sm:py-16">
+        
+        {% if query %}
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
+                Search Results for "<span class="text-[#091e65]">{{ query }}</span>"
+            </h1>
+            <p class="text-gray-600 mb-10 text-lg">
+                Found {{ results|length }} audiobook{{ results|length|pluralize }} matching your search.
+            </p>
+        {% else %}
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-10 text-center">
+                Search Audiobooks
+            </h1>
+            <p class="text-gray-600 mb-10 text-lg text-center">
+                Enter a term in the search bar above to find audiobooks by title, author, or creator.
+            </p>
+        {% endif %}
+
+        {% if results %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12">
+                {% for book_item in results %} {# Changed book to book_item to avoid conflict with any block context #}
+                <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book_item.slug %}" class="block group relative">
+                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl h-full flex flex-col">
+                        <div class="relative h-80 w-full">
+                            <img src="{% if book_item.cover_image_url %}{{ book_item.cover_image_url }}{% else %}https://placehold.co/300x320/eeeeee/999999?text=No+Cover{% endif %}"
+                                 alt="{{ book_item.title }}"
+                                 class="w-full h-full object-cover rounded-t-3xl"
+                                 loading="lazy"
+                                 width="300" height="320"
+                                 onerror="this.onerror=null; this.src='https://placehold.co/300x320/eeeeee/999999?text=Cover+Error';">
+                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
+                                <button
+                                    type="button"
+                                    title="View Details"
+                                    class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                                         stroke="currentColor" class="w-8 h-8">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-4 flex-grow flex flex-col">
+                            <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ book_item.title }}">{{ book_item.title }}</h3>
+                            {% if book_item.author %}
+                                <p class="text-sm text-gray-600 truncate" title="{{ book_item.author }}">By {{ book_item.author }}</p>
+                            {% endif %}
+                            
+                            {% if book_item.creator_name %}
+                                <p class="text-xs text-[#091e65] mt-1">Creator: {{ book_item.creator_name }}</p>
+                            {% elif book_item.source_type == 'librivox' %}
+                                <p class="text-xs text-gray-500 mt-1">Source: LibriVox</p>
+                            {% elif book_item.source_type == 'archive.org' %}
+                                <p class="text-xs text-gray-500 mt-1">Source: Archive.org</p>
+                            {% endif %}
+
+                            {% if book_item.average_rating is not None or book_item.total_views is not None %}
+                            <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500">
+                                {% if book_item.average_rating is not None %}
+                                <div class="flex items-center space-x-1"> 
+                                    {% with rating=book_item.average_rating %}
+                                        {% with full_stars=rating|floatformat:0|add:"0" %}
+                                        {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
+                                        {% with decimal_part_int=decimal_part_str|add:"0" %}
+                                            {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endfor %}
+                                            {% if decimal_part_int >= 5 %}
+                                                <i class="fas fa-star-half-alt text-yellow-400 text-sm mr-px"></i>
+                                                {% with current_stars=full_stars|add:1 %}
+                                                {% with empty_stars=5|sub:current_stars %}
+                                                    {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
+                                                {% endwith %}
+                                                {% endwith %}
+                                            {% else %}
+                                                {% with empty_stars=5|sub:full_stars %}
+                                                    {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
+                                                {% endwith %}
+                                            {% endif %}
+                                        {% endwith %}{# end decimal_part_int #}
+                                        {% endwith %}{# end decimal_part_str #}
+                                        {% endwith %}{# end full_stars #}
+                                        <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
+                                    {% endwith %}
+                                </div>
+                                {% elif book_item.is_creator_book %} {# Only show "No ratings" for DB books if they truly have none #}
+                                 <span class="text-gray-400 italic text-xs">No ratings</span>
+                                {% endif %}
+                                
+                                {% if book_item.total_views is not None %}
+                                <div class="flex items-center space-x-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    <span>{{ book_item.total_views|intcomma }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %} 
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        {% elif query %}
+            <div class="text-center py-10">
+                <img src="{% static 'img/audiox-favicon.png' %}" alt="No results" class="mx-auto h-24 w-24 opacity-50 mb-6">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-3">No Audiobooks Found</h2>
+                <p class="text-gray-500">We couldn't find any audiobooks matching "<span class="font-medium">{{ query }}</span>".</p>
+                <p class="text-gray-500 mt-1">Try searching for a different term or check your spelling.</p>
+                <a href="{% url 'AudioXApp:home' %}" class="mt-8 inline-block bg-[#091e65] hover:bg-blue-900 text-white font-semibold py-2.5 px-6 rounded-lg shadow hover:shadow-md transition duration-150 ease-in-out">
+                    Back to Home
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

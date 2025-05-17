@@ -13,32 +13,25 @@
         </h1>
 
         {% if error_message and not audiobooks_list and not creator_audiobooks %}
-            {# Display a general error message if provided and both lists are empty #}
             <div class="text-center text-gray-600 bg-yellow-50 p-6 rounded-xl shadow-sm border border-yellow-200">
                 <i class="fas fa-exclamation-triangle text-3xl text-yellow-500 mb-3"></i>
                 <p class="text-lg">{{ error_message }}</p>
             </div>
         {% endif %}
 
-        {# --- External Audiobooks Section (e.g., Archive.org) --- #}
         {% if audiobooks_list %}
             <div class="mb-16">
-                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300">
-                    From Public Archives
-                </h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
                     {% for book in audiobooks_list %}
                         <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" class="block group relative">
                             <div class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out group-hover:shadow-2xl hover:-translate-y-1 h-full flex flex-col">
                                 <div class="relative h-72 w-full">
-                                    {# External book cover image #}
                                     <img src="{{ book.cover_image|default:'https://placehold.co/300x288/e2e8f0/64748b?text=No+Cover' }}"
                                          alt="{{ book.title }} Cover"
                                          class="w-full h-full object-cover"
                                          loading="lazy"
                                          onerror="this.onerror=null; this.src='https://placehold.co/300x288/e2e8f0/64748b?text=Cover+Error';">
                                     <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60">
-                                        {# Play button overlay #}
                                         <button type="button" title="View Details" class="bg-white/80 text-[#091e65] rounded-full p-3.5 shadow-md transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
@@ -47,14 +40,11 @@
                                     </div>
                                 </div>
                                 <div class="p-5 flex-grow flex flex-col">
-                                    {# Book title #}
                                     <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ book.title }}">{{ book.title }}</h3>
-                                    {# Author name #}
                                     <p class="text-sm text-gray-600 truncate mb-2" title="{{ book.author|default:'Unknown Author' }}">
                                         By {{ book.author|default:"Unknown Author" }}
                                     </p>
-                                    {# Source of the audiobook #}
-                                    <p class="text-xs text-gray-500 mt-auto">Source: {{ book.source|capfirst|default:"Archive" }}</p>
+                                    {# Source information removed #}
                                 </div>
                             </div>
                         </a>
@@ -62,11 +52,9 @@
                 </div>
             </div>
         {% elif not error_message and not creator_audiobooks %}
-            {# Message if no external books and no general error and no creator books #}
-            <p class="text-center text-gray-500 py-8">No audiobooks from public archives found for this genre at the moment.</p>
+            <p class="text-center text-gray-500 py-8">No audiobooks found for this genre at the moment.</p>
         {% endif %}
 
-        {# --- Creator Audiobooks Section --- #}
         {% if creator_audiobooks %}
             <div class="mb-16">
                 <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300">
@@ -77,7 +65,6 @@
                         <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=creator_book.slug %}" class="block group relative">
                             <div class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out group-hover:shadow-2xl hover:-translate-y-1 h-full flex flex-col">
                                 <div class="relative h-72 w-full">
-                                    {# Creator book cover image #}
                                     {% if creator_book.cover_image %}
                                     <img src="{{ creator_book.cover_image }}"
                                          alt="{{ creator_book.title }} Cover"
@@ -90,14 +77,12 @@
                                          class="w-full h-full object-cover bg-gray-200">
                                     {% endif %}
                                     <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60">
-                                        {# Play button overlay #}
                                         <button type="button" title="View Details" class="bg-white/80 text-[#091e65] rounded-full p-3.5 shadow-md transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
                                             </svg>
                                         </button>
                                     </div>
-                                    {# Pricing badge #}
                                     {% if creator_book.is_paid %}
                                         <span class="absolute top-3 right-3 bg-[#091e65] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow">PKR {{ creator_book.price|floatformat:2 }}</span>
                                     {% else %}
@@ -105,41 +90,37 @@
                                     {% endif %}
                                 </div>
                                 <div class="p-5 flex-grow flex flex-col">
-                                    {# Book title #}
                                     <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ creator_book.title }}">{{ creator_book.title }}</h3>
-                                    {# Author name #}
                                     <p class="text-sm text-gray-600 truncate" title="{{ creator_book.author|default:'Unknown Author' }}">
                                         By {{ creator_book.author|default:"Unknown Author" }}
                                     </p>
-                                    {# Narrator (Creator) name #}
                                     {% if creator_book.creator.creator_name %}
-                                        <p class="text-xs text-[#091e65] mt-1 font-medium">Narrator: {{ creator_book.creator.creator_name }}</p>
+                                         <p class="text-xs text-[#091e65] mt-1 font-medium">Narrator: {{ creator_book.creator.creator_name }}</p>
                                     {% endif %}
-                                    
-                                    {# Rating and Views section #}
+
                                     <div class="mt-auto pt-3 flex justify-between items-center text-xs text-gray-500">
-                                        <div class="flex items-center space-x-1 star-rating-card">
+                                        <div class="flex items-center space-x-1">
                                             {% with rating=creator_book.average_rating %}
-                                                {% if rating is not None %}
-                                                    {% with full_stars=rating|floatformat:0|add:"0" decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                                    {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                                        {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                                        {% if decimal_part_int >= 5 %}
-                                                            <i class="fas fa-star-half-alt text-yellow-400"></i>
-                                                            {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
-                                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                            {% endwith %}
-                                                        {% else %}
-                                                            {% with empty_stars=5|sub:full_stars %}
-                                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                            {% endwith %}
-                                                        {% endif %}
-                                                    {% endwith %}{# end decimal_part_int #}
-                                                    {% endwith %}{# end full_stars & decimal_part_str #}
-                                                    <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
-                                                {% else %}
-                                                    <span class="text-gray-400 italic">No ratings</span>
-                                                {% endif %}
+                                                 {% if rating is not None %}
+                                                     {% with full_stars=rating|floatformat:0|add:"0" decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
+                                                     {% with decimal_part_int=decimal_part_str|add:"0" %}
+                                                          {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endfor %}
+                                                          {% if decimal_part_int >= 5 %}
+                                                              <i class="fas fa-star-half-alt text-yellow-400 text-sm mr-px"></i>
+                                                              {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
+                                                                   {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
+                                                              {% endwith %}
+                                                          {% else %}
+                                                              {% with empty_stars=5|sub:full_stars %}
+                                                                   {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
+                                                              {% endwith %}
+                                                          {% endif %}
+                                                     {% endwith %}
+                                                     {% endwith %}
+                                                     <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
+                                                 {% else %}
+                                                     <span class="text-gray-400 italic text-xs">No ratings</span>
+                                                 {% endif %}
                                             {% endwith %}
                                         </div>
                                         <div class="flex items-center space-x-1">
@@ -157,11 +138,9 @@
                 </div>
             </div>
         {% elif not error_message and not audiobooks_list %}
-             {# Message if no creator books and no general error and no external books #}
             <p class="text-center text-gray-500 py-8">No audiobooks from our creators found for this genre at the moment.</p>
         {% endif %}
 
-        {# General "No audiobooks found" message if both lists are empty and no specific error_message was set #}
         {% if not audiobooks_list and not creator_audiobooks and not error_message %}
             <div class="text-center text-gray-600 bg-blue-50 p-8 rounded-xl shadow">
                 <i class="fas fa-book-open text-4xl text-blue-400 mb-4"></i>
@@ -171,16 +150,4 @@
         {% endif %}
     </div>
 </div>
-
-<style>
-    /* Styles for star rating, can be in a global CSS if used elsewhere */
-    .star-rating-card .fa-star,
-    .star-rating-card .fa-star-half-alt,
-    .star-rating-card .far.fa-star {
-        font-size: 0.8rem; /* Adjust size as needed */
-        margin-right: 1px;
-    }
-    .star-rating-card .text-yellow-400 { color: #facc15; } /* Tailwind yellow-400 */
-    .star-rating-card .text-gray-300 { color: #d1d5db; } /* Tailwind gray-300 */
-</style>
 {% endblock %}

@@ -1,16 +1,16 @@
 {% extends 'Homepage.html' %}
 
-{% load static %} {# Load static if needed for fallback images etc. #}
-{% load humanize %} {# Optional: For formatting numbers, dates etc. #}
+{% load static %}
+{% load humanize %}
+{% load mathfilters %}
+{% load i18n %}
 
 {% block content %}
-{# Subtle gradient background #}
-<div class="bg-gradient-to-b from-indigo-50 via-white to-white min-h-screen font-sans antialiased text-gray-800 pb-28"> {# Increased padding-bottom for taller player bar #}
 
-    {# Container #}
+<div class="bg-gradient-to-b from-indigo-50 via-white to-white min-h-screen font-sans antialiased text-gray-800 pb-28">
+
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
 
-        {# --- Breadcrumbs (Refined style) --- #}
         <nav class="text-xs mb-8 text-gray-500" aria-label="Breadcrumb">
             <ol class="list-none p-0 inline-flex items-center space-x-1.5">
                 <li class="flex items-center">
@@ -20,21 +20,19 @@
                     <svg class="fill-current w-3 h-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569 9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
                 </li>
                 <li>
-                    <span class="font-medium text-gray-600">{% if is_creator_book %}{{ audiobook.title }}{% else %}{{ audiobook.title }}{% endif %}</span>
+                    <span class="font-medium text-gray-600">{{ audiobook.title }}</span>
                 </li>
             </ol>
         </nav>
 
-        {# --- Main Content Grid --- #}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
 
-            {# Left Column: Cover Image & Actions #}
             <div class="md:col-span-1 flex flex-col items-center md:items-start">
                 <div class="w-full max-w-xs sm:max-w-sm md:max-w-full mb-6 shadow-xl rounded-xl overflow-hidden border border-gray-100">
                     {% if audiobook.cover_image %}
-                        <img id="main-cover-image" 
-                             src="{% if is_creator_book %}{{ audiobook.cover_image.url }}{% else %}{{ audiobook.cover_image }}{% endif %}" 
-                             alt="{% if is_creator_book %}{{ audiobook.title }}{% else %}{{ audiobook.title }}{% endif %}" 
+                        <img id="main-cover-image"
+                             src="{% if is_creator_book %}{{ audiobook.cover_image.url }}{% else %}{{ audiobook.cover_image }}{% endif %}"
+                             alt="{{ audiobook.title }}"
                              class="w-full h-auto object-cover aspect-[4/3]">
                     {% else %}
                         <div id="main-cover-image" class="w-full aspect-[4/3] bg-gray-100 flex items-center justify-center border border-gray-200 rounded-xl">
@@ -62,7 +60,7 @@
 
             <div class="md:col-span-2">
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#091e65] mb-3 font-serif leading-tight">
-                    {% if is_creator_book %}{{ audiobook.title }}{% else %}{{ audiobook.title }}{% endif %}
+                    {{ audiobook.title }}
                 </h1>
 
                 <div class="mb-4 text-base text-gray-600 space-y-1">
@@ -103,80 +101,76 @@
                         <div class="bg-white p-5 rounded-lg">
                             <h3 class="text-lg font-semibold text-gray-800 mb-3">Description</h3>
                             <div class="prose prose-sm sm:prose-base max-w-none text-gray-600 leading-relaxed">
-                                {% if is_creator_book %}{{ audiobook.description|safe|default:"No description available." }}{% else %}{{ audiobook.description|safe|default:"No description available." }}{% endif %}
+                                {{ audiobook.description|safe|default:"No description available." }}
                             </div>
                         </div>
                     </div>
 
                     <div id="content-episodes" class="tab-content hidden">
-    <div class="space-y-2.5 relative">
-        {% if chapters_to_display %}
-            {% for chapter_display_item in chapters_to_display %}
-                {# Use the chapter_index directly from the chapter_display_item dictionary #}
-                {% with original_audio_url=chapter_display_item.audio_url chapter_title=chapter_display_item.chapter_title chapter_idx=chapter_display_item.chapter_index %}
-                    {% url 'AudioXApp:stream_audio' as stream_base_url %}
-                    {% if original_audio_url %}
-                        {# Ensure original_audio_url is properly encoded for the query parameter #}
-                        {% with encoded_audio_url=original_audio_url|urlencode:"" %}
-                            {% if encoded_audio_url %}
-                                {% with full_audio_url_template=stream_base_url|add:"?url="|add:encoded_audio_url %}
-                                <div class="chapter-item bg-white p-3 rounded-lg border border-gray-200 hover:border-[#b1b8d7] hover:bg-[#f0f5ff] transition duration-150 ease-in-out flex items-center space-x-3 group"
-                                     data-chapter-title="{{ chapter_title|escapejs|default:"Untitled Episode" }}"
-                                     data-chapter-index="{{ chapter_idx }}" {# This will now be correctly populated #}
-                                     data-audio-url-template="{{ full_audio_url_template }}"
-                                     data-is-accessible="{{ chapter_display_item.is_accessible|yesno:'true,false' }}">
+                        <div class="space-y-2.5 relative">
+                            {% if chapters_to_display %}
+                                {% for chapter_display_item in chapters_to_display %}
+                                    {% with original_audio_url=chapter_display_item.audio_url chapter_title=chapter_display_item.chapter_title chapter_idx=chapter_display_item.chapter_index %}
+                                        {% url 'AudioXApp:stream_audio' as stream_base_url %}
+                                        {% if original_audio_url %}
+                                            {% with encoded_audio_url=original_audio_url|urlencode:"" %}
+                                                {% if encoded_audio_url %}
+                                                    {% with full_audio_url_template=stream_base_url|add:"?url="|add:encoded_audio_url %}
+                                                        <div class="chapter-item bg-white p-3 rounded-lg border border-gray-200 hover:border-[#b1b8d7] hover:bg-[#f0f5ff] transition duration-150 ease-in-out flex items-center space-x-3 group"
+                                                             data-chapter-title="{{ chapter_title|escapejs|default:"Untitled Episode" }}"
+                                                             data-chapter-index="{{ chapter_idx }}"
+                                                             data-audio-url-template="{{ full_audio_url_template }}"
+                                                             data-is-accessible="{{ chapter_display_item.is_accessible|yesno:'true,false' }}">
 
-                                    <div class="flex-shrink-0">
-                                        {% if chapter_display_item.is_accessible %}
-                                        <button onclick="playChapter(this)"
-                                                title="Play Episode {{ forloop.counter }}"
-                                                class="play-button flex items-center justify-center w-9 h-9 bg-[#eef2ff] hover:bg-[#e0e7ff] text-[#091e65] rounded-full transition duration-150 ease-in-out focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[#091e65] transform active:scale-90">
-                                            <svg class="w-4 h-4 play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                                            <svg class="w-4 h-4 pause-icon hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>
-                                            <svg class="w-4 h-4 loading-icon hidden animate-spin text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                        </button>
+                                                            <div class="flex-shrink-0">
+                                                                {% if chapter_display_item.is_accessible %}
+                                                                <button onclick="playChapter(this)"
+                                                                        title="Play Episode {{ forloop.counter }}"
+                                                                        class="play-button flex items-center justify-center w-9 h-9 bg-[#eef2ff] hover:bg-[#e0e7ff] text-[#091e65] rounded-full transition duration-150 ease-in-out focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[#091e65] transform active:scale-90">
+                                                                    <svg class="w-4 h-4 play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
+                                                                    <svg class="w-4 h-4 pause-icon hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>
+                                                                    <svg class="w-4 h-4 loading-icon hidden animate-spin text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                                </button>
+                                                                {% else %}
+                                                                <div title="Episode locked" class="flex items-center justify-center w-9 h-9 bg-gray-200 text-gray-400 rounded-full cursor-not-allowed">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
+                                                                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                                                    </svg>
+                                                                </div>
+                                                                {% endif %}
+                                                            </div>
+                                                            <div class="flex-grow min-w-0">
+                                                                <p class="text-sm font-medium {% if chapter_display_item.is_accessible %}text-gray-800 group-hover:text-[#091e65]{% else %}text-gray-400{% endif %} transition truncate" title="{{ chapter_title|default:"Untitled Episode" }}">
+                                                                    <span class="text-xs {% if chapter_display_item.is_accessible %}text-gray-500{% else %}text-gray-400{% endif %} mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }}
+                                                                </p>
+                                                            </div>
+                                                            <div class="flex-shrink-0 text-xs {% if chapter_display_item.is_accessible %}text-gray-500{% else %}text-gray-400{% endif %} font-mono">
+                                                                {{ chapter_display_item.duration|default:"--:--" }}
+                                                            </div>
+                                                        </div>
+                                                    {% endwith %}
+                                                {% else %}
+                                                    <div class="chapter-item bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-3 opacity-60 cursor-not-allowed">
+                                                        <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
+                                                        <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }} (Audio URL invalid after encoding)</p></div>
+                                                        <div class="flex-shrink-0 text-xs text-gray-400">N/A</div>
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
                                         {% else %}
-                                        <div title="Episode locked" class="flex items-center justify-center w-9 h-9 bg-gray-200 text-gray-400 rounded-full cursor-not-allowed">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
-                                                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-                                            </svg>
-                                        </div>
+                                            <div class="chapter-item bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-3 opacity-60 cursor-not-allowed">
+                                                <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
+                                                <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }} (Audio URL missing)</p></div>
+                                                <div class="flex-shrink-0 text-xs text-gray-400">N/A</div>
+                                            </div>
                                         {% endif %}
-                                    </div>
-                                    <div class="flex-grow min-w-0">
-                                        <p class="text-sm font-medium {% if chapter_display_item.is_accessible %}text-gray-800 group-hover:text-[#091e65]{% else %}text-gray-400{% endif %} transition truncate" title="{{ chapter_title|default:"Untitled Episode" }}">
-                                            <span class="text-xs {% if chapter_display_item.is_accessible %}text-gray-500{% else %}text-gray-400{% endif %} mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }}
-                                        </p>
-                                    </div>
-                                    <div class="flex-shrink-0 text-xs {% if chapter_display_item.is_accessible %}text-gray-500{% else %}text-gray-400{% endif %} font-mono">
-                                        {{ chapter_display_item.duration|default:"--:--" }}
-                                    </div>
-                                </div>
-                                {% endwith %}
+                                    {% endwith %}
+                                {% endfor %}
                             {% else %}
-                                {# Handle case where encoded_audio_url is empty/None #}
-                                <div class="chapter-item bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-3 opacity-60 cursor-not-allowed">
-                                    <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
-                                    <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }} (Audio URL invalid after encoding)</p></div>
-                                    <div class="flex-shrink-0 text-xs text-gray-400">N/A</div>
-                                </div>
+                                <p class="text-center text-gray-500 py-10">No episodes available for this audiobook.</p>
                             {% endif %}
-                        {% endwith %}
-                    {% else %}
-                        {# Handle case where original_audio_url is missing #}
-                        <div class="chapter-item bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-3 opacity-60 cursor-not-allowed">
-                            <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
-                            <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }} (Audio URL missing)</p></div>
-                            <div class="flex-shrink-0 text-xs text-gray-400">N/A</div>
                         </div>
-                    {% endif %}
-                {% endwith %}
-            {% endfor %}
-        {% else %}
-            <p class="text-center text-gray-500 py-10">No episodes available for this audiobook.</p>
-        {% endif %}
-    </div>
-</div>
+                    </div>
 
                     <div id="content-reviews" class="tab-content hidden">
                         <div class="bg-white p-5 rounded-lg">
@@ -184,6 +178,7 @@
                             <p class="text-gray-600">Reviews are not available yet for this audiobook.</p>
                         </div>
                     </div>
+
                     <div id="content-recommendations" class="tab-content hidden">
                         <div class="bg-white p-5 rounded-lg">
                             <h3 class="text-lg font-semibold text-gray-800 mb-3">Recommendations</h3>
@@ -222,7 +217,7 @@
                 <input type="range" id="player-seek-bar" value="0" max="100" step="0.1" class="player-seek-bar-theme w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer range-sm hover:opacity-90">
                 <span id="player-duration" class="text-xs text-gray-500 font-mono w-10 text-left">0:00</span>
             </div>
-            
+
             <div class="flex items-center space-x-1 sm:space-x-2">
                 <button id="player-speed-button" onclick="cyclePlaybackSpeed()" title="Playback Speed" class="p-1.5 text-gray-500 hover:text-[#091e65] hover:bg-[#eef2ff] rounded-full transition text-xs font-semibold w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center">1x</button>
                 <button onclick="closePlayer()" title="Close Player" class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition">
@@ -236,11 +231,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // --- DOM Elements (ensure all these IDs exist in your HTML) ---
+    // --- DOM Elements ---
     const audioPlayer = document.getElementById("audioPlayer");
     const bottomPlayerBar = document.getElementById("bottom-player-bar");
     const playerCoverImage = document.getElementById("player-cover-image");
-    const playerEpisodeNumber = document.getElementById("player-episode-number"); 
+    const playerEpisodeNumber = document.getElementById("player-episode-number");
     const playerEpisodeTitle = document.getElementById("player-episode-title");
     const playerPlayPauseButton = document.getElementById("player-play-pause-button");
     const playerPlayIcon = document.getElementById("player-play-icon");
@@ -251,16 +246,16 @@
     const playerDuration = document.getElementById("player-duration");
     const playerSeekBar = document.getElementById("player-seek-bar");
     const playerSpeedButton = document.getElementById("player-speed-button");
-    const mainCoverImage = document.getElementById("main-cover-image"); 
+    const mainCoverImage = document.getElementById("main-cover-image");
     const placeholderCoverSrc = document.querySelector('template[data-placeholder-src]')?.dataset.placeholderSrc || 'https://placehold.co/100x75/e5e7eb/4b5563?text=N/A';
-    
-    const chapterItems = document.querySelectorAll('.chapter-item'); 
-    let currentChapterIndex = -1; 
-    let currentlyPlayingListItemButton = null; 
-    
+
+    const chapterItems = document.querySelectorAll('.chapter-item');
+    let currentChapterIndex = -1;
+    let currentlyPlayingListItemButton = null;
+
     const playbackSpeeds = [1, 1.5, 2];
     let currentSpeedIndex = 0;
-    const THEME_COLOR = '#091e65'; 
+    const THEME_COLOR = '#091e65';
 
     // --- Utility Functions ---
     function formatTime(seconds) {
@@ -282,7 +277,7 @@
         });
         const contentToShow = document.getElementById(`content-${tabId}`);
         if (contentToShow) contentToShow.classList.remove('hidden');
-        
+
         const selectedTab = document.getElementById(`tab-${tabId}`);
         if(selectedTab) {
             selectedTab.classList.add(`text-[${THEME_COLOR}]`, `border-[${THEME_COLOR}]`, 'font-semibold');
@@ -292,7 +287,7 @@
     }
 
     // --- Player UI Updates ---
-    function updatePlayerUIState(state) { 
+    function updatePlayerUIState(state) {
         playerPlayIcon?.classList.toggle('hidden', state === 'playing' || state === 'loading');
         playerPauseIcon?.classList.toggle('hidden', state !== 'playing');
         if (currentlyPlayingListItemButton) {
@@ -306,35 +301,35 @@
         const pauseIcon = listItemButton.querySelector('.pause-icon');
         const loadingIcon = listItemButton.querySelector('.loading-icon');
         const chapterItemDiv = listItemButton.closest('.chapter-item');
-        
-        playIcon?.classList.add('hidden'); 
-        pauseIcon?.classList.add('hidden'); 
+
+        playIcon?.classList.add('hidden');
+        pauseIcon?.classList.add('hidden');
         loadingIcon?.classList.add('hidden');
-        
+
         listItemButton.classList.remove('bg-pink-100', 'text-pink-600', 'hover:bg-pink-200', 'animate-pulse');
         listItemButton.classList.add(`bg-[#eef2ff]`, `text-[${THEME_COLOR}]`, `hover:bg-[#e0e7ff]`);
-        chapterItemDiv?.classList.remove(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`); 
+        chapterItemDiv?.classList.remove(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`);
         chapterItemDiv?.classList.add('bg-white', 'border-gray-200', `hover:border-[#b1b8d7]`, 'hover:bg-[#f0f5ff]');
 
         if (state === 'playing') {
             pauseIcon?.classList.remove('hidden');
             listItemButton.classList.remove(`bg-[#eef2ff]`, `text-[${THEME_COLOR}]`, `hover:bg-[#e0e7ff]`);
-            listItemButton.classList.add('bg-pink-100', 'text-pink-600', 'hover:bg-pink-200'); 
-            chapterItemDiv?.classList.add(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`); 
+            listItemButton.classList.add('bg-pink-100', 'text-pink-600', 'hover:bg-pink-200');
+            chapterItemDiv?.classList.add(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`);
             chapterItemDiv?.classList.remove('bg-white', 'border-gray-200', `hover:border-[#b1b8d7]`, 'hover:bg-[#f0f5ff]');
         } else if (state === 'loading') {
             loadingIcon?.classList.remove('hidden');
-            listItemButton.classList.add('animate-pulse'); 
-        } else { 
+            listItemButton.classList.add('animate-pulse');
+        } else {
             playIcon?.classList.remove('hidden');
         }
     }
 
-    function showPlayerBar() { 
-        if (bottomPlayerBar) bottomPlayerBar.classList.remove('translate-y-full'); 
+    function showPlayerBar() {
+        if (bottomPlayerBar) bottomPlayerBar.classList.remove('translate-y-full');
     }
-    function hidePlayerBar() { 
-        if (bottomPlayerBar) bottomPlayerBar.classList.add('translate-y-full'); 
+    function hidePlayerBar() {
+        if (bottomPlayerBar) bottomPlayerBar.classList.add('translate-y-full');
     }
 
     function updatePlayerInfo(chapterIndex) {
@@ -343,43 +338,32 @@
         if (!chapterItem) return;
 
         const title = chapterItem.dataset.chapterTitle || 'Unknown Title';
-        const episodeNum = chapterIndex + 1; 
+        const episodeNum = chapterIndex + 1;
         const totalEpisodes = chapterItems.length;
-        
-        if(playerEpisodeTitle) playerEpisodeTitle.textContent = title; 
+
+        if(playerEpisodeTitle) playerEpisodeTitle.textContent = title;
         if(playerEpisodeTitle) playerEpisodeTitle.title = title;
         if(playerEpisodeNumber) playerEpisodeNumber.textContent = `Episode ${episodeNum}/${totalEpisodes}`;
         if(playerCoverImage) playerCoverImage.src = mainCoverImage?.src || placeholderCoverSrc;
-        
+
         if(playerPrevButton) playerPrevButton.disabled = chapterIndex <= 0;
         if(playerNextButton) playerNextButton.disabled = chapterIndex >= totalEpisodes - 1;
     }
 
     // --- Core Playback Logic ---
-    // Ensure this function is not being overridden by another script (e.g., audiobook_creator_details.js)
     function playChapter(buttonElement) {
-        console.log("[Inline Script playChapter] Function called. Button clicked:", buttonElement); 
-
         const chapterItem = buttonElement.closest('.chapter-item');
         if (!chapterItem) {
-            console.error("[Inline Script playChapter] Error: Could not find parent .chapter-item for button:", buttonElement);
-            Swal.fire({ icon: 'error', title: 'Player Error', text: 'Could not find chapter data (no .chapter-item).', confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
+            Swal.fire({ icon: 'error', title: 'Player Error', text: 'Could not find chapter data.', confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
             return;
         }
-        console.log("[Inline Script playChapter] Found chapterItem:", chapterItem); 
 
-        const audioUrlTemplate = chapterItem.dataset.audioUrlTemplate; 
+        const audioUrlTemplate = chapterItem.dataset.audioUrlTemplate;
         const chapterTitle = chapterItem.dataset.chapterTitle || 'Episode';
-        const chapterIndex = parseInt(chapterItem.dataset.chapterIndex ?? '-1', 10); 
+        const chapterIndex = parseInt(chapterItem.dataset.chapterIndex ?? '-1', 10);
         const isAccessible = chapterItem.dataset.isAccessible === 'true';
 
-        console.log("[Inline Script playChapter] Chapter Title:", chapterTitle); 
-        console.log("[Inline Script playChapter] Chapter Index:", chapterIndex); 
-        console.log("[Inline Script playChapter] Is Accessible:", isAccessible); 
-        console.log("[Inline Script playChapter] Audio URL Template from data attribute:", audioUrlTemplate); 
-
         if (!isAccessible) {
-            console.warn("[Inline Script playChapter] Condition: Chapter not accessible.", chapterTitle); 
             Swal.fire({
                 icon: 'warning', title: 'Chapter Locked',
                 text: `This chapter is not accessible. Please purchase the audiobook or subscribe for full access.`,
@@ -387,9 +371,8 @@
             });
             return;
         }
-        
+
         if (typeof audioUrlTemplate !== 'string' || audioUrlTemplate.trim() === '' || !audioUrlTemplate.includes('?url=')) {
-            console.error(`[Inline Script playChapter] Error: Invalid or incomplete audioUrlTemplate for "${chapterTitle}":`, audioUrlTemplate); 
             Swal.fire({
                 icon: 'error', title: 'Audio Link Problem',
                 text: `Could not prepare the audio link for "${chapterTitle}". The audio source URL might be missing or improperly formatted.`,
@@ -398,9 +381,8 @@
             if (buttonElement) updateListItemButtonState(buttonElement, 'error');
             return;
         }
-        
+
         if (audioUrlTemplate.endsWith("?url=")) {
-            console.error(`[Inline Script playChapter] Error: Attempting to play an empty audio source for "${chapterTitle}". Full template: ${audioUrlTemplate}`); 
             Swal.fire({
                 icon: 'error',
                 title: 'Audio Source Missing',
@@ -409,157 +391,126 @@
                 customClass: { popup: 'rounded-xl' }
             });
             if (buttonElement) updateListItemButtonState(buttonElement, 'error');
-            return; 
+            return;
         }
 
-        let audioUrl = audioUrlTemplate; 
-        console.log("[Inline Script playChapter] Final audioUrl to be used:", audioUrl); 
+        let audioUrl = audioUrlTemplate;
 
-        if (chapterIndex < 0) { 
-            console.error("[Inline Script playChapter] Error: Invalid chapterIndex:", chapterIndex, "for chapter:", chapterTitle); 
+        if (chapterIndex < 0) {
             Swal.fire({ icon: 'error', title: 'Chapter Data Error', text: `Could not load data for "${chapterTitle}". Invalid chapter index.`, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
             if (buttonElement) updateListItemButtonState(buttonElement, 'error');
             return;
         }
-        
+
         const isPlayingThisChapter = currentlyPlayingListItemButton === buttonElement && audioPlayer.src === audioUrl && !audioPlayer.paused;
-        console.log("[Inline Script playChapter] isPlayingThisChapter:", isPlayingThisChapter); 
 
         if (isPlayingThisChapter) {
-            console.log("[Inline Script playChapter] Action: Pausing current chapter."); 
             audioPlayer.pause();
-        } else { 
-            console.log("[Inline Script playChapter] Action: Preparing to play new/different chapter."); 
+        } else {
             if (currentlyPlayingListItemButton && currentlyPlayingListItemButton !== buttonElement) {
-                console.log("[Inline Script playChapter] Resetting state of previously playing button."); 
-                updateListItemButtonState(currentlyPlayingListItemButton, 'paused'); 
+                updateListItemButtonState(currentlyPlayingListItemButton, 'paused');
             }
             currentChapterIndex = chapterIndex;
-            currentlyPlayingListItemButton = buttonElement; 
-            
-            console.log("[Inline Script playChapter] Updating UI states to 'loading'."); 
-            updateListItemButtonState(currentlyPlayingListItemButton, 'loading'); 
-            updatePlayerUIState('loading'); 
-            updatePlayerInfo(currentChapterIndex); 
+            currentlyPlayingListItemButton = buttonElement;
+
+            updateListItemButtonState(currentlyPlayingListItemButton, 'loading');
+            updatePlayerUIState('loading');
+            updatePlayerInfo(currentChapterIndex);
             showPlayerBar();
-            
-            console.log("[Inline Script playChapter] Setting audioPlayer.src to:", audioUrl); 
-            audioPlayer.src = audioUrl; 
-            console.log("[Inline Script playChapter] Calling audioPlayer.load()."); 
-            audioPlayer.load(); 
-            console.log("[Inline Script playChapter] Calling audioPlayer.play()."); 
-            audioPlayer.play().then(() => {
-                console.log(`[Inline Script playChapter] Playback started successfully for: ${chapterTitle}`); 
-            }).catch(e => {
-                console.error(`[Inline Script playChapter] Playback .catch() error for: ${chapterTitle}`, e); 
-                handlePlaybackError(e, chapterTitle);
-            });
+
+            audioPlayer.src = audioUrl;
+            audioPlayer.load();
+            audioPlayer.play().catch(e => handlePlaybackError(e, chapterTitle));
         }
-        console.log("[Inline Script playChapter] Function end."); 
     }
 
     function handlePlaybackError(e, chapterTitle = "the selected audio") {
-        console.error(`[Inline Script handlePlaybackError] Error playing audio for "${chapterTitle}":`, e);
-        let errorUserTitle = 'Playback Error'; 
+        let errorUserTitle = 'Playback Error';
         let errorUserText = `Could not play ${chapterTitle}. The file might be missing, inaccessible, or there could be a network issue.`;
-        
-        if (e.name === 'NotAllowedError') { 
-            errorUserTitle = 'Autoplay Blocked'; 
-            errorUserText = `Playback for ${chapterTitle} was prevented by your browser. Please click play again.`; 
-        } else if (e.name === 'AbortError') { 
-            errorUserTitle = 'Load Interrupted'; 
-            errorUserText = `Audio loading for ${chapterTitle} was interrupted. Please try again.`; 
-        } else if (e.name === 'NotSupportedError') { 
-            errorUserTitle = 'Format Not Supported'; 
-            errorUserText = `The audio format for ${chapterTitle} may not be supported by your browser.`; 
-        } else if (audioPlayer.error) { 
+
+        if (e.name === 'NotAllowedError') {
+            errorUserTitle = 'Autoplay Blocked';
+            errorUserText = `Playback for ${chapterTitle} was prevented by your browser. Please click play again.`;
+        } else if (e.name === 'AbortError') {
+            errorUserTitle = 'Load Interrupted';
+            errorUserText = `Audio loading for ${chapterTitle} was interrupted. Please try again.`;
+        } else if (e.name === 'NotSupportedError') {
+            errorUserTitle = 'Format Not Supported';
+            errorUserText = `The audio format for ${chapterTitle} may not be supported by your browser.`;
+        } else if (audioPlayer.error) {
              errorUserText = `Failed to load ${chapterTitle}. (Code: ${audioPlayer.error.code})`;
         }
-        
+
         Swal.fire({ icon: 'error', title: errorUserTitle, text: errorUserText, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
-        updatePlayerUIState('error'); 
-        if(currentlyPlayingListItemButton) updateListItemButtonState(currentlyPlayingListItemButton, 'paused'); 
+        updatePlayerUIState('error');
+        if(currentlyPlayingListItemButton) updateListItemButtonState(currentlyPlayingListItemButton, 'paused');
     }
 
     function togglePlayPause() {
-        console.log("[Inline Script togglePlayPause] Called. currentChapterIndex:", currentChapterIndex, "audioPlayer.src:", audioPlayer.src);
         if (currentChapterIndex < 0 || !audioPlayer.src || audioPlayer.src === window.location.href ) {
             const firstChapterButton = chapterItems[0]?.querySelector('.play-button');
             if (firstChapterButton && chapterItems[0]?.dataset.isAccessible === 'true') {
-                console.log("[Inline Script togglePlayPause] No chapter selected/loaded. Attempting to play the first chapter.");
                 playChapter(firstChapterButton);
             } else {
-                console.log("[Inline Script togglePlayPause] No chapter to play, or first chapter not accessible.");
                 Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'Select an episode to play', showConfirmButton: false, timer: 2500, timerProgressBar: true, background: '#f3f4f6', color: '#1f2937', customClass: { timerProgressBar: `bg-[${THEME_COLOR}]` } });
             }
             return;
         }
 
         if (audioPlayer.paused || audioPlayer.ended) {
-            console.log("[Inline Script togglePlayPause] Attempting to play.");
             audioPlayer.play().catch(e => handlePlaybackError(e, playerEpisodeTitle.textContent));
         } else {
-            console.log("[Inline Script togglePlayPause] Attempting to pause.");
             audioPlayer.pause();
         }
     }
 
     function playNextChapter() {
-        console.log("[Inline Script playNextChapter] Called. currentChapterIndex:", currentChapterIndex);
         const nextIndex = currentChapterIndex + 1;
         if (nextIndex < chapterItems.length) {
             const nextChapterItem = chapterItems[nextIndex];
             if (nextChapterItem?.dataset.isAccessible === 'true') {
-                console.log("[Inline Script playNextChapter] Playing next chapter, index:", nextIndex);
                 nextChapterItem.querySelector('.play-button')?.click();
             } else {
-                console.log("[Inline Script playNextChapter] Next chapter not accessible or does not exist. Index:", nextIndex);
-                updatePlayerUIState('ended'); 
+                updatePlayerUIState('ended');
             }
         } else {
-            updatePlayerUIState('ended'); 
-            console.log("[Inline Script playNextChapter] End of playlist reached.");
+            updatePlayerUIState('ended');
         }
     }
 
     function playPreviousChapter() {
-        console.log("[Inline Script playPreviousChapter] Called. currentChapterIndex:", currentChapterIndex);
         const prevIndex = currentChapterIndex - 1;
         if (prevIndex >= 0) {
              const prevChapterItem = chapterItems[prevIndex];
             if (prevChapterItem?.dataset.isAccessible === 'true') {
-                console.log("[Inline Script playPreviousChapter] Playing previous chapter, index:", prevIndex);
                 prevChapterItem.querySelector('.play-button')?.click();
-            } else {
-                 console.log("[Inline Script playPreviousChapter] Previous chapter not accessible or does not exist. Index:", prevIndex);
             }
         }
     }
 
     function closePlayer() {
-        console.log("[Inline Script closePlayer] Called.");
-        audioPlayer.pause(); 
-        audioPlayer.src = ''; 
+        audioPlayer.pause();
+        audioPlayer.src = '';
         hidePlayerBar();
         if(currentlyPlayingListItemButton) {
-            updateListItemButtonState(currentlyPlayingListItemButton, 'paused'); 
+            updateListItemButtonState(currentlyPlayingListItemButton, 'paused');
         }
-        currentlyPlayingListItemButton = null; 
+        currentlyPlayingListItemButton = null;
         currentChapterIndex = -1;
-        
-        if(playerSeekBar) playerSeekBar.value = 0; 
-        if(playerCurrentTime) playerCurrentTime.textContent = '0:00'; 
+
+        if(playerSeekBar) playerSeekBar.value = 0;
+        if(playerCurrentTime) playerCurrentTime.textContent = '0:00';
         if(playerDuration) playerDuration.textContent = '0:00';
-        if(playerEpisodeTitle) playerEpisodeTitle.textContent = 'Select an episode'; 
+        if(playerEpisodeTitle) playerEpisodeTitle.textContent = 'Select an episode';
         if(playerEpisodeNumber) playerEpisodeNumber.textContent = 'Episode N/A';
         if(playerCoverImage) playerCoverImage.src = placeholderCoverSrc;
-        if(playerPrevButton) playerPrevButton.disabled = true; 
+        if(playerPrevButton) playerPrevButton.disabled = true;
         if(playerNextButton) playerNextButton.disabled = true;
-        
-        currentSpeedIndex = 0; 
+
+        currentSpeedIndex = 0;
         audioPlayer.playbackRate = playbackSpeeds[currentSpeedIndex];
         if(playerSpeedButton) playerSpeedButton.textContent = `${playbackSpeeds[currentSpeedIndex]}x`;
-        updatePlayerUIState('paused'); 
+        updatePlayerUIState('paused');
     }
 
     function cyclePlaybackSpeed() {
@@ -567,20 +518,16 @@
         const newSpeed = playbackSpeeds[currentSpeedIndex];
         audioPlayer.playbackRate = newSpeed;
         if(playerSpeedButton) playerSpeedButton.textContent = `${newSpeed}x`;
-        console.log("[Inline Script cyclePlaybackSpeed] Speed set to:", newSpeed);
     }
 
     // --- Event Listeners for Audio Player ---
-    audioPlayer.addEventListener('play', () => { console.log("[Inline Script Audio Event] play"); updatePlayerUIState('playing'); });
-    audioPlayer.addEventListener('pause', () => { console.log("[Inline Script Audio Event] pause"); updatePlayerUIState('paused'); });
-    audioPlayer.addEventListener('ended', () => { 
-        console.log("[Inline Script Audio Event] ended");
-        updatePlayerUIState('ended'); 
-        playNextChapter(); 
+    audioPlayer.addEventListener('play', () => { updatePlayerUIState('playing'); });
+    audioPlayer.addEventListener('pause', () => { updatePlayerUIState('paused'); });
+    audioPlayer.addEventListener('ended', () => {
+        updatePlayerUIState('ended');
+        playNextChapter();
     });
-    audioPlayer.addEventListener('error', (e) => { 
-        console.error("[Inline Script Audio Event] error:", e, "Audio src:", audioPlayer.src);
-        // Error details are often in audioPlayer.error
+    audioPlayer.addEventListener('error', (e) => {
         let chapterContext = "the current audio track";
         if (currentChapterIndex >= 0 && chapterItems[currentChapterIndex]) {
             chapterContext = `"${chapterItems[currentChapterIndex].dataset.chapterTitle || ('Chapter ' + (currentChapterIndex+1))}"`;
@@ -588,74 +535,51 @@
         handlePlaybackError(e, chapterContext + " (direct audio error)");
     });
     audioPlayer.addEventListener('loadedmetadata', () => {
-        console.log("[Inline Script Audio Event] loadedmetadata. Duration:", audioPlayer.duration);
         if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
-            if(playerDuration) playerDuration.textContent = formatTime(audioPlayer.duration); 
+            if(playerDuration) playerDuration.textContent = formatTime(audioPlayer.duration);
             if(playerSeekBar) playerSeekBar.max = audioPlayer.duration;
-        } else { 
-            if(playerDuration) playerDuration.textContent = '--:--'; 
-            if(playerSeekBar) playerSeekBar.max = 0; 
+        } else {
+            if(playerDuration) playerDuration.textContent = '--:--';
+            if(playerSeekBar) playerSeekBar.max = 0;
         }
-        if(playerCurrentTime) playerCurrentTime.textContent = '0:00'; 
+        if(playerCurrentTime) playerCurrentTime.textContent = '0:00';
         if(playerSeekBar) playerSeekBar.value = 0;
     });
     audioPlayer.addEventListener('timeupdate', () => {
-        // This can be very noisy, so only log if debugging timeupdate specifically
-        // console.log("[Inline Script Audio Event] timeupdate. CurrentTime:", audioPlayer.currentTime);
         if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
-            if(playerCurrentTime) playerCurrentTime.textContent = formatTime(audioPlayer.currentTime); 
+            if(playerCurrentTime) playerCurrentTime.textContent = formatTime(audioPlayer.currentTime);
             if(playerSeekBar) playerSeekBar.value = audioPlayer.currentTime;
         }
     });
 
     playerSeekBar?.addEventListener('input', () => {
-        if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration) && audioPlayer.readyState >= 1) { 
+        if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration) && audioPlayer.readyState >= 1) {
              audioPlayer.currentTime = playerSeekBar.value;
         }
     });
 
     // --- Initialize Page ---
     document.addEventListener('DOMContentLoaded', () => {
-        console.log("[Inline Script DOMContentLoaded] DOM fully loaded and parsed.");
-        showTab('about'); 
-        hidePlayerBar(); 
-        if(playerPrevButton) playerPrevButton.disabled = true; 
+        showTab('about');
+        hidePlayerBar();
+        if(playerPrevButton) playerPrevButton.disabled = true;
         if(playerNextButton) playerNextButton.disabled = true;
         if(playerSpeedButton) playerSpeedButton.textContent = `${playbackSpeeds[currentSpeedIndex]}x`;
-        if(playerSeekBar) playerSeekBar.style.setProperty('--seek-accent-color', THEME_COLOR); 
-
-        // Debug: Check playChapter function availability and content
-        if (typeof playChapter === 'function') {
-            console.log("[Inline Script DOMContentLoaded] 'playChapter' IS defined as a function.");
-            // console.log("[Inline Script DOMContentLoaded] playChapter function body:", playChapter.toString().substring(0, 500) + "..."); // Log first 500 chars
-        } else {
-            console.error("[Inline Script DOMContentLoaded] 'playChapter' IS NOT a function or is undefined. Type:", typeof playChapter);
-        }
-
-        // Debug: Check chapter play buttons
-        const allPlayButtons = document.querySelectorAll('.chapter-item .play-button');
-        console.log(`[Inline Script DOMContentLoaded] Found ${allPlayButtons.length} chapter play buttons in the DOM.`);
-        allPlayButtons.forEach((btn, index) => {
-            if (btn.hasAttribute('onclick')) {
-                console.log(`[Inline Script DOMContentLoaded] Button ${index} has onclick: ${btn.getAttribute('onclick')}`);
-            } else {
-                console.error(`[Inline Script DOMContentLoaded] Button ${index} IS MISSING onclick attribute!`, btn);
-            }
-        });
+        if(playerSeekBar) playerSeekBar.style.setProperty('--seek-accent-color', THEME_COLOR);
     });
 </script>
 <style>
     /* Custom styles for the player seek bar */
-    .player-seek-bar-theme { 
-        accent-color: var(--seek-accent-color, #091e65); 
+    .player-seek-bar-theme {
+        accent-color: var(--seek-accent-color, #091e65);
     }
     .player-seek-bar-theme::-webkit-slider-thumb {
-        -webkit-appearance: none; appearance: none; width: 14px; height: 14px; 
-        background: var(--seek-accent-color, #091e65); border-radius: 50%; 
-        cursor: pointer; margin-top: -5px; 
+        -webkit-appearance: none; appearance: none; width: 14px; height: 14px;
+        background: var(--seek-accent-color, #091e65); border-radius: 50%;
+        cursor: pointer; margin-top: -5px;
     }
     .player-seek-bar-theme::-moz-range-thumb {
-        width: 14px; height: 14px; background: var(--seek-accent-color, #091e65); 
+        width: 14px; height: 14px; background: var(--seek-accent-color, #091e65);
         border-radius: 50%; cursor: pointer; border: none;
     }
     .player-seek-bar-theme::-webkit-slider-runnable-track {
@@ -665,7 +589,7 @@
         height: 6px; background: #e5e7eb; border-radius: 9999px; border: none;
     }
 
-    /* SweetAlert2 Customizations */
+    /* SweetAlert2 Customizations - Keep these as they are external library styles */
     .swal2-popup.rounded-xl { border-radius: 0.75rem !important; }
     .swal2-confirm { background-color: #091e65 !important; border-radius: 0.5rem !important; }
     .swal2-confirm:hover { background-color: #071852 !important; }
@@ -675,7 +599,6 @@
     .swal2-toast { box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important; }
     .swal2-toast .swal2-title { font-size: 0.875rem !important; font-weight: 500 !important; }
     .swal2-timer-progress-bar.bg-\[\#091e65\] { background-color: #091e65 !important; }
-    
-    /* #player-voice-selector { -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none; } */ /* Commented out as selector is removed */
+
 </style>
 {% endblock %}

@@ -19,12 +19,9 @@
             </div>
         {% endif %}
 
-        {# --- External Audiobooks Section (e.g., Archive.org) --- #}
+        {# --- External Audiobooks Section --- #}
         {% if audiobooks_list %}
             <div class="mb-16">
-                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300">
-                    From Public Archives
-                </h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
                     {% for book in audiobooks_list %}
                         <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" class="block group relative">
@@ -48,16 +45,15 @@
                                     <p class="text-sm text-gray-600 truncate mb-2" title="{{ book.author|default:'Unknown Author' }}">
                                         By {{ book.author|default:"Unknown Author" }}
                                     </p>
-                                    <p class="text-xs text-gray-500 mt-auto">Source: {{ book.source|capfirst|default:"Archive" }}</p>
+                                    {# Source information removed #}
                                 </div>
                             </div>
                         </a>
                     {% endfor %}
                 </div>
             </div>
-        {% elif not error_message and not creator_audiobooks %} 
-            {# Show this only if there's no general error message and no creator books either #}
-            <p class="text-center text-gray-500 py-8">No audiobooks from public archives found for this genre at the moment.</p>
+        {% elif not error_message and not creator_audiobooks %}
+            <p class="text-center text-gray-500 py-8">No audiobooks found for this genre at the moment.</p>
         {% endif %}
 
         {# --- Creator Audiobooks Section --- #}
@@ -101,32 +97,32 @@
                                         By {{ creator_book.author|default:"Unknown Author" }}
                                     </p>
                                     {% if creator_book.creator.creator_name %}
-                                        <p class="text-xs text-[#091e65] mt-1 font-medium">Narrator: {{ creator_book.creator.creator_name }}</p>
+                                         <p class="text-xs text-[#091e65] mt-1 font-medium">Narrator: {{ creator_book.creator.creator_name }}</p>
                                     {% endif %}
-                                    
+
                                     <div class="mt-auto pt-3 flex justify-between items-center text-xs text-gray-500">
-                                        <div class="flex items-center space-x-1 star-rating-card">
+                                        <div class="flex items-center space-x-1">
                                             {% with rating=creator_book.average_rating %}
-                                                {% if rating is not None %}
-                                                    {% with full_stars=rating|floatformat:0|add:"0" decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                                    {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                                        {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                                        {% if decimal_part_int >= 5 %}
-                                                            <i class="fas fa-star-half-alt text-yellow-400"></i>
-                                                            {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
-                                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                            {% endwith %}
-                                                        {% else %}
-                                                            {% with empty_stars=5|sub:full_stars %}
-                                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                            {% endwith %}
-                                                        {% endif %}
-                                                    {% endwith %}{# end decimal_part_int #}
-                                                    {% endwith %}{# end full_stars & decimal_part_str #}
-                                                    <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
-                                                {% else %}
-                                                    <span class="text-gray-400 italic">No ratings</span>
-                                                {% endif %}
+                                                 {% if rating is not None %}
+                                                     {% with full_stars=rating|floatformat:0|add:"0" decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
+                                                     {% with decimal_part_int=decimal_part_str|add:"0" %}
+                                                          {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endfor %}
+                                                          {% if decimal_part_int >= 5 %}
+                                                              <i class="fas fa-star-half-alt text-yellow-400 text-sm mr-px"></i>
+                                                              {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
+                                                                   {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
+                                                              {% endwith %}
+                                                          {% else %}
+                                                              {% with empty_stars=5|sub:full_stars %}
+                                                                   {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
+                                                              {% endwith %}
+                                                          {% endif %}
+                                                     {% endwith %}
+                                                     {% endwith %}
+                                                     <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
+                                                 {% else %}
+                                                     <span class="text-gray-400 italic text-xs">No ratings</span>
+                                                 {% endif %}
                                             {% endwith %}
                                         </div>
                                         <div class="flex items-center space-x-1">
@@ -144,7 +140,6 @@
                 </div>
             </div>
         {% elif not error_message and not audiobooks_list %}
-             {# Show this only if there's no general error message and no external books either #}
             <p class="text-center text-gray-500 py-8">No audiobooks from our creators found for this genre at the moment.</p>
         {% endif %}
 
@@ -157,16 +152,4 @@
         {% endif %}
     </div>
 </div>
-
-<style>
-    /* Styles for star rating, can be in a global CSS if used elsewhere */
-    .star-rating-card .fa-star,
-    .star-rating-card .fa-star-half-alt,
-    .star-rating-card .far.fa-star {
-        font-size: 0.8rem; /* Adjust size as needed */
-        margin-right: 1px;
-    }
-    .star-rating-card .text-yellow-400 { color: #facc15; } /* Tailwind yellow-400 */
-    .star-rating-card .text-gray-300 { color: #d1d5db; } /* Tailwind gray-300 */
-</style>
 {% endblock %}

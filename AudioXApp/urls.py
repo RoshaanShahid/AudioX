@@ -1,18 +1,19 @@
 # AudioXApp/urls.py
-from django.urls import path, include # Ensure include is imported if you use it elsewhere
+from django.urls import path, include
 from .views import auth_views, user_views, creator_views, admin_views, content_views, audio_views
 from django.conf import settings
-from django.conf.urls.static import static # Keep this for DEBUG media serving
+from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 app_name = 'AudioXApp'
 
 urlpatterns = [
     # --- Content Views ---
-    # The 'home' view now serves the English homepage, typically at the root.
-    # If this app's urls are included under a prefix (e.g., 'app/'), this will be 'app/'
-    # If this is the project's root urls.py, this will be the site root.
-    path('', content_views.home, name='home'), # This correctly maps the root of this app's URLconf
+    # Main homepage (English)
+    path('', content_views.home, name='home'),
+
+    # Search results page
+    path('search/', content_views.search_results_view, name='search_results'), # <<< NEWLY ADDED LINE
 
     # General Static Pages
     path('ourteam/', content_views.ourteam, name='ourteam'),
@@ -31,15 +32,12 @@ urlpatterns = [
     path('audiobook/<slug:audiobook_slug>/', content_views.audiobook_detail, name='audiobook_detail'),
     path('audiobook/<slug:audiobook_slug>/add_review/', content_views.add_review, name='add_review'),
 
-    # --- Language Specific Home Pages ---
-    # These paths should match the JavaScript redirection logic (e.g., /urdu/)
+    # Language Specific Home Pages
     path('urdu/', content_views.urdu_page, name='urdu_page'),
     path('punjabi/', content_views.punjabi_page, name='punjabi_page'),
     path('sindhi/', content_views.sindhi_page, name='sindhi_page'),
 
-    # --- English Genre Pages ---
-    # These URLs will serve pages for English genres.
-    # The views now point to templates inside 'audiobooks/English/'
+    # English Genre Pages
     path('genre/fiction/', content_views.genre_fiction, name='genre_fiction'),
     path('genre/mystery/', content_views.genre_mystery, name='genre_mystery'),
     path('genre/thriller/', content_views.genre_thriller, name='genre_thriller'),
@@ -50,8 +48,9 @@ urlpatterns = [
     path('genre/history/', content_views.genre_history, name='genre_history'),
     path('genre/selfhelp/', content_views.genre_selfhelp, name='genre_selfhelp'),
     path('genre/business/', content_views.genre_business, name='genre_business'),
+
+    # Upload PDF (assuming this is part of audio_views)
     path('upload/', audio_views.upload_pdf, name='upload_pdf'),
-    # path('genre/<slug:genre_slug>/', content_views.genre_detail, name='genre_detail'), # Original generic genre URL - commented out as specific ones are defined
 
     # --- Auth Views ---
     path('logout/', auth_views.logout_view, name='logout'),
@@ -80,7 +79,7 @@ urlpatterns = [
     path('buycoins/', user_views.buycoins, name='buycoins'),
     path('gift_coins/', user_views.gift_coins, name='gift_coins'),
 
-    # --- NEW URLS FOR DROPDOWN LINKS ---
+    # --- User Account Dropdown Links ---
     path('billing-history/', user_views.billing_history, name='billing_history'),
     path('my-downloads/', user_views.my_downloads, name='my_downloads'),
     path('my-library/', user_views.my_library, name='my_library'),
@@ -128,15 +127,11 @@ urlpatterns = [
     path('admin/creators/<int:user_id>/reject/', creator_views.admin_reject_creator, name='admin_reject_creator'),
     path('admin/creators/<int:user_id>/ban/', creator_views.admin_ban_creator, name='admin_ban_creator'),
     path('admin/creators/<int:user_id>/unban/', creator_views.admin_unban_creator, name='admin_unban_creator'),
-
-    # Removed duplicated language and genre paths that were at the end of the file.
-    # The correct paths are defined above (e.g., path('urdu/', ...), path('genre/fiction/', ...)).
-
 ]
 
 # Static and Media file serving (for development)
-# Use staticfiles_urlpatterns for static files served by Django's dev server
+# These are typically handled by the web server in production,
+# but needed for Django's development server.
 urlpatterns += staticfiles_urlpatterns()
-# Use static() for media files served by Django's dev server in DEBUG mode
 if settings.DEBUG:
-     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
