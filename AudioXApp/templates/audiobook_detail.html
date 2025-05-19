@@ -5,7 +5,57 @@
 {% load mathfilters %}
 {% load i18n %}
 
+{% block title %}{{ audiobook.title }} - Audiobook Details{% endblock %}
+
+{% block head_extra %}
+    {# Added Font Awesome for review stars and other icons #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Styles for star rating input - similar to audiobooks_creator_detail.html */
+        .star-rating-input .fa-star:hover,
+        .star-rating-input .fa-star.selected,
+        .star-rating-input .fa-star.hovered {
+            color: #FACC15; /* Tailwind yellow-400 */
+        }
+        .star-rating-input .fa-star {
+            transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        /* Custom styles for the player seek bar (already present, kept for completeness) */
+        .player-seek-bar-theme {
+            accent-color: var(--seek-accent-color, #091e65);
+        }
+        .player-seek-bar-theme::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 14px; height: 14px;
+            background: var(--seek-accent-color, #091e65); border-radius: 50%;
+            cursor: pointer; margin-top: -5px;
+        }
+        .player-seek-bar-theme::-moz-range-thumb {
+            width: 14px; height: 14px; background: var(--seek-accent-color, #091e65);
+            border-radius: 50%; cursor: pointer; border: none;
+        }
+        .player-seek-bar-theme::-webkit-slider-runnable-track {
+            height: 6px; background: #e5e7eb; border-radius: 9999px;
+        }
+        .player-seek-bar-theme::-moz-range-track {
+            height: 6px; background: #e5e7eb; border-radius: 9999px; border: none;
+        }
+
+        /* SweetAlert2 Customizations (already present, kept for completeness) */
+        .swal2-popup.rounded-xl { border-radius: 0.75rem !important; }
+        .swal2-confirm { background-color: #091e65 !important; border-radius: 0.5rem !important; }
+        .swal2-confirm:hover { background-color: #071852 !important; }
+        .swal2-icon.swal2-error { border-color: #fca5a5 !important; }
+        .swal2-icon.swal2-error [class^=swal2-x-mark-line] { background-color: #ef4444 !important; }
+        .swal2-icon.swal2-info { border-color: #93c5fd !important; color: #3b82f6 !important; }
+        .swal2-toast { box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important; }
+        .swal2-toast .swal2-title { font-size: 0.875rem !important; font-weight: 500 !important; }
+        .swal2-timer-progress-bar.bg-\[\#091e65\] { background-color: #091e65 !important; }
+    </style>
+{% endblock %}
+
 {% block content %}
+{% csrf_token %} {# For review form submissions #}
 
 <div class="bg-gradient-to-b from-indigo-50 via-white to-white min-h-screen font-sans antialiased text-gray-800 pb-28">
 
@@ -20,6 +70,8 @@
                     <svg class="fill-current w-3 h-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path d="M285.476 272.971L91.132 467.314c-9.373 9.373-24.569 9.373-33.941 0l-22.667-22.667c-9.357-9.357-9.375-24.522-.04-33.901L188.505 256 34.484 101.255c-9.335-9.379-9.317-24.544.04-33.901l22.667-22.667c9.373-9.373 24.569 9.373 33.941 0L285.475 239.03c9.373 9.372 9.373 24.568.001 33.941z"/></svg>
                 </li>
                 <li>
+                    {# The 'audiobook' context variable will be a DB model instance if found/created, or a dict from cache if it's a new external book being displayed #}
+                    {# The title should be consistently available from both #}
                     <span class="font-medium text-gray-600">{{ audiobook.title }}</span>
                 </li>
             </ol>
@@ -29,9 +81,10 @@
 
             <div class="md:col-span-1 flex flex-col items-center md:items-start">
                 <div class="w-full max-w-xs sm:max-w-sm md:max-w-full mb-6 shadow-xl rounded-xl overflow-hidden border border-gray-100">
+                    
                     {% if audiobook.cover_image %}
                         <img id="main-cover-image"
-                             src="{% if is_creator_book %}{{ audiobook.cover_image.url }}{% else %}{{ audiobook.cover_image }}{% endif %}"
+                             src="{% if audiobook.is_creator_book_page %}{{ audiobook.cover_image.url }}{% else %}{{ audiobook.cover_image }}{% endif %}"
                              alt="{{ audiobook.title }}"
                              class="w-full h-auto object-cover aspect-[4/3]">
                     {% else %}
@@ -44,12 +97,12 @@
 
                 <div class="flex items-center justify-center md:justify-start space-x-4 w-full">
                     <button class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
-                        <span>Save</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> {# Icon for Offline Download #}
+                        <span>Offline Download</span>
                     </button>
                     <button class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
-                        <span>Rate</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg> {# Icon for Add to Library (bookmark) #}
+                        <span>Add to Library</span>
                     </button>
                     <button class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.001l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
@@ -64,7 +117,17 @@
                 </h1>
 
                 <div class="mb-4 text-base text-gray-600 space-y-1">
-                    <p><span class="font-medium text-gray-800">Source:</span> {% if is_creator_book %}{{ audiobook.creator.creator_name|default:"Creator" }}{% else %}LibriVox{% endif %}</p>
+                    <p><span class="font-medium text-gray-800">Source:</span>
+                        {% if audiobook.is_creator_book_page %}
+                            {{ audiobook.creator.creator_name|default:"Creator" }}
+                        {% elif audiobook.source == 'librivox' %}
+                            LibriVox (via AudioX)
+                        {% elif audiobook.source == 'archive' %}
+                            Archive.org (via AudioX)
+                        {% else %}
+                            AudioX
+                        {% endif %}
+                    </p>
                     {% if audiobook.author %}
                     <p><span class="font-medium text-gray-800">Author:</span> {{ audiobook.author }}</p>
                     {% endif %}
@@ -83,6 +146,12 @@
                             {{ audiobook.language }}
                         </span>
                     {% endif %}
+                    {% if audiobook.total_views is not None %}
+                    <div class="flex items-center space-x-1 text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                        <span>{{ audiobook.total_views|intcomma }} View{{ audiobook.total_views|pluralize }}</span>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="border-b border-gray-200 mb-6">
@@ -91,14 +160,15 @@
                         <button onclick="showTab('episodes')" id="tab-episodes" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
                             EPISODES ({{ chapters_to_display|length|default:"0" }})
                         </button>
-                        <button onclick="showTab('reviews')" id="tab-reviews" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">REVIEWS</button>
+                        <button onclick="showTab('reviews')" id="tab-reviews" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">REVIEWS (<span id="review-count-tab">{{ reviews|length|default:0 }}</span>)</button>
                         <button onclick="showTab('recommendations')" id="tab-recommendations" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">RECOMMENDATIONS</button>
+                        <button onclick="showTab('summaries')" id="tab-summaries" class="tab-button whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">SUMMARIES</button>
                     </nav>
                 </div>
 
                 <div class="min-h-[200px]">
                     <div id="content-about" class="tab-content">
-                        <div class="bg-white p-5 rounded-lg">
+                        <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                             <h3 class="text-lg font-semibold text-gray-800 mb-3">Description</h3>
                             <div class="prose prose-sm sm:prose-base max-w-none text-gray-600 leading-relaxed">
                                 {{ audiobook.description|safe|default:"No description available." }}
@@ -110,61 +180,38 @@
                         <div class="space-y-2.5 relative">
                             {% if chapters_to_display %}
                                 {% for chapter_display_item in chapters_to_display %}
-                                    {% with original_audio_url=chapter_display_item.audio_url chapter_title=chapter_display_item.chapter_title chapter_idx=chapter_display_item.chapter_index %}
-                                        {% url 'AudioXApp:stream_audio' as stream_base_url %}
-                                        {% if original_audio_url %}
-                                            {% with encoded_audio_url=original_audio_url|urlencode:"" %}
-                                                {% if encoded_audio_url %}
-                                                    {% with full_audio_url_template=stream_base_url|add:"?url="|add:encoded_audio_url %}
-                                                        <div class="chapter-item bg-white p-3 rounded-lg border border-gray-200 hover:border-[#b1b8d7] hover:bg-[#f0f5ff] transition duration-150 ease-in-out flex items-center space-x-3 group"
-                                                             data-chapter-title="{{ chapter_title|escapejs|default:"Untitled Episode" }}"
-                                                             data-chapter-index="{{ chapter_idx }}"
-                                                             data-audio-url-template="{{ full_audio_url_template }}"
-                                                             data-is-accessible="{{ chapter_display_item.is_accessible|yesno:'true,false' }}">
+                                    <div class="chapter-item bg-white p-3 rounded-lg border border-gray-200 hover:border-[#b1b8d7] hover:bg-[#f0f5ff] transition duration-150 ease-in-out flex items-center space-x-3 group"
+                                         data-chapter-title="{{ chapter_display_item.chapter_title|escapejs|default:"Untitled Episode" }}"
+                                         data-chapter-index="{{ chapter_display_item.chapter_index }}"
+                                         data-audio-url-template="{% if chapter_display_item.audio_url %}{% url 'AudioXApp:stream_audio' %}?url={{ chapter_display_item.audio_url|urlencode:"" }}{% endif %}"
+                                         data-is-accessible="{{ chapter_display_item.is_accessible|yesno:'true,false' }}">
 
-                                                            <div class="flex-shrink-0">
-                                                                {% if chapter_display_item.is_accessible %}
-                                                                <button onclick="playChapter(this)"
-                                                                        title="Play Episode {{ forloop.counter }}"
-                                                                        class="play-button flex items-center justify-center w-9 h-9 bg-[#eef2ff] hover:bg-[#e0e7ff] text-[#091e65] rounded-full transition duration-150 ease-in-out focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[#091e65] transform active:scale-90">
-                                                                    <svg class="w-4 h-4 play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                                                                    <svg class="w-4 h-4 pause-icon hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>
-                                                                    <svg class="w-4 h-4 loading-icon hidden animate-spin text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                                </button>
-                                                                {% else %}
-                                                                <div title="Episode locked" class="flex items-center justify-center w-9 h-9 bg-gray-200 text-gray-400 rounded-full cursor-not-allowed">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
-                                                                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-                                                                    </svg>
-                                                                </div>
-                                                                {% endif %}
-                                                            </div>
-                                                            <div class="flex-grow min-w-0">
-                                                                <p class="text-sm font-medium {% if chapter_display_item.is_accessible %}text-gray-800 group-hover:text-[#091e65]{% else %}text-gray-400{% endif %} transition truncate" title="{{ chapter_title|default:"Untitled Episode" }}">
-                                                                    <span class="text-xs {% if chapter_display_item.is_accessible %}text-gray-500{% else %}text-gray-400{% endif %} mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }}
-                                                                </p>
-                                                            </div>
-                                                            <div class="flex-shrink-0 text-xs {% if chapter_display_item.is_accessible %}text-gray-500{% else %}text-gray-400{% endif %} font-mono">
-                                                                {{ chapter_display_item.duration|default:"--:--" }}
-                                                            </div>
-                                                        </div>
-                                                    {% endwith %}
-                                                {% else %}
-                                                    <div class="chapter-item bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-3 opacity-60 cursor-not-allowed">
-                                                        <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
-                                                        <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }} (Audio URL invalid after encoding)</p></div>
-                                                        <div class="flex-shrink-0 text-xs text-gray-400">N/A</div>
-                                                    </div>
-                                                {% endif %}
-                                            {% endwith %}
-                                        {% else %}
-                                            <div class="chapter-item bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-3 opacity-60 cursor-not-allowed">
-                                                <div class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div>
-                                                <div class="flex-grow"><p class="text-sm font-medium text-gray-500 truncate"><span class="text-xs mr-1.5">{{ forloop.counter }}.</span> {{ chapter_title|default:"Untitled Episode" }} (Audio URL missing)</p></div>
-                                                <div class="flex-shrink-0 text-xs text-gray-400">N/A</div>
+                                        <div class="flex-shrink-0">
+                                            {% if chapter_display_item.is_accessible %}
+                                            <button onclick="playChapter(this)"
+                                                    title="Play Episode {{ forloop.counter }}"
+                                                    class="play-button flex items-center justify-center w-9 h-9 bg-[#eef2ff] hover:bg-[#e0e7ff] text-[#091e65] rounded-full transition duration-150 ease-in-out focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[#091e65] transform active:scale-90">
+                                                <svg class="w-4 h-4 play-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
+                                                <svg class="w-4 h-4 pause-icon hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" /></svg>
+                                                <svg class="w-4 h-4 loading-icon hidden animate-spin text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            </button>
+                                            {% else %}
+                                            <div title="Episode locked" class="flex items-center justify-center w-9 h-9 bg-gray-200 text-gray-400 rounded-full cursor-not-allowed">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                                </svg>
                                             </div>
-                                        {% endif %}
-                                    {% endwith %}
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow min-w-0">
+                                            <p class="text-sm font-medium {% if chapter_display_item.is_accessible %}text-gray-800 group-hover:text-[#091e65]{% else %}text-gray-400{% endif %} transition truncate" title="{{ chapter_display_item.chapter_title|default:"Untitled Episode" }}">
+                                                <span class="text-xs {% if chapter_display_item.is_accessible %}text-gray-500{% else %}text-gray-400{% endif %} mr-1.5">{{ forloop.counter }}.</span> {{ chapter_display_item.chapter_title|default:"Untitled Episode" }}
+                                            </p>
+                                        </div>
+                                        <div class="flex-shrink-0 text-xs {% if chapter_display_item.is_accessible %}text-gray-500{% else %}text-gray-400{% endif %} font-mono">
+                                            {{ chapter_display_item.duration|default:"--:--" }}
+                                        </div>
+                                    </div>
                                 {% endfor %}
                             {% else %}
                                 <p class="text-center text-gray-500 py-10">No episodes available for this audiobook.</p>
@@ -173,16 +220,153 @@
                     </div>
 
                     <div id="content-reviews" class="tab-content hidden">
-                        <div class="bg-white p-5 rounded-lg">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Reviews</h3>
-                            <p class="text-gray-600">Reviews are not available yet for this audiobook.</p>
+                        <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 border-b border-gray-200 pb-4">
+                                <h3 class="text-xl font-semibold text-gray-800 mb-2 sm:mb-0">Reviews (<span id="review-count">{{ reviews|length|default:0 }}</span>)</h3>
+                                <div class="flex items-center star-rating-display text-sm">
+                                    {% with rating_value=audiobook.average_rating %}
+                                        {% if rating_value is not None and rating_value > 0 %}
+                                            {% with full_stars_count=rating_value|floatformat:0|add:"0" %}
+                                            {% with decimal_part_str_val=rating_value|stringformat:".1f"|slice:"-1:" %}
+                                            {% with decimal_part_int_val=decimal_part_str_val|add:"0" %}
+                                                {% for i in ""|center:full_stars_count %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+                                                {% if decimal_part_int_val >= 3 and decimal_part_int_val <= 7 %}
+                                                    <i class="fas fa-star-half-alt text-yellow-400"></i>
+                                                    {% with current_stars_display_count=full_stars_count|add:1 empty_stars_count=5|sub:current_stars_display_count %}
+                                                        {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                    {% endwith %}
+                                                {% elif decimal_part_int_val > 7 %}
+                                                    {% with effectively_full_stars=full_stars_count|add:1 %}
+                                                        {% if effectively_full_stars > full_stars_count and full_stars_count < 5 %}<i class="fas fa-star text-yellow-400"></i>{% endif %}
+                                                        {% with empty_stars_count=5|sub:effectively_full_stars %}
+                                                            {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                        {% endwith %}
+                                                    {% endwith %}
+                                                {% else %}
+                                                    {% with empty_stars_count=5|sub:full_stars_count %}
+                                                        {% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                    {% endwith %}
+                                                {% endif %}
+                                            {% endwith %}{% endwith %}{% endwith %}
+                                            <span class="font-semibold text-gray-700 ml-1.5">{{ rating_value|floatformat:1 }} avg</span>
+                                        {% else %}
+                                            {% for i in ""|center:5 %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                            <span class="text-gray-400 italic ml-1.5">No ratings yet</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+
+                            {% if user.is_authenticated %}
+                                <form id="review-form" class="mb-6 p-5 border border-indigo-100 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm {% if current_user_has_reviewed %}hidden{% endif %}" data-add-url="{% url 'AudioXApp:add_review' audiobook_slug=audiobook.slug %}">
+                                    {% csrf_token %}
+                                    <h4 class="text-lg font-semibold text-gray-700 mb-4">Leave Your Review</h4>
+                                    <div class="mb-4">
+                                        <label for="rating-value-input" class="block text-sm font-medium text-gray-600 mb-2">Your Rating:</label>
+                                        <div id="review-rating-input" class="star-rating-input text-2xl sm:text-3xl space-x-1.5 cursor-pointer text-gray-300 flex items-center">
+                                            <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="1"></i>
+                                            <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="2"></i>
+                                            <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="3"></i>
+                                            <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="4"></i>
+                                            <i class="far fa-star transition-all duration-150 ease-in-out hover:text-yellow-400 hover:scale-110" data-rating-value="5"></i>
+                                        </div>
+                                        <input type="hidden" name="rating" id="rating-value-input" value="0" required>
+                                        <div id="rating-error" class="text-red-600 text-xs mt-1 h-4"></div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="comment-input" class="block text-sm font-medium text-gray-600 mb-1">Your Comment (Optional):</label>
+                                        <textarea name="comment" id="comment-input" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm placeholder-gray-400" placeholder="Share your thoughts..."></textarea>
+                                    </div>
+                                    <div class="flex justify-end items-center space-x-3">
+                                        <div id="form-message" class="text-sm flex-grow"></div>
+                                        <button type="submit" id="submit-review-btn" class="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-[#091e65] to-[#1031a3] border border-transparent rounded-lg shadow-md text-sm font-medium text-white hover:from-[#071852] hover:to-[#091e65] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] disabled:opacity-50 transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 active:translate-y-0">
+                                            <i class="fas fa-paper-plane mr-2"></i>Submit Review
+                                        </button>
+                                    </div>
+                                </form>
+                                <div id="edit-review-prompt" class="mb-6 text-center p-4 bg-gray-50 rounded-lg border border-gray-200 {% if not current_user_has_reviewed %}hidden{% endif %}">
+                                    <p class="text-sm text-gray-600 mb-2">You've already reviewed this audiobook.</p>
+                                    {% if user_review_object %}
+                                    <p class="text-xs text-gray-500 mb-1">Your rating:
+                                        {% with rating_value=user_review_object.rating %}
+                                            {% for i in ""|center:rating_value %}<i class="fas fa-star text-yellow-400 text-xs"></i>{% endfor %}{% with empty_stars_count=5|sub:rating_value %}{% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300 text-xs"></i>{% endfor %}{% endwith %}
+                                        {% endwith %}
+                                    </p>
+                                    {% if user_review_object.comment %}
+                                    <p class="text-xs text-gray-500 mb-2 italic">"{{ user_review_object.comment|truncatewords:15 }}"</p>
+                                    {% endif %}
+                                    {% endif %}
+                                    <button id="edit-my-review-button" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded">
+                                        <i class="fas fa-edit mr-1"></i> Edit Your Review
+                                    </button>
+                                </div>
+                            {% else %}
+                                <p class="text-sm text-gray-600 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm text-center">
+                                    <a href="{% url 'AudioXApp:login' %}?next={{ request.path }}#content-reviews" class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">Log in</a> or <a href="{% url 'AudioXApp:signup' %}?next={{ request.path }}#content-reviews" class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline">Sign up</a> to leave a review.
+                                </p>
+                            {% endif %}
+
+                            <h4 class="text-lg font-semibold text-gray-700 mb-4 mt-6 pt-4 border-t border-gray-200">Listener Feedback</h4>
+                            <div id="reviews-list" class="space-y-5">
+                                {% if reviews %}
+                                    {% for review_item in reviews %}
+                                    <div class="review-item flex space-x-4 py-4 border-b border-gray-100 last:border-b-0" id="review-{{ review_item.review_id }}">
+                                        <div class="flex-shrink-0 pt-1">
+                                            {% if review_item.user.profile_pic %}
+                                                <img class="h-10 w-10 rounded-full object-cover shadow-sm" src="{{ review_item.user.profile_pic.url }}" alt="{{ review_item.user.username }}">
+                                            {% else %}
+                                                <span class="h-10 w-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-500 shadow-sm">
+                                                    <i class="fas fa-user text-lg"></i>
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <h5 class="text-sm font-semibold text-gray-800">{{ review_item.user.full_name|default:review_item.user.username }}</h5>
+                                                <time datetime="{{ review_item.created_at|date:"c" }}" class="flex-shrink-0 ml-4 text-xs text-gray-400">{{ review_item.created_at|timesince }} ago</time>
+                                            </div>
+                                            <div class="mb-1 flex items-center star-rating-display text-xs">
+                                                {% with rating_value=review_item.rating %}
+                                                    {% for i in ""|center:rating_value %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}{% with empty_stars_count=5|sub:rating_value %}{% for i in ""|center:empty_stars_count %}<i class="far fa-star text-gray-300"></i>{% endfor %}{% endwith %}
+                                                {% endwith %}
+                                            </div>
+                                            {% if review_item.comment %}
+                                            <div class="mt-2 text-sm text-gray-600 prose prose-sm max-w-none leading-relaxed">
+                                                <p>{{ review_item.comment|linebreaksbr }}</p>
+                                            </div>
+                                            {% endif %}
+                                            {% if review_item.user == request.user %}
+                                            <div class="mt-2 text-xs">
+                                                <button data-review-id="{{ review_item.review_id }}"
+                                                        data-rating="{{ review_item.rating }}"
+                                                        data-comment="{{ review_item.comment|default:''|escapejs }}"
+                                                        class="edit-user-review-button text-indigo-600 hover:text-indigo-800 hover:underline font-medium focus:outline-none focus:ring-1 focus:ring-indigo-300 rounded px-1 py-0.5">
+                                                    <i class="fas fa-pencil-alt mr-1 text-xs"></i>Edit
+                                                </button>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p id="no-reviews-message" class="text-center text-gray-500 py-8 italic">Be the first to share your thoughts on this audiobook!</p>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
 
+
                     <div id="content-recommendations" class="tab-content hidden">
-                        <div class="bg-white p-5 rounded-lg">
+                        <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                             <h3 class="text-lg font-semibold text-gray-800 mb-3">Recommendations</h3>
                             <p class="text-gray-600">No recommendations available at this time.</p>
+                        </div>
+                    </div>
+
+                    <div id="content-summaries" class="tab-content hidden">
+                        <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Summaries</h3>
+                            <p class="text-gray-600">No summaries available for this audiobook at this time.</p>
                         </div>
                     </div>
                 </div>
@@ -230,6 +414,16 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{# Ensure necessary context variables are passed for JS, especially audiobook.slug for the review form #}
+<script id="page-context-data-detail" type="application/json">
+{
+    "isAuthenticated": {{ request.user.is_authenticated|yesno:"true,false" }},
+    "audiobookSlug": "{{ audiobook.slug|escapejs }}",
+    "csrfToken": "{{ csrf_token }}",
+    "addReviewUrl": "{% if audiobook.slug %}{% url 'AudioXApp:add_review' audiobook_slug=audiobook.slug %}{% else %}#error-no-slug{% endif %}"
+}
+</script>
+
 <script>
     // --- DOM Elements ---
     const audioPlayer = document.getElementById("audioPlayer");
@@ -246,7 +440,7 @@
     const playerDuration = document.getElementById("player-duration");
     const playerSeekBar = document.getElementById("player-seek-bar");
     const playerSpeedButton = document.getElementById("player-speed-button");
-    const mainCoverImage = document.getElementById("main-cover-image");
+    const mainCoverImageElement = document.getElementById("main-cover-image"); // Renamed to avoid conflict
     const placeholderCoverSrc = document.querySelector('template[data-placeholder-src]')?.dataset.placeholderSrc || 'https://placehold.co/100x75/e5e7eb/4b5563?text=N/A';
 
     const chapterItems = document.querySelectorAll('.chapter-item');
@@ -256,6 +450,14 @@
     const playbackSpeeds = [1, 1.5, 2];
     let currentSpeedIndex = 0;
     const THEME_COLOR = '#091e65';
+
+    let pageContext = {};
+    try {
+        pageContext = JSON.parse(document.getElementById('page-context-data-detail').textContent);
+    } catch (e) {
+        console.error("Error parsing page context data:", e);
+    }
+
 
     // --- Utility Functions ---
     function formatTime(seconds) {
@@ -271,7 +473,7 @@
     function showTab(tabId) {
         tabContents.forEach(content => content.classList.add('hidden'));
         tabs.forEach(tab => {
-            tab.classList.remove(`text-[${THEME_COLOR}]`, `border-[${THEME_COLOR}]`, 'font-semibold');
+            tab.classList.remove(`text-[${THEME_COLOR}]`, `border-[${THEME_COLOR}]`, 'font-semibold', 'active');
             tab.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent', 'font-medium');
             tab.setAttribute('aria-current', 'false');
         });
@@ -280,7 +482,7 @@
 
         const selectedTab = document.getElementById(`tab-${tabId}`);
         if(selectedTab) {
-            selectedTab.classList.add(`text-[${THEME_COLOR}]`, `border-[${THEME_COLOR}]`, 'font-semibold');
+            selectedTab.classList.add(`text-[${THEME_COLOR}]`, `border-[${THEME_COLOR}]`, 'font-semibold', 'active');
             selectedTab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent', 'font-medium');
             selectedTab.setAttribute('aria-current', 'page');
         }
@@ -308,19 +510,21 @@
 
         listItemButton.classList.remove('bg-pink-100', 'text-pink-600', 'hover:bg-pink-200', 'animate-pulse');
         listItemButton.classList.add(`bg-[#eef2ff]`, `text-[${THEME_COLOR}]`, `hover:bg-[#e0e7ff]`);
-        chapterItemDiv?.classList.remove(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`);
+        
+        chapterItemDiv?.classList.remove(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`, 'playing');
         chapterItemDiv?.classList.add('bg-white', 'border-gray-200', `hover:border-[#b1b8d7]`, 'hover:bg-[#f0f5ff]');
+
 
         if (state === 'playing') {
             pauseIcon?.classList.remove('hidden');
             listItemButton.classList.remove(`bg-[#eef2ff]`, `text-[${THEME_COLOR}]`, `hover:bg-[#e0e7ff]`);
             listItemButton.classList.add('bg-pink-100', 'text-pink-600', 'hover:bg-pink-200');
-            chapterItemDiv?.classList.add(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`);
+            chapterItemDiv?.classList.add(`bg-[#eef2ff]`, `border-[${THEME_COLOR}]`, 'playing');
             chapterItemDiv?.classList.remove('bg-white', 'border-gray-200', `hover:border-[#b1b8d7]`, 'hover:bg-[#f0f5ff]');
         } else if (state === 'loading') {
             loadingIcon?.classList.remove('hidden');
             listItemButton.classList.add('animate-pulse');
-        } else {
+        } else { 
             playIcon?.classList.remove('hidden');
         }
     }
@@ -344,7 +548,9 @@
         if(playerEpisodeTitle) playerEpisodeTitle.textContent = title;
         if(playerEpisodeTitle) playerEpisodeTitle.title = title;
         if(playerEpisodeNumber) playerEpisodeNumber.textContent = `Episode ${episodeNum}/${totalEpisodes}`;
-        if(playerCoverImage) playerCoverImage.src = mainCoverImage?.src || placeholderCoverSrc;
+        if(playerCoverImage && mainCoverImageElement) playerCoverImage.src = mainCoverImageElement.src || placeholderCoverSrc;
+        else if(playerCoverImage) playerCoverImage.src = placeholderCoverSrc;
+
 
         if(playerPrevButton) playerPrevButton.disabled = chapterIndex <= 0;
         if(playerNextButton) playerNextButton.disabled = chapterIndex >= totalEpisodes - 1;
@@ -381,9 +587,9 @@
             if (buttonElement) updateListItemButtonState(buttonElement, 'error');
             return;
         }
-
+        
         if (audioUrlTemplate.endsWith("?url=")) {
-            Swal.fire({
+             Swal.fire({
                 icon: 'error',
                 title: 'Audio Source Missing',
                 text: `The audio source for "${chapterTitle}" is missing. Please try another chapter or report this issue.`,
@@ -427,18 +633,22 @@
     function handlePlaybackError(e, chapterTitle = "the selected audio") {
         let errorUserTitle = 'Playback Error';
         let errorUserText = `Could not play ${chapterTitle}. The file might be missing, inaccessible, or there could be a network issue.`;
-
-        if (e.name === 'NotAllowedError') {
-            errorUserTitle = 'Autoplay Blocked';
-            errorUserText = `Playback for ${chapterTitle} was prevented by your browser. Please click play again.`;
-        } else if (e.name === 'AbortError') {
-            errorUserTitle = 'Load Interrupted';
-            errorUserText = `Audio loading for ${chapterTitle} was interrupted. Please try again.`;
-        } else if (e.name === 'NotSupportedError') {
-            errorUserTitle = 'Format Not Supported';
-            errorUserText = `The audio format for ${chapterTitle} may not be supported by your browser.`;
-        } else if (audioPlayer.error) {
-             errorUserText = `Failed to load ${chapterTitle}. (Code: ${audioPlayer.error.code})`;
+        console.error("Playback error caught:", e, "for chapter:", chapterTitle, "Audio src:", audioPlayer.src);
+        if (e && e.name) {
+            if (e.name === 'NotAllowedError') {
+                errorUserTitle = 'Autoplay Blocked';
+                errorUserText = `Playback for ${chapterTitle} was prevented by your browser. Please click play again.`;
+            } else if (e.name === 'AbortError') {
+                errorUserTitle = 'Load Interrupted';
+                errorUserText = `Audio loading for ${chapterTitle} was interrupted. Please try again.`;
+            } else if (e.name === 'NotSupportedError') {
+                errorUserTitle = 'Format Not Supported';
+                errorUserText = `The audio format for ${chapterTitle} may not be supported by your browser.`;
+            }
+        }
+        if (audioPlayer.error) {
+            console.error("Audio Element Error:", audioPlayer.error);
+            errorUserText = `Failed to load ${chapterTitle}. (Error code: ${audioPlayer.error.code})`;
         }
 
         Swal.fire({ icon: 'error', title: errorUserTitle, text: errorUserText, confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' } });
@@ -446,11 +656,14 @@
         if(currentlyPlayingListItemButton) updateListItemButtonState(currentlyPlayingListItemButton, 'paused');
     }
 
+
     function togglePlayPause() {
         if (currentChapterIndex < 0 || !audioPlayer.src || audioPlayer.src === window.location.href ) {
             const firstChapterButton = chapterItems[0]?.querySelector('.play-button');
             if (firstChapterButton && chapterItems[0]?.dataset.isAccessible === 'true') {
                 playChapter(firstChapterButton);
+            } else if (chapterItems.length > 0 && chapterItems[0]?.dataset.isAccessible !== 'true') {
+                 Swal.fire({ toast: true, position: 'bottom-end', icon: 'warning', title: 'First episode is locked.', showConfirmButton: false, timer: 3000, timerProgressBar: true, background: '#fefcbf', color: '#713f12', customClass: { timerProgressBar: `bg-[${THEME_COLOR}]` } });
             } else {
                 Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'Select an episode to play', showConfirmButton: false, timer: 2500, timerProgressBar: true, background: '#f3f4f6', color: '#1f2937', customClass: { timerProgressBar: `bg-[${THEME_COLOR}]` } });
             }
@@ -469,11 +682,16 @@
         if (nextIndex < chapterItems.length) {
             const nextChapterItem = chapterItems[nextIndex];
             if (nextChapterItem?.dataset.isAccessible === 'true') {
-                nextChapterItem.querySelector('.play-button')?.click();
+                const playButton = nextChapterItem.querySelector('.play-button');
+                if (playButton) {
+                    playChapter(playButton);
+                }
             } else {
+                Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'Next chapter is locked.', showConfirmButton: false, timer: 2500, timerProgressBar: true });
                 updatePlayerUIState('ended');
             }
         } else {
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'End of audiobook reached.', showConfirmButton: false, timer: 3000, timerProgressBar: true });
             updatePlayerUIState('ended');
         }
     }
@@ -481,12 +699,18 @@
     function playPreviousChapter() {
         const prevIndex = currentChapterIndex - 1;
         if (prevIndex >= 0) {
-             const prevChapterItem = chapterItems[prevIndex];
+            const prevChapterItem = chapterItems[prevIndex];
             if (prevChapterItem?.dataset.isAccessible === 'true') {
-                prevChapterItem.querySelector('.play-button')?.click();
+                 const playButton = prevChapterItem.querySelector('.play-button');
+                if (playButton) {
+                    playChapter(playButton);
+                }
+            } else {
+                 Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'Previous chapter is locked.', showConfirmButton: false, timer: 2500, timerProgressBar: true });
             }
         }
     }
+
 
     function closePlayer() {
         audioPlayer.pause();
@@ -503,10 +727,10 @@
         if(playerDuration) playerDuration.textContent = '0:00';
         if(playerEpisodeTitle) playerEpisodeTitle.textContent = 'Select an episode';
         if(playerEpisodeNumber) playerEpisodeNumber.textContent = 'Episode N/A';
-        if(playerCoverImage) playerCoverImage.src = placeholderCoverSrc;
+        if(playerCoverImage) playerCoverImage.src = mainCoverImageElement?.src || placeholderCoverSrc;
         if(playerPrevButton) playerPrevButton.disabled = true;
         if(playerNextButton) playerNextButton.disabled = true;
-
+        
         currentSpeedIndex = 0;
         audioPlayer.playbackRate = playbackSpeeds[currentSpeedIndex];
         if(playerSpeedButton) playerSpeedButton.textContent = `${playbackSpeeds[currentSpeedIndex]}x`;
@@ -529,11 +753,12 @@
     });
     audioPlayer.addEventListener('error', (e) => {
         let chapterContext = "the current audio track";
-        if (currentChapterIndex >= 0 && chapterItems[currentChapterIndex]) {
+        if (currentChapterIndex >= 0 && currentChapterIndex < chapterItems.length && chapterItems[currentChapterIndex]) {
             chapterContext = `"${chapterItems[currentChapterIndex].dataset.chapterTitle || ('Chapter ' + (currentChapterIndex+1))}"`;
         }
         handlePlaybackError(e, chapterContext + " (direct audio error)");
     });
+
     audioPlayer.addEventListener('loadedmetadata', () => {
         if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
             if(playerDuration) playerDuration.textContent = formatTime(audioPlayer.duration);
@@ -558,6 +783,264 @@
         }
     });
 
+    // --- Review Form Logic ---
+    const reviewForm = document.getElementById('review-form');
+    const reviewRatingInputContainer = document.getElementById('review-rating-input');
+    const ratingValueInput = document.getElementById('rating-value-input');
+    const commentInput = document.getElementById('comment-input');
+    const ratingError = document.getElementById('rating-error');
+    const formMessage = document.getElementById('form-message');
+    const submitReviewBtn = document.getElementById('submit-review-btn');
+    const reviewsList = document.getElementById('reviews-list');
+    const reviewCountSpan = document.getElementById('review-count');
+    const reviewCountTabSpan = document.getElementById('review-count-tab');
+    const editReviewPrompt = document.getElementById('edit-review-prompt');
+    const editMyReviewButton = document.getElementById('edit-my-review-button'); // Button in the "You've reviewed" prompt
+    const allEditUserReviewButtons = document.querySelectorAll('.edit-user-review-button'); // Buttons on individual reviews
+
+    function setStarRating(rating) {
+        if (!reviewRatingInputContainer) return;
+        const stars = reviewRatingInputContainer.querySelectorAll('.fa-star');
+        stars.forEach((s, i) => {
+            const isSelected = i < rating;
+            s.classList.toggle('selected', isSelected);
+            s.classList.toggle('fas', isSelected); // Solid star
+            s.classList.toggle('far', !isSelected); // Outline star
+        });
+        if (ratingValueInput) ratingValueInput.value = rating;
+        if (ratingError) ratingError.textContent = '';
+    }
+    
+    if (reviewRatingInputContainer) {
+        const stars = reviewRatingInputContainer.querySelectorAll('.fa-star');
+        stars.forEach(star => {
+            star.addEventListener('mouseover', () => {
+                const rating = parseInt(star.dataset.ratingValue);
+                stars.forEach((s, i) => {
+                    s.classList.toggle('hovered', i < rating);
+                    s.classList.toggle('far', i >= rating && !s.classList.contains('selected'));
+                    s.classList.toggle('fas', i < rating || s.classList.contains('selected'));
+                });
+            });
+
+            star.addEventListener('mouseout', () => {
+                const currentRating = parseInt(ratingValueInput.value);
+                stars.forEach((s, i) => {
+                    s.classList.remove('hovered');
+                    const isSelected = i < currentRating;
+                    s.classList.toggle('selected', isSelected);
+                    s.classList.toggle('fas', isSelected);
+                    s.classList.toggle('far', !isSelected);
+                });
+            });
+
+            star.addEventListener('click', () => {
+                const rating = parseInt(star.dataset.ratingValue);
+                setStarRating(rating);
+            });
+        });
+    }
+
+    function displayReviewInList(reviewData, isNew) {
+        if (!reviewsList) return;
+
+        const existingReviewElement = document.getElementById(`review-${reviewData.review_id}`);
+        if (existingReviewElement) existingReviewElement.remove(); // Remove old one if editing
+
+        const reviewItem = document.createElement('div');
+        reviewItem.className = 'review-item flex space-x-4 py-4 border-b border-gray-100 last:border-b-0';
+        reviewItem.id = `review-${reviewData.review_id}`;
+
+        let avatarHtml = `<span class="h-10 w-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-500 shadow-sm"><i class="fas fa-user text-lg"></i></span>`;
+        if (reviewData.user_profile_pic) {
+            avatarHtml = `<img class="h-10 w-10 rounded-full object-cover shadow-sm" src="${reviewData.user_profile_pic}" alt="${reviewData.user_name}">`;
+        }
+
+        let starsHtml = '';
+        for (let i = 0; i < 5; i++) {
+            starsHtml += `<i class="fas fa-star ${i < reviewData.rating ? 'text-yellow-400' : 'text-gray-300'}"></i>`;
+        }
+        
+        let editButtonHtml = '';
+        if (pageContext.isAuthenticated && reviewData.user_id && pageContext.user_id === reviewData.user_id) {
+             editButtonHtml = `
+                <div class="mt-2 text-xs">
+                    <button data-review-id="${reviewData.review_id}"
+                            data-rating="${reviewData.rating}"
+                            data-comment="${reviewData.comment.replace(/"/g, '&quot;')}"
+                            class="edit-user-review-button text-indigo-600 hover:text-indigo-800 hover:underline font-medium focus:outline-none focus:ring-1 focus:ring-indigo-300 rounded px-1 py-0.5">
+                        <i class="fas fa-pencil-alt mr-1 text-xs"></i>Edit
+                    </button>
+                </div>`;
+        }
+
+
+        reviewItem.innerHTML = `
+            <div class="flex-shrink-0 pt-1">${avatarHtml}</div>
+            <div class="flex-grow">
+                <div class="flex items-center justify-between mb-1">
+                    <h5 class="text-sm font-semibold text-gray-800">${reviewData.user_name}</h5>
+                    <time datetime="${reviewData.created_at}" class="flex-shrink-0 ml-4 text-xs text-gray-400">${reviewData.timesince}</time>
+                </div>
+                <div class="mb-1 flex items-center star-rating-display text-xs">${starsHtml}</div>
+                ${reviewData.comment ? `<div class="mt-2 text-sm text-gray-600 prose prose-sm max-w-none leading-relaxed"><p>${reviewData.comment.replace(/\n/g, '<br>')}</p></div>` : ''}
+                ${editButtonHtml}
+            </div>
+        `;
+        
+        // Add event listener to the new edit button
+        const newEditButton = reviewItem.querySelector('.edit-user-review-button');
+        if (newEditButton) {
+            newEditButton.addEventListener('click', handleEditReviewButtonClick);
+        }
+
+
+        const noReviewsMsg = document.getElementById('no-reviews-message');
+        if (noReviewsMsg) noReviewsMsg.style.display = 'none';
+
+        if (isNew && reviewsList.firstChild) {
+            reviewsList.insertBefore(reviewItem, reviewsList.firstChild);
+        } else {
+            reviewsList.appendChild(reviewItem);
+        }
+    }
+    
+    function handleEditReviewButtonClick(event) {
+        const button = event.currentTarget;
+        const rating = button.dataset.rating;
+        const comment = button.dataset.comment;
+
+        if (reviewForm && ratingValueInput && commentInput) {
+            setStarRating(parseInt(rating));
+            commentInput.value = comment;
+            reviewForm.classList.remove('hidden');
+            if (editReviewPrompt) editReviewPrompt.classList.add('hidden');
+            reviewForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (formMessage) formMessage.textContent = 'Editing your review...';
+        }
+    }
+
+
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            if (!pageContext.isAuthenticated) {
+                Swal.fire({ title: 'Authentication Required', text: 'Please log in to submit a review.', icon: 'info', confirmButtonColor: THEME_COLOR });
+                return;
+            }
+            if (ratingValueInput.value === "0") {
+                if(ratingError) ratingError.textContent = 'Please select a rating.';
+                return;
+            }
+            if(ratingError) ratingError.textContent = '';
+            if(formMessage) formMessage.textContent = '';
+
+            const payload = {
+                rating: ratingValueInput.value,
+                comment: commentInput.value.trim()
+            };
+
+            try {
+                if(submitReviewBtn) submitReviewBtn.disabled = true;
+                if(formMessage) formMessage.textContent = 'Submitting...';
+
+                const response = await fetch(pageContext.addReviewUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': pageContext.csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    Swal.fire({ title: 'Success!', text: result.message, icon: 'success', confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' }});
+                    reviewForm.reset();
+                    setStarRating(0); // Reset stars
+                    reviewForm.classList.add('hidden');
+                    if (editReviewPrompt) {
+                        editReviewPrompt.classList.remove('hidden');
+                        // Update the prompt with new review details (optional)
+                        const promptRatingStars = editReviewPrompt.querySelectorAll('.fa-star');
+                        if(promptRatingStars.length === 5) {
+                            for(let i=0; i < 5; i++) {
+                                promptRatingStars[i].classList.toggle('text-yellow-400', i < result.review_data.rating);
+                                promptRatingStars[i].classList.toggle('text-gray-300', i >= result.review_data.rating);
+                            }
+                        }
+                        const promptComment = editReviewPrompt.querySelector('p.italic');
+                        if(promptComment && result.review_data.comment) {
+                             promptComment.textContent = `"${result.review_data.comment.substring(0,50)}${result.review_data.comment.length > 50 ? '...' : ''}"`;
+                        } else if (promptComment) {
+                            promptComment.textContent = ""; // Clear if no comment
+                        }
+                    }
+                    
+                    displayReviewInList(result.review_data, result.created);
+                    
+                    // Update review counts
+                    const currentReviewCount = parseInt(reviewCountSpan.textContent) || 0;
+                    if (result.created) {
+                        if(reviewCountSpan) reviewCountSpan.textContent = currentReviewCount + 1;
+                        if(reviewCountTabSpan) reviewCountTabSpan.textContent = currentReviewCount + 1;
+                    }
+                     // Update average rating display (if applicable on this page)
+                    const avgRatingDisplayElements = document.querySelectorAll('.star-rating-display span.font-semibold.text-gray-700.ml-1\.5');
+                    avgRatingDisplayElements.forEach(el => {
+                        if (result.new_average_rating && result.new_average_rating !== "0.0") {
+                            el.textContent = `${parseFloat(result.new_average_rating).toFixed(1)} avg`;
+                            // Update stars for average rating display
+                            const starContainer = el.closest('.star-rating-display');
+                            if (starContainer) {
+                                const avgStars = starContainer.querySelectorAll('i.fa-star, i.fa-star-half-alt');
+                                const avgRatingValue = parseFloat(result.new_average_rating);
+                                const fullStars = Math.floor(avgRatingValue);
+                                const halfStar = avgRatingValue % 1 >= 0.3 && avgRatingValue % 1 <= 0.7;
+                                const effectiveFullStars = avgRatingValue % 1 > 0.7 ? fullStars + 1 : fullStars;
+
+                                avgStars.forEach((star, index) => {
+                                    star.classList.remove('text-yellow-400', 'text-gray-300', 'fas', 'far', 'fa-star-half-alt');
+                                    if (index < fullStars) {
+                                        star.classList.add('fas', 'fa-star', 'text-yellow-400');
+                                    } else if (index === fullStars && halfStar) {
+                                        star.classList.add('fas', 'fa-star-half-alt', 'text-yellow-400');
+                                    } else if (index < effectiveFullStars && avgRatingValue % 1 > 0.7) {
+                                         star.classList.add('fas', 'fa-star', 'text-yellow-400');
+                                    }
+                                    else {
+                                        star.classList.add('far', 'fa-star', 'text-gray-300');
+                                    }
+                                });
+                            }
+                        } else {
+                             el.textContent = "No ratings yet";
+                        }
+                    });
+
+
+                } else {
+                    Swal.fire({ title: 'Error', text: result.message || 'Could not submit review.', icon: 'error', confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' }});
+                }
+
+            } catch (error) {
+                Swal.fire({ title: 'Error', text: 'An unexpected error occurred. Please try again.', icon: 'error', confirmButtonColor: THEME_COLOR, customClass: { popup: 'rounded-xl' }});
+            } finally {
+                if(submitReviewBtn) submitReviewBtn.disabled = false;
+                if(formMessage) formMessage.textContent = '';
+            }
+        });
+    }
+    
+    if (editMyReviewButton) { // Button in the "You've reviewed this" prompt
+        editMyReviewButton.addEventListener('click', handleEditReviewButtonClick);
+    }
+    allEditUserReviewButtons.forEach(button => { // Buttons on individual reviews in the list
+        button.addEventListener('click', handleEditReviewButtonClick);
+    });
+
+
     // --- Initialize Page ---
     document.addEventListener('DOMContentLoaded', () => {
         showTab('about');
@@ -566,39 +1049,18 @@
         if(playerNextButton) playerNextButton.disabled = true;
         if(playerSpeedButton) playerSpeedButton.textContent = `${playbackSpeeds[currentSpeedIndex]}x`;
         if(playerSeekBar) playerSeekBar.style.setProperty('--seek-accent-color', THEME_COLOR);
+
+        // If user has already reviewed, pre-fill the form if edit prompt is shown
+        // This part might be redundant if the edit prompt directly triggers form population
+        // const userReviewDataText = document.getElementById('user-review-data-json')?.textContent;
+        // if (userReviewDataText) {
+        //     try {
+        //         const userReviewData = JSON.parse(userReviewDataText);
+        //         if (userReviewData.has_reviewed && editReviewPrompt && !editReviewPrompt.classList.contains('hidden')) {
+        //             // This logic is now handled by the edit button click
+        //         }
+        //     } catch (e) { console.error("Error parsing user review data for prefill:", e); }
+        // }
     });
 </script>
-<style>
-    /* Custom styles for the player seek bar */
-    .player-seek-bar-theme {
-        accent-color: var(--seek-accent-color, #091e65);
-    }
-    .player-seek-bar-theme::-webkit-slider-thumb {
-        -webkit-appearance: none; appearance: none; width: 14px; height: 14px;
-        background: var(--seek-accent-color, #091e65); border-radius: 50%;
-        cursor: pointer; margin-top: -5px;
-    }
-    .player-seek-bar-theme::-moz-range-thumb {
-        width: 14px; height: 14px; background: var(--seek-accent-color, #091e65);
-        border-radius: 50%; cursor: pointer; border: none;
-    }
-    .player-seek-bar-theme::-webkit-slider-runnable-track {
-        height: 6px; background: #e5e7eb; border-radius: 9999px;
-    }
-    .player-seek-bar-theme::-moz-range-track {
-        height: 6px; background: #e5e7eb; border-radius: 9999px; border: none;
-    }
-
-    /* SweetAlert2 Customizations - Keep these as they are external library styles */
-    .swal2-popup.rounded-xl { border-radius: 0.75rem !important; }
-    .swal2-confirm { background-color: #091e65 !important; border-radius: 0.5rem !important; }
-    .swal2-confirm:hover { background-color: #071852 !important; }
-    .swal2-icon.swal2-error { border-color: #fca5a5 !important; }
-    .swal2-icon.swal2-error [class^=swal2-x-mark-line] { background-color: #ef4444 !important; }
-    .swal2-icon.swal2-info { border-color: #93c5fd !important; color: #3b82f6 !important; }
-    .swal2-toast { box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important; }
-    .swal2-toast .swal2-title { font-size: 0.875rem !important; font-weight: 500 !important; }
-    .swal2-timer-progress-bar.bg-\[\#091e65\] { background-color: #091e65 !important; }
-
-</style>
 {% endblock %}

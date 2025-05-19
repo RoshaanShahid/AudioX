@@ -653,10 +653,17 @@ class Audiobook(models.Model):
     """Represents an audiobook."""
     STATUS_CHOICES = (
         ('PUBLISHED', 'Published'),
-        ('INACTIVE', 'Inactive'),
-        ('REJECTED', 'Rejected by Admin'),
-        ('PAUSED_BY_ADMIN', 'Paused by Admin')
+        ('INACTIVE', 'Inactive'), # For creator books that are unlisted/paused by creator
+        ('REJECTED', 'Rejected by Admin'), # For creator books
+        ('PAUSED_BY_ADMIN', 'Paused by Admin') # For creator books
     )
+    # New field to distinguish source
+    SOURCE_CHOICES = (
+        ('creator', 'Creator Upload'),
+        ('librivox', 'LibriVox'),
+        ('archive', 'Archive.org'),
+    )
+
     audiobook_id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255, blank=True, null=True)
@@ -666,10 +673,19 @@ class Audiobook(models.Model):
     description = models.TextField(blank=False, null=True)
     publish_date = models.DateTimeField(default=timezone.now)
     genre = models.CharField(max_length=100, blank=True, null=True)
-    creator = models.ForeignKey('Creator', on_delete=models.CASCADE, related_name="audiobooks")
+
+    # Made creator nullable to accommodate external audiobooks
+    creator = models.ForeignKey(
+        'Creator',
+        on_delete=models.SET_NULL,  # Changed from CASCADE to SET_NULL
+        null=True,                  # Allow null
+        blank=True,                 # Allow blank in forms/admin
+        related_name="audiobooks"
+    )
     slug = models.SlugField(max_length=255, unique=True, blank=True)
-    cover_image = models.ImageField(upload_to='audiobook_covers/', blank=False, null=True)
+    cover_image = models.ImageField(upload_to='audiobook_covers/', blank=True, null=True) # Allow blank for external books initially
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PUBLISHED', db_index=True, help_text="The current status of the audiobook.")
+    source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default='creator', db_index=True, help_text="Source of the audiobook (Creator, LibriVox, Archive.org)")
 
     total_views = models.PositiveIntegerField(default=0, help_text="Total number of times the audiobook detail page has been viewed.")
 
@@ -682,6 +698,10 @@ class Audiobook(models.Model):
     created_at = models.DateTimeField(default=timezone.now, editable=False, help_text="Timestamp when the audiobook record was created.")
     updated_at = models.DateTimeField(auto_now=True, help_text="Timestamp when the audiobook record was last updated.")
 
+    # To explicitly manage if it's a creator book or an external placeholder for reviews
+    is_creator_book = models.BooleanField(default=True, help_text="True if uploaded by a platform creator, False if a placeholder for an external book.")
+
+
     class Meta:
         db_table = "AUDIOBOOKS"
         ordering = ['-created_at']
@@ -692,7 +712,7 @@ class Audiobook(models.Model):
             base_slug = slugify(self.title) or "audiobook"
             slug = base_slug
             counter = 1
-            pk_to_exclude = self.pk if self.pk is not None else uuid.uuid4()
+            pk_to_exclude = self.pk if self.pk is not None else uuid.uuid4() # Use a non-existent UUID if pk is None
             while Audiobook.objects.filter(slug=slug).exclude(pk=pk_to_exclude).exists():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
@@ -701,12 +721,22 @@ class Audiobook(models.Model):
         if not self.is_paid:
             self.price = Decimal('0.00')
 
+        # Determine is_creator_book based on creator field or source
+        if self.creator:
+            self.is_creator_book = True
+            self.source = 'creator' # Ensure source is 'creator' if a creator is assigned
+        elif self.source != 'creator': # If no creator and source is external, it's not a creator book
+             self.is_creator_book = False
+        # If no creator and source is 'creator' (e.g. default), it implies an issue or an external book placeholder being created
+        # where creator should be explicitly set to None.
+
         super().save(*args, **kwargs)
 
     def __str__(self):
         price_info = f"(PKR {self.price})" if self.is_paid else "(Free)"
         status_display = self.get_status_display() if hasattr(self, 'get_status_display') else self.status
-        return f"{self.title} [{status_display}] {price_info}"
+        source_display = self.get_source_display() if hasattr(self, 'get_source_display') else self.source
+        return f"{self.title} [{status_display} - {source_display}] {price_info}"
 
     def clean(self):
         """Validates price based on is_paid status."""
@@ -714,7 +744,14 @@ class Audiobook(models.Model):
         if not self.is_paid and self.price != Decimal('0.00'):
             raise ValidationError({'price': _('Price must be 0.00 for free audiobooks.')})
         if self.is_paid and self.price <= Decimal('0.00'):
-             raise ValidationError({'price': _('Price must be greater than 0.00 for paid audiobooks.')})
+            raise ValidationError({'price': _('Price must be greater than 0.00 for paid audiobooks.')})
+        
+        if not self.creator and self.source == 'creator':
+            # This case implies a creator book should have a creator.
+            # However, for external books being given reviews, creator will be None.
+            # The `is_creator_book` field will be the primary differentiator if creator is None.
+            pass
+
 
     @property
     def average_rating(self):
@@ -724,14 +761,14 @@ class Audiobook(models.Model):
 
     def update_sales_analytics(self, amount_paid):
         """Updates sales count and revenue. Called after a successful purchase."""
-        if self.status == 'PUBLISHED':
+        if self.status == 'PUBLISHED' and self.is_creator_book: # Only for creator books
             Audiobook.objects.filter(pk=self.pk).update(
                 total_sales=F('total_sales') + 1,
                 total_revenue_generated=F('total_revenue_generated') + Decimal(amount_paid)
             )
             self.refresh_from_db(fields=['total_sales', 'total_revenue_generated'])
         else:
-            logger.warning(f"Sale not recorded for analytics as audiobook '{self.title}' is not PUBLISHED. Status: {self.status}")
+            logger.warning(f"Sale not recorded for analytics for '{self.title}'. Status: {self.status}, Is Creator Book: {self.is_creator_book}")
 
     @property
     def first_chapter_audio_url(self):
@@ -922,3 +959,4 @@ class AudiobookViewLog(models.Model):
     def __str__(self):
         user_str = self.user.username if self.user else "Anonymous"
         return f"View of '{self.audiobook.title}' by {user_str} at {self.viewed_at.strftime('%Y-%m-%d %H:%M')}"
+
