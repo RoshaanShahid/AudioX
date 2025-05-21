@@ -284,10 +284,10 @@
                 {# Core Features Section #}
             <div class="px-4 py-5 space-y-3">
                 <p class="px-3 text-xs font-semibold uppercase text-indigo-200 tracking-wider">Features</p>
-                {# Generate Audio from PDF #}
-                <a href="{% url 'AudioXApp:upload_pdf' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-yellow-500/10 text-yellow-300 hover:bg-yellow-500/20 border border-yellow-500/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
+                {# Generate Audio from Document (PDF/Image) - UPDATED LINK #}
+                <a href="{% url 'AudioXApp:generate_audio_from_document' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-yellow-500/10 text-yellow-300 hover:bg-yellow-500/20 border border-yellow-500/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
                     <i class="fas fa-file-audio mr-3 text-lg w-5 text-center text-yellow-300/80 group-hover:text-yellow-300 transition-colors"></i>
-                    <span>Generate Audio from PDF</span>
+                    <span>Generate Audio from Document</span> {# UPDATED TEXT #}
                 </a>
 
 
@@ -795,8 +795,8 @@
                     // Handle cases where recognition might already be active or other errors
                     console.error("Error starting speech recognition:", e);
                     if (e.name === 'InvalidStateError') {
-                         // recognition.stop(); // Optionally stop and restart, or just inform the user
-                         SwalStyled.fire({title: 'Voice Search Busy', text: 'Voice search is already active or processing. Please wait.', icon: 'info', confirmButtonText: 'Okay'});
+                        // recognition.stop(); // Optionally stop and restart, or just inform the user
+                        SwalStyled.fire({title: 'Voice Search Busy', text: 'Voice search is already active or processing. Please wait.', icon: 'info', confirmButtonText: 'Okay'});
                     } else {
                         SwalStyled.fire({title: 'Voice Search Error', text: 'Could not start voice input. Please try again.', icon: 'error', confirmButtonText: 'Okay'});
                     }
@@ -858,7 +858,7 @@
         function showCreatorModal() {
             if (!creatorModal || !creatorModalBackdrop) return;
             if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) {
-                   closeSlideMenu();
+                    closeSlideMenu();
             }
             creatorModalBackdrop.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
@@ -1107,7 +1107,7 @@
             } else if (path.startsWith('/sindhi/')) {
                 selector.value = 'Sindhi';
             }
-            else {
+            else { // Default to English if no specific language path matches
                 selector.value = 'English';
             }
         }
