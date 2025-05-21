@@ -13,7 +13,7 @@ urlpatterns = [
     path('', content_views.home, name='home'),
 
     # Search results page
-    path('search/', content_views.search_results_view, name='search_results'), # <<< NEWLY ADDED LINE
+    path('search/', content_views.search_results_view, name='search_results'),
 
     # General Static Pages
     path('ourteam/', content_views.ourteam, name='ourteam'),
@@ -49,8 +49,7 @@ urlpatterns = [
     path('genre/selfhelp/', content_views.genre_selfhelp, name='genre_selfhelp'),
     path('genre/business/', content_views.genre_business, name='genre_business'),
 
-    # Upload PDF (assuming this is part of audio_views)
-    path('upload/', audio_views.upload_pdf, name='upload_pdf'),
+    path('generate-audio/', audio_views.generate_audio_from_document,  name='generate_audio_from_document' ),
 
     # --- Auth Views ---
     path('logout/', auth_views.logout_view, name='logout'),
@@ -106,6 +105,9 @@ urlpatterns = [
     path('api/audiobook/<slug:audiobook_slug>/chapters/', creator_views.get_audiobook_chapters_json, name='get_audiobook_chapters'),
     path('api/audiobook/log-view/', creator_views.log_audiobook_view, name='log_audiobook_view'),
     path('api/creator/generate-tts-preview/', creator_views.generate_tts_preview_audio, name='generate_tts_preview_audio'),
+    # NEW URL for document TTS preview
+    path('api/creator/generate-document-tts-preview/', creator_views.generate_document_tts_preview_audio, name='generate_document_tts_preview_audio'),
+
 
     # --- Admin Area Views ---
     path('admin/welcome/', admin_views.admin_welcome_view, name='admin_welcome'),

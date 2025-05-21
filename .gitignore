@@ -8,7 +8,7 @@ venv.bak/
 # Python cache files and artifacts
 __pycache__/
 *.py[cod]
-*$py.class
+# *$py.class  # Consider if this is truly needed; .pyc/.pyo are covered by *.py[cod]
 *.egg-info/
 dist/
 build/
@@ -21,6 +21,9 @@ celerybeat-schedule
 *.pid
 pip-log.txt
 pip-delete-this-directory.txt
+
+# Django specific
+django_cache_data/ # For Django's file-based cache
 
 # Virtual environment
 .venv/
@@ -37,9 +40,10 @@ media/
 # Log files
 *.log
 logs/
-*.log.*
-*.log.[0-9]
-*.log.[0-9][0][0-9]
+# The following are quite specific, *.log and logs/ often suffice, but they don't hurt.
+# *.log.*
+# *.log.[0-9]
+# *.log.[0-9][0][0-9]
 
 # IDE files
 .vscode/
@@ -68,10 +72,10 @@ npm-debug.log*
 yarn-error.log*
 yarn-debug.log*
 
-# Generated Tailwind CSS output file
-static/css/output.css
+# Generated Tailwind CSS output file (if you always build it and don't commit the output)
+# static/css/output.css # Your call: commit if it's the source of truth for deployment without a build step there, ignore if always built.
 
-# Sensitive Files (should not be committed to Git)
+# Sensitive Files (SHOULD NOT BE COMMITTED TO GIT)
 audiox-auth-e32bbe6bfa04.json
 
 # Other common ignores
@@ -79,3 +83,16 @@ audiox-auth-e32bbe6bfa04.json
 .pylintrc
 coverage.xml
 nosetests.xml
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Sass cache
+.sass-cache/
+
+# Python session history (e.g., from IPython)
+.python_history
+
+# Build artifacts from various tools
+/out/
+/target/

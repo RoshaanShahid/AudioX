@@ -1,0 +1,413 @@
+{% extends "homepage.html" %}
+{% load static %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row font-sans h-full">
+
+    <aside class="w-full md:w-1/3 lg:w-2/5 bg-[#091e65] text-white p-8 sm:p-12 flex flex-col justify-between overflow-y-auto">
+        <div>
+            <div class="mb-12">
+                <a href="#" class="inline-flex items-center space-x-3 mb-3">
+                    <span class="bg-white/20 p-3 rounded-xl">
+                        <svg class="h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+                        </svg>
+                    </span>
+                    <h1 class="text-4xl font-extrabold tracking-tight">AudioX</h1>
+                </a>
+                <p class="text-lg text-white/80 leading-relaxed">
+                    Your personal Document-to-Audio suite. Convert, listen, and manage your documents effortlessly.
+                </p>
+            </div>
+
+            <div class="space-y-6">
+                <div class="flex items-start space-x-3">
+                    <svg class="h-7 w-7 text-white/90 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.5 3.75a2.25 2.25 0 00-2.25 2.25v12a2.25 2.25 0 002.25 2.25h3a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25h-3zm-2.25 2.25V18h7.5V6H8.25zm6.75-1.5h-3a.75.75 0 000 1.5h3a.75.75 0 000-1.5z" clip-rule="evenodd" /></svg>
+                    <div>
+                        <h3 class="text-xl font-semibold">Simple Upload</h3>
+                        <p class="text-white/70 text-sm">Easily select your PDF or Image document.</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                     <svg class="h-7 w-7 text-white/90 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5A1.5 1.5 0 007.5 20.25h9a1.5 1.5 0 001.5-1.5V5.25A1.5 1.5 0 0016.5 3.75h-9zm-1.5 1.5a3 3 0 013-3h9a3 3 0 013 3v13.5a3 3 0 01-3 3h-9a3 3 0 01-3-3V5.25z" /><path d="M8.25 7.5a.75.75 0 01.75-.75h6a.75.75 0 010 1.5h-6a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H9z" /></svg>
+                    <div>
+                        <h3 class="text-xl font-semibold">Language & Narrator</h3>
+                        <p class="text-white/70 text-sm">Choose language and preferred narrator voice.</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <svg class="h-7 w-7 text-white/90 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm14.024-.983a1.125 1.125 0 010 1.966l-5.603 3.113A1.125 1.125 0 019 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113z" clip-rule="evenodd" /></svg>
+                    <div>
+                        <h3 class="text-xl font-semibold">Instant Audio</h3>
+                        <p class="text-white/70 text-sm">Listen directly or download your audio file.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="mt-12 text-center text-sm text-white/60">
+            <p>&copy; {% now "Y" %} AudioXApp. All rights reserved.</p>
+            <p>A YourBrand Innovation.</p>
+        </footer>
+    </aside>
+
+    <main class="w-full md:w-2/3 lg:w-3/5 bg-white flex-1 p-8 sm:p-12 lg:p-16 overflow-y-auto">
+        <header class="mb-10 md:mb-12">
+            <h2 class="text-4xl font-bold text-gray-800">Generate Audio from Document</h2>
+            <p class="text-lg text-gray-500 mt-2">Upload a PDF or Image. Follow the simple steps below.</p>
+        </header>
+
+        <section id="uploadSection" class="mb-12">
+            <div class="flex items-center mb-6">
+                <span class="flex items-center justify-center w-10 h-10 border-2 border-[#091e65] text-[#091e65] rounded-lg text-xl font-bold mr-4">1</span>
+                <h3 class="text-2xl font-semibold text-gray-700">Upload & Configure</h3>
+            </div>
+            <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:generate_audio_from_document' %}" class="space-y-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                {% csrf_token %}
+                <div>
+                    <label for="{{ form.document_file.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        {{ form.document_file.label|default:"Document (PDF or Image)" }}
+                    </label>
+                    {{ form.document_file }} {# Renders the file input field #}
+                    <script>
+                        var fileInput = document.getElementById("{{ form.document_file.id_for_label }}");
+                        if (fileInput) {
+                            fileInput.className = 'block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/50 file:mr-4 file:py-2.5 file:px-5 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#091e65] file:text-white hover:file:bg-[#0d2a8a] file:transition-colors file:duration-150 p-1';
+                        }
+                    </script>
+                    {% if form.document_file.help_text %}
+                        <p class="text-xs text-gray-500 mt-1.5">{{ form.document_file.help_text }}</p>
+                    {% endif %}
+                    {% if form.document_file.errors %}
+                        {% for error in form.document_file.errors %}
+                            <p class="text-red-600 text-xs font-medium mt-1.5 error-message-file">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.language.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        {{ form.language.label|default:"Audio Language" }}
+                    </label>
+                    <div class="relative">
+                        {{ form.language }} {# Renders the language select field #}
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+                        </div>
+                    </div>
+                    <script>
+                        var langSelect = document.getElementById("{{ form.language.id_for_label }}");
+                        if (langSelect) {
+                             langSelect.className = 'block w-full p-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] appearance-none pr-10';
+                        }
+                    </script>
+                    {% if form.language.errors %}
+                        {% for error in form.language.errors %}
+                            <p class="text-red-600 text-xs font-medium mt-1.5 error-message-lang">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div id="narratorGenderContainer" class="hidden"> {# Initially hidden, JS will show/hide #}
+                    <label for="{{ form.narrator_gender.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        {{ form.narrator_gender.label|default:"Narrator Gender" }}
+                    </label>
+                    <div class="relative">
+                        {{ form.narrator_gender }} {# Renders the gender select field #}
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
+                        </div>
+                    </div>
+                    <script>
+                        var genderSelectEl = document.getElementById("{{ form.narrator_gender.id_for_label }}");
+                        if (genderSelectEl) {
+                            genderSelectEl.className = 'block w-full p-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] appearance-none pr-10';
+                        }
+                    </script>
+                    {% if form.narrator_gender.errors %}
+                        {% for error in form.narrator_gender.errors %}
+                            <p class="text-red-600 text-xs font-medium mt-1.5 error-message-gender">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+
+                {% if form.non_field_errors %} {# Display non-field errors #}
+                    {% for error in form.non_field_errors %}
+                        <p class="text-red-600 text-sm font-medium error-message-nonfield">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+
+                <button type="submit" id="convertButton"
+                        class="w-full flex items-center justify-center bg-white text-[#091e65] border-2 border-[#091e65] hover:bg-[#091e65] hover:text-white font-semibold py-3 px-6 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#091e65]/30 transition-all duration-200 ease-in-out transform active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed text-base group">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2.5 button-icon transition-colors duration-200 ease-in-out">
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                    </svg>
+                    <span class="button-text">Generate Audio</span>
+                    <svg class="button-loader hidden animate-spin ml-3 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </form>
+        </section>
+
+        <section id="generatedAudioSection" class="mb-12 hidden">
+            <div class="flex items-center mb-6">
+                <span class="flex items-center justify-center w-10 h-10 border-2 border-[#091e65] text-[#091e65] rounded-lg text-xl font-bold mr-4">2</span>
+                <h3 class="text-2xl font-semibold text-gray-700">Listen & Finalize</h3>
+            </div>
+            <div class="p-6 bg-gray-50 rounded-xl border border-gray-200 space-y-6">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <audio id="audioPlayer" controls class="w-full rounded-md"></audio>
+                </div>
+                <div>
+                    <label for="audioDurationDisplay" class="block text-sm font-medium text-gray-700 mb-1">Audio Duration:</label>
+                    <p id="audioDurationDisplay" class="text-base text-gray-700 font-semibold bg-white p-3 rounded-md border border-gray-200 inline-flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2 text-gray-400"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>
+                        Calculating...
+                    </p>
+                </div>
+                <div>
+                    <label for="chapterNameInput" class="block text-sm font-medium text-gray-700 mb-2">Audio Filename (Chapter Name):</label>
+                    <input type="text" id="chapterNameInput" class="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] bg-white" placeholder="e.g., My_Audio_Chapter_1">
+                </div>
+            </div>
+        </section>
+
+        <section id="downloadButtonSection" class="hidden">
+             <button id="downloadButton"
+                    class="w-full flex items-center justify-center bg-[#091e65] text-white hover:bg-[#0d2a8a] font-semibold py-3.5 px-6 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#091e65]/30 transition-colors duration-200 ease-in-out text-base">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2.5">
+                    <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" />
+                    <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+                </svg>
+                Download Audio
+            </button>
+        </section>
+
+        <div id="errorMessage" class="mt-8 text-red-700 font-medium hidden p-4 bg-red-50 border border-red-300 rounded-lg text-sm items-center justify-start">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2.5 flex-shrink-0">
+                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+            </svg>
+            <span id="errorTextContent" class="flex-1"></span>
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('uploadForm');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const errorMessageDiv = document.getElementById('errorMessage');
+    const errorTextContentSpan = document.getElementById('errorTextContent');
+    const convertButton = document.getElementById('convertButton');
+    const buttonText = convertButton.querySelector('.button-text');
+    const buttonLoader = convertButton.querySelector('.button-loader');
+    const buttonIcon = convertButton.querySelector('.button-icon');
+
+    const generatedAudioSection = document.getElementById('generatedAudioSection');
+    const audioDurationElement = document.getElementById('audioDurationDisplay');
+    const chapterNameInput = document.getElementById('chapterNameInput');
+
+    const downloadButtonSection = document.getElementById('downloadButtonSection');
+    const downloadButton = document.getElementById('downloadButton');
+
+    const languageSelect = document.getElementById("{{ form.language.id_for_label }}");
+    const narratorGenderContainer = document.getElementById('narratorGenderContainer');
+    const narratorGenderSelect = document.getElementById("{{ form.narrator_gender.id_for_label }}");
+
+    // Narrator display names configuration - UPDATED
+    const narratorDisplayNames = {
+        en: {
+            male: "Male (Natural, Engaging)",   // Updated for en-US-DavisNeural
+            female: "Female (Clear, Expressive)" // Updated for en-US-AriaNeural
+        },
+        ur: {
+            male: "Male (Asad)",        // Kept specific name example for Urdu
+            female: "Female (Uzma)"     // Kept specific name example for Urdu
+        }
+        // Add other languages here if needed
+    };
+
+    let currentAudioBlob = null;
+    let currentAudioUrl = null;
+
+    function setErrorMessage(message, field = null) {
+        document.querySelectorAll('.error-message-file, .error-message-lang, .error-message-gender, .error-message-nonfield').forEach(el => el.textContent = '');
+        if (field) {
+            const errorEl = document.querySelector(`.error-message-${field}`);
+            if (errorEl) { errorEl.textContent = message; }
+            else {
+                if (errorTextContentSpan) errorTextContentSpan.textContent = message;
+                else errorMessageDiv.textContent = message; // Fallback if span not found
+                errorMessageDiv.classList.remove('hidden'); errorMessageDiv.classList.add('flex');
+            }
+        } else {
+            if (errorTextContentSpan) errorTextContentSpan.textContent = message;
+            else errorMessageDiv.textContent = message; // Fallback if span not found
+            errorMessageDiv.classList.remove('hidden'); errorMessageDiv.classList.add('flex');
+        }
+        // Ensure general error message div is shown if message is present and it was hidden
+        if (!field && message && errorMessageDiv.classList.contains('hidden')) {
+            errorMessageDiv.classList.remove('hidden'); errorMessageDiv.classList.add('flex');
+        }
+    }
+
+    function clearErrorMessage() {
+        errorMessageDiv.classList.add('hidden'); errorMessageDiv.classList.remove('flex');
+        if(errorTextContentSpan) errorTextContentSpan.textContent = ''; else errorMessageDiv.textContent = '';
+        document.querySelectorAll('.error-message-file, .error-message-lang, .error-message-gender, .error-message-nonfield').forEach(el => el.textContent = '');
+    }
+
+    // Function to update the display text of narrator gender options
+    function updateNarratorGenderOptions() {
+        const selectedLang = languageSelect.value;
+        const genderOptionsConfig = narratorDisplayNames[selectedLang];
+
+        // Iterate over the options in the select element
+        for (let i = 0; i < narratorGenderSelect.options.length; i++) {
+            const option = narratorGenderSelect.options[i];
+            if (option.value === 'male') {
+                option.textContent = genderOptionsConfig ? genderOptionsConfig.male : 'Male';
+            } else if (option.value === 'female') {
+                option.textContent = genderOptionsConfig ? genderOptionsConfig.female : 'Female';
+            }
+            // The placeholder option (value="") will retain its original text (e.g., "Select Gender")
+        }
+    }
+
+    // Function to toggle visibility and update options for narrator gender field
+    function toggleNarratorGenderField() {
+        const selectedLang = languageSelect.value;
+        if (selectedLang === 'en' || selectedLang === 'ur') { // Languages that support gender selection
+            narratorGenderContainer.classList.remove('hidden');
+            narratorGenderSelect.required = true;
+            updateNarratorGenderOptions(); // Update display names when language changes
+        } else {
+            narratorGenderContainer.classList.add('hidden');
+            narratorGenderSelect.required = false;
+            narratorGenderSelect.value = ''; // Reset selection if field is hidden
+        }
+    }
+
+    if (languageSelect) {
+        languageSelect.addEventListener('change', toggleNarratorGenderField);
+        toggleNarratorGenderField(); // Call on page load to set initial state
+    }
+
+    async function processDocumentForAudio(event) {
+        event.preventDefault();
+        const formData = new FormData(form);
+        clearErrorMessage();
+        generatedAudioSection.classList.add('hidden');
+        downloadButtonSection.classList.add('hidden');
+        audioPlayer.classList.add('hidden');
+        if (currentAudioUrl) { URL.revokeObjectURL(currentAudioUrl); }
+        audioPlayer.src = ''; currentAudioBlob = null; currentAudioUrl = null;
+        const durationIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2 text-gray-400"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>`;
+        audioDurationElement.innerHTML = `${durationIconSvg} Calculating...`;
+        audioDurationElement.className = 'text-base text-gray-700 font-semibold bg-white p-3 rounded-md border border-gray-200 inline-flex items-center';
+
+
+        if(buttonText) buttonText.classList.add('hidden');
+        if(buttonIcon) buttonIcon.classList.add('hidden');
+        if(buttonLoader) buttonLoader.classList.remove('hidden');
+        convertButton.disabled = true;
+        convertButton.classList.add('disabled:opacity-60', 'disabled:cursor-not-allowed');
+
+        try {
+            const response = await fetch(form.action, {
+                method: form.method, body: formData, headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+            });
+            if (response.ok) {
+                const audioBlob = await response.blob();
+                if (audioBlob.type.startsWith('audio/')) {
+                    currentAudioBlob = audioBlob; currentAudioUrl = URL.createObjectURL(currentAudioBlob);
+                    audioPlayer.src = currentAudioUrl;
+                    audioPlayer.classList.remove('hidden');
+                    generatedAudioSection.classList.remove('hidden');
+                    downloadButtonSection.classList.remove('hidden');
+                    audioPlayer.onloadedmetadata = () => {
+                        const duration = audioPlayer.duration;
+                        audioDurationElement.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+                        if (isFinite(duration)) {
+                            const minutes = Math.floor(duration / 60);
+                            const seconds = Math.floor(duration % 60).toString().padStart(2, '0');
+                            audioDurationElement.innerHTML = `${durationIconSvg} ${minutes} min ${seconds} sec`;
+                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-green-50 text-green-700 border-green-200';
+                        } else {
+                            audioDurationElement.innerHTML = `${durationIconSvg} Duration N/A`;
+                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-yellow-50 text-yellow-700 border-yellow-200';
+                        }
+                    };
+                    audioPlayer.onerror = () => {
+                         audioDurationElement.innerHTML = `${durationIconSvg} Error loading audio`;
+                         audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-red-50 text-red-700 border-red-200';
+                    }
+                    const fileInputField = document.getElementById("{{ form.document_file.id_for_label }}");
+                    let uploadedFileName = "generated_audio_chapter";
+                    if (fileInputField && fileInputField.files && fileInputField.files[0]) {
+                        const completeFileName = fileInputField.files[0].name;
+                        const lastDotIndex = completeFileName.lastIndexOf('.');
+                        if (lastDotIndex > 0) {
+                            uploadedFileName = completeFileName.substring(0, lastDotIndex).replace(/[\s_]+/g, '_').replace(/[^\w-]/g, '');
+                        } else {
+                            uploadedFileName = completeFileName.replace(/[\s_]+/g, '_').replace(/[^\w-]/g, '');
+                        }
+                    }
+                    chapterNameInput.value = uploadedFileName || "audio_chapter";
+                } else {
+                    const errorText = await response.text();
+                    setErrorMessage('Server Error: Received unexpected content type: ' + audioBlob.type + ". Details: " + (errorText || "No details from server."));
+                }
+            } else {
+                const errorText = await response.text();
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    if (errorJson.errors) {
+                        clearErrorMessage();
+                        for (const field in errorJson.errors) {
+                            const fieldErrors = errorJson.errors[field].join(' ');
+                            if (field === '__all__') { setErrorMessage(fieldErrors, 'nonfield'); }
+                            else if (field === 'document_file') { setErrorMessage(fieldErrors, 'file'); }
+                            else if (field === 'language') { setErrorMessage(fieldErrors, 'lang'); }
+                            else if (field === 'narrator_gender') { setErrorMessage(fieldErrors, 'gender'); }
+                            else { setErrorMessage(`${field}: ${fieldErrors}`); }
+                        }
+                    } else { setErrorMessage(`Error (Status: ${response.status}). ${errorText || 'No additional details from server.'}`); }
+                } catch (e) { setErrorMessage(`Error (Status: ${response.status}). ${errorText || 'No additional details from server.'}`); }
+            }
+        } catch (error) {
+            console.error('Network or Fetch error:', error);
+            setErrorMessage('A network error occurred. Please check your connection and try again. Details: ' + error.message);
+        } finally {
+            if(buttonText) buttonText.classList.remove('hidden');
+            if(buttonIcon) buttonIcon.classList.remove('hidden');
+            if(buttonLoader) buttonLoader.classList.add('hidden');
+            convertButton.disabled = false;
+            convertButton.classList.remove('disabled:opacity-60', 'disabled:cursor-not-allowed');
+        }
+    }
+
+    form.addEventListener('submit', processDocumentForAudio);
+
+    downloadButton.addEventListener('click', () => {
+        if (currentAudioUrl && currentAudioBlob) {
+            const link = document.createElement('a');
+            link.href = currentAudioUrl;
+            let chapterName = chapterNameInput.value.trim().replace(/[\s]+/g, '_').replace(/[^\w-]/g, '');
+            if (!chapterName) chapterName = "generated_audio_chapter";
+            let extension = '.mp3';
+            if (currentAudioBlob.type === 'audio/mpeg') { extension = '.mp3'; }
+            else if (currentAudioBlob.type === 'audio/wav') { extension = '.wav'; }
+            link.download = `${chapterName}${extension}`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        } else {
+            setErrorMessage('No audio data available to download.');
+            downloadButtonSection.classList.add('hidden');
+        }
+    });
+});
+</script>
+
+{% endblock content %}
