@@ -1,212 +1,18 @@
-# AudioXApp/views/admin_views.py
+# AudioXApp/views/admin_views/admin_creator_manage_views.py
 
 import json
-from decimal import Decimal
 from datetime import timedelta
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.conf import settings
 from django.urls import reverse
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError, ObjectDoesNotExist, ImproperlyConfigured
 from django.utils import timezone
-from django.db.models import Count, Sum, Q, Prefetch
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_protect
+from django.db.models import Count, Q, Prefetch
+from django.core.exceptions import ObjectDoesNotExist
 
-from ..models import User, Admin, CoinTransaction, Creator, WithdrawalRequest, Audiobook, CreatorApplicationLog
-from .decorators import admin_role_required, admin_login_required
-
-# --- Admin Authentication Views ---
-
-def admin_welcome_view(request):
-    """Renders the admin welcome page or redirects to dashboard if logged in."""
-    if request.session.get('is_admin') and request.session.get('admin_id'):
-        return redirect('AudioXApp:admindashboard')
-    return render(request, 'admin/admin_welcome.html')
-
-def adminsignup(request):
-    """Handles admin signup."""
-    if request.method == 'POST':
-        email = request.POST.get('email')
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-        roles_list = request.POST.getlist('roles')
-
-        errors = {}
-        if not email or not username or not password or not confirm_password:
-            errors['__all__'] = 'All credential fields are required.'
-        if password != confirm_password:
-            errors['confirm_password'] = 'Passwords do not match.'
-        if not roles_list:
-            errors['roles'] = 'Please select at least one role.'
-        else:
-            valid_roles = [choice[0] for choice in Admin.RoleChoices.choices]
-            if not all(role in valid_roles for role in roles_list):
-                errors['roles'] = 'Invalid role selected.'
-
-        if email:
-            if Admin.objects.filter(email__iexact=email).exists():
-                errors['email_prefix'] = 'An admin with this email already exists.'
-            try:
-                validate_email(email)
-            except ValidationError:
-                errors['email_prefix'] = 'Invalid email format.'
-
-        if username and Admin.objects.filter(username__iexact=username).exists():
-            errors['username_prefix'] = 'An admin with this username already exists.'
-
-        if errors:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Please correct the errors below.',
-                'errors': errors
-            }, status=400)
-
-        try:
-            roles_string = ','.join(roles_list)
-            admin = Admin.objects.create_admin(
-                email=email,
-                username=username,
-                password=password,
-                roles=roles_string
-            )
-            return JsonResponse({
-                'status': 'success',
-                'message': 'Admin account created successfully!',
-                'redirect_url': reverse('AudioXApp:adminlogin')
-            })
-        except ValueError as ve:
-            return JsonResponse({'status': 'error', 'message': str(ve), 'errors': {'__all__': str(ve)}}, status=400)
-        except Exception:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'An unexpected server error occurred during registration.',
-                'errors': {'__all__': 'Server error during registration.'}
-            }, status=500)
-    else:
-        context = {'role_choices': Admin.RoleChoices.choices}
-        return render(request, 'admin/admin_register.html', context)
-
-
-def adminlogin(request):
-    """Handles admin login."""
-    if request.method == 'POST':
-        login_identifier = request.POST.get('username')
-        password = request.POST.get('password')
-        admin = None
-
-        if not login_identifier or not password:
-            return JsonResponse({'status': 'error', 'message': 'Email/Username and password are required.'}, status=400)
-
-        if '@' in login_identifier:
-            try:
-                admin_by_email = Admin.objects.filter(email__iexact=login_identifier).first()
-                if admin_by_email and admin_by_email.check_password(password):
-                    admin = admin_by_email
-            except Admin.DoesNotExist:
-                pass
-
-        if not admin:
-            try:
-                admin_by_username = Admin.objects.filter(username__iexact=login_identifier).first()
-                if admin_by_username and admin_by_username.check_password(password):
-                    admin = admin_by_username
-            except Admin.DoesNotExist:
-                pass
-
-        if admin:
-            if admin.is_active:
-                request.session['admin_id'] = admin.adminid
-                request.session['admin_username'] = admin.username
-                request.session['is_admin'] = True
-
-                try:
-                    admin_roles_list = admin.get_roles_list()
-                except AttributeError:
-                    admin_roles_list = []
-
-                request.session['admin_roles'] = admin_roles_list
-                request.session.set_expiry(settings.SESSION_COOKIE_AGE)
-
-                admin.last_login = timezone.now()
-                admin.save(update_fields=['last_login'])
-
-                return JsonResponse({'status': 'success', 'redirect_url': reverse('AudioXApp:admindashboard')})
-            else:
-                return JsonResponse({'status': 'error', 'message': 'This admin account is inactive.'}, status=403)
-        else:
-            return JsonResponse({'status': 'error', 'message': 'Incorrect email/username or password.'}, status=401)
-
-    if request.session.get('is_admin') and request.session.get('admin_id'):
-        return redirect('AudioXApp:admindashboard')
-
-    return render(request, 'admin/admin_login.html')
-
-
-@admin_login_required
-@require_POST
-@csrf_protect
-def admin_logout_view(request):
-    """Logs out the current admin user."""
-    try:
-        keys_to_delete = ['admin_id', 'admin_username', 'is_admin', 'admin_roles']
-        for key in keys_to_delete:
-            request.session.pop(key, None)
-        messages.success(request, "You have been logged out successfully.")
-    except Exception:
-        messages.error(request, "An error occurred during logout. Please try again.")
-    return redirect('AudioXApp:adminlogin')
-
-# --- Admin Dashboard View ---
-
-@admin_role_required()
-def admindashboard(request):
-    """Renders the admin dashboard with key metrics."""
-    total_user_count = User.objects.count()
-    subscribed_user_count = User.objects.filter(subscription_type='PR').count()
-    free_user_count = total_user_count - subscribed_user_count
-    active_creator_count = Creator.objects.filter(verification_status='approved', is_banned=False).count()
-    pending_verification_count = Creator.objects.filter(verification_status='pending').count()
-    total_audiobook_count = Audiobook.objects.count()
-    creator_audiobook_count = Audiobook.objects.filter(creator__verification_status='approved', creator__is_banned=False).count()
-
-    pending_withdrawal_count = 0
-    try:
-        pending_withdrawal_count = WithdrawalRequest.objects.filter(
-            status='pending',
-            creator__verification_status='approved',
-            creator__is_banned=False
-        ).count()
-    except Exception:
-        messages.error(request, "Could not retrieve withdrawal request count due to a server error.")
-
-    total_earnings_query = CoinTransaction.objects.filter(
-        transaction_type='purchase', status='completed'
-    ).exclude(
-        pack_name__icontains='Subscription'
-    ).aggregate(total=Sum('price'))
-    total_earnings = total_earnings_query['total'] or Decimal('0.00')
-
-    context = {
-        'admin_user': getattr(request, 'admin_user', None),
-        'active_page': 'dashboard',
-        'is_creator_management_page': False,
-        'total_user_count': total_user_count,
-        'subscribed_user_count': subscribed_user_count,
-        'free_user_count': free_user_count,
-        'active_creator_count': active_creator_count,
-        'total_audiobook_count': total_audiobook_count,
-        'creator_audiobook_count': creator_audiobook_count,
-        'pending_verification_count': pending_verification_count,
-        'pending_withdrawal_count': pending_withdrawal_count,
-        'total_earnings': total_earnings.quantize(Decimal("0.01")),
-        'TIME_ZONE': settings.TIME_ZONE,
-    }
-    return render(request, 'admin/admin_dashboard.html', context)
+from ...models import Creator, Audiobook, WithdrawalRequest, CreatorApplicationLog # Relative imports
+from ..decorators import admin_role_required # Relative import
 
 # --- Admin Creator Management Views ---
 
@@ -291,7 +97,7 @@ def admin_manage_creators(request):
         'daily_pending_data_json': json.dumps(daily_pending_data),
         'daily_banned_data_json': json.dumps(daily_banned_data),
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'manage_creators',
+        'active_page': 'manage_creators_overview', # Updated active_page
         'is_creator_management_page': True,
     }
     return render(request, 'admin/manage_creators.html', context)
@@ -309,7 +115,12 @@ def admin_pending_creator_applications(request):
     pending_creators_data = []
     for creator in pending_creators_qs:
         attempts_this_month = creator.get_attempts_this_month()
-        is_re_application = creator.application_logs.filter(status='rejected').exists() and attempts_this_month > 0
+        # Check if there's any rejected log before the current pending application
+        is_re_application = creator.application_logs.filter(
+            status='rejected', 
+            application_date__lt=creator.last_application_date if creator.last_application_date else timezone.now()
+        ).exists()
+
 
         pending_creators_data.append({
             'creator': creator,
@@ -322,7 +133,7 @@ def admin_pending_creator_applications(request):
         'admin_user': admin_user,
         'pending_creators_data': pending_creators_data,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'pending_creators',
+        'active_page': 'manage_creators_pending', # Updated active_page
         'is_creator_management_page': True,
     }
 
@@ -382,7 +193,7 @@ def admin_approved_creator_applications(request):
         'current_filter': filter_option,
         'search_query': search_query,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'approved_creators',
+        'active_page': 'manage_creators_approved', # Updated active_page
         'is_creator_management_page': True,
     }
     return render(request, 'admin/creators_approvedapplications.html', context)
@@ -403,9 +214,9 @@ def admin_rejected_creator_applications(request):
         Prefetch(
             'application_logs',
             queryset=CreatorApplicationLog.objects.filter(status='rejected').select_related('processed_by').order_by('-processed_at'),
-            to_attr='latest_rejected_logs'
+            to_attr='latest_rejected_logs' # Gets all rejected logs, template can pick the first
         )
-    ).order_by('-last_application_date')
+    ).order_by('-last_application_date') # Or by the date of the latest rejection log
 
     filter_title = "Rejected Creator Applications"
 
@@ -418,8 +229,10 @@ def admin_rejected_creator_applications(request):
             Q(creator_name__icontains=search_query) |
             Q(creator_unique_name__icontains=search_query) |
             Q(cid__icontains=search_query) |
-            Q(rejection_reason__icontains=search_query)
+            Q(rejection_reason__icontains=search_query) # Searches current rejection reason on Creator model
         )
+        # If searching by processed_by username, it's a bit more complex with prefetch
+        # For simplicity, keeping search on Creator model fields or direct user fields.
         rejected_creators_qs = rejected_creators_qs.filter(search_filter).distinct()
         filter_title += f" matching '{search_query}'"
 
@@ -429,7 +242,7 @@ def admin_rejected_creator_applications(request):
         'filter_title': filter_title,
         'search_query': search_query,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'rejected_creators',
+        'active_page': 'manage_creators_rejected', # Updated active_page
         'is_creator_management_page': True,
     }
     return render(request, 'admin/creators_rejectedapplications.html', context)
@@ -446,37 +259,41 @@ def admin_creator_application_history(request):
     if search_query:
         try:
             search_filter = None
+            # Prioritize CID search if it matches the format
             if search_query.lower().startswith('cid-') and len(search_query) > 4:
                 search_filter = Q(cid__iexact=search_query)
+            # Then try User ID if it's purely numeric
+            elif search_query.isdigit():
+                 search_filter = Q(user_id=int(search_query))
+            # Then try email
             elif '@' in search_query:
                 search_filter = Q(user__email__iexact=search_query)
+            # Fallback to username
             else:
-                try:
-                    user_id_int = int(search_query)
-                    search_filter = Q(user_id=user_id_int)
-                except ValueError:
-                    search_filter = Q(user__username__iexact=search_query)
-
+                search_filter = Q(user__username__iexact=search_query)
+            
             if search_filter:
                 found_creator = Creator.objects.select_related('user').get(search_filter)
 
             if found_creator:
                 application_logs = found_creator.application_logs.select_related(
-                    'processed_by'
-                ).order_by('-application_date')
+                    'processed_by' # Admin user who processed the log
+                ).order_by('-application_date') # Show newest first
 
         except Creator.DoesNotExist:
             messages.warning(request, f"No creator found matching '{search_query}'. Please try User ID, Email, Username, or CID (e.g., cid-xxxx).")
+        except ValueError: # Handles if search_query.isdigit() is true but it's not a valid int for user_id
+             messages.warning(request, f"Invalid User ID format for '{search_query}'.")
         except Exception:
             messages.error(request, f"An error occurred during the search. Please ensure your query is specific (User ID, Email, Username, or CID).")
-
+            
     context = {
         'admin_user': admin_user,
         'search_query': search_query,
         'found_creator': found_creator,
         'application_logs': application_logs,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'application_history',
+        'active_page': 'manage_creators_history', # Updated active_page
         'is_creator_management_page': True,
     }
     return render(request, 'admin/creators_totalapplications.html', context)
@@ -505,21 +322,24 @@ def admin_all_creators_list(request):
 
         status_filter = Q()
         query_lower = search_query.lower()
+        
+        # Check for specific status keywords
         if 'banned' in query_lower:
             status_filter = Q(is_banned=True)
-        elif 'active' in query_lower or 'approved' in query_lower:
+        elif 'active' in query_lower or 'approved' in query_lower: # 'active' implies approved and not banned
             status_filter = Q(is_banned=False, verification_status='approved')
         elif 'pending' in query_lower:
             status_filter = Q(verification_status='pending')
         elif 'rejected' in query_lower:
             status_filter = Q(is_banned=False, verification_status='rejected')
+        # Check if the search query itself is a valid status choice
         elif search_query in [s[0] for s in Creator.VERIFICATION_STATUS_CHOICES]:
              status_filter = Q(verification_status=search_query)
 
 
-        if status_filter:
+        if status_filter: # If a status keyword was found, filter by that status
             creators_qs = creators_qs.filter(status_filter)
-        else:
+        else: # Otherwise, use the general base search filter
             creators_qs = creators_qs.filter(base_search_filter)
 
         filter_title += f" matching '{search_query}'"
@@ -530,7 +350,7 @@ def admin_all_creators_list(request):
         'filter_title': filter_title,
         'search_query': search_query,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'all_creators',
+        'active_page': 'manage_creators_all', # Updated active_page
         'is_creator_management_page': True,
     }
     return render(request, 'admin/creators_list.html', context)
@@ -558,7 +378,7 @@ def admin_banned_creators_list(request):
             Q(creator_unique_name__icontains=search_query) |
             Q(cid__icontains=search_query) |
             Q(ban_reason__icontains=search_query) |
-            Q(banned_by__username__icontains=search_query)
+            Q(banned_by__username__icontains=search_query) # Search by banning admin's username
         )
         banned_creators_qs = banned_creators_qs.filter(search_filter)
         filter_title += f" matching '{search_query}'"
@@ -569,7 +389,7 @@ def admin_banned_creators_list(request):
         'filter_title': filter_title,
         'search_query': search_query,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'banned_creators',
+        'active_page': 'manage_creators_banned', # Updated active_page
         'is_creator_management_page': True,
     }
     return render(request, 'admin/creators_banned.html', context)
@@ -580,26 +400,37 @@ def admin_view_creator_detail(request, user_id):
     """Displays detailed information for a specific creator."""
     admin_user = getattr(request, 'admin_user', None)
 
+    # Ensure user_id is an integer before querying
+    try:
+        user_id_int = int(user_id)
+    except ValueError:
+        messages.error(request, "Invalid Creator ID format.")
+        # Determine a sensible redirect, perhaps to the 'all creators' list or dashboard
+        return redirect(reverse('AudioXApp:admin_all_creators_list'))
+
+
     creator = get_object_or_404(
         Creator.objects.select_related('user', 'approved_by', 'banned_by'),
-        user_id=user_id
+        user_id=user_id_int # Use the validated integer
     )
 
     total_audiobooks = Audiobook.objects.filter(creator=creator).count()
 
-    recent_logs = creator.application_logs.select_related('processed_by').order_by('-application_date')[:5]
+    # Fetch all logs, not just recent, for a complete history view on this page
+    application_logs = creator.application_logs.select_related('processed_by').order_by('-application_date')
 
     context = {
         'admin_user': admin_user,
         'creator': creator,
         'total_audiobooks': total_audiobooks,
-        'recent_logs': recent_logs,
+        'application_logs': application_logs, # Changed from recent_logs
         'is_banned': creator.is_banned,
         'is_pending': creator.verification_status == 'pending',
         'is_approved': creator.verification_status == 'approved' and not creator.is_banned,
         'is_rejected': creator.verification_status == 'rejected' and not creator.is_banned,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'all_creators',
+        # Determine active_page based on creator's status for better sidebar highlighting
+        'active_page': f'manage_creators_{creator.get_status_for_active_page()}',
         'is_creator_management_page': True,
     }
     return render(request, 'admin/creator_detail.html', context)

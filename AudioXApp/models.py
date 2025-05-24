@@ -129,7 +129,7 @@ class User(AbstractBaseUser, PermissionsMixin):
                 profile = self.creator_profile
                 return profile.verification_status == 'approved' and not getattr(profile, 'is_banned', False)
             return False
-        except Creator.DoesNotExist:
+        except Creator.DoesNotExist: # Added DoesNotExist exception handling
             return False
         except AttributeError:
             return False
@@ -234,7 +234,7 @@ class Admin(models.Model):
         verbose_name_plural = "Custom Administrators"
 
 # --- Transaction and Earning Models ---
-
+# ... (CoinTransaction, AudiobookPurchase, CreatorEarning models as provided)
 class CoinTransaction(models.Model):
     """Records transactions related to user coins."""
     TRANSACTION_TYPES = (
@@ -416,7 +416,7 @@ class Creator(models.Model):
             self.last_application_date.month == now.month):
             return self.application_attempts_current_month
         else:
-            return 0
+            return 0 # Reset to 0 if last application was not in the current month
 
     def can_reapply(self):
         """Checks if the creator is eligible to reapply."""
@@ -425,12 +425,12 @@ class Creator(models.Model):
         if self.verification_status == 'rejected':
             attempts_this_month = self.get_attempts_this_month()
             return attempts_this_month < getattr(settings, 'MAX_CREATOR_APPLICATION_ATTEMPTS', 3)
-        return True
+        return True # Should not be reached if status is not rejected, banned, approved, or pending
 
     def can_request_withdrawal(self):
         """Checks if the creator can currently request a withdrawal."""
         has_pending_or_processing_request = self.withdrawal_requests.filter(
-            status__in=['pending', 'processing', 'approved']
+            status__in=['pending', 'processing', 'approved'] # 'approved' means admin approved, but not yet processed by finance
         ).exists()
 
         if has_pending_or_processing_request:
@@ -442,9 +442,28 @@ class Creator(models.Model):
             if timezone.now() < self.last_withdrawal_request_date + cooldown:
                 next_allowed_date = self.last_withdrawal_request_date + cooldown
                 return False, f"You can make another withdrawal request after {next_allowed_date.strftime('%B %d, %Y')}."
-
         return True, ""
 
+    def get_status_for_active_page(self):
+        """
+        Determines the status string to be used for setting the 'active_page'
+        in the admin creator detail view. This helps highlight the correct
+        sidebar link (e.g., Approved, Pending, Banned, Rejected).
+        """
+        if self.is_banned:
+            return 'banned' # Corresponds to 'manage_creators_banned'
+        elif self.verification_status == 'approved':
+            # If approved and not banned, it falls under the general 'approved' list
+            return 'approved' # Corresponds to 'manage_creators_approved'
+        elif self.verification_status == 'pending':
+            return 'pending' # Corresponds to 'manage_creators_pending'
+        elif self.verification_status == 'rejected':
+            # If rejected and not banned, it falls under 'rejected' list
+            return 'rejected' # Corresponds to 'manage_creators_rejected'
+        return 'all' # Fallback, should ideally map to 'manage_creators_all'
+
+# ... (CreatorApplicationLog, WithdrawalAccount, WithdrawalRequest models as provided)
+# ... (Audiobook, Chapter, Review, Subscription, AudiobookViewLog models as provided)
 
 class CreatorApplicationLog(models.Model):
     """Logs each creator application submission."""
@@ -529,17 +548,18 @@ class WithdrawalAccount(models.Model):
             except ValidationError as e:
                 raise ValidationError({'account_identifier': e.messages})
         elif self.account_type in ['jazzcash', 'easypaisa', 'nayapay', 'upaisa']:
-            self.bank_name = None
+            self.bank_name = None # Ensure bank_name is None for mobile accounts
             try:
                 self.mobile_account_validator(self.account_identifier)
             except ValidationError as e:
                 raise ValidationError({'account_identifier': e.messages})
-        else:
+        else: # Should not happen with choices, but good for safety
             self.bank_name = None
+
 
     def save(self, *args, **kwargs):
         """Ensures only one primary account and calls clean before saving."""
-        self.full_clean()
+        self.full_clean() # Call full_clean to run validators
         if self.is_primary:
             WithdrawalAccount.objects.filter(creator=self.creator, is_primary=True).exclude(pk=self.pk).update(is_primary=False)
         super().save(*args, **kwargs)
@@ -587,7 +607,7 @@ class WithdrawalRequest(models.Model):
 
     def reject(self, admin_user, reason=""):
         """Rejects the withdrawal request and returns amount to creator balance."""
-        if self.status in ['pending', 'approved']:
+        if self.status in ['pending', 'approved']: # Can reject if pending or already admin-approved but not yet processing
             original_amount = self.amount
             self.status = 'rejected'
             self.processed_by = admin_user
@@ -604,6 +624,7 @@ class WithdrawalRequest(models.Model):
             except Exception as e:
                 logger.error(f"ERROR: Failed to save admin rejection or return amount PKR {original_amount} to creator {self.creator.creator_name} for withdrawal {self.request_id}: {e}")
 
+
     def process(self, admin_user, reference=""):
         """Marks the withdrawal request as processing."""
         if self.status == 'approved':
@@ -616,7 +637,7 @@ class WithdrawalRequest(models.Model):
 
     def complete(self, admin_user, reference=""):
         """Marks the withdrawal request as completed."""
-        if self.status == 'processing':
+        if self.status == 'processing': # Should only complete if it was in processing
             self.status = 'completed'
             self.processed_date = timezone.now()
             self.processed_by = admin_user
@@ -628,9 +649,10 @@ class WithdrawalRequest(models.Model):
                 self.withdrawal_account.last_used_at = self.processed_date
                 self.withdrawal_account.save(update_fields=['last_used_at'])
 
+
     def fail(self, admin_user, reason=""):
         """Marks the withdrawal request as failed and returns amount to creator balance."""
-        if self.status in ['processing', 'approved']:
+        if self.status in ['processing', 'approved']: # Can fail if it was processing or approved but not yet completed
             original_amount = self.amount
             self.status = 'failed'
             self.processed_date = timezone.now()
@@ -648,7 +670,7 @@ class WithdrawalRequest(models.Model):
                 logger.error(f"ERROR: Failed to save failure or return amount PKR {original_amount} to creator {self.creator.creator_name} for withdrawal {self.request_id} after failure: {e}")
 
 # --- Audiobook and Content Models ---
-
+# ... (Audiobook, Chapter, Review, Subscription, AudiobookViewLog models as provided)
 class Audiobook(models.Model):
     """Represents an audiobook."""
     STATUS_CHOICES = (
@@ -670,7 +692,7 @@ class Audiobook(models.Model):
     narrator = models.CharField(max_length=255, blank=True, null=True)
     language = models.CharField(max_length=100, blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
-    description = models.TextField(blank=False, null=True)
+    description = models.TextField(blank=False, null=True) # Assuming it can be null based on your previous model
     publish_date = models.DateTimeField(default=timezone.now)
     genre = models.CharField(max_length=100, blank=True, null=True)
 
@@ -726,7 +748,7 @@ class Audiobook(models.Model):
             self.is_creator_book = True
             self.source = 'creator' # Ensure source is 'creator' if a creator is assigned
         elif self.source != 'creator': # If no creator and source is external, it's not a creator book
-             self.is_creator_book = False
+            self.is_creator_book = False
         # If no creator and source is 'creator' (e.g. default), it implies an issue or an external book placeholder being created
         # where creator should be explicitly set to None.
 
@@ -780,8 +802,9 @@ class Audiobook(models.Model):
                     return first_chapter.audio_file.url
             except Exception as e:
                 logger.error(f"Error checking existence or getting URL for {first_chapter.audio_file.name}: {e}")
-                pass
+                pass # Fall through to return None
         return None
+
 
     @property
     def first_chapter_title(self):
@@ -811,7 +834,7 @@ class Chapter(models.Model):
     tts_voice_id = models.CharField(
         max_length=50,
         choices=TTS_VOICE_CHOICES,
-        default=None,
+        default=None, # Explicitly None
         blank=True, null=True,
         help_text="Voice used if audio was generated by TTS."
     )
@@ -832,29 +855,32 @@ class Chapter(models.Model):
             try:
                 if hasattr(self, 'get_tts_voice_id_display') and self.tts_voice_id:
                     display_name = self.get_tts_voice_id_display()
-                    if display_name and str(display_name).lower() != 'none':
+                    if display_name and str(display_name).lower() != 'none': # Check against string 'none'
                         tts_info = f" (TTS: {display_name})"
-                    elif self.tts_voice_id:
-                        tts_info = f" (TTS: {self.tts_voice_id})"
-                elif self.tts_voice_id:
+                    elif self.tts_voice_id: # Fallback if display_name is None or 'None'
+                         tts_info = f" (TTS: {self.tts_voice_id})"
+                elif self.tts_voice_id: # Fallback if get_tts_voice_id_display doesn't exist
                     tts_info = f" (TTS: {self.tts_voice_id})"
-            except Exception:
+            except Exception: # Catch any error during display name retrieval
                 if self.tts_voice_id:
-                    tts_info = f" (TTS: {self.tts_voice_id} - Error displaying name)"
+                     tts_info = f" (TTS: {self.tts_voice_id} - Error displaying name)"
 
         return f"{self.chapter_order}: {self.chapter_name}{tts_info} ({self.audiobook.title})"
+
 
     def save(self, *args, **kwargs):
         """Ensures first chapter is preview eligible and sets tts_voice_id if not TTS."""
         if self.chapter_order == 1:
             self.is_preview_eligible = True
-        if not self.is_tts_generated:
+        if not self.is_tts_generated: # If not TTS, ensure tts_voice_id is None
             self.tts_voice_id = None
         super().save(*args, **kwargs)
 
     @property
     def duration_display(self):
         """Placeholder for chapter duration display."""
+        # This would ideally calculate duration from the audio_file if available
+        # For now, a placeholder:
         return "--:--"
 
 
@@ -871,7 +897,7 @@ class Review(models.Model):
     class Meta:
         db_table = 'REVIEWS'
         ordering = ['-created_at']
-        unique_together = ('audiobook', 'user')
+        unique_together = ('audiobook', 'user') # A user can review an audiobook only once
         verbose_name = "Audiobook Review"
         verbose_name_plural = "Audiobook Reviews"
 
@@ -887,16 +913,16 @@ class Subscription(models.Model):
     )
     STATUS_CHOICES = (
         ('active', 'Active'),
-        ('canceled', 'Canceled'),
-        ('expired', 'Expired'),
+        ('canceled', 'Canceled'), # User cancelled, but active until period end
+        ('expired', 'Expired'),   # Period ended and not renewed
         ('pending', 'Pending Payment'),
         ('failed', 'Payment Failed'),
-        ('past_due', 'Past Due')
+        ('past_due', 'Past Due') # Stripe specific, payment failed but retrying
     )
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription') # One user has one subscription
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES)
     start_date = models.DateTimeField()
-    end_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True, help_text="End of the current billing cycle. For 'canceled' status, this is when access ends.")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active', db_index=True)
 
     stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
@@ -911,31 +937,36 @@ class Subscription(models.Model):
         return f"{self.user.username} - {self.get_plan_display()} ({self.get_status_display()})"
 
     def is_active(self):
-        """Checks if the subscription is currently active."""
+        """Checks if the subscription is currently active and within its valid period."""
         return self.status == 'active' and (self.end_date is None or self.end_date >= timezone.now())
 
     def cancel(self):
         """Cancels the subscription. It remains active until end_date."""
-        if self.status == 'active':
+        if self.status == 'active': # Only cancel active subscriptions
             self.status = 'canceled'
+            # Note: The actual cancellation with Stripe (to stop future billing)
+            # should happen in a view/task that calls Stripe's API.
+            # This model method just updates the local status.
             self.save(update_fields=['status'])
+            # The end_date should already be set by Stripe webhook or upon creation.
 
     def update_status(self):
-        """Updates status to 'expired' if end_date is past."""
+        """Updates status to 'expired' if end_date is past and it was active/canceled."""
         now = timezone.now()
-        if self.status == 'active' and self.end_date and self.end_date < now:
+        if self.status in ['active', 'canceled'] and self.end_date and self.end_date < now:
             self.status = 'expired'
             self.save(update_fields=['status'])
-            if self.user.subscription_type == 'PR':
-                self.user.subscription_type = 'FR'
+            if self.user.subscription_type == 'PR': # If user was premium
+                self.user.subscription_type = 'FR' # Downgrade to Free
                 self.user.save(update_fields=['subscription_type'])
+
 
     @property
     def remaining_days(self):
-        """Calculates remaining days in the subscription."""
+        """Calculates remaining days in the subscription if active or canceled but not yet ended."""
         if self.status in ['active', 'canceled'] and self.end_date:
             remaining = self.end_date - timezone.now()
-            return max(0, remaining.days)
+            return max(0, remaining.days) # Return 0 if already past
         return 0
 
 
@@ -943,7 +974,7 @@ class AudiobookViewLog(models.Model):
     """Logs each view of an audiobook detail page."""
     view_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     audiobook = models.ForeignKey(Audiobook, on_delete=models.CASCADE, related_name='view_logs')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audiobook_views')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audiobook_views') # User can be anonymous
     viewed_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
@@ -952,8 +983,8 @@ class AudiobookViewLog(models.Model):
         verbose_name = "Audiobook View Log"
         verbose_name_plural = "Audiobook View Logs"
         indexes = [
-            models.Index(fields=['audiobook', 'viewed_at']),
-            models.Index(fields=['user', 'audiobook', 'viewed_at']),
+            models.Index(fields=['audiobook', 'viewed_at']), # For querying views of a specific audiobook
+            models.Index(fields=['user', 'audiobook', 'viewed_at']), # For user-specific view history
         ]
 
     def __str__(self):

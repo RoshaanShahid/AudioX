@@ -1,10 +1,14 @@
-# AudioXApp/decorators.py
+# AudioXApp/views/decorators.py
 
 from functools import wraps
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.urls import reverse
-from ..models import Admin
+from django.contrib.auth.decorators import login_required # Added for creator_required
+from ..models import Admin, Creator # Added Creator model import
+import logging # Added for creator_required
+
+logger = logging.getLogger(__name__) # Added for creator_required
 
 def admin_role_required(*roles):
     """
@@ -45,10 +49,8 @@ def admin_role_required(*roles):
                 request.session.flush() # Clear potentially invalid session
                 return redirect(reverse('AudioXApp:adminlogin'))
             except Exception as e:
-                # Catch any other unexpected errors during admin check or view execution
+                logger.error(f"Error in admin_role_required decorator: {type(e).__name__} - {e}", exc_info=True)
                 messages.error(request, "A server error occurred while trying to load the page. Please try again or contact support.")
-                # Optionally flush session on unexpected errors, depending on desired security level
-                # request.session.flush()
                 return redirect(reverse('AudioXApp:adminlogin'))
 
         return _wrapped_view
@@ -72,8 +74,8 @@ def admin_login_required(view_func):
 
         try:
             # Fetch the active admin user and attach to request
-            admin_user = Admin.objects.get(pk=admin_id, is_active=True)
-            request.admin_user = admin_user
+            admin_user_obj = Admin.objects.get(pk=admin_id, is_active=True) # Renamed to avoid conflict
+            request.admin_user = admin_user_obj
             return view_func(request, *args, **kwargs)
 
         except Admin.DoesNotExist:
@@ -81,11 +83,44 @@ def admin_login_required(view_func):
             request.session.flush()
             messages.error(request, "Invalid admin session. Please log in again.")
             return redirect(reverse('AudioXApp:adminlogin'))
-        except Exception:
-            # Catch any other unexpected errors
+        except Exception as e:
+            logger.error(f"Error in admin_login_required decorator: {type(e).__name__} - {e}", exc_info=True)
             messages.error(request, "An error occurred verifying your admin session.")
-            # Optionally flush session
-            # request.session.flush()
             return redirect(reverse('AudioXApp:adminlogin'))
 
+    return _wrapped_view
+
+
+# --- ADDED creator_required decorator ---
+def creator_required(view_func):
+    @login_required # Ensure the user is logged in first
+    @wraps(view_func) # Preserve metadata of the original view function
+    def _wrapped_view(request, *args, **kwargs):
+        try:
+            # Attempt to fetch the creator profile associated with the logged-in user
+            # Assuming Creator model has a OneToOneField to User named 'user'
+            # and user_id is the primary key for User model.
+            creator = Creator.objects.select_related('user').get(user=request.user)
+            
+            if creator.is_banned:
+                messages.error(request, "Your creator account is banned and you cannot access this page.")
+                return redirect('AudioXApp:home') # Or a more specific "banned" page
+            
+            if creator.verification_status != 'approved':
+                messages.warning(request, "Your creator profile is not yet approved. Access denied.")
+                # Redirect to a page that explains their status, or home
+                return redirect('AudioXApp:creator_welcome') # Or 'AudioXApp:home'
+            
+            # If all checks pass, attach the creator object to the request and call the original view
+            request.creator = creator
+            return view_func(request, *args, **kwargs)
+
+        except Creator.DoesNotExist:
+            messages.warning(request, "You do not have an active creator profile. Please apply or wait for approval.")
+            return redirect('AudioXApp:creator_welcome') # Redirect to apply or welcome page
+        except Exception as e:
+            user_identifier = request.user.username if hasattr(request.user, 'username') else "Unknown User"
+            logger.error(f"Error in creator_required decorator for user {user_identifier}: {type(e).__name__} - {e}", exc_info=True)
+            messages.error(request, "An error occurred while verifying your creator status. Please try again later.")
+            return redirect('AudioXApp:home')
     return _wrapped_view
