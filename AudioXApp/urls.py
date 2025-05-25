@@ -1,15 +1,19 @@
 # AudioXApp/urls.py
-from django.urls import path, include
+from django.urls import path, include # Ensure include is imported if you use it elsewhere
 from .views import (
     content_views, 
-    audio_views
+    audio_views # Assuming audio_views is still relevant
 )
 # Import the admin view modules from the admin_views subdirectory
 from .views.admin_views import (
     admin_auth_views,
     admin_dashboard_views,
     admin_creator_manage_views
+    # Add other admin sub-modules if they exist and are used
 )
+
+from .views import library_views # Import the new library views
+
 # Import the new creator view modules from the creator_views subdirectory
 from .views.creator_views import (
     dashboard_views as creator_dashboard_views,
@@ -18,6 +22,7 @@ from .views.creator_views import (
     earning_views as creator_earning_views,
     creator_tts_views,
     admin_actions_views as creator_admin_actions_views
+    # Add other creator sub-modules if they exist and are used
 )
 # Import the new user and auth view modules from the user_views subdirectory
 from .views.user_views import (
@@ -27,7 +32,11 @@ from .views.user_views import (
     subscription_views,
     payment_processing_views,
     account_activity_views
+    # Add other user sub-modules if they exist and are used
 )
+# Import the new history views
+from .views import history_views # Assuming history_views.py is in AudioXApp/views/
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -49,20 +58,27 @@ urlpatterns = [
     path("fetch_cover_image/", content_views.fetch_cover_image, name="fetch_cover_image"),
     path('audiobook/<slug:audiobook_slug>/', content_views.audiobook_detail, name='audiobook_detail'),
     path('audiobook/<slug:audiobook_slug>/add_review/', content_views.add_review, name='add_review'),
-    path('urdu/', content_views.urdu_page, name='urdu_page'),
-    path('punjabi/', content_views.punjabi_page, name='punjabi_page'),
-    path('sindhi/', content_views.sindhi_page, name='sindhi_page'),
+    path('urdu/', content_views.urdu_page, name='urdu_page'), 
+    path('punjabi/', content_views.punjabi_page, name='punjabi_page'), 
+    path('sindhi/', content_views.sindhi_page, name='sindhi_page'), 
+    
+    # Genre pages
     path('genre/fiction/', content_views.genre_fiction, name='genre_fiction'),
     path('genre/mystery/', content_views.genre_mystery, name='genre_mystery'),
     path('genre/thriller/', content_views.genre_thriller, name='genre_thriller'),
-    path('genre/scifi/', content_views.genre_scifi, name='genre_scifi'),
+    path('genre/science-fiction/', content_views.genre_scifi, name='genre_scifi'), 
     path('genre/fantasy/', content_views.genre_fantasy, name='genre_fantasy'),
+    path('genre/romance/', content_views.genre_romance, name='genre_romance'), 
     path('genre/biography/', content_views.genre_biography, name='genre_biography'),
-    path('genre/romance/', content_views.genre_romance, name='genre_romance'),
     path('genre/history/', content_views.genre_history, name='genre_history'),
-    path('genre/selfhelp/', content_views.genre_selfhelp, name='genre_selfhelp'),
+    path('genre/self-help/', content_views.genre_selfhelp, name='genre_selfhelp'), 
     path('genre/business/', content_views.genre_business, name='genre_business'),
-    path('generate-audio/', audio_views.generate_audio_from_document,  name='generate_audio_from_document' ),
+
+    # Trending Page URL
+    path('trending/', content_views.trending_audiobooks_view, name='trending_audiobooks'),
+    
+    # Audio Generation (if still used)
+    path('generate-audio/', audio_views.generate_audio_from_document, name='generate_audio_from_document' ),
 
     # --- Auth Views (now from user_views.authentication_views) ---
     path('logout/', authentication_views.logout_view, name='logout'),
@@ -93,6 +109,15 @@ urlpatterns = [
     path('billing-history/', account_activity_views.billing_history, name='billing_history'),
     path('my-downloads/', account_activity_views.my_downloads, name='my_downloads'),
     path('my-library/', account_activity_views.my_library, name='my_library'),
+
+    # --- Listening History ---
+    path('my-listening-history/', history_views.listening_history_page, name='listening_history_page'),
+    path('ajax/update-audio-progress/', history_views.update_listening_progress, name='update_listening_progress'),
+
+    
+    # --- User Library URLs ---
+    path('my-library/', library_views.my_library_page, name='my_library_page'), # New page for displaying library
+    path('ajax/toggle-library-item/', library_views.toggle_library_item, name='toggle_library_item'), # AJAX endpoint
 
     # --- Stripe Payment URLs (now from user_views.payment_processing_views) ---
     path('payment/create-checkout-session/', payment_processing_views.create_checkout_session, name='create_checkout_session'),

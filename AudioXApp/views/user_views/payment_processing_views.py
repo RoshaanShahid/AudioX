@@ -5,6 +5,8 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import datetime # Keep for fromtimestamp
 import logging
 import stripe
+from django.db import IntegrityError
+
 
 from django.shortcuts import redirect
 from django.http import JsonResponse
@@ -352,7 +354,7 @@ def stripe_webhook(request):
                                 else: price_paid = Decimal(default_price_str)
                             except (InvalidOperation, TypeError): price_paid = Decimal(default_price_str)
 
-                            user_locked.coins = F('coins') + coins_to_grant
+                            user_locked.coins = ('coins') + coins_to_grant
                             user_locked.save(update_fields=['coins'])
                             user_locked.refresh_from_db(fields=['coins']) # Get the updated value for logging
 
@@ -402,8 +404,8 @@ def stripe_webhook(request):
                             # Update creator earnings and audiobook sales stats if it's a creator's book
                             if creator and creator.is_approved: # Check if creator exists and is approved
                                 creator_locked = Creator.objects.select_for_update().get(pk=creator.pk)
-                                creator_locked.total_earning = F('total_earning') + amount_paid_pkr # Gross amount for creator's total
-                                creator_locked.available_balance = F('available_balance') + creator_share_amount # Net for withdrawal
+                                creator_locked.total_earning = ('total_earning') + amount_paid_pkr # Gross amount for creator's total
+                                creator_locked.available_balance = ('available_balance') + creator_share_amount # Net for withdrawal
                                 creator_locked.save(update_fields=['total_earning', 'available_balance'])
 
                                 CreatorEarning.objects.create(
@@ -415,8 +417,8 @@ def stripe_webhook(request):
                             
                             # Update audiobook's own sales stats
                             audiobook_locked = Audiobook.objects.select_for_update().get(pk=audiobook.pk)
-                            audiobook_locked.total_sales = F('total_sales') + 1
-                            audiobook_locked.total_revenue_generated = F('total_revenue_generated') + amount_paid_pkr
+                            audiobook_locked.total_sales = ('total_sales') + 1
+                            audiobook_locked.total_revenue_generated = ('total_revenue_generated') + amount_paid_pkr
                             audiobook_locked.save(update_fields=['total_sales', 'total_revenue_generated'])
                             logger.info(f"Audiobook '{audiobook.title}' purchased by user {user.username}. Stripe session {session.id}")
 

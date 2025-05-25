@@ -10,8 +10,7 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://js.stripe.com/v3/"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <script src="https://js.stripe.com/v3/"></script> <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -156,6 +155,11 @@
                                     <i class="fas fa-cog w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> Manage Subscription
                                 </a>
                             {% endif %}
+
+                            <a href="{% url 'AudioXApp:billing_history' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
+                                <i class="fas fa-history w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> History
+                            </a>
+
                             <a href="{% url 'AudioXApp:buycoins' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
                                 <i class="fas fa-coins w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> Buy Coins
                             </a>
@@ -938,12 +942,12 @@
                                     '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
 
                 const popupHtml = `<div class="space-y-4">
-                                        <p class="text-gray-700"><i class="fas fa-info-circle mr-1.5 text-[#091e65]"></i>Your previous application requires attention for the following reason:</p>
-                                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md shadow-sm" role="alert">
-                                            <p class="font-medium">${reason}</p>
-                                        </div>
-                                        <p class="text-sm text-gray-600">${attemptsText}</p>
-                                    </div>`;
+                                            <p class="text-gray-700"><i class="fas fa-info-circle mr-1.5 text-[#091e65]"></i>Your previous application requires attention for the following reason:</p>
+                                            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md shadow-sm" role="alert">
+                                                <p class="font-medium">${reason}</p>
+                                            </div>
+                                            <p class="text-sm text-gray-600">${attemptsText}</p>
+                                        </div>`;
 
                 SwalStyled.fire({
                     title: 'Application Status',
@@ -971,12 +975,12 @@
 
                 const reason = djangoContext.banReason || 'No specific reason provided by the administrator.';
                 const banPopupHtml = `<div class="space-y-4">
-                                        <p class="text-gray-700"><i class="fas fa-exclamation-triangle mr-1.5 text-red-600"></i> Your Creator Profile is currently blocked for the following reason:</p>
-                                        <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 rounded-md shadow-sm" role="alert">
-                                            <p class="font-medium">${reason}</p>
-                                        </div>
-                                        <p class="text-sm text-gray-600">If you believe this is an error or wish to appeal this decision, please contact our support team.</p>
-                                    </div>`;
+                                            <p class="text-gray-700"><i class="fas fa-exclamation-triangle mr-1.5 text-red-600"></i> Your Creator Profile is currently blocked for the following reason:</p>
+                                            <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 rounded-md shadow-sm" role="alert">
+                                                <p class="font-medium">${reason}</p>
+                                            </div>
+                                            <p class="text-sm text-gray-600">If you believe this is an error or wish to appeal this decision, please contact our support team.</p>
+                                        </div>`;
                 SwalStyled.fire({
                     title: 'Creator Profile Blocked',
                     html: banPopupHtml,
@@ -1021,11 +1025,11 @@
 
         if (djangoContext && djangoContext.showWelcomePopup) {
             const welcomeHtml = `<div class="text-center">
-                                    <div class="text-6xl mb-4 text-teal-500 animate-bounce">🎉</div>
-                                    <h2 class="text-2xl font-bold text-[#091e65] mb-3">Welcome Aboard!</h2>
-                                    <p class="text-gray-700 mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p>
-                                    <p class="text-gray-700 px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p>
-                                </div>`;
+                                        <div class="text-6xl mb-4 text-teal-500 animate-bounce">🎉</div>
+                                        <h2 class="text-2xl font-bold text-[#091e65] mb-3">Welcome Aboard!</h2>
+                                        <p class="text-gray-700 mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p>
+                                        <p class="text-gray-700 px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p>
+                                    </div>`;
             SwalStyled.fire({
                 html: welcomeHtml,
                 showConfirmButton: true,
@@ -1112,6 +1116,5 @@
     });
     </script>
 
-    {% block javascript_extra %}{% endblock %}
-</body>
+    {% block javascript_extra %}{% endblock %} </body>
 </html>

@@ -1,0 +1,149 @@
+{% extends "homepage.html" %}
+{% load static %}
+{% load humanize %}
+{% load mathfilters %}
+
+{% block title %}Trending Audiobooks - AudioX{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+{# Assuming Font Awesome is already loaded in homepage.html or via another mechanism #}
+<style>
+  /* For Webkit browsers to style scrollbars if desired, optional */
+  /* ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background-color: #091e65; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background-color: #0b2a82; }
+  ::-webkit-scrollbar-track { background-color: #e2e8f0; } */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-slate-100 min-h-screen font-sans antialiased pb-20">
+
+    {# Page Header - Using the primary color #}
+    <div class="bg-[#091e65] text-white pt-20 pb-24 md:pt-28 md:pb-32 shadow-xl">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4">
+                <i class="fas fa-stream mr-3 text-sky-400"></i>Trending Audiobooks
+            </h1>
+            <p class="mt-3 text-lg md:text-xl text-slate-300 max-w-3xl mx-auto">
+                Explore the most captivating and popular audiobooks currently making waves on AudioX.
+            </p>
+        </div>
+    </div>
+
+    {# --- Main Content Area for Trending Audiobooks --- #}
+    <div class="container mx-auto px-4 mt-12 md:mt-16">
+
+        {% if error_message and not trending_audiobooks %}
+            <div class="text-center text-slate-700 bg-amber-50 p-8 rounded-xl shadow-lg border border-amber-200 max-w-2xl mx-auto">
+                <i class="fas fa-exclamation-triangle text-4xl text-amber-500 mb-4"></i>
+                <p class="text-xl font-semibold">{{ error_message }}</p>
+                <p class="mt-2 text-slate-600">Please try again later or contact support if the issue persists.</p>
+            </div>
+        {% endif %}
+
+        {% if trending_audiobooks %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-8 md:gap-y-10">
+                {% for book in trending_audiobooks %}
+                    <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}"
+                       class="block group relative transition-all duration-300 ease-in-out transform hover:-translate-y-2">
+                        <div class="bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden h-full flex flex-col border border-transparent hover:border-[#091e65]/30">
+                            <div class="relative aspect-[3/4] w-full">
+                                {% if book.cover_image and book.cover_image.url %}
+                                    <img src="{{ book.cover_image.url }}"
+                                         alt="{{ book.title }} Cover"
+                                         class="w-full h-full object-cover"
+                                         loading="lazy"
+                                         onerror="this.onerror=null; this.src='https://placehold.co/300x400/e2e8f0/64748b?text=Cover+Error&font=sans-serif';">
+                                {% else %}
+                                    <div class="w-full h-full bg-slate-200 flex items-center justify-center">
+                                        <img src="https://placehold.co/300x400/e2e8f0/64748b?text={{ book.title|slice:':15'|urlencode }}&font=sans-serif"
+                                             alt="{{ book.title }} Cover"
+                                             class="w-full h-full object-cover"
+                                             loading="lazy">
+                                    </div>
+                                {% endif %}
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/70">
+                                    <button type="button" title="Play Audiobook Preview" class="bg-[#091e65] text-white rounded-full p-4 shadow-lg transition-transform duration-200 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-sky-400/50">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-8 h-8">
+                                            <path d="M8 5.14v14l11-7-11-7Z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="absolute top-2.5 right-2.5 bg-[#091e65]/90 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-md flex items-center backdrop-blur-sm">
+                                    <i class="fas fa-headphones-alt mr-1.5 text-sky-300"></i> {{ book.total_views|intcomma }}
+                                </div>
+                                {% if book.is_new %} {# Example: You might add an 'is_new' attribute to your model #}
+                                <div class="absolute top-2.5 left-2.5 bg-sky-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow">
+                                    NEW
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="p-4 sm:p-5 flex-grow flex flex-col">
+                                <h3 class="font-semibold text-base md:text-lg text-slate-800 group-hover:text-[#091e65] transition-colors duration-200 line-clamp-2 mb-1" title="{{ book.title }}">{{ book.title }}</h3>
+                                <p class="text-xs sm:text-sm text-slate-600 line-clamp-1 mb-2" title="{{ book.author|default:'Unknown Author' }}">
+                                    By: {{ book.author|default:"Unknown Author" }}
+                                </p>
+
+                                {% if book.is_creator_book and book.creator %}
+                                    <p class="text-xs text-sky-700 block mb-2 line-clamp-1">Narrator: {{ book.creator.creator_name }}</p>
+                                {% elif book.source != 'creator' %}
+                                     <p class="text-xs text-slate-500 block mb-2 line-clamp-1">Source: {{ book.get_source_display|default:book.source|capfirst }}</p>
+                                {% else %}
+                                    <div class="mb-2 h-[18px]"></div> {# Placeholder for consistent height if no narrator/source #}
+                                {% endif %}
+
+                                <div class="mt-auto pt-2 flex justify-between items-center text-xs text-slate-500">
+                                    <div class="flex items-center space-x-1 star-rating-card">
+                                        {% with rating=book.average_rating %}
+                                            {% if rating is not None %}
+                                                {% with full_stars=rating|floatformat:0|add:"0" decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
+                                                {% with decimal_part_int=decimal_part_str|add:"0" %}
+                                                    {% for i in ""|center:full_stars %}<i class="fas fa-star text-amber-400"></i>{% endfor %}
+                                                    {% if decimal_part_int >= 3 and decimal_part_int <= 7 %} {# Covers .3 to .7 for half star #}
+                                                        <i class="fas fa-star-half-alt text-amber-400"></i>
+                                                        {% with current_stars_display=full_stars|add:1 empty_stars=5|sub:current_stars_display %}
+                                                            {% for i in ""|center:empty_stars %}<i class="far fa-star text-slate-300"></i>{% endfor %}
+                                                        {% endwith %}
+                                                    {% elif decimal_part_int > 7 %} {# Rounds up to full star if .8 or .9 #}
+                                                         <i class="fas fa-star text-amber-400"></i> {# This star completes the rounded up one #}
+                                                         {% with current_stars_display=full_stars|add:1 empty_stars=5|sub:current_stars_display %}
+                                                            {% for i in ""|center:empty_stars %}<i class="far fa-star text-slate-300"></i>{% endfor %}
+                                                        {% endwith %}
+                                                    {% else %} {# decimal_part_int < 3, so no half star, just fill empty #}
+                                                        {% with empty_stars=5|sub:full_stars %}
+                                                            {% for i in ""|center:empty_stars %}<i class="far fa-star text-slate-300"></i>{% endfor %}
+                                                        {% endwith %}
+                                                    {% endif %}
+                                                {% endwith %}{# end decimal_part_int #}
+                                                {% endwith %}{# end full_stars & decimal_part_str #}
+                                                <span class="font-semibold text-slate-700 ml-1.5">{{ rating|floatformat:1 }}</span>
+                                            {% else %}
+                                                {% for i in "12345" %}<i class="far fa-star text-slate-300"></i>{% endfor %}
+                                                <span class="text-slate-400 italic ml-1.5">No ratings</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    {% if book.is_paid %}
+                                        <span class="font-bold text-sm text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">PKR {{ book.price|floatformat:0 }}</span>
+                                    {% else %}
+                                        <span class="font-bold text-sm text-[#091e65] bg-sky-100 px-2.5 py-0.5 rounded-md">Free</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% elif not error_message %}
+            <div class="text-center text-slate-600 py-16 max-w-xl mx-auto bg-white p-10 rounded-xl shadow-lg">
+                <i class="fas fa-wind text-5xl text-sky-500 mb-6"></i>
+                <p class="text-2xl font-semibold text-slate-700 mb-2">No Trending Audiobooks Yet</p>
+                <p class="mt-1 text-slate-500">It seems a bit quiet here right now. We're constantly updating our charts, so please check back soon to discover what's popular!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

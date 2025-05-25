@@ -4,7 +4,6 @@ from django import forms
 LANGUAGE_CHOICES = [
     ('en', 'English'),
     ('ur', 'Urdu'),
-    # Add other languages if your TTS and OCR support them
 ]
 
 # Simplified base choices. Display names will be handled by JavaScript in the template.

@@ -7,9 +7,12 @@ import mimetypes
 import logging
 import asyncio
 import io
+from datetime import timedelta
+import datetime
+from typing import Optional # Keep this import
 
 # For document processing
-import fitz  # PyMuPDF for PDF text extraction
+import fitz    # PyMuPDF for PDF text extraction
 try:
     import docx # python-docx for .docx text extraction
 except ImportError:
@@ -95,7 +98,7 @@ LANGUAGE_GENRE_MAPPING = {
 }
 
 # --- Helper functions for text extraction ---
-def extract_text_from_docx(file_content_bytes: bytes) -> str | None:
+def extract_text_from_docx(file_content_bytes: bytes) -> Optional[str]:
     if docx is None:
         logger.error("python-docx library is not installed. Cannot process .docx files.")
         return None
@@ -110,7 +113,7 @@ def extract_text_from_docx(file_content_bytes: bytes) -> str | None:
         logger.error(f"Error extracting text from DOCX: {e}", exc_info=True)
         return None
 
-def extract_text_from_pdf(pdf_content_bytes: bytes) -> str | None:
+def extract_text_from_pdf(pdf_content_bytes: bytes) -> Optional[str]:
     text = ""
     try:
         doc = fitz.open(stream=pdf_content_bytes, filetype="pdf")
@@ -191,7 +194,7 @@ def generate_tts_preview_audio(request):
             for old_file_name in os.listdir(temp_tts_full_dir_path):
                 old_filepath = os.path.join(temp_tts_full_dir_path, old_file_name)
                 if os.path.isfile(old_filepath):
-                    file_mod_time = datetime.fromtimestamp(os.path.getmtime(old_filepath))
+                    file_mod_time = datetime.datetime.fromtimestamp(os.path.getmtime(old_filepath)) # Use datetime.datetime
                     file_mod_time_aware = timezone.make_aware(file_mod_time, timezone.get_default_timezone()) if timezone.is_naive(file_mod_time) else file_mod_time
                     if file_mod_time_aware < (timezone.now() - timedelta(hours=getattr(settings, 'TEMP_FILE_CLEANUP_HOURS', 2))):
                         os.remove(old_filepath)
@@ -242,7 +245,7 @@ def generate_document_tts_preview_audio(request):
         if not (file_mime_type in allowed_doc_mime_types or doc_extension in allowed_doc_extensions):
             return JsonResponse({'status': 'error', 'message': 'Invalid document type. Allowed: PDF, DOC, DOCX.'}, status=400)
         
-        if doc_extension == '.doc' and docx is None: # Check if python-docx is available for .doc
+        if doc_extension == '.doc' and docx is None:
              return JsonResponse({'status': 'error', 'message': '.doc files are not supported for preview if the server cannot process them. Please use .docx or PDF.'}, status=400)
 
         if not audiobook_language_selected:
@@ -267,8 +270,8 @@ def generate_document_tts_preview_audio(request):
             extracted_text = extract_text_from_pdf(doc_content_bytes)
         elif doc_extension == '.docx' and docx:
             extracted_text = extract_text_from_docx(doc_content_bytes)
-        elif doc_extension == '.doc' and docx: # Attempt .doc if python-docx is present
-            extracted_text = extract_text_from_docx(doc_content_bytes) # python-docx can sometimes read .doc
+        elif doc_extension == '.doc' and docx:
+            extracted_text = extract_text_from_docx(doc_content_bytes)
         
         if not extracted_text or len(extracted_text.strip()) < 10:
             msg = "Could not extract sufficient text from the document. It might be empty, image-based, or an unsupported format."

@@ -1,0 +1,85 @@
+{% extends "user/myprofile.html" %} {# OR your relevant base template for user sections #}
+{% load static %}
+
+{% block title %}{{ page_title|default:"Listening History" }} - AudioX{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-8">{{ page_title|default:"My Listening History" }}</h1>
+
+    {% if history_items %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for item in history_items %}
+            <div class="bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden flex flex-col transform transition-all duration-300 ease-in-out hover:scale-105">
+                <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}" class="block">
+                    {% if item.audiobook.cover_image %}
+                        <img src="{{ item.audiobook.cover_image.url }}" alt="{{ item.audiobook.title }} Cover" class="w-full h-56 object-cover">
+                    {% else %}
+                        <div class="w-full h-56 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <svg class="w-16 h-16 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3.5a1.5 1.5 0 011.5 1.5v0.5a1.5 1.5 0 01-3 0V5A1.5 1.5 0 0110 3.5zM5.5 7A1.5 1.5 0 004 8.5v3A1.5 1.5 0 005.5 13h9a1.5 1.5 0 001.5-1.5v-3A1.5 1.5 0 0014.5 7h-9zM5 8.5a.5.5 0 01.5-.5h9a.5.5 0 01.5.5v3a.5.5 0 01-.5.5h-9a.5.5 0 01-.5-.5v-3z"></path></svg>
+                        </div>
+                    {% endif %}
+                </a>
+                <div class="p-4 flex-grow flex flex-col">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate" title="{{ item.audiobook.title }}">
+                        <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}" class="hover:text-blue-600 dark:hover:text-blue-400">
+                            {{ item.audiobook.title }}
+                        </a>
+                    </h2>
+                    {% if item.audiobook.author %}
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">By: {{ item.audiobook.author }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mb-3">Last listened: {{ item.last_listened_at|date:"M d, Y, P" }}</p>
+
+                    {% if item.audiobook.duration_in_seconds > 0 %}
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-1 relative">
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ item.progress_percentage }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mb-2">
+                        {{ item.progress_percentage }}% complete
+                        {% if item.current_chapter %}
+                            (Chapter: <span class="truncate" title="{{item.current_chapter.chapter_name}}">{{ item.current_chapter.chapter_name|truncatechars:20 }}</span>)
+                        {% endif %}
+                    </p>
+                    {% else %}
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mb-2">
+                        Progress: {{ item.progress_seconds }}s
+                        {% if item.current_chapter %}
+                            (Chapter: {{ item.current_chapter.chapter_name|truncatechars:20 }})
+                        {% endif %}
+                    </p>
+                    {% endif %}
+
+                    <div class="mt-auto pt-2"> {# Pushes button to the bottom if content above is short #}
+                        <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}"
+                           class="w-full block text-center bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 text-sm">
+                            {% if item.progress_seconds > 0 and item.progress_percentage < 100 %}
+                                Continue Listening
+                            {% elif item.progress_percentage >= 100 %}
+                                Listen Again
+                            {% else %}
+                                Start Listening
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+            <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">No Listening History Yet</h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start listening to audiobooks to see your history here.</p>
+            <div class="mt-6">
+              <a href="{% url 'AudioXApp:home' %}" {# Corrected URL name #}
+                 class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Browse Audiobooks
+              </a>
+            </div>
+          </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -11,7 +11,7 @@ from django.utils.text import slugify
 from decimal import Decimal
 import os
 import uuid
-from django.conf import settings
+from django.conf import settings # Ensure settings is imported
 from datetime import timedelta
 from django.db.models import Avg, Sum, F, Prefetch, Q
 from django.db import transaction
@@ -21,6 +21,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # --- Helper Functions ---
+# ... (your existing helper functions: creator_cnic_path, creator_profile_pic_path) ...
 def creator_cnic_path(instance, filename):
     """Generates upload path for creator CNIC images."""
     user_id = None
@@ -34,7 +35,6 @@ def creator_cnic_path(instance, filename):
         unique_filename = f'{uuid.uuid4()}{extension}'
         path_prefix = 'creator_application_logs' if isinstance(instance, CreatorApplicationLog) else 'creator_verification'
         return f'{path_prefix}/{user_id}/{unique_filename}'
-
     return f'creator_verification/unknown/{uuid.uuid4()}{os.path.splitext(filename)[1]}'
 
 def creator_profile_pic_path(instance, filename):
@@ -44,7 +44,9 @@ def creator_profile_pic_path(instance, filename):
     unique_filename = f'{uuid.uuid4()}{extension}'
     return f'creator_profile_pics/{user_id}/{unique_filename}'
 
+
 # --- User and Admin Models ---
+# ... (your existing User, Admin, Transaction, Creator, Audiobook, Chapter, Review, Subscription, AudiobookViewLog, ListeningHistory models) ...
 
 class UserManager(BaseUserManager):
     """Custom manager for the User model."""
@@ -109,6 +111,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         through='AudiobookPurchase',
         related_name='purchased_by_users'
     )
+    # For My Library feature
+    library_audiobooks = models.ManyToManyField(
+        'Audiobook',
+        through='UserLibraryItem',
+        related_name='saved_in_libraries',
+        blank=True
+    )
+
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'full_name']
@@ -137,6 +147,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     def has_purchased_audiobook(self, audiobook):
         """Checks if the user has a completed purchase for an audiobook."""
         return AudiobookPurchase.objects.filter(user=self, audiobook=audiobook, status='COMPLETED').exists()
+
+    def is_in_library(self, audiobook):
+        """Checks if an audiobook is in the user's library."""
+        return self.library_audiobooks.filter(pk=audiobook.pk).exists()
 
 
 class AdminManager(BaseUserManager):
@@ -233,8 +247,6 @@ class Admin(models.Model):
         verbose_name = "Custom Administrator"
         verbose_name_plural = "Custom Administrators"
 
-# --- Transaction and Earning Models ---
-# ... (CoinTransaction, AudiobookPurchase, CreatorEarning models as provided)
 class CoinTransaction(models.Model):
     """Records transactions related to user coins."""
     TRANSACTION_TYPES = (
@@ -351,8 +363,6 @@ class CreatorEarning(models.Model):
             self.audiobook_title_at_transaction = self.audiobook.title
         super().save(*args, **kwargs)
 
-# --- Creator Models ---
-
 class Creator(models.Model):
     """Represents a Creator user with verification and earning details."""
     VERIFICATION_STATUS_CHOICES = (
@@ -394,7 +404,6 @@ class Creator(models.Model):
     last_withdrawal_request_date = models.DateTimeField(null=True, blank=True, help_text="Timestamp of the last non-cancelled withdrawal request.")
     profile_pic_updated_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp of the last profile picture update.")
 
-
     class Meta:
         db_table = "CREATORS"
 
@@ -416,7 +425,7 @@ class Creator(models.Model):
             self.last_application_date.month == now.month):
             return self.application_attempts_current_month
         else:
-            return 0 # Reset to 0 if last application was not in the current month
+            return 0
 
     def can_reapply(self):
         """Checks if the creator is eligible to reapply."""
@@ -425,12 +434,12 @@ class Creator(models.Model):
         if self.verification_status == 'rejected':
             attempts_this_month = self.get_attempts_this_month()
             return attempts_this_month < getattr(settings, 'MAX_CREATOR_APPLICATION_ATTEMPTS', 3)
-        return True # Should not be reached if status is not rejected, banned, approved, or pending
+        return True
 
     def can_request_withdrawal(self):
         """Checks if the creator can currently request a withdrawal."""
         has_pending_or_processing_request = self.withdrawal_requests.filter(
-            status__in=['pending', 'processing', 'approved'] # 'approved' means admin approved, but not yet processed by finance
+            status__in=['pending', 'processing', 'approved']
         ).exists()
 
         if has_pending_or_processing_request:
@@ -445,25 +454,16 @@ class Creator(models.Model):
         return True, ""
 
     def get_status_for_active_page(self):
-        """
-        Determines the status string to be used for setting the 'active_page'
-        in the admin creator detail view. This helps highlight the correct
-        sidebar link (e.g., Approved, Pending, Banned, Rejected).
-        """
         if self.is_banned:
-            return 'banned' # Corresponds to 'manage_creators_banned'
+            return 'banned'
         elif self.verification_status == 'approved':
-            # If approved and not banned, it falls under the general 'approved' list
-            return 'approved' # Corresponds to 'manage_creators_approved'
+            return 'approved'
         elif self.verification_status == 'pending':
-            return 'pending' # Corresponds to 'manage_creators_pending'
+            return 'pending'
         elif self.verification_status == 'rejected':
-            # If rejected and not banned, it falls under 'rejected' list
-            return 'rejected' # Corresponds to 'manage_creators_rejected'
-        return 'all' # Fallback, should ideally map to 'manage_creators_all'
+            return 'rejected'
+        return 'all'
 
-# ... (CreatorApplicationLog, WithdrawalAccount, WithdrawalRequest models as provided)
-# ... (Audiobook, Chapter, Review, Subscription, AudiobookViewLog models as provided)
 
 class CreatorApplicationLog(models.Model):
     """Logs each creator application submission."""
@@ -548,18 +548,17 @@ class WithdrawalAccount(models.Model):
             except ValidationError as e:
                 raise ValidationError({'account_identifier': e.messages})
         elif self.account_type in ['jazzcash', 'easypaisa', 'nayapay', 'upaisa']:
-            self.bank_name = None # Ensure bank_name is None for mobile accounts
+            self.bank_name = None
             try:
                 self.mobile_account_validator(self.account_identifier)
             except ValidationError as e:
                 raise ValidationError({'account_identifier': e.messages})
-        else: # Should not happen with choices, but good for safety
+        else:
             self.bank_name = None
-
 
     def save(self, *args, **kwargs):
         """Ensures only one primary account and calls clean before saving."""
-        self.full_clean() # Call full_clean to run validators
+        self.full_clean()
         if self.is_primary:
             WithdrawalAccount.objects.filter(creator=self.creator, is_primary=True).exclude(pk=self.pk).update(is_primary=False)
         super().save(*args, **kwargs)
@@ -607,7 +606,7 @@ class WithdrawalRequest(models.Model):
 
     def reject(self, admin_user, reason=""):
         """Rejects the withdrawal request and returns amount to creator balance."""
-        if self.status in ['pending', 'approved']: # Can reject if pending or already admin-approved but not yet processing
+        if self.status in ['pending', 'approved']:
             original_amount = self.amount
             self.status = 'rejected'
             self.processed_by = admin_user
@@ -624,7 +623,6 @@ class WithdrawalRequest(models.Model):
             except Exception as e:
                 logger.error(f"ERROR: Failed to save admin rejection or return amount PKR {original_amount} to creator {self.creator.creator_name} for withdrawal {self.request_id}: {e}")
 
-
     def process(self, admin_user, reference=""):
         """Marks the withdrawal request as processing."""
         if self.status == 'approved':
@@ -637,7 +635,7 @@ class WithdrawalRequest(models.Model):
 
     def complete(self, admin_user, reference=""):
         """Marks the withdrawal request as completed."""
-        if self.status == 'processing': # Should only complete if it was in processing
+        if self.status == 'processing':
             self.status = 'completed'
             self.processed_date = timezone.now()
             self.processed_by = admin_user
@@ -649,10 +647,9 @@ class WithdrawalRequest(models.Model):
                 self.withdrawal_account.last_used_at = self.processed_date
                 self.withdrawal_account.save(update_fields=['last_used_at'])
 
-
     def fail(self, admin_user, reason=""):
         """Marks the withdrawal request as failed and returns amount to creator balance."""
-        if self.status in ['processing', 'approved']: # Can fail if it was processing or approved but not yet completed
+        if self.status in ['processing', 'approved']:
             original_amount = self.amount
             self.status = 'failed'
             self.processed_date = timezone.now()
@@ -669,17 +666,15 @@ class WithdrawalRequest(models.Model):
             except Exception as e:
                 logger.error(f"ERROR: Failed to save failure or return amount PKR {original_amount} to creator {self.creator.creator_name} for withdrawal {self.request_id} after failure: {e}")
 
-# --- Audiobook and Content Models ---
-# ... (Audiobook, Chapter, Review, Subscription, AudiobookViewLog models as provided)
+
 class Audiobook(models.Model):
     """Represents an audiobook."""
     STATUS_CHOICES = (
         ('PUBLISHED', 'Published'),
-        ('INACTIVE', 'Inactive'), # For creator books that are unlisted/paused by creator
-        ('REJECTED', 'Rejected by Admin'), # For creator books
-        ('PAUSED_BY_ADMIN', 'Paused by Admin') # For creator books
+        ('INACTIVE', 'Inactive'),
+        ('REJECTED', 'Rejected by Admin'),
+        ('PAUSED_BY_ADMIN', 'Paused by Admin')
     )
-    # New field to distinguish source
     SOURCE_CHOICES = (
         ('creator', 'Creator Upload'),
         ('librivox', 'LibriVox'),
@@ -692,37 +687,28 @@ class Audiobook(models.Model):
     narrator = models.CharField(max_length=255, blank=True, null=True)
     language = models.CharField(max_length=100, blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
-    description = models.TextField(blank=False, null=True) # Assuming it can be null based on your previous model
+    description = models.TextField(blank=False, null=True)
     publish_date = models.DateTimeField(default=timezone.now)
     genre = models.CharField(max_length=100, blank=True, null=True)
-
-    # Made creator nullable to accommodate external audiobooks
     creator = models.ForeignKey(
         'Creator',
-        on_delete=models.SET_NULL,  # Changed from CASCADE to SET_NULL
-        null=True,                  # Allow null
-        blank=True,                 # Allow blank in forms/admin
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="audiobooks"
     )
     slug = models.SlugField(max_length=255, unique=True, blank=True)
-    cover_image = models.ImageField(upload_to='audiobook_covers/', blank=True, null=True) # Allow blank for external books initially
+    cover_image = models.ImageField(upload_to='audiobook_covers/', blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PUBLISHED', db_index=True, help_text="The current status of the audiobook.")
     source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default='creator', db_index=True, help_text="Source of the audiobook (Creator, LibriVox, Archive.org)")
-
     total_views = models.PositiveIntegerField(default=0, help_text="Total number of times the audiobook detail page has been viewed.")
-
     is_paid = models.BooleanField(default=False, help_text="Is this audiobook paid or free?")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'), validators=[MinValueValidator(Decimal('0.00'))], help_text="Price in PKR if the audiobook is paid (set to 0.00 if free).")
-
     total_sales = models.PositiveIntegerField(default=0, help_text="Number of times this audiobook has been sold.")
     total_revenue_generated = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Total gross revenue generated by this audiobook before platform fees.")
-
     created_at = models.DateTimeField(default=timezone.now, editable=False, help_text="Timestamp when the audiobook record was created.")
     updated_at = models.DateTimeField(auto_now=True, help_text="Timestamp when the audiobook record was last updated.")
-
-    # To explicitly manage if it's a creator book or an external placeholder for reviews
     is_creator_book = models.BooleanField(default=True, help_text="True if uploaded by a platform creator, False if a placeholder for an external book.")
-
 
     class Meta:
         db_table = "AUDIOBOOKS"
@@ -734,7 +720,7 @@ class Audiobook(models.Model):
             base_slug = slugify(self.title) or "audiobook"
             slug = base_slug
             counter = 1
-            pk_to_exclude = self.pk if self.pk is not None else uuid.uuid4() # Use a non-existent UUID if pk is None
+            pk_to_exclude = self.pk if self.pk is not None else uuid.uuid4()
             while Audiobook.objects.filter(slug=slug).exclude(pk=pk_to_exclude).exists():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
@@ -743,15 +729,11 @@ class Audiobook(models.Model):
         if not self.is_paid:
             self.price = Decimal('0.00')
 
-        # Determine is_creator_book based on creator field or source
         if self.creator:
             self.is_creator_book = True
-            self.source = 'creator' # Ensure source is 'creator' if a creator is assigned
-        elif self.source != 'creator': # If no creator and source is external, it's not a creator book
+            self.source = 'creator'
+        elif self.source != 'creator':
             self.is_creator_book = False
-        # If no creator and source is 'creator' (e.g. default), it implies an issue or an external book placeholder being created
-        # where creator should be explicitly set to None.
-
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -767,13 +749,15 @@ class Audiobook(models.Model):
             raise ValidationError({'price': _('Price must be 0.00 for free audiobooks.')})
         if self.is_paid and self.price <= Decimal('0.00'):
             raise ValidationError({'price': _('Price must be greater than 0.00 for paid audiobooks.')})
-        
         if not self.creator and self.source == 'creator':
-            # This case implies a creator book should have a creator.
-            # However, for external books being given reviews, creator will be None.
-            # The `is_creator_book` field will be the primary differentiator if creator is None.
             pass
 
+    @property
+    def duration_in_seconds(self):
+        """Returns the total duration of the audiobook in seconds."""
+        if self.duration:
+            return int(self.duration.total_seconds())
+        return 0
 
     @property
     def average_rating(self):
@@ -783,7 +767,7 @@ class Audiobook(models.Model):
 
     def update_sales_analytics(self, amount_paid):
         """Updates sales count and revenue. Called after a successful purchase."""
-        if self.status == 'PUBLISHED' and self.is_creator_book: # Only for creator books
+        if self.status == 'PUBLISHED' and self.is_creator_book:
             Audiobook.objects.filter(pk=self.pk).update(
                 total_sales=F('total_sales') + 1,
                 total_revenue_generated=F('total_revenue_generated') + Decimal(amount_paid)
@@ -802,9 +786,8 @@ class Audiobook(models.Model):
                     return first_chapter.audio_file.url
             except Exception as e:
                 logger.error(f"Error checking existence or getting URL for {first_chapter.audio_file.name}: {e}")
-                pass # Fall through to return None
+                pass
         return None
-
 
     @property
     def first_chapter_title(self):
@@ -826,21 +809,17 @@ class Chapter(models.Model):
     audiobook = models.ForeignKey(Audiobook, on_delete=models.CASCADE, related_name="chapters")
     chapter_name = models.CharField(max_length=255)
     chapter_order = models.PositiveIntegerField()
-
     audio_file = models.FileField(upload_to="chapters_audio/", blank=True, null=True, help_text="Audio file for the chapter.")
     text_content = models.TextField(blank=True, null=True, help_text="Text content for this chapter.")
-
     is_tts_generated = models.BooleanField(default=False, help_text="True if this chapter's audio was generated using Text-to-Speech.")
     tts_voice_id = models.CharField(
         max_length=50,
         choices=TTS_VOICE_CHOICES,
-        default=None, # Explicitly None
+        default=None,
         blank=True, null=True,
         help_text="Voice used if audio was generated by TTS."
     )
-
     is_preview_eligible = models.BooleanField(default=False, help_text="Can this chapter be previewed by premium users if the book is paid but not purchased?")
-
     created_at = models.DateTimeField(default=timezone.now, editable=False, help_text="Timestamp when the chapter was added.")
     updated_at = models.DateTimeField(auto_now=True, help_text="Timestamp when the chapter was last updated.")
 
@@ -855,32 +834,28 @@ class Chapter(models.Model):
             try:
                 if hasattr(self, 'get_tts_voice_id_display') and self.tts_voice_id:
                     display_name = self.get_tts_voice_id_display()
-                    if display_name and str(display_name).lower() != 'none': # Check against string 'none'
+                    if display_name and str(display_name).lower() != 'none':
                         tts_info = f" (TTS: {display_name})"
-                    elif self.tts_voice_id: # Fallback if display_name is None or 'None'
-                         tts_info = f" (TTS: {self.tts_voice_id})"
-                elif self.tts_voice_id: # Fallback if get_tts_voice_id_display doesn't exist
+                    elif self.tts_voice_id:
+                        tts_info = f" (TTS: {self.tts_voice_id})"
+                elif self.tts_voice_id:
                     tts_info = f" (TTS: {self.tts_voice_id})"
-            except Exception: # Catch any error during display name retrieval
+            except Exception:
                 if self.tts_voice_id:
-                     tts_info = f" (TTS: {self.tts_voice_id} - Error displaying name)"
-
+                    tts_info = f" (TTS: {self.tts_voice_id} - Error displaying name)"
         return f"{self.chapter_order}: {self.chapter_name}{tts_info} ({self.audiobook.title})"
-
 
     def save(self, *args, **kwargs):
         """Ensures first chapter is preview eligible and sets tts_voice_id if not TTS."""
         if self.chapter_order == 1:
             self.is_preview_eligible = True
-        if not self.is_tts_generated: # If not TTS, ensure tts_voice_id is None
+        if not self.is_tts_generated:
             self.tts_voice_id = None
         super().save(*args, **kwargs)
 
     @property
     def duration_display(self):
         """Placeholder for chapter duration display."""
-        # This would ideally calculate duration from the audio_file if available
-        # For now, a placeholder:
         return "--:--"
 
 
@@ -897,7 +872,7 @@ class Review(models.Model):
     class Meta:
         db_table = 'REVIEWS'
         ordering = ['-created_at']
-        unique_together = ('audiobook', 'user') # A user can review an audiobook only once
+        unique_together = ('audiobook', 'user')
         verbose_name = "Audiobook Review"
         verbose_name_plural = "Audiobook Reviews"
 
@@ -913,18 +888,17 @@ class Subscription(models.Model):
     )
     STATUS_CHOICES = (
         ('active', 'Active'),
-        ('canceled', 'Canceled'), # User cancelled, but active until period end
-        ('expired', 'Expired'),   # Period ended and not renewed
+        ('canceled', 'Canceled'),
+        ('expired', 'Expired'),
         ('pending', 'Pending Payment'),
         ('failed', 'Payment Failed'),
-        ('past_due', 'Past Due') # Stripe specific, payment failed but retrying
+        ('past_due', 'Past Due')
     )
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription') # One user has one subscription
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(null=True, blank=True, help_text="End of the current billing cycle. For 'canceled' status, this is when access ends.")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active', db_index=True)
-
     stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     stripe_payment_method_brand = models.CharField(max_length=50, blank=True, null=True, help_text="e.g., visa, mastercard")
@@ -942,13 +916,9 @@ class Subscription(models.Model):
 
     def cancel(self):
         """Cancels the subscription. It remains active until end_date."""
-        if self.status == 'active': # Only cancel active subscriptions
+        if self.status == 'active':
             self.status = 'canceled'
-            # Note: The actual cancellation with Stripe (to stop future billing)
-            # should happen in a view/task that calls Stripe's API.
-            # This model method just updates the local status.
             self.save(update_fields=['status'])
-            # The end_date should already be set by Stripe webhook or upon creation.
 
     def update_status(self):
         """Updates status to 'expired' if end_date is past and it was active/canceled."""
@@ -956,17 +926,16 @@ class Subscription(models.Model):
         if self.status in ['active', 'canceled'] and self.end_date and self.end_date < now:
             self.status = 'expired'
             self.save(update_fields=['status'])
-            if self.user.subscription_type == 'PR': # If user was premium
-                self.user.subscription_type = 'FR' # Downgrade to Free
+            if self.user.subscription_type == 'PR':
+                self.user.subscription_type = 'FR'
                 self.user.save(update_fields=['subscription_type'])
-
 
     @property
     def remaining_days(self):
         """Calculates remaining days in the subscription if active or canceled but not yet ended."""
         if self.status in ['active', 'canceled'] and self.end_date:
             remaining = self.end_date - timezone.now()
-            return max(0, remaining.days) # Return 0 if already past
+            return max(0, remaining.days)
         return 0
 
 
@@ -974,7 +943,7 @@ class AudiobookViewLog(models.Model):
     """Logs each view of an audiobook detail page."""
     view_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     audiobook = models.ForeignKey(Audiobook, on_delete=models.CASCADE, related_name='view_logs')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audiobook_views') # User can be anonymous
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audiobook_views')
     viewed_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
@@ -983,11 +952,57 @@ class AudiobookViewLog(models.Model):
         verbose_name = "Audiobook View Log"
         verbose_name_plural = "Audiobook View Logs"
         indexes = [
-            models.Index(fields=['audiobook', 'viewed_at']), # For querying views of a specific audiobook
-            models.Index(fields=['user', 'audiobook', 'viewed_at']), # For user-specific view history
+            models.Index(fields=['audiobook', 'viewed_at']),
+            models.Index(fields=['user', 'audiobook', 'viewed_at']),
         ]
 
     def __str__(self):
         user_str = self.user.username if self.user else "Anonymous"
         return f"View of '{self.audiobook.title}' by {user_str} at {self.viewed_at.strftime('%Y-%m-%d %H:%M')}"
 
+
+class ListeningHistory(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='listening_history')
+    audiobook = models.ForeignKey(Audiobook, on_delete=models.CASCADE, related_name='listening_sessions')
+    current_chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True, related_name='listening_markers')
+    progress_seconds = models.PositiveIntegerField(default=0, help_text="Timestamp in seconds where the user left off within the audiobook or current chapter.")
+    last_listened_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'LISTENING_HISTORY'
+        unique_together = ('user', 'audiobook')
+        ordering = ['-last_listened_at']
+        verbose_name = "Listening History"
+        verbose_name_plural = "Listening Histories"
+
+    def __str__(self):
+        chapter_info = f" (Chapter: {self.current_chapter.chapter_name})" if self.current_chapter else ""
+        return f"{self.user.username} listened to {self.audiobook.title}{chapter_info} - progress: {self.progress_seconds}s"
+
+    @property
+    def progress_percentage(self):
+        """Calculates the overall progress percentage for the audiobook."""
+        audiobook_total_seconds = self.audiobook.duration_in_seconds
+        if audiobook_total_seconds and audiobook_total_seconds > 0:
+            return min(int((self.progress_seconds / audiobook_total_seconds) * 100), 100)
+        return 0
+
+# --- User Library Model ---
+class UserLibraryItem(models.Model):
+    """
+    Represents an audiobook saved by a user to their library.
+    This acts as the 'through' model for the ManyToManyField on User.
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='library_items')
+    audiobook = models.ForeignKey(Audiobook, on_delete=models.CASCADE, related_name='saved_by_users')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'USER_LIBRARY_ITEMS'
+        unique_together = ('user', 'audiobook') # Ensures a user can't add the same audiobook multiple times
+        ordering = ['-added_at'] # Show most recently added items first
+        verbose_name = "User Library Item"
+        verbose_name_plural = "User Library Items"
+
+    def __str__(self):
+        return f"'{self.audiobook.title}' in {self.user.username}'s library"

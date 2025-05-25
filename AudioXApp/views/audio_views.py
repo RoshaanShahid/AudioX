@@ -3,18 +3,18 @@
 import fitz  # PyMuPDF for PDF text extraction
 import os
 from dotenv import load_dotenv
-# import pyttsx3 # For English TTS - NO LONGER USED FOR ENGLISH
 import tempfile
 import io
 from PIL import Image
 import pytesseract      # For OCR
 import asyncio
 import edge_tts # For Edge TTS
+from typing import Optional # Changed from Union, or just use Optional
 
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 
-from ..forms import DocumentUploadForm # Assuming forms.py is in the same app directory
+from ..forms import DocumentUploadForm
 
 load_dotenv()
 
@@ -32,12 +32,12 @@ async def generate_edge_tts_audio_async(text: str, voice_name: str, output_path:
     except Exception as e:
         print(f"DEBUG EDGE-TTS: Error during generation with voice {voice_name}: {e}")
         import traceback
-        traceback.print_exc() # Print full traceback for detailed error diagnosis
+        traceback.print_exc()
         return False
 
 # --- Text Extraction Helper Functions ---
 
-def extract_text_from_pdf(pdf_content: bytes) -> str | None:
+def extract_text_from_pdf(pdf_content: bytes) -> Optional[str]:
     """Extracts text from PDF content."""
     text = ""
     print("DEBUG PDF: Attempting to extract text from PDF...")
@@ -50,7 +50,7 @@ def extract_text_from_pdf(pdf_content: bytes) -> str | None:
         doc.close()
         stripped_text = text.strip()
         print(f"DEBUG PDF: Total extracted PDF text length (stripped): {len(stripped_text)}")
-        if stripped_text: # Log a snippet if text is found
+        if stripped_text:
             print(f"DEBUG PDF: Extracted PDF text snippet (first 200 chars): '{stripped_text[:200]}'")
         if len(stripped_text) < 5:
             print("DEBUG PDF: Extracted PDF text very short or empty.")
@@ -59,16 +59,16 @@ def extract_text_from_pdf(pdf_content: bytes) -> str | None:
         print(f"DEBUG PDF: Error extracting text from PDF: {e}")
         return None
 
-def extract_text_from_image(image_content: bytes, language_code: str = 'eng') -> str | None:
+def extract_text_from_image(image_content: bytes, language_code: str = 'eng') -> Optional[str]:
     """Extracts text from image content using OCR."""
     print(f"DEBUG OCR: Attempting to extract text from image with language_code: {language_code}")
     try:
         image = Image.open(io.BytesIO(image_content))
-        image = image.convert('L') # Convert to grayscale
-        threshold = 150 # Basic thresholding
+        image = image.convert('L')
+        threshold = 150
         image = image.point(lambda x: 0 if x < threshold else 255, '1')
 
-        tess_lang = language_code # Use the provided language code directly for Tesseract
+        tess_lang = language_code
 
         custom_config = f'--oem 3 --psm 3 -l {tess_lang}'
         print(f"DEBUG OCR: Tesseract config: {custom_config}")
@@ -77,23 +77,23 @@ def extract_text_from_image(image_content: bytes, language_code: str = 'eng') ->
         stripped_text = text.strip()
 
         print(f"DEBUG OCR: Total extracted OCR text length (stripped): {len(stripped_text)}")
-        if stripped_text: # Log a snippet if text is found
+        if stripped_text:
             print(f"DEBUG OCR: Extracted OCR text snippet (first 200 chars): '{stripped_text[:200]}'")
 
-        if len(stripped_text) < 5: # Consider text too short if less than 5 chars
+        if len(stripped_text) < 5:
             print(f"DEBUG OCR: Extracted OCR text for lang '{tess_lang}' is very short or empty.")
             return None
         return stripped_text
     except pytesseract.TesseractNotFoundError:
         print(f"DEBUG OCR: TesseractNotFoundError for language '{tess_lang}'. Ensure Tesseract is installed and '{tess_lang}.traineddata' is available in tessdata directory.")
-        raise # Re-raise to be caught by the main view
+        raise
     except Exception as e:
         print(f"DEBUG OCR: Error extracting text from image (lang: {language_code}): {e}")
         return None
 
 # --- Text-to-Speech Conversion Function ---
 
-def convert_text_to_audio(text: str, language: str, narrator_gender: str | None = None) -> bytes | None:
+def convert_text_to_audio(text: str, language: str, narrator_gender: Optional[str] = None) -> Optional[bytes]:
     """
     Converts text to audio using appropriate TTS engine based on language and gender.
     The narrator_gender parameter expects 'male' or 'female' (from the form).
@@ -107,16 +107,16 @@ def convert_text_to_audio(text: str, language: str, narrator_gender: str | None 
         print("DEBUG TTS: No text provided to convert (text is empty or whitespace).")
         return None
 
-    edge_voice_name = None # Will be used for both English and Urdu now
+    edge_voice_name = None
 
     if language == 'en':
         print(f"DEBUG TTS: Using edge-tts for English, gender: {narrator_gender}")
         if narrator_gender == 'female':
-            edge_voice_name = 'en-US-AriaNeural' # Good for storytelling, clear
+            edge_voice_name = 'en-US-AriaNeural'
         elif narrator_gender == 'male':
-            edge_voice_name = 'en-US-AndrewNeural' # Warm, Confident, Authentic, Honest
+            edge_voice_name = 'en-US-AndrewNeural'
         else:
-            edge_voice_name = 'en-US-AriaNeural' # Default English voice
+            edge_voice_name = 'en-US-AriaNeural'
             print(f"DEBUG TTS: Narrator gender for English not specified or invalid ('{narrator_gender}'), defaulting to {edge_voice_name}.")
 
     elif language == 'ur':
@@ -132,7 +132,6 @@ def convert_text_to_audio(text: str, language: str, narrator_gender: str | None 
         print(f"DEBUG TTS: Unsupported language for TTS: {language}")
         return None
 
-    # Common logic for edge-tts processing (now for both English and Urdu)
     if edge_voice_name:
         temp_audio_path = ""
         try:
@@ -212,7 +211,7 @@ def generate_audio_from_document(request):
                     print("DEBUG VIEW: convert_text_to_audio returned None (TTS failed).")
                     error_message_tts = f"Could not generate audio. The TTS service for '{selected_language_for_tts}'"
                     if selected_language_for_tts in ['en', 'ur'] and narrator_gender:
-                         error_message_tts += f" (Gender: {narrator_gender})"
+                            error_message_tts += f" (Gender: {narrator_gender})"
                     error_message_tts += " might be unavailable, the text was unsuitable (e.g., too short after OCR), or the specified voice was not found."
                     return HttpResponse(error_message_tts, status=500)
 

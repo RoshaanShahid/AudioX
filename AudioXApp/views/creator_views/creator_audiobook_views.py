@@ -27,6 +27,8 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 from django.core.files.base import ContentFile
 
+from typing import Optional # Add this import
+
 from ...models import (
     User, Creator, Audiobook, Chapter, 
     CreatorEarning, AudiobookViewLog # Models used by these views
@@ -34,19 +36,10 @@ from ...models import (
 from ..utils import _get_full_context
 from ..decorators import creator_required
 
-# Import TTS related constants and functions from tts_views (will be created next)
-# For now, we'll define them here if needed directly, or assume they will be imported
-# from .tts_views import EDGE_TTS_VOICES_BY_LANGUAGE, LANGUAGE_GENRE_MAPPING, ALL_EDGE_TTS_VOICES_MAP, generate_audio_edge_tts_async, extract_text_from_pdf, extract_text_from_docx
-
 logger = logging.getLogger(__name__)
 
-# Constants that might be shared or specific to these views
-# If EARNING_PER_VIEW is used elsewhere, consider moving to a central constants file.
 EARNING_PER_VIEW = Decimal(getattr(settings, 'CREATOR_EARNING_PER_FREE_VIEW', '1.00'))
 
-
-# Placeholder for TTS constants and functions if not importing from tts_views.py yet
-# These would ideally be in tts_views.py and imported.
 EDGE_TTS_VOICES_BY_LANGUAGE = {
     'English': [
         {'id': 'en-US-AriaNeural', 'name': 'Aria (Female)', 'gender': 'Female', 'edge_voice_id': 'en-US-AriaNeural'},
@@ -71,15 +64,15 @@ LANGUAGE_GENRE_MAPPING = {
     "Punjabi": [{"value": "Punjabi-Other", "text": "Other (ہور)"}],
     "Sindhi": [{"value": "Sindhi-Other", "text": "Other (ٻيو)"}]
 }
-# Dummy async function if tts_views.py is not ready
+
 async def generate_audio_edge_tts_async(text: str, voice_id: str, output_path: str):
     logger.warning(f"Dummy generate_audio_edge_tts_async called for {output_path}. Implement actual TTS generation.")
-    # Create a tiny dummy mp3 file for testing if needed
-    # with open(output_path, 'wb') as f:
-    #     f.write(b'RIFF....WAVEfmt ....') # Minimal valid WAV header, not MP3
     pass
-def extract_text_from_pdf(pdf_content_bytes: bytes) -> str | None: return "Dummy PDF text"
-def extract_text_from_docx(file_content_bytes: bytes) -> str | None: return "Dummy DOCX text"
+
+def extract_text_from_pdf(pdf_content_bytes: bytes) -> Optional[str]: return "Dummy PDF text"
+def extract_text_from_docx(file_content_bytes: bytes) -> Optional[str]: return "Dummy DOCX text"
+
+# Rest of your code remains the same...
 # End of placeholder TTS constants/functions
 
 
