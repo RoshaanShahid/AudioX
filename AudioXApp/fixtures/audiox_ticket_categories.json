@@ -1,0 +1,776 @@
+[
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 1,
+  "fields": {
+    "name": "General Inquiry",
+    "description": "For general questions about AudioX.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 2,
+  "fields": {
+    "name": "Account Access & Login",
+    "description": "Issues related to logging in, password resets, etc.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 3,
+  "fields": {
+    "name": "Subscription & Billing",
+    "description": "Questions about subscription plans, payments, invoices.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 4,
+  "fields": {
+    "name": "Technical Problem",
+    "description": "Bugs, errors, or other technical difficulties.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 5,
+  "fields": {
+    "name": "Audiobook Upload Issue",
+    "description": "Problems with uploading or managing audiobooks.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 6,
+  "fields": {
+    "name": "Creator Earnings & Payouts",
+    "description": "Questions about earnings, withdrawal requests.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 7,
+  "fields": {
+    "name": "Account Registration Issue",
+    "description": "Problems encountered during the signup process, email verification, or initial account setup.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 8,
+  "fields": {
+    "name": "Login & Password Reset",
+    "description": "Difficulty logging in, forgotten password, OTP issues, or problems with two-factor authentication (2FA).",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 9,
+  "fields": {
+    "name": "Update Profile Information",
+    "description": "Help with changing full name, username, email, phone number, bio, or other personal details.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 10,
+  "fields": {
+    "name": "Profile Picture Issue",
+    "description": "Problems uploading, changing, or displaying profile picture.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 11,
+  "fields": {
+    "name": "Account Notification Settings",
+    "description": "Questions or issues related to managing email, push, or in-app notification preferences.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 12,
+  "fields": {
+    "name": "Account Privacy Settings",
+    "description": "Inquiries about managing account privacy, data visibility, or related settings.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 13,
+  "fields": {
+    "name": "Request Account Deletion/Deactivation",
+    "description": "Inquiries about how to permanently delete or temporarily deactivate an account.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 14,
+  "fields": {
+    "name": "Account Reactivation Issue",
+    "description": "Problems reactivating a previously deactivated account.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 15,
+  "fields": {
+    "name": "Subscription Plan Inquiry",
+    "description": "Questions about different subscription plans, features, or pricing.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 16,
+  "fields": {
+    "name": "Upgrade/Downgrade Subscription",
+    "description": "Issues or questions about changing an existing subscription plan.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 17,
+  "fields": {
+    "name": "Payment Method Issue",
+    "description": "Problems adding, updating, or removing payment methods (credit/debit card, etc.).",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 18,
+  "fields": {
+    "name": "Subscription Payment Failed",
+    "description": "Issues related to a failed subscription payment, card declined, or auto-renewal problems.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 19,
+  "fields": {
+    "name": "View Invoices & Billing History",
+    "description": "Difficulty accessing or understanding invoices, payment receipts, or billing history.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 20,
+  "fields": {
+    "name": "Cancel Subscription",
+    "description": "Help with canceling an active subscription or understanding cancellation terms.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 21,
+  "fields": {
+    "name": "Refund Request (Subscription)",
+    "description": "Inquiries about eligibility for a refund on a subscription charge.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 22,
+  "fields": {
+    "name": "Buy Coins Issue",
+    "description": "Problems encountered while purchasing coin packs or payment failures for coins.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 23,
+  "fields": {
+    "name": "Coin Balance Discrepancy",
+    "description": "Concerns about incorrect coin balance or missing coins after a purchase/activity.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 24,
+  "fields": {
+    "name": "Using Coins for Audiobooks",
+    "description": "Issues with redeeming coins to purchase or unlock audiobooks.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 25,
+  "fields": {
+    "name": "Gift Coins Issue",
+    "description": "Problems sending or receiving gifted coins, or inquiries about the gifting process.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 26,
+  "fields": {
+    "name": "Coin Transaction History",
+    "description": "Difficulty viewing or understanding coin transaction history.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 27,
+  "fields": {
+    "name": "Promotional Coins/Codes Issue",
+    "description": "Problems with redeeming promotional coin codes or issues with bonus coins not appearing.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 28,
+  "fields": {
+    "name": "Audiobook Search & Discovery",
+    "description": "Difficulty finding specific audiobooks, genres, or authors; issues with search filter accuracy.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 29,
+  "fields": {
+    "name": "Audiobook Playback Error",
+    "description": "Problems with the audio player, errors during playback, audio not loading, or skipping issues.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 30,
+  "fields": {
+    "name": "Audio Quality Issue",
+    "description": "Reporting poor audio quality, low volume, static, or other sound-related problems for an audiobook.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 31,
+  "fields": {
+    "name": "Buffering or Streaming Problem",
+    "description": "Excessive buffering, interruptions during streaming, or slow loading of audio content.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 32,
+  "fields": {
+    "name": "Offline Downloads Issue",
+    "description": "Problems downloading audiobooks for offline listening, or issues with accessing downloaded content.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 33,
+  "fields": {
+    "name": "My Library Management",
+    "description": "Issues adding, removing, or organizing audiobooks in \"My Library\".",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 34,
+  "fields": {
+    "name": "Listening History Problem",
+    "description": "Listening history not updating correctly, progress not saving, or inaccurate tracking.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 35,
+  "fields": {
+    "name": "Content Availability / Regional Restriction",
+    "description": "Questions about why an audiobook is not available or if there are regional restrictions.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 36,
+  "fields": {
+    "name": "Issue with Audiobook Chapters/Narration",
+    "description": "Problems with chapter order, missing chapters, incorrect narration, or issues with narrator's voice.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 37,
+  "fields": {
+    "name": "Website Bug / Error Message",
+    "description": "Reporting a specific bug, error message (please provide details), or unexpected behavior on the website.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 38,
+  "fields": {
+    "name": "Mobile App Issue",
+    "description": "Reporting bugs, crashes, or performance problems specific to the AudioX mobile application (if applicable).",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 39,
+  "fields": {
+    "name": "Slow Performance / Loading Times",
+    "description": "General issues with slow loading of pages, features, or content on the platform.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 40,
+  "fields": {
+    "name": "UI/UX Problem",
+    "description": "Feedback or issues related to confusing navigation, layout problems, or general usability (User Interface/Experience).",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 41,
+  "fields": {
+    "name": "Accessibility Issue",
+    "description": "Reporting problems related to accessibility for users with disabilities (e.g., screen reader compatibility, keyboard navigation).",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 42,
+  "fields": {
+    "name": "Creator Application Process",
+    "description": "Questions about the creator application form, required information, or general process.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 43,
+  "fields": {
+    "name": "Creator Document Submission",
+    "description": "Problems uploading CNIC, bank details, or other verification documents.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 44,
+  "fields": {
+    "name": "Creator Application Status Inquiry",
+    "description": "Checking the status of a pending creator application.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 45,
+  "fields": {
+    "name": "Creator Application Rejection Reason",
+    "description": "Seeking clarification on why a creator application was rejected or how to address issues.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 46,
+  "fields": {
+    "name": "Creator Re-application Process",
+    "description": "Questions about eligibility or process for re-applying after a rejection.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 47,
+  "fields": {
+    "name": "Creator Terms & Conditions Inquiry",
+    "description": "Questions about the terms and conditions for AudioX creators.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 48,
+  "fields": {
+    "name": "Audiobook Upload Process (Creator)",
+    "description": "Issues with the audiobook upload form, file formats, metadata entry (title, author, genre, etc.).",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 49,
+  "fields": {
+    "name": "Cover Art Upload Issue (Creator)",
+    "description": "Problems uploading or displaying the audiobook cover art.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 50,
+  "fields": {
+    "name": "Chapter Management (Creator)",
+    "description": "Issues adding, ordering, editing, or deleting audiobook chapters.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 51,
+  "fields": {
+    "name": "Audio File Processing Error (Creator)",
+    "description": "Errors encountered after uploading audio files for chapters (e.g., processing failed, format not supported).",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 52,
+  "fields": {
+    "name": "Edit/Update Existing Audiobook (Creator)",
+    "description": "Problems modifying details, chapters, or files for an already uploaded audiobook.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 53,
+  "fields": {
+    "name": "Audiobook Status Inquiry (Creator)",
+    "description": "Questions about why an uploaded audiobook is pending review, rejected, or paused.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 54,
+  "fields": {
+    "name": "TTS: Document Processing Failed",
+    "description": "Errors when trying to upload or process a document (PDF, DOCX) for TTS generation.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 55,
+  "fields": {
+    "name": "TTS: Voice Selection / Quality",
+    "description": "Issues with available TTS voices, audio quality of generated speech, or pronunciation problems.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 56,
+  "fields": {
+    "name": "TTS: Preview or Download Issue",
+    "description": "Problems generating a TTS preview, or issues with the downloaded TTS audio file.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 57,
+  "fields": {
+    "name": "Content Visibility (Creator)",
+    "description": "Concerns that an approved/published audiobook is not appearing in search or listings.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 58,
+  "fields": {
+    "name": "Understanding Earnings Report",
+    "description": "Questions about how to interpret the earnings dashboard, sales data, or revenue calculations.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 59,
+  "fields": {
+    "name": "Earnings Discrepancy",
+    "description": "Belief that reported earnings are incorrect or do not match expected sales/views.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 60,
+  "fields": {
+    "name": "Analytics Data Inquiry (Creator)",
+    "description": "Questions about listener statistics, audiobook performance metrics, or demographic data.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 61,
+  "fields": {
+    "name": "Withdrawal Account Setup",
+    "description": "Problems adding or verifying bank account, JazzCash, Easypaisa, or other payout methods.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 62,
+  "fields": {
+    "name": "Payout Request Issue",
+    "description": "Difficulty submitting a withdrawal request, or issues with the request form.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 63,
+  "fields": {
+    "name": "Withdrawal Status Inquiry",
+    "description": "Checking the status of a pending, processing, or completed withdrawal.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 64,
+  "fields": {
+    "name": "Minimum Payout Threshold",
+    "description": "Questions about the minimum balance required for a withdrawal.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 65,
+  "fields": {
+    "name": "Payout Fees & Deductions",
+    "description": "Inquiries about any fees or deductions applied to creator payouts.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 66,
+  "fields": {
+    "name": "Tax Information (Creator)",
+    "description": "Questions related to tax forms, withholding, or other tax-related matters for creators.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 67,
+  "fields": {
+    "name": "Creator Public Profile Setup",
+    "description": "Help customizing the public creator page, bio, links, or unique creator name.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 68,
+  "fields": {
+    "name": "Content Guidelines (Creator)",
+    "description": "Clarification on AudioX's content policies, prohibited content, or quality standards for creators.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 69,
+  "fields": {
+    "name": "Copyright Claim Received (Creator)",
+    "description": "Seeking advice or help regarding a copyright claim made against content uploaded by the creator.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 70,
+  "fields": {
+    "name": "Warning or Strike Inquiry (Creator)",
+    "description": "Questions about a warning or strike received related to content or account conduct.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 71,
+  "fields": {
+    "name": "Appeal Moderation Decision (Creator)",
+    "description": "Process for appealing a decision related to content removal, account restriction, or ban.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 72,
+  "fields": {
+    "name": "Creator Account Suspension/Ban",
+    "description": "Inquiries related to a suspended or banned creator account.",
+    "is_creator_specific": true
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 73,
+  "fields": {
+    "name": "Community Chatroom Access",
+    "description": "Problems joining or participating in community chatrooms.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 74,
+  "fields": {
+    "name": "Report Chatroom Misconduct",
+    "description": "Reporting inappropriate messages, spam, or user behavior in chatrooms.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 75,
+  "fields": {
+    "name": "Chatroom Feature Bug",
+    "description": "Technical issues or bugs within the community chatroom feature.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 76,
+  "fields": {
+    "name": "Report Copyright Infringement",
+    "description": "Reporting content on AudioX that infringes on your copyright (DMCA takedown requests).",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 77,
+  "fields": {
+    "name": "Report Inappropriate Content",
+    "description": "Reporting audiobooks or user-generated content that violates platform policies (hate speech, explicit content, etc.).",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 78,
+  "fields": {
+    "name": "Report User Misconduct",
+    "description": "Reporting a user for harassment, spam, impersonation, or other violations.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 79,
+  "fields": {
+    "name": "Account Security Concern / Unauthorized Access",
+    "description": "Suspected unauthorized access to an account or other security vulnerabilities noticed.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 80,
+  "fields": {
+    "name": "Privacy Policy Inquiry",
+    "description": "Questions about AudioX's privacy policy or how user data is handled.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 81,
+  "fields": {
+    "name": "Terms of Service Inquiry",
+    "description": "Questions or requests for clarification regarding AudioX's Terms of Service.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 82,
+  "fields": {
+    "name": "Platform Feedback (General)",
+    "description": "General comments, likes, or dislikes about the AudioX platform.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 83,
+  "fields": {
+    "name": "Platform Improvement Suggestion",
+    "description": "Suggestions for overall platform improvements or new functionalities for all users.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 84,
+  "fields": {
+    "name": "Partnership or Business Inquiry",
+    "description": "For individuals or companies interested in partnerships, advertising, or other business collaborations.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 85,
+  "fields": {
+    "name": "Media & Press Inquiry",
+    "description": "For media personnel or press-related questions.",
+    "is_creator_specific": false
+  }
+},
+{
+  "model": "AudioXApp.ticketcategory",
+  "pk": 86,
+  "fields": {
+    "name": "Other (Not Listed)",
+    "description": "For any issue or question that doesn't fit into the predefined categories.",
+    "is_creator_specific": false
+  }
+}
+]

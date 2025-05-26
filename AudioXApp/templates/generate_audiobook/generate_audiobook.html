@@ -29,7 +29,7 @@
                     </div>
                 </div>
                 <div class="flex items-start space-x-3">
-                     <svg class="h-7 w-7 text-white/90 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5A1.5 1.5 0 007.5 20.25h9a1.5 1.5 0 001.5-1.5V5.25A1.5 1.5 0 0016.5 3.75h-9zm-1.5 1.5a3 3 0 013-3h9a3 3 0 013 3v13.5a3 3 0 01-3 3h-9a3 3 0 01-3-3V5.25z" /><path d="M8.25 7.5a.75.75 0 01.75-.75h6a.75.75 0 010 1.5h-6a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H9z" /></svg>
+                    <svg class="h-7 w-7 text-white/90 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5A1.5 1.5 0 007.5 20.25h9a1.5 1.5 0 001.5-1.5V5.25A1.5 1.5 0 0016.5 3.75h-9zm-1.5 1.5a3 3 0 013-3h9a3 3 0 013 3v13.5a3 3 0 01-3 3h-9a3 3 0 01-3-3V5.25z" /><path d="M8.25 7.5a.75.75 0 01.75-.75h6a.75.75 0 010 1.5h-6a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H9z" /></svg>
                     <div>
                         <h3 class="text-xl font-semibold">Language & Narrator</h3>
                         <p class="text-white/70 text-sm">Choose language and preferred narrator voice.</p>
@@ -62,12 +62,12 @@
                 <h3 class="text-2xl font-semibold text-gray-700">Upload & Configure</h3>
             </div>
             {# The form action points to the URL name for the view that handles GET and POST #}
-            <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:generate_audio_from_document' %}" class="space-y-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+            <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_generate_audio_from_document' %}" class="space-y-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
                 {% csrf_token %}
                 <div>
                     <label for="{{ form.document_file.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
                         {{ form.document_file.label|default:"Document (PDF, DOC, DOCX)" }}
-                         <span class="text-red-500">*</span>
+                        <span class="text-red-500">*</span>
                     </label>
                     {{ form.document_file }} {# Renders the file input field #}
                     <script>
@@ -133,7 +133,7 @@
                         }
                     </script>
                     <div class="text-red-600 text-xs font-medium mt-1.5 error-message-gender">
-                         {% if form.narrator_gender.errors %}
+                        {% if form.narrator_gender.errors %}
                             {% for error in form.narrator_gender.errors %}
                                 {{ error }}
                             {% endfor %}
@@ -187,7 +187,7 @@
         </section>
 
         <section id="downloadButtonSection" class="mt-6 hidden"> {# Added mt-6 for spacing #}
-             <button id="downloadButton"
+            <button id="downloadButton"
                     class="w-full flex items-center justify-center bg-[#091e65] text-white hover:bg-[#0d2a8a] font-semibold py-3.5 px-6 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#091e65]/30 transition-colors duration-200 ease-in-out text-base">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2.5">
                     <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" />
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function () {
         else if (fieldKey === 'language' && langErrorDiv) langErrorDiv.textContent = errorContent;
         else if (fieldKey === 'narrator_gender' && genderErrorDiv) genderErrorDiv.textContent = errorContent;
         else if (fieldKey === '__all__' && nonFieldErrorDiv) {
-             nonFieldErrorDiv.innerHTML = errors.map(err => `<p>${err.message || err}</p>`).join('');
+            nonFieldErrorDiv.innerHTML = errors.map(err => `<p>${err.message || err}</p>`).join('');
         }
         else { // Fallback to general error display for unmapped fields
             if (generalErrorTextContentSpan) {
@@ -300,9 +300,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (option.value === "") continue; // Skip the placeholder
 
             if (genderOptionsConfig && genderOptionsConfig[option.value]) {
-                 option.textContent = genderOptionsConfig[option.value];
+                option.textContent = genderOptionsConfig[option.value];
             } else { // Fallback if no specific display name for this language/gender combination
-                 option.textContent = option.value.charAt(0).toUpperCase() + option.value.slice(1); // e.g., "Male", "Female"
+                option.textContent = option.value.charAt(0).toUpperCase() + option.value.slice(1); // e.g., "Male", "Female"
             }
         }
     }
@@ -385,8 +385,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                         };
                         audioPlayer.onerror = () => {
-                             audioDurationElement.innerHTML = `${durationIconSvg} Error loading audio`;
-                             audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-red-50 text-red-700 border-red-200';
+                            audioDurationElement.innerHTML = `${durationIconSvg} Error loading audio`;
+                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-red-50 text-red-700 border-red-200';
                         }
                     }
 

@@ -5,6 +5,8 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 import datetime # Keep for fromtimestamp
 import logging
 import stripe
+from django.db import IntegrityError # Keep this import
+
 
 from django.shortcuts import redirect
 from django.http import JsonResponse
@@ -134,7 +136,7 @@ def create_checkout_session(request):
                         creator_display_name = audiobook.creator.creator_name
                     else:
                         # Fallback if creator exists but name is blank or only whitespace
-                        creator_display_name = f"Creator (ID: {audiobook.creator.id})"
+                        creator_display_name = f"Creator (ID: {audiobook.creator.user_id if audiobook.creator.user_id else audiobook.creator.pk})"
 
 
                 line_items = [{
@@ -245,7 +247,7 @@ def stripe_webhook(request):
 
         if not user_id or not item_type or not item_id:
             logger.error(f"Stripe webhook 'checkout.session.completed' missing essential metadata: UserID {user_id}, ItemType {item_type}, ItemID {item_id}. Session: {session.id}")
-            return JsonResponse({'status': 'error', 'message': 'Missing essential metadata.'}, status=200) 
+            return JsonResponse({'status': 'error', 'message': 'Missing essential metadata.'}, status=200) # Return 200 so Stripe doesn't retry for this error
 
         if session.payment_status == 'paid':
             try:
@@ -327,7 +329,7 @@ def stripe_webhook(request):
                                 'stripe_payment_method_last4': payment_last4,
                             }
                         )
-                        if not created:
+                        if not created: # If subscription existed, update its fields
                             sub.plan = plan_type; sub.start_date = timezone.now(); sub.end_date = end_date; sub.status = 'active'
                             sub.stripe_subscription_id = stripe_subscription_id_from_session 
                             sub.stripe_customer_id = stripe_customer_id_from_session
@@ -342,7 +344,7 @@ def stripe_webhook(request):
                         CoinTransaction.objects.update_or_create(
                             description=idempotency_key_description, 
                             defaults={
-                                'user': user_locked, 'transaction_type': 'purchase', 'amount': 0, 
+                                'user': user_locked, 'transaction_type': 'purchase', 'amount': 0, # Amount 0 for subscription activation
                                 'status': 'completed', 'pack_name': pack_name, 'price': price
                             }
                         )
@@ -363,7 +365,7 @@ def stripe_webhook(request):
                             elif coins_to_grant == 1000: pack_name = "Pro Pack (1000 Coins)"
                             
                             if default_price_str is None: 
-                                default_price_str = f"{coins_to_grant}.00" 
+                                default_price_str = f"{coins_to_grant}.00" # Fallback if price not in settings
                                 logger.warning(f"Price for coin pack '{coins_pack_id_str}' not found in COIN_PACK_PRICES settings. Using fallback.")
                             
                             price_paid = Decimal('0.00')
@@ -374,9 +376,9 @@ def stripe_webhook(request):
                                 else: price_paid = Decimal(default_price_str)
                             except (InvalidOperation, TypeError): price_paid = Decimal(default_price_str)
 
-                            user_locked.coins = F('coins') + coins_to_grant
+                            user_locked.coins = F('coins') + coins_to_grant # Use F() expression
                             user_locked.save(update_fields=['coins'])
-                            user_locked.refresh_from_db(fields=['coins']) 
+                            user_locked.refresh_from_db(fields=['coins']) # Refresh to get the new value
 
                             CoinTransaction.objects.update_or_create(
                                 description=idempotency_key_description, 
@@ -420,10 +422,13 @@ def stripe_webhook(request):
                                 status='COMPLETED' 
                             )
                             
-                            if creator and creator.is_approved: 
+                            if creator and creator.is_approved: # Check if creator is approved
                                 creator_locked = Creator.objects.select_for_update().get(pk=creator.pk)
-                                creator_locked.total_earning = F('total_earning') + amount_paid_pkr 
-                                creator_locked.available_balance = F('available_balance') + creator_share_amount 
+                                # --- MERGED SECTION for creator earnings ---
+                                # Using F() expressions from HEAD, comments from friend
+                                creator_locked.total_earning = F('total_earning') + amount_paid_pkr # Gross amount for creator's total
+                                creator_locked.available_balance = F('available_balance') + creator_share_amount # Net for withdrawal
+                                # --- END MERGED SECTION ---
                                 creator_locked.save(update_fields=['total_earning', 'available_balance'])
 
                                 CreatorEarning.objects.create(
@@ -444,7 +449,8 @@ def stripe_webhook(request):
                             return JsonResponse({'status': 'error', 'message': 'Audiobook not found.'}, status=200)
                         except Creator.DoesNotExist: 
                             logger.error(f"Creator for audiobook {audiobook_slug} not found during Stripe fulfillment. Session: {session.id}")
-                            return JsonResponse({'status': 'error', 'message': 'Creator data error for audiobook.'}, status=500) 
+                            # Still fulfill purchase for user, but log error for creator share
+                            return JsonResponse({'status': 'error', 'message': 'Creator data error for audiobook.'}, status=500) # 500 as it's a server data issue
                         except Exception as e_ab_fulfill:
                             logger.error(f"Error fulfilling audiobook purchase for {audiobook_slug}, session {session.id}: {e_ab_fulfill}", exc_info=True)
                             return JsonResponse({'error': 'Internal server error during audiobook fulfillment.'}, status=500) 
@@ -454,13 +460,15 @@ def stripe_webhook(request):
 
             except IntegrityError as e_int: 
                 logger.error(f"IntegrityError during Stripe webhook fulfillment for session {session.id}: {e_int}", exc_info=True)
-                return JsonResponse({'status': 'error', 'message': 'Database conflict during fulfillment.'}, status=200) 
+                # This might happen if another webhook for the same session is processed concurrently
+                # or if there's a unique constraint violation (e.g., idempotency key already used).
+                return JsonResponse({'status': 'error', 'message': 'Database conflict during fulfillment.'}, status=200) # 200 so Stripe doesn't retry for this
             except Exception as e_fulfill: 
                 logger.error(f"General error during Stripe webhook fulfillment for session {session.id}: {e_fulfill}", exc_info=True)
-                return JsonResponse({'error': 'Internal server error during fulfillment.'}, status=500) 
-        else: 
+                return JsonResponse({'error': 'Internal server error during fulfillment.'}, status=500) # 500 for Stripe to retry
+        else: # Payment not paid
             logger.warning(f"Checkout session {session.id} completed but payment_status is '{session.payment_status}'. No action taken.")
-            pass 
+            pass # Or handle other payment_statuses if necessary
 
     elif event.type == 'customer.subscription.updated':
         subscription_data = event.data.object
@@ -476,26 +484,29 @@ def stripe_webhook(request):
                 if stripe_status == 'active': local_sub.status = 'active'
                 elif stripe_status == 'canceled': local_sub.status = 'canceled' 
                 elif stripe_status in ['past_due', 'unpaid']: local_sub.status = 'past_due'
-                elif stripe_status == 'trialing': local_sub.status = 'active' 
-                else: local_sub.status = 'expired' 
+                elif stripe_status == 'trialing': local_sub.status = 'active' # Treat trialing as active
+                else: local_sub.status = 'expired' # Default to expired for other statuses
 
                 if subscription_data.current_period_end:
                     local_sub.end_date = timezone.make_aware(datetime.datetime.fromtimestamp(subscription_data.current_period_end))
-                else: 
+                else: # Should not happen for active subscriptions usually
                     local_sub.end_date = None 
                 
-                if subscription_data.cancel_at_period_end and local_sub.end_date and timezone.now() >= local_sub.end_date:
+                # If Stripe says it's canceled AND cancel_at_period_end is true, and period has ended
+                if stripe_status == 'canceled' and subscription_data.cancel_at_period_end and local_sub.end_date and timezone.now() >= local_sub.end_date:
                     local_sub.status = 'expired'
 
                 fields_to_save = []
                 if local_sub.status != original_local_status: fields_to_save.append('status')
                 
-                current_db_end_date = Subscription.objects.get(pk=local_sub.pk).end_date 
+                # Get current end_date from DB to avoid unnecessary saves if it hasn't changed
+                current_db_end_date = Subscription.objects.get(pk=local_sub.pk).end_date # Re-fetch to compare
                 if local_sub.end_date != current_db_end_date : fields_to_save.append('end_date')
                 
+                # Update payment method details if changed
                 if 'default_payment_method' in subscription_data and subscription_data.default_payment_method:
                     pm_id = subscription_data.default_payment_method
-                    if isinstance(pm_id, str): 
+                    if isinstance(pm_id, str): # Ensure it's a string ID
                         try:
                             pm_obj = stripe.PaymentMethod.retrieve(pm_id)
                             if pm_obj.card:
@@ -509,10 +520,11 @@ def stripe_webhook(request):
                             logger.warning(f"Could not retrieve new payment method {pm_id} for sub {stripe_sub_id}: {e_pm_retrieve}")
 
 
-                if fields_to_save: 
-                    local_sub.save(update_fields=list(set(fields_to_save))) 
+                if fields_to_save: # Only save if there are actual changes
+                    local_sub.save(update_fields=list(set(fields_to_save))) # Use set to avoid duplicate fields
                     logger.info(f"Subscription {stripe_sub_id} for user {local_sub.user.username} updated. New status: {local_sub.status}, End date: {local_sub.end_date}")
 
+                # Update user's subscription_type based on the new local_sub.status
                 if local_sub.status == 'expired' and user_locked.subscription_type == 'PR':
                     user_locked.subscription_type = 'FR'
                     user_locked.save(update_fields=['subscription_type'])
@@ -525,12 +537,12 @@ def stripe_webhook(request):
 
         except Subscription.DoesNotExist:
             logger.warning(f"Received Stripe 'customer.subscription.updated' event for non-existent local subscription: {stripe_sub_id}")
-            pass 
+            pass # No local subscription to update
         except Exception as e_sub_update:
             logger.error(f"Error processing 'customer.subscription.updated' for Stripe sub ID {stripe_sub_id}: {e_sub_update}", exc_info=True)
-            return JsonResponse({'error': 'Internal server error processing subscription update.'}, status=500) 
+            return JsonResponse({'error': 'Internal server error processing subscription update.'}, status=500) # 500 for Stripe to retry
 
-    elif event.type == 'customer.subscription.deleted': 
+    elif event.type == 'customer.subscription.deleted': # Handles explicit deletion or end of subscription term if not renewed
         subscription_data = event.data.object
         stripe_sub_id = subscription_data.id
         try:
@@ -538,8 +550,8 @@ def stripe_webhook(request):
                 local_sub = Subscription.objects.select_for_update().get(stripe_subscription_id=stripe_sub_id)
                 user_locked = User.objects.select_for_update().get(pk=local_sub.user.pk)
                 
-                local_sub.status = 'expired' 
-                local_sub.end_date = timezone.now() 
+                local_sub.status = 'expired' # Mark as expired
+                local_sub.end_date = timezone.now() # Set end date to now
                 local_sub.save(update_fields=['status', 'end_date'])
 
                 if user_locked.subscription_type == 'PR':
@@ -551,19 +563,19 @@ def stripe_webhook(request):
             pass
         except Exception as e_sub_deleted:
             logger.error(f"Error processing 'customer.subscription.deleted' for Stripe sub ID {stripe_sub_id}: {e_sub_deleted}", exc_info=True)
-            return JsonResponse({'error': 'Internal server error processing subscription deletion.'}, status=500) 
+            return JsonResponse({'error': 'Internal server error processing subscription deletion.'}, status=500) # 500 for Stripe to retry
 
     elif event.type == 'invoice.paid':
         invoice = event.data.object
-        stripe_subscription_id = getattr(invoice, 'subscription', None) 
+        stripe_subscription_id = getattr(invoice, 'subscription', None) # subscription can be null for one-off invoices
 
-        if stripe_subscription_id and invoice.billing_reason == 'subscription_cycle':
+        if stripe_subscription_id and invoice.billing_reason == 'subscription_cycle': # Renewal payment
             try:
                 with transaction.atomic():
                     local_sub = Subscription.objects.select_for_update().get(stripe_subscription_id=stripe_subscription_id)
                     user_locked = User.objects.select_for_update().get(pk=local_sub.user.pk)
 
-                    update_fields = ['status'] 
+                    update_fields = ['status'] # Status will likely change to active
                     local_sub.status = 'active'
 
                     if invoice.period_start:
@@ -577,6 +589,7 @@ def stripe_webhook(request):
                             local_sub.end_date = new_end_date
                             update_fields.append('end_date')
                     
+                    # Update payment method details from the charge associated with the invoice if available
                     charge_id = getattr(invoice, 'charge', None)
                     if charge_id and isinstance(charge_id, str):
                         try:
@@ -591,16 +604,16 @@ def stripe_webhook(request):
                         except stripe.error.StripeError as e_charge:
                             logger.warning(f"Could not retrieve charge {charge_id} details for invoice {invoice.id}: {e_charge}")
 
-                    if update_fields: 
+                    if update_fields: # Only save if there are changes
                         local_sub.save(update_fields=list(set(update_fields)))
                     
-                    if user_locked.subscription_type != 'PR': 
+                    if user_locked.subscription_type != 'PR': # Ensure user is marked as premium
                         user_locked.subscription_type = 'PR'
                         user_locked.save(update_fields=['subscription_type'])
 
                     pack_name = "Monthly Premium Renewal" if local_sub.plan == 'monthly' else "Annual Premium Renewal"
-                    price = Decimal(invoice.amount_paid / 100.0) 
-                    idempotency_key_description = f"stripe_invoice_{invoice.id}" 
+                    price = Decimal(invoice.amount_paid / 100.0) # amount_paid is in cents
+                    idempotency_key_description = f"stripe_invoice_{invoice.id}" # Use invoice ID for idempotency
                     
                     CoinTransaction.objects.update_or_create(
                         description=idempotency_key_description,
@@ -614,11 +627,11 @@ def stripe_webhook(request):
                 logger.warning(f"Received 'invoice.paid' for unknown Stripe subscription ID: {stripe_subscription_id}")
             except Exception as e_invoice_paid:
                 logger.error(f"Error processing 'invoice.paid' for Stripe subscription ID {stripe_subscription_id}: {e_invoice_paid}", exc_info=True)
-                return JsonResponse({'error': 'Internal server error during invoice.paid renewal processing.'}, status=500) 
+                return JsonResponse({'error': 'Internal server error during invoice.paid renewal processing.'}, status=500) # 500 for retry
         
-        elif invoice.billing_reason == 'subscription_create': 
+        elif invoice.billing_reason == 'subscription_create': # Initial payment for a new subscription
             logger.info(f"Received 'invoice.paid' for subscription_create (invoice: {invoice.id}). Handled by checkout.session.completed.")
-            pass 
+            pass # This is typically handled by checkout.session.completed
         else:
             logger.info(f"Received 'invoice.paid' with unhandled billing_reason: {invoice.billing_reason} (invoice: {invoice.id})")
             pass
@@ -630,21 +643,23 @@ def stripe_webhook(request):
             try:
                 with transaction.atomic():
                     local_sub = Subscription.objects.select_for_update().get(stripe_subscription_id=stripe_subscription_id)
-                    if local_sub.status != 'past_due': 
-                        local_sub.status = 'past_due' 
+                    if local_sub.status != 'past_due': # Avoid redundant updates
+                        local_sub.status = 'past_due' # Mark as past_due
                         local_sub.save(update_fields=['status'])
                         logger.info(f"Subscription {stripe_subscription_id} for user {local_sub.user.username} marked as 'past_due' due to failed payment (invoice: {invoice.id}).")
             except Subscription.DoesNotExist:
                 logger.warning(f"Received 'invoice.payment_failed' for unknown Stripe subscription ID: {stripe_subscription_id}")
             except Exception as e_payment_failed:
                 logger.error(f"Error processing 'invoice.payment_failed' for Stripe subscription ID {stripe_subscription_id}: {e_payment_failed}", exc_info=True)
-                return JsonResponse({'error': 'Internal server error processing payment failure.'}, status=500) 
+                return JsonResponse({'error': 'Internal server error processing payment failure.'}, status=500) # 500 for retry
         else:
-            logger.info(f"Received 'invoice.payment_failed' without a subscription ID (invoice: {invoice.id}).")
+            logger.info(f"Received 'invoice.payment_failed' without a subscription ID (invoice: {invoice.id}). Likely for a one-time payment that failed.")
+            # You might want to log this against a specific purchase if possible,
+            # e.g., if the invoice has a checkout session ID in its metadata.
             pass 
 
     else:
         logger.info(f"Unhandled Stripe event type received: {event.type}")
-        pass 
+        pass # Acknowledge other events without erroring
 
-    return JsonResponse({'status': 'success'}) 
+    return JsonResponse({'status': 'success'}) # Acknowledge receipt of the webhook

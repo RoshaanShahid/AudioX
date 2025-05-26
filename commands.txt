@@ -2,3 +2,13 @@ stripe listen --forward-to localhost:8000/payment/webhook/stripe/
 TRUNCATE TABLE audiox_schema."USERS" RESTART IDENTITY CASCADE;
 npm run build:css
 npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch
+python manage.py dumpdata AudioXApp.TicketCategory --output AudioXApp/fixtures/audiox_ticket_categories.json --indent 2
+python manage.py loaddata audiox_ticket_categories.json
+
+[ DO $$ DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'audiox_schema') LOOP
+        EXECUTE 'DROP TABLE IF EXISTS audiox_schema.' || quote_ident(r.tablename) || ' CASCADE';
+    END LOOP;
+END $$; ] FOR DATABASE SCHEMA DROP TABLES

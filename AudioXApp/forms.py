@@ -4,6 +4,7 @@ import os # For file extension checking
 
 # Values for LANGUAGE_CHOICES should match the keys in EDGE_TTS_VOICES_BY_LANGUAGE
 # in creator_tts_views.py (e.g., 'English', 'Urdu')
+# --- MERGED LANGUAGE_CHOICES (using HEAD version) ---
 LANGUAGE_CHOICES = [
     ('', 'Select Language...'), # Added a more descriptive default
     ('English', 'English'),   # Changed 'en' to 'English' for consistency with typical TTS voice map keys
@@ -14,6 +15,7 @@ LANGUAGE_CHOICES = [
     # ('Punjabi', 'Punjabi (پنجابی)'),
     # ('Sindhi', 'Sindhi (سنڌي)'),
 ]
+# --- END MERGED LANGUAGE_CHOICES ---
 
 NARRATOR_GENDER_CHOICES = [
     ('', '---------'), # User's preferred empty choice

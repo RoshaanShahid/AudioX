@@ -8,9 +8,12 @@ import mimetypes
 import logging
 import asyncio # Ensure asyncio is imported
 import io
+from datetime import timedelta # Specific import for timedelta
+# typing.Optional was imported but not explicitly used in the final merged version, kept for good practice
+from typing import Optional 
 
 # For document processing
-import fitz  # PyMuPDF for PDF text extraction
+import fitz   # PyMuPDF for PDF text extraction
 try:
     import docx # python-docx for .docx text extraction
 except ImportError:
@@ -24,7 +27,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 from django.utils import timezone # Django's timezone
 from django.conf import settings
-from django.template.defaultfilters import filesizeformat
+from django.template.defaultfilters import filesizeformat # Used in friend's version, but validation moved to form
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
@@ -91,7 +94,8 @@ LANGUAGE_GENRE_MAPPING = {
     ]
 }
 
-def extract_text_from_docx(file_content_bytes: bytes) -> str | None:
+# --- Helper functions for text extraction --- (Comment from friend's branch)
+def extract_text_from_docx(file_content_bytes: bytes) -> Optional[str]: # Using Optional[str]
     if docx is None:
         logger.error("python-docx library is not installed. Cannot process .docx files.")
         return None
@@ -106,7 +110,7 @@ def extract_text_from_docx(file_content_bytes: bytes) -> str | None:
         logger.error(f"Error extracting text from DOCX: {e}", exc_info=True)
         return None
 
-def extract_text_from_pdf(pdf_content_bytes: bytes) -> str | None:
+def extract_text_from_pdf(pdf_content_bytes: bytes) -> Optional[str]:
     text = ""
     try:
         doc = fitz.open(stream=pdf_content_bytes, filetype="pdf")
@@ -124,7 +128,7 @@ def extract_text_from_pdf(pdf_content_bytes: bytes) -> str | None:
 
 async def generate_audio_edge_tts_async(text: str, voice_id: str, output_path: str):
     communicate = edge_tts.Communicate(text, voice_id)
-    await communicate.save(output_path) # This await is fine as it's inside an async function
+    await communicate.save(output_path) 
     logger.info(f"Edge TTS audio saved to {output_path} for voice {voice_id}")
 
 @creator_required
@@ -142,7 +146,7 @@ def generate_tts_preview_audio(request):
             return JsonResponse({'status': 'error', 'message': 'Text content is required.'}, status=400)
         if len(text_content) < 10:
             return JsonResponse({'status': 'error', 'message': 'Text content too short (min 10 characters).'}, status=400)
-        if len(text_content) > 5000:
+        if len(text_content) > 5000: # Max length for preview
             return JsonResponse({'status': 'error', 'message': 'Text content too long (max 5000 chars for preview).'}, status=400)
         if not audiobook_language_selected:
             return JsonResponse({'status': 'error', 'message': 'Audiobook language selection is missing.'}, status=400)
@@ -153,15 +157,15 @@ def generate_tts_preview_audio(request):
 
         selected_voice_details = ALL_EDGE_TTS_VOICES_MAP.get(tts_voice_option_id)
         actual_edge_tts_voice_id_to_use = None
-        final_tts_voice_option_id = tts_voice_option_id
+        final_tts_voice_option_id = tts_voice_option_id # This will be the ID returned to client
 
         if not selected_voice_details or selected_voice_details not in voices_for_lang:
             logger.warning(f"[TTS PREVIEW AJAX] Invalid voice '{tts_voice_option_id}' for lang '{audiobook_language_selected}'. Trying default.")
-            if voices_for_lang: # Ensure there are voices for the language
-                selected_voice_details = voices_for_lang[0] # Default to first voice for the language
+            if voices_for_lang: 
+                selected_voice_details = voices_for_lang[0] 
                 actual_edge_tts_voice_id_to_use = selected_voice_details['edge_voice_id']
-                final_tts_voice_option_id = selected_voice_details['id'] # Use the ID of the voice actually being used
-            else: # Should not happen if previous check for voices_for_lang passed
+                final_tts_voice_option_id = selected_voice_details['id'] 
+            else: 
                  return JsonResponse({'status': 'error', 'message': f'No voices configured for {audiobook_language_selected}.'}, status=400)
         else:
             actual_edge_tts_voice_id_to_use = selected_voice_details['edge_voice_id']
@@ -169,32 +173,47 @@ def generate_tts_preview_audio(request):
         if not actual_edge_tts_voice_id_to_use:
              return JsonResponse({'status': 'error', 'message': 'Could not determine a valid TTS voice.'}, status=400)
 
-        temp_dir_name = getattr(settings, 'TEMP_TTS_PREVIEWS_DIR_NAME', 'temp_tts_previews')
-        temp_full_dir = os.path.join(settings.MEDIA_ROOT, temp_dir_name)
-        os.makedirs(temp_full_dir, exist_ok=True)
+        # Using friend's variable names for consistency with cleanup logic
+        temp_tts_dir_name = getattr(settings, 'TEMP_TTS_PREVIEWS_DIR_NAME', 'temp_tts_previews')
+        temp_tts_full_dir_path = os.path.join(settings.MEDIA_ROOT, temp_tts_dir_name)
+        os.makedirs(temp_tts_full_dir_path, exist_ok=True)
 
-        temp_filename = f"preview_{request.user.user_id}_{uuid.uuid4().hex[:8]}.mp3"
-        temp_filepath = os.path.join(temp_full_dir, temp_filename)
+        temp_audio_filename = f"preview_{request.user.user_id}_{uuid.uuid4().hex[:8]}.mp3"
+        temp_audio_filepath_local = os.path.join(temp_tts_full_dir_path, temp_audio_filename)
         
-        # CORRECTED: Use asyncio.run() to call the async function
-        asyncio.run(generate_audio_edge_tts_async(text_content, actual_edge_tts_voice_id_to_use, temp_filepath))
+        asyncio.run(generate_audio_edge_tts_async(text_content, actual_edge_tts_voice_id_to_use, temp_audio_filepath_local))
 
-        audio_url = os.path.join(settings.MEDIA_URL, temp_dir_name, temp_filename).replace(os.sep, '/')
-        if not audio_url.startswith('/'): audio_url = '/' + audio_url
-        
-        # ... (Optional cleanup logic) ...
+        # Construct URL using friend's naming
+        temp_audio_url = os.path.join(settings.MEDIA_URL, temp_tts_dir_name, temp_audio_filename)
+        temp_audio_url = temp_audio_url.replace(os.sep, '/') # Ensure forward slashes for URL
+        if not temp_audio_url.startswith('/'): temp_audio_url = '/' + temp_audio_url
+
+        # Cleanup old temporary files (from friend's branch)
+        try:
+            for old_file_name in os.listdir(temp_tts_full_dir_path):
+                old_filepath = os.path.join(temp_tts_full_dir_path, old_file_name)
+                if os.path.isfile(old_filepath):
+                    # Use Python's datetime for timestamp, then make timezone aware if needed
+                    file_mod_time_naive = datetime.datetime.fromtimestamp(os.path.getmtime(old_filepath))
+                    file_mod_time_aware = timezone.make_aware(file_mod_time_naive, timezone.get_default_timezone()) if timezone.is_naive(file_mod_time_naive) else file_mod_time_naive
+                    
+                    if file_mod_time_aware < (timezone.now() - timedelta(hours=getattr(settings, 'TEMP_FILE_CLEANUP_HOURS', 2))):
+                        os.remove(old_filepath)
+                        logger.info(f"[EDGE_TTS PREVIEW] Deleted old temp file: {old_filepath}")
+        except Exception as e_cleanup:
+            logger.error(f"[EDGE_TTS PREVIEW] Error cleaning up old temp TTS files: {e_cleanup}", exc_info=True)
 
         return JsonResponse({
             'status': 'success',
-            'audio_url': audio_url,
+            'audio_url': temp_audio_url, # Use the correct URL variable
             'voice_id_used': final_tts_voice_option_id, 
-            'filename': temp_filename
+            'filename': temp_audio_filename # Use the correct filename variable
         })
     except Exception as e:
         logger.error(f"[TTS PREVIEW AJAX] Error for user {request.user.username}: {e}", exc_info=True)
         return JsonResponse({'status': 'error', 'message': f'An unexpected error occurred: {str(e)}'}, status=500)
 
-@csrf_protect
+@csrf_protect # No login_required here, form handles auth if needed, or it's public with limits
 def generate_document_tts_preview_audio(request):
     if request.method == 'POST':
         form = DocumentUploadForm(request.POST, request.FILES)
@@ -202,7 +221,7 @@ def generate_document_tts_preview_audio(request):
             try:
                 document_file = form.cleaned_data['document_file']
                 language_from_form = form.cleaned_data['language']
-                narrator_gender_from_form = form.cleaned_data.get('narrator_gender', '')
+                narrator_gender_from_form = form.cleaned_data.get('narrator_gender', '') # Optional
 
                 actual_edge_tts_voice_id = None
                 voices_for_selected_lang = EDGE_TTS_VOICES_BY_LANGUAGE.get(language_from_form)
@@ -211,21 +230,20 @@ def generate_document_tts_preview_audio(request):
                     logger.error(f"[DOC_TTS] No voices configured for language key: '{language_from_form}'.")
                     return JsonResponse({'status': 'error', 'message': f"TTS is not available for the selected language: {language_from_form}."}, status=400)
 
+                # Using HEAD's voice selection logic
                 if narrator_gender_from_form:
                     found_voice = next((v for v in voices_for_selected_lang if v['gender'].lower() == narrator_gender_from_form.lower()), None)
                     if found_voice:
                         actual_edge_tts_voice_id = found_voice['edge_voice_id']
-                    else:
+                    else: # Default to first voice of the language if gender not matched
                         actual_edge_tts_voice_id = voices_for_selected_lang[0]['edge_voice_id']
                         logger.warning(f"[DOC_TTS] No specific voice for gender '{narrator_gender_from_form}' in lang '{language_from_form}'. Defaulting to {actual_edge_tts_voice_id}")
-                else:
-                    if voices_for_selected_lang:
+                else: # No gender specified, default to first voice of the language
+                    if voices_for_selected_lang: # Should always be true due to earlier check
                         actual_edge_tts_voice_id = voices_for_selected_lang[0]['edge_voice_id']
-                    else:
-                         logger.error(f"[DOC_TTS] Language '{language_from_form}' selected but no voices are listed for it.")
-                         return JsonResponse({'status': 'error', 'message': f"No TTS voices available for {language_from_form}."}, status=400)
+                    # No else needed, covered by 'if not voices_for_selected_lang'
 
-                if not actual_edge_tts_voice_id:
+                if not actual_edge_tts_voice_id: # Should ideally not be reached if logic above is correct
                     logger.error(f"[DOC_TTS] Critical: Could not determine TTS voice for lang '{language_from_form}', gender '{narrator_gender_from_form}'.")
                     return JsonResponse({'status': 'error', 'message': 'Could not determine a narrator voice for your selection.'}, status=400)
 
@@ -240,16 +258,22 @@ def generate_document_tts_preview_audio(request):
                     extracted_text = extract_text_from_pdf(doc_content_bytes)
                 elif doc_extension == '.docx' and docx:
                     extracted_text = extract_text_from_docx(doc_content_bytes)
-                elif doc_extension == '.doc' and docx:
+                elif doc_extension == '.doc' and docx: # Attempt .doc with python-docx
                     extracted_text = extract_text_from_docx(doc_content_bytes)
                 else:
-                    return JsonResponse({'status': 'error', 'message': 'Unsupported document type after form validation.'}, status=400)
-
+                    # This case should be caught by form validation, but as a fallback:
+                    return JsonResponse({'status': 'error', 'message': 'Unsupported document type after form validation. Please use PDF, DOCX.'}, status=400)
+                
+                # Using friend's more detailed error message for text extraction failure
                 if not extracted_text or len(extracted_text.strip()) < 10:
-                    msg = "Could not extract sufficient text. Document might be empty, image-based, or content not readable."
+                    msg = "Could not extract sufficient text from the document. It might be empty, image-based, or an unsupported format."
+                    if doc_extension == '.doc' and not docx: 
+                        msg += " For .doc files, ensure it's text-based or try converting to .docx or PDF. The server may also need a library to process .doc files."
+                    elif doc_extension == '.doc' and docx:
+                         msg += " For .doc files, ensure it's text-based or try converting to .docx or PDF."
                     return JsonResponse({'status': 'error', 'message': msg}, status=400)
 
-                text_for_preview = extracted_text.strip()[:5000]
+                text_for_preview = extracted_text.strip()[:5000] # Limit preview length
                 temp_tts_dir_name = getattr(settings, 'TEMP_DOC_TTS_PREVIEWS_DIR_NAME', 'temp_doc_tts_previews')
                 temp_tts_full_dir_path = os.path.join(settings.MEDIA_ROOT, temp_tts_dir_name)
                 os.makedirs(temp_tts_full_dir_path, exist_ok=True)
@@ -257,30 +281,34 @@ def generate_document_tts_preview_audio(request):
                 temp_audio_filename = f"doc_preview_{user_id_part}_{uuid.uuid4().hex[:8]}.mp3"
                 temp_audio_filepath_local = os.path.join(temp_tts_full_dir_path, temp_audio_filename)
 
-                # CORRECTED: Use asyncio.run() to call the async function
                 asyncio.run(generate_audio_edge_tts_async(text_for_preview, actual_edge_tts_voice_id, temp_audio_filepath_local))
                 
                 if os.path.exists(temp_audio_filepath_local):
                     with open(temp_audio_filepath_local, 'rb') as f_audio:
                         audio_content_blob = f_audio.read()
                     try:
-                        os.remove(temp_audio_filepath_local)
+                        os.remove(temp_audio_filepath_local) # Clean up after reading
                     except OSError as e_remove:
                         logger.error(f"[DOC_TTS] Could not delete temp audio file {temp_audio_filepath_local}: {e_remove}")
+                    
                     response = HttpResponse(audio_content_blob, content_type='audio/mpeg')
-                    response['Content-Disposition'] = f'attachment; filename="{temp_audio_filename}"'
+                    response['Content-Disposition'] = f'attachment; filename="{temp_audio_filename}"' # Suggest download
                     return response
                 else:
                     logger.error(f"[DOC_TTS] Generated audio file not found at {temp_audio_filepath_local}")
                     return JsonResponse({'status': 'error', 'message': 'Generated audio file not found on server.'}, status=500)
 
             except Exception as e_post:
-                logger.error(f"[DOC_TTS] POST Error for User: {user_display_name}. Error: {e_post}", exc_info=True)
+                logger.error(f"[DOC_TTS] POST Error for User: {user_display_name if 'user_display_name' in locals() else 'UnknownUser'}. Error: {e_post}", exc_info=True)
                 return JsonResponse({'status': 'error', 'message': f'Server error during audio generation: {str(e_post)}'}, status=500)
-        else:
+        else: # Form is not valid
             logger.warning(f"[DOC_TTS] POST Form Invalid. User: {request.user.username if request.user.is_authenticated else 'AnonymousUser'}. Errors: {form.errors.as_json()}")
+            # Return form errors to be displayed on the client-side
             return JsonResponse({'status': 'error', 'message': 'Invalid data submitted. Please correct the errors below.', 'errors': form.errors.get_json_data()}, status=400)
     else: # GET request
         form = DocumentUploadForm()
+        # You might want to pass EDGE_TTS_VOICES_BY_LANGUAGE and LANGUAGE_GENRE_MAPPING to the template
+        # if the template needs to dynamically populate language/voice options.
         context = {'form': form}
+        # Add any other context needed for the GET request template
         return render(request, 'generate_audiobook/generate_audiobook.html', context)

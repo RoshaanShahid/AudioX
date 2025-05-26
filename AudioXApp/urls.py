@@ -1,18 +1,20 @@
 # AudioXApp/urls.py
-from django.urls import path
+from django.urls import path, include # Combined import, 'include' from friend's branch
 from .views import (
     content_views,
-    audio_views
+    audio_views,
+    library_views, # Added from friend's branch
+    history_views  # Added from friend's branch
 )
 # Import the admin view modules
 from .views.admin_views import (
     admin_auth_views,
     admin_dashboard_views,
-    admin_creator_manage_views,
-    admin_users_manage_views,
-    admin_manage_financials_views,
-    admin_ticket_management_views,
-    admin_management_views
+    admin_creator_manage_views, # Common, HEAD had more specific list below
+    admin_users_manage_views,         # From HEAD
+    admin_manage_financials_views,    # From HEAD
+    admin_ticket_management_views,    # From HEAD
+    admin_management_views            # From HEAD
 )
 # Import creator view modules
 from .views.creator_views import (
@@ -22,6 +24,7 @@ from .views.creator_views import (
     earning_views as creator_earning_views,
     creator_tts_views,
     admin_actions_views as creator_admin_actions_views
+    # Add other creator sub-modules if they exist and are used
 )
 # Import user and auth view modules
 from .views.user_views import (
@@ -30,12 +33,13 @@ from .views.user_views import (
     wallet_views,
     subscription_views,
     payment_processing_views,
-    account_activity_views,
-    contactsupport_views
+    account_activity_views, # Common
+    contactsupport_views    # From HEAD
+    # Add other user sub-modules if they exist and are used
 )
 # Import views for static/legal pages and features
-from .views.legal_views import static_pages_views
-from .views.features_views import community_chatrooms_views
+from .views.legal_views import static_pages_views # From HEAD
+from .views.features_views import community_chatrooms_views # From HEAD
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -54,17 +58,27 @@ urlpatterns = [
     path('urdu/', content_views.urdu_page, name='urdu_page'),
     path('punjabi/', content_views.punjabi_page, name='punjabi_page'),
     path('sindhi/', content_views.sindhi_page, name='sindhi_page'),
+
+    # Genre pages
     path('genre/fiction/', content_views.genre_fiction, name='genre_fiction'),
     path('genre/mystery/', content_views.genre_mystery, name='genre_mystery'),
     path('genre/thriller/', content_views.genre_thriller, name='genre_thriller'),
-    path('genre/scifi/', content_views.genre_scifi, name='genre_scifi'),
+    path('genre/science-fiction/', content_views.genre_scifi, name='genre_scifi'),
     path('genre/fantasy/', content_views.genre_fantasy, name='genre_fantasy'),
-    path('genre/biography/', content_views.genre_biography, name='genre_biography'),
     path('genre/romance/', content_views.genre_romance, name='genre_romance'),
+    path('genre/biography/', content_views.genre_biography, name='genre_biography'),
     path('genre/history/', content_views.genre_history, name='genre_history'),
-    path('genre/selfhelp/', content_views.genre_selfhelp, name='genre_selfhelp'),
+    path('genre/self-help/', content_views.genre_selfhelp, name='genre_selfhelp'),
     path('genre/business/', content_views.genre_business, name='genre_business'),
-    path('creator/generate-audio-from-document/', creator_tts_views.generate_document_tts_preview_audio, name='generate_audio_from_document'),
+
+    # --- MERGED SECTION for Audio Generation & Trending ---
+    # Kept from HEAD: Creator-specific document to audio generation
+    path('creator/generate-audio-from-document/', creator_tts_views.generate_document_tts_preview_audio, name='creator_generate_audio_from_document'),
+    # Added from friend's branch: Trending Page URL
+    path('trending/', content_views.trending_audiobooks_view, name='trending_audiobooks'),
+    # Kept from friend's branch: General audio generation (if still used, name changed to avoid conflict)
+    path('generate-audio/', audio_views.generate_audio_from_document, name='general_generate_audio_from_document' ),
+    # --- END MERGED SECTION ---
 
     # --- Legal, Company, and Contact Pages ---
     path('ourteam/', static_pages_views.ourteam_view, name='ourteam'),
@@ -111,9 +125,20 @@ urlpatterns = [
     # --- User Account Activity Views ---
     path('billing-history/', account_activity_views.billing_history, name='billing_history'),
     path('my-downloads/', account_activity_views.my_downloads, name='my_downloads'),
-    path('my-library/', account_activity_views.my_library, name='my_library'),
+    # Original 'my-library' from HEAD, path and name changed to avoid conflict with new library page
+    path('my-account-library/', account_activity_views.my_library, name='my_account_library'),
 
-    # --- Stripe Payment URLs ---
+    # --- MERGED SECTION for Listening History & New Library ---
+    # Added from friend's branch: Listening History
+    path('my-listening-history/', history_views.listening_history_page, name='listening_history_page'),
+    path('ajax/update-audio-progress/', history_views.update_listening_progress, name='update_listening_progress'),
+
+    # Added from friend's branch: User Library URLs (new page for displaying library)
+    path('my-library/', library_views.my_library_page, name='my_library_page'),
+    path('ajax/toggle-library-item/', library_views.toggle_library_item, name='toggle_library_item'), # AJAX endpoint
+    # --- END MERGED SECTION ---
+
+    # --- Stripe Payment URLs (comment from friend's branch, actual URLs are the same) ---
     path('payment/create-checkout-session/', payment_processing_views.create_checkout_session, name='create_checkout_session'),
     path('payment/webhook/stripe/', payment_processing_views.stripe_webhook, name='stripe_webhook'),
 
@@ -131,7 +156,7 @@ urlpatterns = [
 
     # --- API Endpoints (Creator related) ---
     path('api/creator/mark-welcome-popup/', creator_profile_views.mark_welcome_popup_shown, name='api_mark_welcome_popup'),
-    path('api/creator/mark-rejection-popup/', creator_profile_views.mark_rejection_popup_shown, name='api_mark_rejection_popup'), # <<< FIX APPLIED HERE
+    path('api/creator/mark-rejection-popup/', creator_profile_views.mark_rejection_popup_shown, name='api_mark_rejection_popup'),
     path('api/audiobook/<slug:audiobook_slug>/chapters/', creator_audiobook_views.get_audiobook_chapters_json, name='get_audiobook_chapters'),
     path('api/audiobook/log-view/', creator_audiobook_views.log_audiobook_view, name='log_audiobook_view'),
     path('api/creator/generate-tts-preview/', creator_tts_views.generate_tts_preview_audio, name='generate_tts_preview_audio'),
