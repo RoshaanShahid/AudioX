@@ -128,7 +128,7 @@ def fetch_audiobooks_data():
                                 break
                         if cover_image_original_url: break
                     if cover_image_original_url: break
-
+            
             slug = slugify(title) if title and title != 'Unknown Title' else f'librivox-book-{random.randint(1000,9999)}'
 
             cover_image_proxy_url = None
@@ -199,10 +199,12 @@ def fetch_audiobooks_data():
                 else:
                     author = creator_data
 
-                description = doc.get('description', 'No description available.')
-                if isinstance(description, list):
-                    description = ' '.join(description)
-
+                description_data = doc.get('description', 'No description available.')
+                if isinstance(description_data, list):
+                    description = ' '.join(description_data)
+                else:
+                    description = description_data
+                
                 subjects = doc.get('subject', [])
                 language_from_doc = doc.get('language', 'English')
                 if isinstance(language_from_doc, list):
@@ -228,7 +230,7 @@ def fetch_audiobooks_data():
                             "audio_url": f"https://archive.org/download/{identifier}/{quote(f_item['name'])}"
                         })
                 if not chapters: continue
-
+                
                 slug = slugify(title) if title and title != 'Unknown Title' else f'archive-{term.lower().replace(" ", "-")}-{random.randint(1000,9999)}'
 
                 book_data = {
@@ -270,7 +272,7 @@ def fetch_audiobooks_data():
     if fetch_successful:
         new_cache_duration = 6 * 60 * 60  # 6 hours in seconds (21600)
         logger.info(f"CACHE SET: Storing fetched data in cache (key: {cache_key}, duration: {new_cache_duration}s).")
-        cache.set(cache_key, combined_data, new_cache_duration) # MODIFIED LINE for 6-hour timeout
+        cache.set(cache_key, combined_data, new_cache_duration) 
         return combined_data
     else:
         logger.warning(f"FETCH UNSUCCESSFUL: No new data to cache. Returning potentially partial or None.")
@@ -387,7 +389,7 @@ def audiobook_detail(request, audiobook_slug):
     audiobook_obj = None
     is_creator_book_page_flag = False
     context = _get_full_context(request)
-    template_name = 'audiobook_detail.html'
+    template_name = 'audiobook_detail.html' # Default for external books
 
     reviews_list = []
     user_review_object = None
@@ -399,9 +401,10 @@ def audiobook_detail(request, audiobook_slug):
     user_has_purchased = False
     chapters_to_display = []
     audiobook_lock_message = None
-    context_audiobook_data = None
+    context_audiobook_data = None # This will hold either the DB object or the dict for external books
 
     try:
+        # Try to get from DB first (creator books and potentially cached external ones)
         audiobook_obj = Audiobook.objects.prefetch_related(
             Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order')),
             Prefetch('reviews', queryset=Review.objects.select_related('user').order_by('-created_at'))
@@ -421,9 +424,9 @@ def audiobook_detail(request, audiobook_slug):
                     "comment": user_review_object.comment or ""
                 })
             except Review.DoesNotExist: pass
-            except TypeError:
+            except TypeError: # Handle case where request.user might not be a full User object
                 logger.warning(f"TypeError checking review for {request.user} on {audiobook_slug}.")
-
+        
         if is_creator_book_page_flag and audiobook_obj.is_paid:
             if request.user.is_authenticated and hasattr(request.user, 'has_purchased_audiobook'):
                 user_has_purchased = request.user.has_purchased_audiobook(audiobook_obj)
@@ -444,18 +447,18 @@ def audiobook_detail(request, audiobook_slug):
             preview_limit = getattr(audiobook_obj, 'preview_chapters', 0)
 
         for i, chapter_db_obj in enumerate(all_db_chapters):
-            is_accessible = True
+            is_accessible = True # Default for free/purchased or non-creator books handled by initial logic
             if is_creator_book_page_flag and audiobook_obj.is_paid and not user_has_purchased:
                 is_accessible = i < preview_limit
-
+            
             chapters_to_display.append({
                 'object': chapter_db_obj, 'is_accessible': is_accessible,
                 'audio_url': chapter_db_obj.audio_file.url if chapter_db_obj.audio_file else None,
                 'chapter_title': chapter_db_obj.chapter_name,
-                'duration': getattr(chapter_db_obj, 'duration_display', '--:--'),
+                'duration': getattr(chapter_db_obj, 'duration_display', '--:--'), # Assuming duration_display is a property or field
                 'chapter_index': i
             })
-        context_audiobook_data = audiobook_obj
+        context_audiobook_data = audiobook_obj # For creator books, this is the DB object
 
     except Audiobook.DoesNotExist:
         logger.info(f"Audiobook with slug '{audiobook_slug}' not in DB. Checking cache for external book.")
@@ -471,7 +474,7 @@ def audiobook_detail(request, audiobook_slug):
                         if book_dict_item.get('slug') == audiobook_slug:
                             found_external_book_dict = book_dict_item
                             break
-                else:
+                else: # For archive_genre_audiobooks and archive_language_audiobooks (which are dicts of lists)
                     for _, book_list_items in external_audiobook_data_cache.get(source_key, {}).items():
                         for book_dict_item in book_list_items:
                             if book_dict_item.get('slug') == audiobook_slug:
@@ -479,29 +482,34 @@ def audiobook_detail(request, audiobook_slug):
                                 break
                         if found_external_book_dict: break
                 if found_external_book_dict: break
-
+        
         if found_external_book_dict:
-            is_creator_book_page_flag = False
-            template_name = 'audiobook_detail.html'
+            is_creator_book_page_flag = False # It's an external book
+            template_name = 'audiobook_detail.html' # Ensure this is the correct template for external
 
+            # Create or update a minimal Audiobook entry for reviews and tracking if it doesn't exist
+            # This ensures reviews can be attached to a stable DB ID.
             audiobook_obj, created = Audiobook.objects.get_or_create(
                 slug=audiobook_slug,
                 defaults={
                     'title': found_external_book_dict.get('title', 'Unknown Title'),
                     'author': found_external_book_dict.get('author'),
-                    'description': found_external_book_dict.get('description'),
+                    'description': found_external_book_dict.get('description'), # Keep it short or consider not storing full desc
                     'language': found_external_book_dict.get('language'),
-                    'genre': found_external_book_dict.get('genre'),
-                    'source': found_external_book_dict.get('source', 'librivox'),
+                    'genre': found_external_book_dict.get('genre'), # If available
+                    'source': found_external_book_dict.get('source', 'librivox'), # Or 'archive'
                     'is_creator_book': False,
                     'creator': None,
                     'is_paid': False,
                     'price': Decimal('0.00'),
-                    'status': 'PUBLISHED',
+                    'status': 'PUBLISHED', # Assuming external books are always considered published
+                    # cover_image_url: found_external_book_dict.get('cover_image') # If you want to store this
                 }
             )
             if created:
-                logger.info(f"Created new Audiobook DB entry for external book: {audiobook_slug}")
+                logger.info(f"Created new Audiobook DB entry for external book: {audiobook_slug} to allow reviews/tracking.")
+            else: # If it exists, maybe update some fields if necessary, or just use it
+                pass
 
             reviews_list = audiobook_obj.reviews.select_related('user').order_by('-created_at').all()
             if request.user.is_authenticated:
@@ -513,68 +521,85 @@ def audiobook_detail(request, audiobook_slug):
                         "comment": user_review_object.comment or ""
                     })
                 except Review.DoesNotExist: pass
-
+            
+            # Populate chapters_to_display from the dictionary
             for i, ch_info in enumerate(found_external_book_dict.get('chapters', [])):
                 chapters_to_display.append({
-                    'object': None,
+                    'object': None, # No DB object for external chapters unless you model them
                     'chapter_title': ch_info.get('chapter_title'),
                     'audio_url': ch_info.get('audio_url'),
-                    'is_accessible': True,
-                    'duration': ch_info.get('duration', '--:--'),
+                    'is_accessible': True, # External book chapters are generally all accessible
+                    'duration': ch_info.get('duration', '--:--'), # If duration is available in cache
                     'chapter_index': i
                 })
-
-            context_audiobook_data = found_external_book_dict
-            context_audiobook_data.setdefault('author', 'Unknown Author')
-            context_audiobook_data['source'] = audiobook_obj.source
+            
+            context_audiobook_data = found_external_book_dict # For external books, this is the dict
+            # Ensure essential keys for the template are present in the dict
+            context_audiobook_data.setdefault('author', 'Unknown Author') # Default if not in dict
+            context_audiobook_data['source'] = audiobook_obj.source # Ensure source is from DB obj
+            # Add total_views and average_rating from the DB object
             context_audiobook_data.setdefault('total_views', audiobook_obj.total_views)
             context_audiobook_data.setdefault('average_rating', audiobook_obj.average_rating)
 
-        else:
+
+        else: # Not in DB and not in cache
             messages.error(request, "Audiobook not found or is not available.")
             logger.warning(f"Audiobook with slug '{audiobook_slug}' not found in DB or cache.")
             raise Http404("Audiobook not found or is not available.")
 
-    if audiobook_obj:
+    # Log the view and increment view count for the DB object (audiobook_obj)
+    if audiobook_obj: # Ensure we have a DB object to work with for logging and view counts
         current_user_for_log = request.user if request.user.is_authenticated else None
-
+        
+        # Create a view log entry regardless of whether total_views is incremented this time
         AudiobookViewLog.objects.create(audiobook=audiobook_obj, user=current_user_for_log)
 
+        # Determine if total_views on the Audiobook model should be incremented
         should_increment_total_views = False
-        if audiobook_obj.is_creator_book:
+        if audiobook_obj.is_creator_book: # Always increment for creator books on each detail view load
             should_increment_total_views = True
-        else:
+        else: # For external books, limit view count increment to once per 24 hours per user/session
             twenty_four_hours_ago = timezone.now() - timezone.timedelta(hours=24)
             if request.user.is_authenticated:
+                # Check if a view log for this user and book exists within the last 24 hours
+                # The current view log was just created, so we check for count > 1 (meaning previous + current)
+                # More accurately, check for a log *before* this current one.
+                # Simplification: if this is the *first* view by this user for this book in the last 24h for this new log entry.
                 if AudiobookViewLog.objects.filter(
-                    audiobook=audiobook_obj,
-                    user=request.user,
+                    audiobook=audiobook_obj, 
+                    user=request.user, 
                     viewed_at__gte=twenty_four_hours_ago
-                ).count() == 1:
+                ).count() == 1: # Only the one we just created
                     should_increment_total_views = True
-            else:
+            else: # Anonymous user, use session
                 last_viewed_timestamps = request.session.get('last_viewed_external_books', {})
                 slug_last_viewed_str = last_viewed_timestamps.get(audiobook_obj.slug)
-
+                
                 if slug_last_viewed_str:
-                    slug_last_viewed_dt = timezone.datetime.fromisoformat(slug_last_viewed_str)
-                    if settings.USE_TZ and timezone.is_naive(slug_last_viewed_dt):
-                        slug_last_viewed_dt = timezone.make_aware(slug_last_viewed_dt, timezone.get_default_timezone())
-
-                    if timezone.now() >= slug_last_viewed_dt + timezone.timedelta(hours=24):
+                    try:
+                        slug_last_viewed_dt = timezone.datetime.fromisoformat(slug_last_viewed_str)
+                        if settings.USE_TZ and timezone.is_naive(slug_last_viewed_dt):
+                             slug_last_viewed_dt = timezone.make_aware(slug_last_viewed_dt, timezone.get_default_timezone())
+                        
+                        if timezone.now() >= slug_last_viewed_dt + timezone.timedelta(hours=24):
+                            should_increment_total_views = True
+                            last_viewed_timestamps[audiobook_obj.slug] = timezone.now().isoformat()
+                            request.session['last_viewed_external_books'] = last_viewed_timestamps
+                    except ValueError: # Handle cases where isoformat parsing might fail
                         should_increment_total_views = True
                         last_viewed_timestamps[audiobook_obj.slug] = timezone.now().isoformat()
                         request.session['last_viewed_external_books'] = last_viewed_timestamps
-                else:
+                else: # First view in session
                     should_increment_total_views = True
                     last_viewed_timestamps[audiobook_obj.slug] = timezone.now().isoformat()
                     request.session['last_viewed_external_books'] = last_viewed_timestamps
 
         if should_increment_total_views:
             Audiobook.objects.filter(pk=audiobook_obj.pk).update(total_views=F('total_views') + 1)
-            audiobook_obj.refresh_from_db(fields=['total_views'])
+            audiobook_obj.refresh_from_db(fields=['total_views']) # Refresh the object
+            # If context_audiobook_data is a dict (for external books), update its view count
             if isinstance(context_audiobook_data, dict):
-                context_audiobook_data['total_views'] = audiobook_obj.total_views
+                 context_audiobook_data['total_views'] = audiobook_obj.total_views
 
 
     context['audiobook'] = context_audiobook_data
@@ -596,17 +621,24 @@ def audiobook_detail(request, audiobook_slug):
 
 @login_required
 @require_POST
-@csrf_protect
+@csrf_protect # Ensure CSRF protection
 def add_review(request, audiobook_slug):
     try:
+        # Use the Audiobook DB object for review, whether it's a creator book or an external one (that was get_or_created)
         audiobook = get_object_or_404(Audiobook, slug=audiobook_slug)
         can_review = False
-        if not audiobook.is_paid:
-            can_review = True
-        elif audiobook.is_paid and request.user.is_authenticated and hasattr(request.user, 'has_purchased_audiobook'):
-            if audiobook.is_creator_book and request.user.has_purchased_audiobook(audiobook):
-                can_review = True
 
+        # Logic to determine if a user can review:
+        # 1. Non-paid (free) books can always be reviewed by logged-in users.
+        # 2. Paid creator books require purchase.
+        # (External books are usually free, if they were paid, this logic would need extension)
+        if not audiobook.is_paid: # Covers free creator books and all external books (assumed free)
+            can_review = True
+        elif audiobook.is_paid and audiobook.is_creator_book: # Paid creator book
+            if request.user.is_authenticated and hasattr(request.user, 'has_purchased_audiobook'):
+                if request.user.has_purchased_audiobook(audiobook):
+                    can_review = True
+        
         if not can_review:
             return JsonResponse({'status': 'error', 'message': 'You must purchase this audiobook or it must be free to leave a review.'}, status=403)
 
@@ -630,19 +662,20 @@ def add_review(request, audiobook_slug):
                 user=request.user,
                 defaults={'rating': rating, 'comment': comment}
             )
-
-        audiobook.refresh_from_db()
-        new_average_rating_val = audiobook.average_rating
+        
+        # Recalculate average rating on the Audiobook model instance
+        audiobook.refresh_from_db() # To get the latest review set for average calculation
+        new_average_rating_val = audiobook.average_rating # This should be updated by the signal or model's save method
 
         message = "Review updated successfully!" if not created else "Review added successfully!"
         user_profile_pic_url = None
         if hasattr(review.user, 'profile_pic') and review.user.profile_pic:
             try: user_profile_pic_url = review.user.profile_pic.url
-            except ValueError: pass
+            except ValueError: pass # Handle missing file gracefully
 
         review_data = {
             'review_id': review.review_id, 'rating': review.rating, 'comment': review.comment or "",
-            'user_id': getattr(review.user, 'user_id', getattr(review.user, 'id', None)),
+            'user_id': getattr(review.user, 'user_id', getattr(review.user, 'id', None)), # Handle potential differences in user model id attribute
             'user_name': getattr(review.user, 'full_name', review.user.username) or review.user.username,
             'user_profile_pic': user_profile_pic_url, 'created_at': review.created_at.isoformat(),
             'timesince': timesince(review.created_at) + " ago",
@@ -654,137 +687,228 @@ def add_review(request, audiobook_slug):
         logger.error(f"Error in add_review for {audiobook_slug}: {e}", exc_info=True)
         return JsonResponse({'status': 'error', 'message': 'An unexpected server error occurred. Please try again.'}, status=500)
 
-@csrf_exempt
+@csrf_exempt # Consider if this is safe or if you need CSRF for GET proxy
 @require_GET
 def stream_audio(request):
     audio_url_param = request.GET.get("url")
     if not audio_url_param: return JsonResponse({"error": "No audio URL provided"}, status=400)
+    
     target_audio_url = audio_url_param
     parsed_url = urlparse(target_audio_url)
+
+    # Check if it's a local media URL (relative to MEDIA_URL)
     is_local_media = target_audio_url.startswith(settings.MEDIA_URL) and not parsed_url.scheme and not parsed_url.netloc
+    
     if is_local_media:
         try:
-            if not target_audio_url.startswith(('http://', 'https://')): target_audio_url = request.build_absolute_uri(target_audio_url)
-        except Exception as e: return HttpResponse("Error processing local audio URL", status=500)
-    elif not all([parsed_url.scheme, parsed_url.netloc]): return HttpResponse(f"Invalid audio URL provided: {audio_url_param}", status=400)
+            # Ensure it's an absolute URI if it's local to make requests.get work if needed,
+            # or handle serving directly from Django for local files (safer).
+            # For simplicity, if you are proxying local files too via requests.get:
+            if not target_audio_url.startswith(('http://', 'https://')):
+                 target_audio_url = request.build_absolute_uri(target_audio_url)
+        except Exception as e:
+            logger.error(f"Error processing local audio URL for streaming: {e}")
+            return HttpResponse("Error processing local audio URL", status=500)
+    elif not all([parsed_url.scheme, parsed_url.netloc]): # Check if it's a valid absolute URL
+        return HttpResponse(f"Invalid audio URL provided: {audio_url_param}", status=400)
+
     try:
         range_header = request.headers.get('Range', None)
-        user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "audiox.com"
+        user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "audiox.com" # Fallback
         proxy_headers = {'User-Agent': f'AudioXApp Audio Proxy/1.0 (+http://{user_agent_host})'}
         if range_header: proxy_headers['Range'] = range_header
-        audio_stream_timeout = 45
+        
+        audio_stream_timeout = 45 # seconds
         response = requests.get(target_audio_url, stream=True, headers=proxy_headers, timeout=audio_stream_timeout)
-        response.raise_for_status()
+        response.raise_for_status() # Raises HTTPError for bad responses (4XX or 5XX)
+
         content_type = response.headers.get('Content-Type', 'audio/mpeg')
+        # Validate or guess content type if not explicitly audio
         if not content_type.lower().startswith('audio/'):
             guessed_type, _ = mimetypes.guess_type(target_audio_url)
             content_type = guessed_type if guessed_type and guessed_type.startswith('audio/') else 'audio/mpeg'
+
         def generate_audio_chunks():
             try:
-                for chunk in response.iter_content(chunk_size=8192):
+                for chunk in response.iter_content(chunk_size=8192): # 8KB chunks
                     if chunk: yield chunk
-            finally: response.close()
+            finally:
+                response.close() # Ensure the response is closed
+
         streaming_response = StreamingHttpResponse(generate_audio_chunks(), content_type=content_type)
+        
+        # Forward relevant headers for streaming and content negotiation
         if 'Content-Range' in response.headers: streaming_response['Content-Range'] = response.headers['Content-Range']
         if 'Content-Length' in response.headers: streaming_response['Content-Length'] = response.headers['Content-Length']
-        streaming_response['Accept-Ranges'] = 'bytes'
-        streaming_response.status_code = response.status_code
+        streaming_response['Accept-Ranges'] = 'bytes' # Important for seeking
+        streaming_response.status_code = response.status_code # Forward the status code (e.g., 206 Partial Content)
+        
         return streaming_response
-    except requests.exceptions.Timeout: return HttpResponse("Audio stream timed out from external source", status=408)
-    except requests.exceptions.HTTPError as e_http: return HttpResponse(f"Error fetching audio from external source: Status {e_http.response.status_code}", status=e_http.response.status_code)
-    except requests.exceptions.RequestException as e_req: return HttpResponse("Error processing audio stream (could not connect to external source)", status=502)
-    except SuspiciousOperation as e_susp: return JsonResponse({"error": str(e_susp)}, status=400)
-    except Exception as e_gen: return HttpResponse("Internal server error during audio streaming", status=500)
 
-@csrf_exempt
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout streaming audio from: {target_audio_url}")
+        return HttpResponse("Audio stream timed out from external source", status=408)
+    except requests.exceptions.HTTPError as e_http:
+        logger.error(f"HTTPError streaming audio from {target_audio_url}: {e_http.response.status_code} - {e_http.response.text[:200]}")
+        return HttpResponse(f"Error fetching audio from external source: Status {e_http.response.status_code}", status=e_http.response.status_code)
+    except requests.exceptions.RequestException as e_req: # Other network errors
+        logger.error(f"RequestException streaming audio from {target_audio_url}: {e_req}")
+        return HttpResponse("Error processing audio stream (could not connect to external source)", status=502) # Bad Gateway
+    except SuspiciousOperation as e_susp: # If Django detects suspicious operations with the URL
+        logger.warning(f"SuspiciousOperation in stream_audio: {e_susp}")
+        return JsonResponse({"error": str(e_susp)}, status=400)
+    except Exception as e_gen:
+        logger.error(f"Generic error in stream_audio from {target_audio_url}: {e_gen}", exc_info=True)
+        return HttpResponse("Internal server error during audio streaming", status=500)
+
+
+@csrf_exempt # Consider if this is safe or if you need CSRF for GET proxy
 @require_GET
 def fetch_cover_image(request):
     image_url = request.GET.get("url")
     if not image_url: return JsonResponse({"error": "No image URL provided"}, status=400)
+
     target_image_url = image_url
     parsed_url = urlparse(image_url)
+    
     is_local_media = image_url.startswith(settings.MEDIA_URL) and not parsed_url.scheme and not parsed_url.netloc
     if is_local_media:
         try:
-            if not target_image_url.startswith(('http://', 'https://')): target_image_url = request.build_absolute_uri(target_image_url)
-        except Exception as e: return HttpResponse("Error processing local image URL", status=500)
-    elif not all([parsed_url.scheme, parsed_url.netloc]): return HttpResponse("Invalid image URL provided", status=400)
+            if not target_image_url.startswith(('http://', 'https://')):
+                target_image_url = request.build_absolute_uri(target_image_url)
+        except Exception as e:
+            logger.error(f"Error processing local image URL for proxy: {e}")
+            return HttpResponse("Error processing local image URL", status=500)
+    elif not all([parsed_url.scheme, parsed_url.netloc]):
+        return HttpResponse("Invalid image URL provided", status=400)
+
     try:
         user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "AudioXApp.com"
         proxy_headers = {'User-Agent': f'AudioXApp Image Proxy/1.0 (+http://{user_agent_host})'}
-        image_fetch_timeout = 30
+        image_fetch_timeout = 30 # seconds
+        
         response = requests.get(target_image_url, stream=True, timeout=image_fetch_timeout, headers=proxy_headers)
         response.raise_for_status()
-        content_type = response.headers.get('Content-Type', 'image/jpeg')
+
+        content_type = response.headers.get('Content-Type', 'image/jpeg') # Default to jpeg
         if not content_type.lower().startswith('image/'):
             guessed_type, _ = mimetypes.guess_type(target_image_url)
             content_type = guessed_type if guessed_type and guessed_type.startswith('image/') else 'image/jpeg'
+        
         streaming_response = StreamingHttpResponse(response.iter_content(chunk_size=8192), content_type=content_type)
         if 'Content-Length' in response.headers: streaming_response['Content-Length'] = response.headers['Content-Length']
         streaming_response.status_code = response.status_code
+        
         return streaming_response
-    except requests.exceptions.Timeout: return HttpResponse("Image fetch timed out", status=408)
-    except requests.exceptions.HTTPError as e_http: return HttpResponse(f"Error fetching image: {e_http.response.status_code}", status=e_http.response.status_code)
-    except requests.exceptions.RequestException as e_req: return HttpResponse("Failed to fetch image", status=502)
-    except SuspiciousOperation as e_susp: return JsonResponse({"error": str(e_susp)}, status=400)
-    except Exception as e_gen: return HttpResponse("Internal server error", status=500)
+    except requests.exceptions.Timeout:
+        logger.warning(f"Timeout fetching image from: {target_image_url}")
+        return HttpResponse("Image fetch timed out", status=408)
+    except requests.exceptions.HTTPError as e_http:
+        logger.warning(f"HTTPError fetching image from {target_image_url}: {e_http.response.status_code}")
+        return HttpResponse(f"Error fetching image: {e_http.response.status_code}", status=e_http.response.status_code)
+    except requests.exceptions.RequestException as e_req:
+        logger.warning(f"RequestException fetching image from {target_image_url}: {e_req}")
+        return HttpResponse("Failed to fetch image", status=502)
+    except SuspiciousOperation as e_susp:
+        logger.warning(f"SuspiciousOperation in fetch_cover_image: {e_susp}")
+        return JsonResponse({"error": str(e_susp)}, status=400)
+    except Exception as e_gen:
+        logger.error(f"Generic error in fetch_cover_image from {target_image_url}: {e_gen}", exc_info=True)
+        return HttpResponse("Internal server error", status=500)
+
 
 def search_results_view(request):
     query = request.GET.get('q', '').strip().lower()
     processed_results = []
-    seen_slugs = set()
+    seen_slugs = set() # To avoid duplicates if a book is in DB and also from external source matching query
     common_context = _get_full_context(request)
+
     if query:
+        # Search in creator-uploaded books (Audiobook model where is_creator_book=True)
         db_audiobooks = Audiobook.objects.filter(
             Q(title__icontains=query) | Q(author__icontains=query) | Q(creator__creator_name__icontains=query) |
-            Q(genre__icontains=query) | Q(description__icontains=query),
-            status='PUBLISHED', is_creator_book=True
-        ).select_related('creator').distinct().order_by('-publish_date')
+            Q(genre__icontains=query) | Q(description__icontains=query), # Consider if description search is too broad/slow
+            status='PUBLISHED', is_creator_book=True # Only search published creator books
+        ).select_related('creator').distinct().order_by('-publish_date') # Order by relevance or date
+
         for book in db_audiobooks:
             if book.slug not in seen_slugs:
-                processed_results.append({'slug': book.slug, 'title': book.title, 'author': book.author, 'cover_image_url': book.cover_image.url if book.cover_image else None, 'creator_name': book.creator.creator_name if book.creator else None, 'average_rating': book.average_rating, 'total_views': book.total_views, 'is_creator_book': True, 'source_type': 'creator', 'price': book.price, 'is_paid': book.is_paid, 'genre': book.genre, 'language': book.language})
+                processed_results.append({
+                    'slug': book.slug, 'title': book.title, 'author': book.author, 
+                    'cover_image_url': book.cover_image.url if book.cover_image else None,
+                    'creator_name': book.creator.creator_name if book.creator else None,
+                    'average_rating': book.average_rating, 'total_views': book.total_views,
+                    'is_creator_book': True, 'source_type': 'creator',
+                    'price': book.price, 'is_paid': book.is_paid,
+                    'genre': book.genre, 'language': book.language
+                })
                 seen_slugs.add(book.slug)
+
+        # Search in external audiobooks from cache
         cache_key = 'librivox_archive_audiobooks_data_v6'
         cached_data = cache.get(cache_key)
         if cached_data:
-            external_sources_to_search = [("librivox_audiobooks", "librivox"), ("archive_genre_audiobooks", "archive.org"), ("archive_language_audiobooks", "archive.org")]
+            external_sources_to_search = [
+                ("librivox_audiobooks", "librivox"), 
+                ("archive_genre_audiobooks", "archive.org"), 
+                ("archive_language_audiobooks", "archive.org")
+            ]
             for source_list_key, source_type_val in external_sources_to_search:
-                if source_list_key == "librivox_audiobooks":
+                if source_list_key == "librivox_audiobooks": # This is a list
                     item_list = cached_data.get(source_list_key, [])
                     for book_dict in item_list:
                         book_slug = book_dict.get('slug')
-                        if book_slug and book_slug not in seen_slugs:
+                        if book_slug and book_slug not in seen_slugs: # Check if already added from DB
+                            # Check multiple fields for the query
                             title_match = query in book_dict.get('title', '').lower()
                             desc_match = query in book_dict.get('description', '').lower()
                             author_match = query in book_dict.get('author', '').lower() if book_dict.get('author') else False
                             genre_match = query in book_dict.get('genre', '').lower() if book_dict.get('genre') else False
                             lang_match = query in book_dict.get('language', '').lower() if book_dict.get('language') else False
+
                             if title_match or desc_match or author_match or genre_match or lang_match:
-                                processed_results.append({'slug': book_slug, 'title': book_dict.get('title'), 'author': book_dict.get('author', 'LibriVox'), 'cover_image_url': book_dict.get('cover_image'), 'creator_name': None, 'average_rating': None, 'total_views': None, 'is_creator_book': False, 'source_type': source_type_val, 'price': Decimal("0.00"), 'is_paid': False, 'genre': book_dict.get('genre'), 'language': book_dict.get('language')})
+                                processed_results.append({
+                                    'slug': book_slug, 'title': book_dict.get('title'), 
+                                    'author': book_dict.get('author', 'LibriVox'), 
+                                    'cover_image_url': book_dict.get('cover_image'), # This is already proxied URL
+                                    'creator_name': None, 'average_rating': None, 'total_views': None, # External books might not have these tracked same way
+                                    'is_creator_book': False, 'source_type': source_type_val,
+                                    'price': Decimal("0.00"), 'is_paid': False,
+                                    'genre': book_dict.get('genre'), 'language': book_dict.get('language')
+                                })
                                 seen_slugs.add(book_slug)
-                else:
-                    for term_books_list in cached_data.get(source_list_key, {}).values():
+                else: # For archive_... which are dicts of lists
+                    for term_key, term_books_list in cached_data.get(source_list_key, {}).items():
                         for book_dict in term_books_list:
                             book_slug = book_dict.get('slug')
                             if book_slug and book_slug not in seen_slugs:
                                 title_match = query in book_dict.get('title', '').lower()
                                 desc_match = query in book_dict.get('description', '').lower()
                                 author_match = query in book_dict.get('author', '').lower()
+                                # Archive books might have 'subjects' list instead of a single 'genre' string
                                 subject_match = any(query in subject.lower() for subject in book_dict.get('subjects', []))
                                 genre_match = query in book_dict.get('genre', '').lower() if book_dict.get('genre') else False
                                 lang_match = query in book_dict.get('language', '').lower() if book_dict.get('language') else False
+                                
                                 if title_match or desc_match or author_match or subject_match or genre_match or lang_match:
-                                    processed_results.append({'slug': book_slug, 'title': book_dict.get('title'), 'author': book_dict.get('author'), 'cover_image_url': book_dict.get('cover_image'), 'creator_name': None, 'average_rating': None, 'total_views': None, 'is_creator_book': False, 'source_type': source_type_val, 'price': Decimal("0.00"), 'is_paid': False, 'genre': book_dict.get('genre'), 'language': book_dict.get('language')})
+                                    processed_results.append({
+                                        'slug': book_slug, 'title': book_dict.get('title'), 
+                                        'author': book_dict.get('author'), 
+                                        'cover_image_url': book_dict.get('cover_image'), # Archive.org direct image URL
+                                        'creator_name': None, 'average_rating': None, 'total_views': None,
+                                        'is_creator_book': False, 'source_type': source_type_val,
+                                        'price': Decimal("0.00"), 'is_paid': False,
+                                        'genre': book_dict.get('genre'), 'language': book_dict.get('language')
+                                    })
                                     seen_slugs.add(book_slug)
-        else: logger.warning("Search: External audiobook cache is empty or not available.")
-    context_data = {'query': request.GET.get('q', '').strip(), 'results': processed_results, 'page_title': f"Search Results for '{request.GET.get('q', '').strip()}'" if query else "Search Audiobooks"}
-    context_data.update(common_context)
-    return render(request, 'audiobooks/English/english_search.html', context_data)
+        else:
+            logger.warning("Search: External audiobook cache is empty or not available.")
+            messages.info(request, "External audiobook listings are currently being updated. Search results may be limited.")
 
-def ourteam(request): return render(request, 'company/ourteam.html', _get_full_context(request))
-def paymentpolicy(request): return render(request, 'legal/paymentpolicy.html', _get_full_context(request))
-def privacypolicy(request): return render(request, 'legal/privacypolicy.html', _get_full_context(request))
-def piracypolicy(request): return render(request, 'legal/piracypolicy.html', _get_full_context(request))
-def termsandconditions(request): return render(request, 'legal/termsandconditions.html', _get_full_context(request))
-def aboutus(request): return render(request, 'company/aboutus.html', _get_full_context(request))
-def contactus(request): return render(request, 'company/contactus.html', _get_full_context(request))
+    context_data = {
+        'query': request.GET.get('q', '').strip(), 
+        'results': processed_results,
+        'page_title': f"Search Results for '{request.GET.get('q', '').strip()}'" if query else "Search Audiobooks"
+    }
+    context_data.update(common_context) # Add common context like user info, CSRF token
+    return render(request, 'audiobooks/English/english_search.html', context_data)

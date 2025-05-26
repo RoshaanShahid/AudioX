@@ -1,21 +1,32 @@
 # AudioXApp/views/admin_views/admin_creator_manage_views.py
 
 import json
-from datetime import timedelta
+from datetime import timedelta, datetime as dt_datetime
+import logging
+from decimal import Decimal, InvalidOperation
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
-from django.db.models import Count, Q, Prefetch
-from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Count, Q, Prefetch, Sum, Value, CharField, F, OuterRef, Subquery
+from django.db.models.functions import Concat
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db import transaction
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import Http404
 
-from ...models import Creator, Audiobook, WithdrawalRequest, CreatorApplicationLog # Relative imports
-from ..decorators import admin_role_required # Relative import
+# Ensure all necessary models are imported
+from ...models import (
+    Creator, Audiobook, WithdrawalRequest, CreatorApplicationLog, Admin,
+    AudiobookPurchase, CreatorEarning, WithdrawalAccount
+)
+from ..decorators import admin_role_required
 
-# --- Admin Creator Management Views ---
+logger = logging.getLogger(__name__)
 
+# --- Admin Creator Management Main Overview ---
 @admin_role_required('manage_creators')
 def admin_manage_creators(request):
     """Renders the main creator management page with summary statistics."""
@@ -31,10 +42,8 @@ def admin_manage_creators(request):
         creator__is_banned=False
     ).count()
 
-    pending_creator_withdrawals = WithdrawalRequest.objects.filter(
-        creator__verification_status='approved',
-        creator__is_banned=False,
-        status='pending'
+    pending_or_processing_creator_withdrawals_count = WithdrawalRequest.objects.filter(
+        status__in=['PENDING', 'PROCESSING']
     ).count()
 
     today = timezone.now().date()
@@ -53,16 +62,16 @@ def admin_manage_creators(request):
         if date_key in daily_data:
             daily_data[date_key][stat['status']] = stat['count']
 
-    pending_stats = Creator.objects.filter(
+    pending_creators_daily = Creator.objects.filter(
         verification_status='pending',
         last_application_date__date__gte=start_date,
         last_application_date__date__lte=today
     ).values('last_application_date__date').annotate(count=Count('user_id'))
 
-    for stat in pending_stats:
+    for stat in pending_creators_daily:
         date_key = stat['last_application_date__date']
         if date_key in daily_data:
-            daily_data[date_key]['pending'] += stat['count']
+            daily_data[date_key]['pending'] = stat['count']
 
     banned_stats = Creator.objects.filter(
         is_banned=True,
@@ -75,11 +84,11 @@ def admin_manage_creators(request):
         if date_key in daily_data:
             daily_data[date_key]['banned'] = stat['count']
 
-    daily_chart_labels = sorted([date_obj.strftime('%Y-%m-%d') for date_obj in daily_data.keys()])
-    daily_approvals_data = [daily_data[timezone.datetime.strptime(label, '%Y-%m-%d').date()]['approved'] for label in daily_chart_labels]
-    daily_rejections_data = [daily_data[timezone.datetime.strptime(label, '%Y-%m-%d').date()]['rejected'] for label in daily_chart_labels]
-    daily_pending_data = [daily_data[timezone.datetime.strptime(label, '%Y-%m-%d').date()]['pending'] for label in daily_chart_labels]
-    daily_banned_data = [daily_data[timezone.datetime.strptime(label, '%Y-%m-%d').date()]['banned'] for label in daily_chart_labels]
+    daily_chart_labels = [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
+    daily_approvals_data = [daily_data.get(dt_datetime.strptime(label, '%Y-%m-%d').date(), {}).get('approved', 0) for label in daily_chart_labels]
+    daily_rejections_data = [daily_data.get(dt_datetime.strptime(label, '%Y-%m-%d').date(), {}).get('rejected', 0) for label in daily_chart_labels]
+    daily_pending_data = [daily_data.get(dt_datetime.strptime(label, '%Y-%m-%d').date(), {}).get('pending', 0) for label in daily_chart_labels]
+    daily_banned_data = [daily_data.get(dt_datetime.strptime(label, '%Y-%m-%d').date(), {}).get('banned', 0) for label in daily_chart_labels]
 
     context = {
         'admin_user': getattr(request, 'admin_user', None),
@@ -89,7 +98,7 @@ def admin_manage_creators(request):
         'rejected_creator_count': rejected_creator_count,
         'banned_creator_count': banned_creator_count,
         'total_creator_audiobooks': total_creator_audiobooks,
-        'pending_creator_withdrawals': pending_creator_withdrawals,
+        'pending_creator_withdrawals_count': pending_or_processing_creator_withdrawals_count,
         'total_applications_count': total_applications_count,
         'daily_chart_labels_json': json.dumps(daily_chart_labels),
         'daily_approvals_data_json': json.dumps(daily_approvals_data),
@@ -97,340 +106,511 @@ def admin_manage_creators(request):
         'daily_pending_data_json': json.dumps(daily_pending_data),
         'daily_banned_data_json': json.dumps(daily_banned_data),
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'manage_creators_overview', # Updated active_page
-        'is_creator_management_page': True,
+        'active_page': 'manage_creators_overview',
     }
-    return render(request, 'admin/manage_creators.html', context)
+    return render(request, 'admin/manage_creators/manage_creators.html', context)
 
-
+# --- Pending Creator Applications ---
 @admin_role_required('manage_creators')
 def admin_pending_creator_applications(request):
-    """Lists creator applications with 'pending' status."""
     admin_user = getattr(request, 'admin_user', None)
+    search_query = request.GET.get('q', '').strip()
+    
+    pending_creators_qs = Creator.objects.select_related('user').filter(verification_status='pending').order_by('-last_application_date')
+    filter_title = "Pending Creator Applications"
 
-    pending_creators_qs = Creator.objects.filter(
-        verification_status='pending'
-    ).select_related('user').order_by('last_application_date')
+    if search_query:
+        pending_creators_qs = pending_creators_qs.filter(
+            Q(user__username__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
+            Q(creator_name__icontains=search_query) |
+            Q(creator_unique_name__icontains=search_query)
+        )
+        filter_title = f"Pending Applications (Search: '{search_query}')"
 
-    pending_creators_data = []
-    for creator in pending_creators_qs:
-        attempts_this_month = creator.get_attempts_this_month()
-        # Check if there's any rejected log before the current pending application
-        is_re_application = creator.application_logs.filter(
-            status='rejected', 
-            application_date__lt=creator.last_application_date if creator.last_application_date else timezone.now()
-        ).exists()
+    paginator = Paginator(pending_creators_qs, 25)
+    page_number = request.GET.get('page')
+    try:
+        pending_creators_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        pending_creators_page = paginator.page(1)
+    except EmptyPage:
+        pending_creators_page = paginator.page(paginator.num_pages)
 
-
-        pending_creators_data.append({
-            'creator': creator,
-            'is_re_application': is_re_application,
-            'attempt_count': attempts_this_month,
-            'previous_rejection_reason': creator.rejection_reason if is_re_application else None
-        })
+    processed_pending_list = []
+    for creator_obj in pending_creators_page.object_list:
+        creator_obj.attempt_count = creator_obj.application_attempts_current_month
+        creator_obj.is_re_application = creator_obj.application_attempts_current_month > 1 
+        creator_obj.previous_rejection_reason = None
+        if creator_obj.is_re_application and creator_obj.last_application_date:
+            last_rejected_log = CreatorApplicationLog.objects.filter(
+                creator=creator_obj,
+                status='rejected',
+                application_date__lt=creator_obj.last_application_date 
+            ).order_by('-application_date').first()
+            if last_rejected_log:
+                creator_obj.previous_rejection_reason = last_rejected_log.rejection_reason
+        processed_pending_list.append(creator_obj)
+    
+    pending_creators_page.object_list = processed_pending_list
 
     context = {
         'admin_user': admin_user,
-        'pending_creators_data': pending_creators_data,
-        'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'manage_creators_pending', # Updated active_page
-        'is_creator_management_page': True,
-    }
-
-    try:
-        return render(request, 'admin/creators_pendingapplications.html', context)
-    except Exception:
-        messages.error(request, "An unexpected error occurred while displaying the pending applications page.")
-        return redirect(reverse('AudioXApp:admindashboard'))
-
-
-@admin_role_required('manage_creators')
-def admin_approved_creator_applications(request):
-    """Lists creator applications with 'approved' status (and not banned)."""
-    admin_user = getattr(request, 'admin_user', None)
-    filter_option = request.GET.get('filter', 'all')
-    search_query = request.GET.get('q', '').strip()
-
-    approved_creators_qs = Creator.objects.filter(
-        verification_status='approved',
-        is_banned=False
-    ).select_related('user', 'approved_by').order_by('-approved_at')
-
-    now = timezone.now()
-    today = now.date()
-    filter_title = "Approved Creators (Active)"
-
-    if filter_option == 'today':
-        approved_creators_qs = approved_creators_qs.filter(approved_at__date=today)
-        filter_title = "Approved Today (Active)"
-    elif filter_option == '3days':
-        start_date = today - timedelta(days=2)
-        approved_creators_qs = approved_creators_qs.filter(approved_at__date__gte=start_date)
-        filter_title = "Approved in Last 3 Days (Active)"
-    elif filter_option == '7days':
-        start_date = today - timedelta(days=6)
-        approved_creators_qs = approved_creators_qs.filter(approved_at__date__gte=start_date)
-        filter_title = "Approved in Last 7 Days (Active)"
-
-    if search_query:
-        search_filter = (
-            Q(user__user_id__icontains=search_query) |
-            Q(user__email__icontains=search_query) |
-            Q(user__username__icontains=search_query) |
-            Q(user__full_name__icontains=search_query) |
-            Q(creator_name__icontains=search_query) |
-            Q(creator_unique_name__icontains=search_query) |
-            Q(cid__icontains=search_query) |
-            Q(approved_by__username__icontains=search_query)
-        )
-        approved_creators_qs = approved_creators_qs.filter(search_filter)
-        filter_title += f" matching '{search_query}'"
-
-    context = {
-        'admin_user': getattr(request, 'admin_user', None),
-        'approved_creators': approved_creators_qs,
+        'pending_creators_data': pending_creators_page,
         'filter_title': filter_title,
-        'current_filter': filter_option,
         'search_query': search_query,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'manage_creators_approved', # Updated active_page
-        'is_creator_management_page': True,
+        'active_page': 'manage_creators_pending',
     }
-    return render(request, 'admin/creators_approvedapplications.html', context)
+    return render(request, 'admin/manage_creators/admin_creators_pending_applications_list.html', context)
 
+# --- Approved Creator Applications ---
+@admin_role_required('manage_creators')
+def admin_approved_creator_applications(request):
+    admin_user = getattr(request, 'admin_user', None)
+    search_query = request.GET.get('q', '').strip()
+    
+    approved_creators_qs = Creator.objects.select_related('user').filter(verification_status='approved', is_banned=False).order_by('-approved_at', '-user__date_joined')
+    filter_title = "Approved Creators"
 
+    if search_query:
+        approved_creators_qs = approved_creators_qs.filter(
+            Q(user__username__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
+            Q(creator_name__icontains=search_query) |
+            Q(creator_unique_name__icontains=search_query)
+        )
+        filter_title = f"Approved Creators (Search: '{search_query}')"
+    
+    paginator = Paginator(approved_creators_qs, 25)
+    page_number = request.GET.get('page')
+    try:
+        approved_creators_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        approved_creators_page = paginator.page(1)
+    except EmptyPage:
+        approved_creators_page = paginator.page(paginator.num_pages)
+    
+    context = {
+        'admin_user': admin_user,
+        'approved_creators': approved_creators_page,
+        'filter_title': filter_title,
+        'search_query': search_query,
+        'TIME_ZONE': settings.TIME_ZONE,
+        'active_page': 'manage_creators_approved',
+    }
+    return render(request, 'admin/manage_creators/admin_creators_approved_applications_list.html', context)
+
+# --- Rejected Creator Applications ---
 @admin_role_required('manage_creators')
 def admin_rejected_creator_applications(request):
-    """Lists creator applications with 'rejected' status (and not banned)."""
     admin_user = getattr(request, 'admin_user', None)
     search_query = request.GET.get('q', '').strip()
 
-    rejected_creators_qs = Creator.objects.filter(
-        verification_status='rejected',
-        is_banned=False
-    ).select_related(
-        'user'
-    ).prefetch_related(
-        Prefetch(
-            'application_logs',
-            queryset=CreatorApplicationLog.objects.filter(status='rejected').select_related('processed_by').order_by('-processed_at'),
-            to_attr='latest_rejected_logs' # Gets all rejected logs, template can pick the first
-        )
-    ).order_by('-last_application_date') # Or by the date of the latest rejection log
+    latest_rejected_log_prefetch = Prefetch(
+        'application_logs',
+        queryset=CreatorApplicationLog.objects.filter(status='rejected').select_related('processed_by').order_by('-application_date'),
+        to_attr='latest_rejected_log_list'
+    )
 
+    rejected_creators_qs = Creator.objects.select_related('user').filter(
+        verification_status='rejected', 
+        is_banned=False
+    ).prefetch_related(
+        latest_rejected_log_prefetch
+    ).order_by('-last_application_date')
+    
     filter_title = "Rejected Creator Applications"
 
     if search_query:
-        search_filter = (
-            Q(user__user_id__icontains=search_query) |
-            Q(user__email__icontains=search_query) |
+        rejected_creators_qs = rejected_creators_qs.filter(
             Q(user__username__icontains=search_query) |
-            Q(user__full_name__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
             Q(creator_name__icontains=search_query) |
             Q(creator_unique_name__icontains=search_query) |
-            Q(cid__icontains=search_query) |
-            Q(rejection_reason__icontains=search_query) # Searches current rejection reason on Creator model
-        )
-        # If searching by processed_by username, it's a bit more complex with prefetch
-        # For simplicity, keeping search on Creator model fields or direct user fields.
-        rejected_creators_qs = rejected_creators_qs.filter(search_filter).distinct()
-        filter_title += f" matching '{search_query}'"
+            Q(rejection_reason__icontains=search_query) |
+            Q(application_logs__rejection_reason__icontains=search_query)
+        ).distinct()
+        filter_title = f"Rejected Applications (Search: '{search_query}')"
+
+    paginator = Paginator(rejected_creators_qs, 25)
+    page_number = request.GET.get('page')
+    try:
+        rejected_creators_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        rejected_creators_page = paginator.page(1)
+    except EmptyPage:
+        rejected_creators_page = paginator.page(paginator.num_pages)
 
     context = {
         'admin_user': admin_user,
-        'rejected_creators': rejected_creators_qs,
+        'rejected_creators': rejected_creators_page,
         'filter_title': filter_title,
         'search_query': search_query,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'manage_creators_rejected', # Updated active_page
-        'is_creator_management_page': True,
+        'active_page': 'manage_creators_rejected',
     }
-    return render(request, 'admin/creators_rejectedapplications.html', context)
+    return render(request, 'admin/manage_creators/admin_creators_rejected_applications_list.html', context)
 
-
+# --- Creator Application History ---
 @admin_role_required('manage_creators')
 def admin_creator_application_history(request):
-    """Displays the application history for a specific creator."""
     admin_user = getattr(request, 'admin_user', None)
     search_query = request.GET.get('q', '').strip()
     found_creator = None
-    application_logs = None
+    application_logs_qs = CreatorApplicationLog.objects.none() 
+    filter_title = "Creator Application History"
 
     if search_query:
         try:
-            search_filter = None
-            # Prioritize CID search if it matches the format
-            if search_query.lower().startswith('cid-') and len(search_query) > 4:
-                search_filter = Q(cid__iexact=search_query)
-            # Then try User ID if it's purely numeric
-            elif search_query.isdigit():
-                 search_filter = Q(user_id=int(search_query))
-            # Then try email
-            elif '@' in search_query:
-                search_filter = Q(user__email__iexact=search_query)
-            # Fallback to username
-            else:
-                search_filter = Q(user__username__iexact=search_query)
+            if search_query.isdigit():
+                found_creator = Creator.objects.select_related('user').get(user_id=search_query)
+            else: 
+                found_creator = Creator.objects.select_related('user').filter(
+                    Q(user__username__iexact=search_query) | Q(user__email__iexact=search_query) | Q(creator_name__iexact=search_query) | Q(creator_unique_name__iexact=search_query)
+                ).first()
             
-            if search_filter:
-                found_creator = Creator.objects.select_related('user').get(search_filter)
-
             if found_creator:
-                application_logs = found_creator.application_logs.select_related(
-                    'processed_by' # Admin user who processed the log
-                ).order_by('-application_date') # Show newest first
-
+                application_logs_qs = CreatorApplicationLog.objects.filter(creator=found_creator).select_related('processed_by').order_by('-application_date', '-log_id')
+                filter_title = f"Application History for {found_creator.creator_name or found_creator.user.username}"
+            else:
+                messages.warning(request, f"No creator found for query: '{search_query}'. Showing all logs.")
+                application_logs_qs = CreatorApplicationLog.objects.select_related('creator__user', 'processed_by').all().order_by('-application_date', '-log_id')
+                filter_title = "All Creator Application Logs"
         except Creator.DoesNotExist:
-            messages.warning(request, f"No creator found matching '{search_query}'. Please try User ID, Email, Username, or CID (e.g., cid-xxxx).")
-        except ValueError: # Handles if search_query.isdigit() is true but it's not a valid int for user_id
-             messages.warning(request, f"Invalid User ID format for '{search_query}'.")
-        except Exception:
-            messages.error(request, f"An error occurred during the search. Please ensure your query is specific (User ID, Email, Username, or CID).")
-            
+            messages.warning(request, f"No creator found with ID: '{search_query}'. Showing all logs.")
+            application_logs_qs = CreatorApplicationLog.objects.select_related('creator__user', 'processed_by').all().order_by('-application_date', '-log_id')
+            filter_title = "All Creator Application Logs"
+        except Exception as e:
+            messages.error(request, f"An error occurred while searching: {e}")
+            logger.error(f"Error in admin_creator_application_history search: {e}", exc_info=True)
+            application_logs_qs = CreatorApplicationLog.objects.select_related('creator__user', 'processed_by').all().order_by('-application_date', '-log_id')
+            filter_title = "All Creator Application Logs (Error occurred)"
+    else: 
+        application_logs_qs = CreatorApplicationLog.objects.select_related('creator__user', 'processed_by').all().order_by('-application_date', '-log_id')
+        filter_title = "All Creator Application Logs"
+
+    paginator = Paginator(application_logs_qs, 25)
+    page_number = request.GET.get('page')
+    try:
+        application_logs_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        application_logs_page = paginator.page(1)
+    except EmptyPage:
+        application_logs_page = paginator.page(paginator.num_pages)
+    
     context = {
         'admin_user': admin_user,
         'search_query': search_query,
         'found_creator': found_creator,
-        'application_logs': application_logs,
+        'application_logs_page': application_logs_page,
+        'filter_title': filter_title,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'manage_creators_history', # Updated active_page
-        'is_creator_management_page': True,
+        'active_page': 'manage_creators_history',
     }
-    return render(request, 'admin/creators_totalapplications.html', context)
+    return render(request, 'admin/manage_creators/admin_creators_all_applications_list.html', context)
 
-
+# --- All Creators List ---
 @admin_role_required('manage_creators')
 def admin_all_creators_list(request):
-    """Lists all creators with filtering and search options."""
     admin_user = getattr(request, 'admin_user', None)
     search_query = request.GET.get('q', '').strip()
-
-    creators_qs = Creator.objects.select_related('user').order_by('user__date_joined')
-
-    filter_title = "All Creators"
+    status_filter_param = request.GET.get('status', '')
+    
+    creators_list = Creator.objects.select_related('user').all().order_by('-user__date_joined')
+    filter_title_parts = []
 
     if search_query:
-        base_search_filter = (
-            Q(user__user_id__icontains=search_query) |
-            Q(user__email__icontains=search_query) |
+        creators_list = creators_list.filter(
             Q(user__username__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
             Q(user__full_name__icontains=search_query) |
             Q(creator_name__icontains=search_query) |
-            Q(creator_unique_name__icontains=search_query) |
-            Q(cid__icontains=search_query)
+            Q(creator_unique_name__icontains=search_query)
         )
-
-        status_filter = Q()
-        query_lower = search_query.lower()
+        filter_title_parts.append(f"Search: '{search_query}'")
         
-        # Check for specific status keywords
-        if 'banned' in query_lower:
-            status_filter = Q(is_banned=True)
-        elif 'active' in query_lower or 'approved' in query_lower: # 'active' implies approved and not banned
-            status_filter = Q(is_banned=False, verification_status='approved')
-        elif 'pending' in query_lower:
-            status_filter = Q(verification_status='pending')
-        elif 'rejected' in query_lower:
-            status_filter = Q(is_banned=False, verification_status='rejected')
-        # Check if the search query itself is a valid status choice
-        elif search_query in [s[0] for s in Creator.VERIFICATION_STATUS_CHOICES]:
-             status_filter = Q(verification_status=search_query)
+    if status_filter_param:
+        creators_list = creators_list.filter(verification_status=status_filter_param)
+        status_display = dict(Creator.VERIFICATION_STATUS_CHOICES).get(status_filter_param, status_filter_param.capitalize())
+        filter_title_parts.append(f"Status: {status_display}")
 
+    filter_title = " | ".join(filter_title_parts) if filter_title_parts else "All Creators"
 
-        if status_filter: # If a status keyword was found, filter by that status
-            creators_qs = creators_qs.filter(status_filter)
-        else: # Otherwise, use the general base search filter
-            creators_qs = creators_qs.filter(base_search_filter)
-
-        filter_title += f" matching '{search_query}'"
+    paginator = Paginator(creators_list, 25)
+    page_number = request.GET.get('page')
+    try:
+        all_creators_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        all_creators_page = paginator.page(1)
+    except EmptyPage:
+        all_creators_page = paginator.page(paginator.num_pages)
 
     context = {
-        'admin_user': getattr(request, 'admin_user', None),
-        'all_creators': creators_qs,
+        'admin_user': admin_user,
+        'all_creators_page': all_creators_page,
         'filter_title': filter_title,
         'search_query': search_query,
+        'current_status_filter': status_filter_param,
+        'verification_status_choices': Creator.VERIFICATION_STATUS_CHOICES,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'manage_creators_all', # Updated active_page
-        'is_creator_management_page': True,
+        'active_page': 'manage_creators_all',
     }
-    return render(request, 'admin/creators_list.html', context)
+    return render(request, 'admin/manage_creators/admin_total_creators_list.html', context)
 
-
+# --- Banned Creators List ---
 @admin_role_required('manage_creators')
 def admin_banned_creators_list(request):
-    """Lists all banned creators with search options."""
     admin_user = getattr(request, 'admin_user', None)
     search_query = request.GET.get('q', '').strip()
-
-    banned_creators_qs = Creator.objects.filter(
-        is_banned=True
-    ).select_related('user', 'banned_by').order_by('-banned_at')
-
+    
+    banned_creators_qs = Creator.objects.select_related('user', 'banned_by').filter(is_banned=True).order_by('-banned_at', '-user__date_joined')
     filter_title = "Banned Creators"
 
     if search_query:
-        search_filter = (
-            Q(user__user_id__icontains=search_query) |
-            Q(user__email__icontains=search_query) |
+        banned_creators_qs = banned_creators_qs.filter(
             Q(user__username__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
             Q(user__full_name__icontains=search_query) |
-            Q(creator_name__icontains=search_query) |
-            Q(creator_unique_name__icontains=search_query) |
-            Q(cid__icontains=search_query) |
-            Q(ban_reason__icontains=search_query) |
-            Q(banned_by__username__icontains=search_query) # Search by banning admin's username
+            Q(creator_name__icontains=search_query)
         )
-        banned_creators_qs = banned_creators_qs.filter(search_filter)
-        filter_title += f" matching '{search_query}'"
+        filter_title = f"Banned Creators (Search: '{search_query}')"
+
+    paginator = Paginator(banned_creators_qs, 25)
+    page_number = request.GET.get('page')
+    try:
+        banned_creators_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        banned_creators_page = paginator.page(1)
+    except EmptyPage:
+        banned_creators_page = paginator.page(paginator.num_pages)
 
     context = {
-        'admin_user': getattr(request, 'admin_user', None),
-        'banned_creators': banned_creators_qs,
+        'admin_user': admin_user,
+        'banned_creators_page': banned_creators_page,
         'filter_title': filter_title,
         'search_query': search_query,
         'TIME_ZONE': settings.TIME_ZONE,
-        'active_page': 'manage_creators_banned', # Updated active_page
-        'is_creator_management_page': True,
+        'active_page': 'manage_creators_banned',
     }
-    return render(request, 'admin/creators_banned.html', context)
+    return render(request, 'admin/manage_creators/admin_banned_creators_list.html', context)
 
-
+# --- View Creator Detail ---
 @admin_role_required('manage_creators')
 def admin_view_creator_detail(request, user_id):
-    """Displays detailed information for a specific creator."""
     admin_user = getattr(request, 'admin_user', None)
-
-    # Ensure user_id is an integer before querying
     try:
         user_id_int = int(user_id)
+        creator = get_object_or_404(
+            Creator.objects.select_related('user', 'approved_by', 'banned_by') 
+                             .prefetch_related(
+                                 'withdrawal_accounts', 
+                                 Prefetch('application_logs', queryset=CreatorApplicationLog.objects.select_related('processed_by').order_by('-application_date')), 
+                                 'audiobooks',
+                                 Prefetch('withdrawal_requests', queryset=WithdrawalRequest.objects.select_related('withdrawal_account', 'processed_by').order_by('-request_date'))
+                             ),
+            user_id=user_id_int
+        )
     except ValueError:
-        messages.error(request, "Invalid Creator ID format.")
-        # Determine a sensible redirect, perhaps to the 'all creators' list or dashboard
-        return redirect(reverse('AudioXApp:admin_all_creators_list'))
+        raise Http404("Creator ID must be an integer.")
 
+    primary_withdrawal_account = creator.primary_withdrawal_account
 
-    creator = get_object_or_404(
-        Creator.objects.select_related('user', 'approved_by', 'banned_by'),
-        user_id=user_id_int # Use the validated integer
-    )
+    total_audiobooks = creator.audiobooks.count() 
+    
+    total_audiobook_sales = AudiobookPurchase.objects.filter(audiobook__creator=creator, status='COMPLETED').aggregate(total_sales=Sum('amount_paid'))['total_sales'] or Decimal('0.00')
+    total_earnings_recorded = CreatorEarning.objects.filter(creator=creator).aggregate(total_earnings=Sum('amount_earned'))['total_earnings'] or Decimal('0.00')
+    
+    application_logs_qs = creator.application_logs.all()
+    paginator_logs = Paginator(application_logs_qs, 10)
+    page_number_logs = request.GET.get('log_page')
+    try:
+        application_logs_page = paginator_logs.page(page_number_logs)
+    except PageNotAnInteger:
+        application_logs_page = paginator_logs.page(1)
+    except EmptyPage:
+        application_logs_page = paginator_logs.page(paginator_logs.num_pages)
 
-    total_audiobooks = Audiobook.objects.filter(creator=creator).count()
-
-    # Fetch all logs, not just recent, for a complete history view on this page
-    application_logs = creator.application_logs.select_related('processed_by').order_by('-application_date')
+    withdrawal_requests_qs = creator.withdrawal_requests.all()
+    paginator_withdrawals = Paginator(withdrawal_requests_qs, 10)
+    page_number_withdrawals = request.GET.get('withdrawal_page')
+    try:
+        withdrawal_requests_page = paginator_withdrawals.page(page_number_withdrawals)
+    except PageNotAnInteger:
+        withdrawal_requests_page = paginator_withdrawals.page(1)
+    except EmptyPage:
+        withdrawal_requests_page = paginator_withdrawals.page(paginator_withdrawals.num_pages)
 
     context = {
         'admin_user': admin_user,
         'creator': creator,
+        'primary_withdrawal_account': primary_withdrawal_account, 
         'total_audiobooks': total_audiobooks,
-        'application_logs': application_logs, # Changed from recent_logs
+        'total_audiobook_sales': total_audiobook_sales,
+        'total_earnings_recorded': total_earnings_recorded,
+        'application_logs_page': application_logs_page,
+        'withdrawal_requests_history_page': withdrawal_requests_page, 
         'is_banned': creator.is_banned,
         'is_pending': creator.verification_status == 'pending',
-        'is_approved': creator.verification_status == 'approved' and not creator.is_banned,
-        'is_rejected': creator.verification_status == 'rejected' and not creator.is_banned,
+        'is_approved_active': creator.verification_status == 'approved' and not creator.is_banned,
+        'is_rejected_not_banned': creator.verification_status == 'rejected' and not creator.is_banned,
         'TIME_ZONE': settings.TIME_ZONE,
-        # Determine active_page based on creator's status for better sidebar highlighting
-        'active_page': f'manage_creators_{creator.get_status_for_active_page()}',
-        'is_creator_management_page': True,
+        'active_page': f'manage_creators_detail_{user_id_int}',
     }
-    return render(request, 'admin/creator_detail.html', context)
+    return render(request, 'admin/manage_creators/admin_creator_detail.html', context)
+
+# --- Manage Withdrawal Requests ---
+@admin_role_required('manage_withdrawals')
+@transaction.atomic
+def admin_manage_withdrawal_requests(request):
+    admin_user_profile = getattr(request, 'admin_user', None)
+    search_query = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '')
+
+    if request.method == 'POST':
+        request_id_to_update = request.POST.get('request_id')
+        action = request.POST.get('action') 
+        
+        processing_admin_instance = None
+        if admin_user_profile and isinstance(admin_user_profile, Admin):
+            processing_admin_instance = admin_user_profile
+        else:
+            try:
+                if hasattr(request, 'user') and request.user.is_authenticated and hasattr(request.user, 'email'):
+                    current_django_user_email = request.user.email
+                    processing_admin_instance = Admin.objects.get(email=current_django_user_email)
+                
+                if not processing_admin_instance:
+                    messages.error(request, "Could not identify the processing admin (not found or not an Admin instance). Action aborted.")
+                    logger.error(f"Could not identify processing Admin for user {getattr(request, 'user', 'UnknownUser')} during withdrawal POST.")
+                    current_query_params = request.GET.urlencode()
+                    return redirect(reverse('AudioXApp:admin_manage_withdrawal_requests') + (f'?{current_query_params}' if current_query_params else ''))
+            except Admin.DoesNotExist:
+                messages.error(request, "Admin profile matching your user email not found. Action aborted.")
+                logger.error(f"Admin.DoesNotExist for user {getattr(request, 'user', 'UnknownUser')} (email: {getattr(request.user, 'email', 'N/A')}) during withdrawal POST.")
+                current_query_params = request.GET.urlencode()
+                return redirect(reverse('AudioXApp:admin_manage_withdrawal_requests') + (f'?{current_query_params}' if current_query_params else ''))
+            except Exception as e:
+                messages.error(request, f"Error identifying processing admin: {e}. Action aborted.")
+                logger.error(f"Generic error identifying processing Admin for user {getattr(request, 'user', 'UnknownUser')}: {e}", exc_info=True)
+                current_query_params = request.GET.urlencode()
+                return redirect(reverse('AudioXApp:admin_manage_withdrawal_requests') + (f'?{current_query_params}' if current_query_params else ''))
+
+        if processing_admin_instance:
+            try:
+                wd_request = WithdrawalRequest.objects.select_related('creator').get(id=request_id_to_update)
+                original_status = wd_request.status
+
+                if action == 'approve_and_complete':
+                    if original_status == 'PROCESSING':
+                        admin_remarks = request.POST.get('completion_notes', '')
+                        payment_reference = request.POST.get('completion_reference', '')
+                        payment_slip_file = request.FILES.get('payment_slip')
+                        
+                        wd_request.approve_and_complete_by_admin(
+                            admin_user=processing_admin_instance,
+                            payment_slip_file=payment_slip_file,
+                            reference=payment_reference,
+                            notes=admin_remarks
+                        )
+                        messages.success(request, f"Withdrawal request {wd_request.display_request_id} successfully Approved & Completed.")
+                    else:
+                        messages.error(request, f"Request {wd_request.display_request_id} must be 'Processing' to be approved. Current status: {original_status}.")
+                
+                elif action == 'reject':
+                    if original_status in ['PENDING', 'PROCESSING']:
+                        admin_remarks = request.POST.get('rejection_reason', '')
+                        if not admin_remarks: 
+                            messages.error(request, "Rejection reason is required when rejecting a request.")
+                        else:
+                            wd_request.reject_by_admin(
+                                admin_user=processing_admin_instance,
+                                reason=admin_remarks
+                            )
+                            messages.success(request, f"Withdrawal request {wd_request.display_request_id} has been Rejected.")
+                    else:
+                        messages.error(request, f"Request {wd_request.display_request_id} cannot be rejected. Current status: {original_status}.")
+
+                elif action == 'mark_processing':
+                    if original_status == 'PENDING':
+                        admin_remarks = request.POST.get('processing_notes', '')
+                        wd_request.mark_as_processing_by_admin(
+                            admin_user=processing_admin_instance,
+                            notes=admin_remarks
+                        )
+                        messages.info(request, f"Withdrawal request {wd_request.display_request_id} marked as Processing.")
+                    else:
+                        messages.error(request, f"Request {wd_request.display_request_id} must be 'Pending' to be marked as processing. Current status: {original_status}.")
+                
+                else:
+                    messages.error(request, f"Invalid action '{action}' provided for withdrawal request.")
+            
+            except WithdrawalRequest.DoesNotExist:
+                messages.error(request, "Withdrawal request not found.")
+            except ValueError as ve: 
+                messages.error(request, str(ve))
+            except Exception as e:
+                messages.error(request, f"An unexpected error occurred: {e}")
+                logger.error(f"Error updating withdrawal request {request_id_to_update} with action '{action}': {e}", exc_info=True)
+        
+        redirect_url = reverse('AudioXApp:admin_manage_withdrawal_requests')
+        query_params_from_get = request.GET.urlencode() 
+
+        if query_params_from_get:
+            redirect_url += "?" + query_params_from_get
+        return redirect(redirect_url)
+
+    # GET request handling
+    withdrawal_requests_qs = WithdrawalRequest.objects.select_related(
+        'creator__user', 'processed_by', 'withdrawal_account' 
+    ).all().order_by('-request_date')
+    
+    filter_title_parts = []
+    if search_query:
+        numeric_search_query = search_query
+        if search_query.upper().startswith('REQ-') and search_query[4:].isdigit():
+            numeric_search_query = search_query[4:]
+            try: 
+                actual_id = int(numeric_search_query) - 10000
+                withdrawal_requests_qs = withdrawal_requests_qs.filter(id=actual_id)
+            except ValueError: 
+                withdrawal_requests_qs = withdrawal_requests_qs.filter(
+                    Q(creator__user__username__icontains=search_query) |
+                    Q(creator__creator_name__icontains=search_query)
+                )
+        elif search_query.isdigit(): 
+            withdrawal_requests_qs = withdrawal_requests_qs.filter(id=search_query)
+        else: 
+            withdrawal_requests_qs = withdrawal_requests_qs.filter(
+                Q(creator__user__username__icontains=search_query) |
+                Q(creator__creator_name__icontains=search_query)
+            )
+        filter_title_parts.append(f"Search: '{search_query}'")
+
+    if status_filter:
+        withdrawal_requests_qs = withdrawal_requests_qs.filter(status=status_filter)
+        status_display = dict(WithdrawalRequest.STATUS_CHOICES).get(status_filter, status_filter.capitalize())
+        filter_title_parts.append(f"Status: {status_display}")
+    
+    filter_title = " | ".join(filter_title_parts) if filter_title_parts else "All Withdrawal Requests"
+
+    paginator = Paginator(withdrawal_requests_qs, 25)
+    page_number = request.GET.get('page')
+    try:
+        withdrawal_requests_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        withdrawal_requests_page = paginator.page(1)
+    except EmptyPage:
+        withdrawal_requests_page = paginator.page(paginator.num_pages)
+
+    context = {
+        'admin_user': admin_user_profile,
+        'withdrawal_requests_page': withdrawal_requests_page,
+        'filter_title': filter_title,
+        'current_status_filter': status_filter, 
+        'search_query': search_query,
+        'status_choices': WithdrawalRequest.STATUS_CHOICES, 
+        'TIME_ZONE': settings.TIME_ZONE,
+        'active_page': 'manage_creators_withdrawals',
+    }
+    return render(request, 'admin/manage_creators/admin_creators_withdrawal_requests_list.html', context)

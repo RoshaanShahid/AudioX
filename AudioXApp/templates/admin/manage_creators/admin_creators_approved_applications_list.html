@@ -1,0 +1,306 @@
+{% extends 'admin/admin_base.html' %} {# Assumes admin_base.html is in templates/admin/ and includes Tailwind CSS, Font Awesome, and sets body class e.g., <body class="bg-slate-100"> #}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+
+{% block title %}Approved Creator Applications - Admin (AudioX){% endblock %}
+
+{% block header_title %}
+    <h1 class="text-2xl md:text-3xl font-bold text-[#091e65]">
+        Approved Creator Applications
+    </h1>
+{% endblock %}
+
+{% block extra_head %}
+{# All styling is done via Tailwind CSS. Ensure admin_base.html body has bg-slate-100 or similar #}
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+    {# Django Messages #}
+    {% if messages %}
+        <div class="space-y-4">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg shadow-md flex items-start
+                    {% if message.tags == 'success' %} bg-green-50 border-l-4 border-green-500 text-green-800
+                    {% elif message.tags == 'error' %} bg-red-50 border-l-4 border-red-500 text-red-800
+                    {% elif message.tags == 'warning' %} bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800
+                    {% else %} bg-blue-50 border-l-4 border-blue-400 text-blue-800
+                    {% endif %}"
+                    role="alert">
+                    <div class="flex-shrink-0 mr-3 pt-0.5">
+                        <i class="fas 
+                        {% if message.tags == 'success' %} fa-check-circle text-green-600
+                        {% elif message.tags == 'error' %} fa-exclamation-circle text-red-600
+                        {% elif message.tags == 'warning' %} fa-exclamation-triangle text-yellow-600
+                        {% else %} fa-info-circle text-blue-600
+                        {% endif %} text-xl"></i>
+                    </div>
+                    <div class="flex-1 text-sm font-medium">
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Filters and Search Section #}
+    <div class="bg-white p-6 rounded-xl shadow-xl space-y-6">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-700 mb-3">Filter Applications</h2>
+            <div class="flex flex-wrap gap-2 filter-btn-group">
+                <a href="{% url 'AudioXApp:admin_approved_creator_applications' %}?filter=all{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                   class="px-4 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 {% if current_filter == 'all' %}bg-[#091e65] text-white border-[#091e65] shadow-md{% else %}bg-white text-slate-600 border-slate-300 hover:border-[#091e65]/70 hover:text-[#091e65] hover:bg-[#091e65]/5{% endif %}">
+                   All Approved
+                </a>
+                <a href="{% url 'AudioXApp:admin_approved_creator_applications' %}?filter=today{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                   class="px-4 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 {% if current_filter == 'today' %}bg-[#091e65] text-white border-[#091e65] shadow-md{% else %}bg-white text-slate-600 border-slate-300 hover:border-[#091e65]/70 hover:text-[#091e65] hover:bg-[#091e65]/5{% endif %}">
+                   Approved Today
+                </a>
+                <a href="{% url 'AudioXApp:admin_approved_creator_applications' %}?filter=3days{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                   class="px-4 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 {% if current_filter == '3days' %}bg-[#091e65] text-white border-[#091e65] shadow-md{% else %}bg-white text-slate-600 border-slate-300 hover:border-[#091e65]/70 hover:text-[#091e65] hover:bg-[#091e65]/5{% endif %}">
+                   Last 3 Days
+                </a>
+                <a href="{% url 'AudioXApp:admin_approved_creator_applications' %}?filter=7days{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                   class="px-4 py-2 rounded-lg text-xs font-semibold border transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 {% if current_filter == '7days' %}bg-[#091e65] text-white border-[#091e65] shadow-md{% else %}bg-white text-slate-600 border-slate-300 hover:border-[#091e65]/70 hover:text-[#091e65] hover:bg-[#091e65]/5{% endif %}">
+                   Last 7 Days
+                </a>
+            </div>
+        </div>
+        
+        <form method="GET" action="{% url 'AudioXApp:admin_approved_creator_applications' %}" id="search-form" class="pt-4 border-t border-slate-200">
+            <input type="hidden" name="filter" value="{{ current_filter|default:'all' }}" id="hidden-filter-input">
+            <label for="search-input" class="block text-sm font-semibold text-slate-700 mb-1">Search Within "{{ filter_title }}"</label>
+             <div class="relative flex items-center">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                    <i class="fas fa-search"></i>
+                </div>
+                <input 
+                    type="search" name="q" id="search-input" 
+                    class="w-full pl-10 pr-28 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/60 focus:border-[#091e65] focus:outline-none placeholder-slate-400 text-slate-800 text-sm transition duration-150 ease-in-out shadow-sm"
+                    placeholder="Name, Email, ID, Admin..." value="{{ search_query|default:'' }}">
+                <button type="submit" class="absolute inset-y-0 right-0 flex items-center justify-center px-5 h-full text-white bg-[#091e65] hover:bg-[#071852] rounded-r-lg text-xs font-semibold transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-[#091e65]/70">
+                    <i class="fas fa-search mr-1.5 text-xs"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# Loading Indicator #}
+    <div id="loading-indicator" class="hidden items-center justify-center gap-4 text-slate-700 font-medium py-12 text-center">
+        <svg class="animate-spin h-10 w-10 text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-xl">Searching creators...</span>
+    </div>
+
+    {# Section Title for Results #}
+    <div class="flex justify-between items-baseline mb-6 border-b-2 border-[#091e65]/20 pb-3">
+        <h2 class="text-2xl font-semibold text-slate-800">
+            {{ filter_title }}
+        </h2>
+        <span class="text-sm font-medium text-slate-500">Showing {{ approved_creators.count }} creator{{ approved_creators.count|pluralize }}</span>
+    </div>
+
+    {% if approved_creators %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for creator in approved_creators %}
+            <div class="bg-white rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-300 ease-out overflow-hidden flex flex-col" id="creator-{{ creator.user.user_id }}">
+                <div class="px-6 py-5 border-b border-slate-200 bg-slate-50/70">
+                    <div class="flex items-center gap-4">
+                        <span class="flex-shrink-0 inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#091e65] text-white text-xl font-semibold shadow-md ring-2 ring-white">
+                            {{ creator.creator_name|slice:":1"|upper }}
+                        </span>
+                        <div>
+                            <h3 class="text-lg font-semibold text-[#091e65] leading-tight hover:underline">
+                                <a href="{% url 'AudioXApp:admin_view_creator_detail' creator.user.user_id %}">{{ creator.creator_name }}</a>
+                            </h3>
+                            <p class="text-sm font-mono text-slate-600 leading-tight">@{{ creator.creator_unique_name }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 space-y-4 flex-grow">
+                    <dl class="space-y-3 text-sm">
+                        <div>
+                            <dt class="text-xs font-medium text-slate-500 uppercase tracking-wider">Creator ID (CID)</dt>
+                            <dd class="mt-0.5 text-slate-700 font-mono font-medium">{{ creator.cid|default:"N/A" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium text-slate-500 uppercase tracking-wider">Applicant Email</dt>
+                            <dd class="mt-0.5 text-slate-700">{{ creator.user.email }}</dd>
+                        </div>
+                         <div>
+                            <dt class="text-xs font-medium text-slate-500 uppercase tracking-wider">Approved On</dt>
+                            <dd class="mt-0.5 text-slate-700 font-medium">
+                                {% if creator.approved_at %}
+                                    {{ creator.approved_at|localtime|date:"F j, Y, P" }}
+                                    <span class="block text-xs text-slate-400">({{ creator.approved_at|naturaltime }})</span>
+                                {% else %} N/A {% endif %}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium text-slate-500 uppercase tracking-wider">Approved By</dt>
+                            <dd class="mt-0.5 text-[#091e65] font-medium">
+                                {{ creator.approved_by.username|default:"System" }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="px-6 py-4 bg-slate-50/70 border-t border-slate-200 mt-auto">
+                     <a href="{% url 'AudioXApp:admin_view_creator_detail' creator.user.user_id %}" class="inline-flex items-center justify-center w-full px-4 py-2 text-xs font-semibold rounded-lg bg-[#091e65]/10 text-[#091e65] hover:bg-[#091e65]/20 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#091e65]/50">
+                        <i class="fas fa-eye mr-2"></i> View Full Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center text-slate-500 py-16 px-6 bg-white rounded-xl border-2 border-dashed border-slate-300 shadow-xl">
+            <i class="fas fa-user-check fa-5x text-slate-300 mb-6"></i>
+            <p class="text-2xl font-semibold text-slate-700 mb-2">No Approved Creators Found</p>
+            {% if search_query %}
+                <p class="text-base text-slate-500">Your search for "{{ search_query }}" did not match any approved creators{% if current_filter != 'all' %} within the selected time filter ("{{ filter_title }}"){% endif %}.</p>
+                <p class="text-sm text-slate-400 mt-3">Try refining your search or adjusting the date filters.</p>
+            {% else %}
+                <p class="text-base text-slate-500">There are no approved creators matching the current filter ("{{ filter_title }}").</p>
+                <p class="text-sm text-slate-400 mt-3">Adjust the filter or check back later as new creators get approved.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# Pagination #}
+    {% if approved_creators.has_other_pages %} {# Assuming the paginated object is named 'approved_creators' #}
+    <div class="mt-12 flex items-center justify-between border-t-2 border-slate-200 pt-8">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if approved_creators.has_previous %}
+                <a href="?filter={{ current_filter|default:'all' }}&q={{ search_query|urlencode }}&page={{ approved_creators.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-100 transition-colors">
+                    Previous
+                </a>
+            {% else %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-slate-200 text-sm font-medium rounded-md text-slate-400 bg-slate-100 cursor-not-allowed">
+                    Previous
+                </span>
+            {% endif %}
+            {% if approved_creators.has_next %}
+                <a href="?filter={{ current_filter|default:'all' }}&q={{ search_query|urlencode }}&page={{ approved_creators.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-100 transition-colors">
+                    Next
+                </a>
+            {% else %}
+                <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-200 text-sm font-medium rounded-md text-slate-400 bg-slate-100 cursor-not-allowed">
+                    Next
+                </span>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-slate-600">
+                    Showing
+                    <span class="font-semibold text-[#091e65]">{{ approved_creators.start_index }}</span>
+                    to
+                    <span class="font-semibold text-[#091e65]">{{ approved_creators.end_index }}</span>
+                    of
+                    <span class="font-semibold text-[#091e65]">{{ approved_creators.paginator.count }}</span>
+                    results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px overflow-hidden border border-slate-300" aria-label="Pagination">
+                    {% if approved_creators.has_previous %}
+                        <a href="?filter={{ current_filter|default:'all' }}&q={{ search_query|urlencode }}&page={{ approved_creators.previous_page_number }}" class="relative inline-flex items-center px-3 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left h-5 w-4"></i>
+                        </a>
+                    {% else %}
+                        <span class="relative inline-flex items-center px-3 py-2 bg-slate-100 text-sm font-medium text-slate-400 cursor-not-allowed border-r border-slate-300">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left h-5 w-4"></i>
+                        </span>
+                    {% endif %}
+
+                    {% for num in approved_creators.paginator.get_elided_page_range %}
+                        {% if num == approved_creators.paginator.ELLIPSIS %}
+                             <span class="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-slate-700 border-r border-slate-300">...</span>
+                        {% elif approved_creators.number == num %}
+                            <span aria-current="page" class="relative z-10 inline-flex items-center px-4 py-2 bg-[#091e65]/10 text-sm font-semibold text-[#091e65] focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                                {{ num }}
+                            </span>
+                        {% else %}
+                            <a href="?filter={{ current_filter|default:'all' }}&q={{ search_query|urlencode }}&page={{ num }}" class="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-[#091e65] transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if approved_creators.has_next %}
+                        <a href="?filter={{ current_filter|default:'all' }}&q={{ search_query|urlencode }}&page={{ approved_creators.next_page_number }}" class="relative inline-flex items-center px-3 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right h-5 w-4"></i>
+                        </a>
+                    {% else %}
+                         <span class="relative inline-flex items-center px-3 py-2 bg-slate-100 text-sm font-medium text-slate-400 cursor-not-allowed">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right h-5 w-4"></i>
+                        </span>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %} {# End pagination #}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('search-form');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const searchInput = document.getElementById('search-input');
+    const hiddenFilterInput = document.getElementById('hidden-filter-input');
+    const filterButtonGroup = document.querySelector('.filter-btn-group');
+
+    const getUrlParameter = (name) => {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        const results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    };
+
+    const initialSearchQuery = getUrlParameter('q');
+    const initialFilter = getUrlParameter('filter') || 'all';
+
+    if (searchInput) searchInput.value = initialSearchQuery;
+    if (hiddenFilterInput) hiddenFilterInput.value = initialFilter;
+
+    if (filterButtonGroup) {
+        filterButtonGroup.querySelectorAll('a').forEach(btn => {
+            const btnUrl = new URL(btn.href, window.location.origin); // Ensure base URL for proper parsing
+            const btnFilter = btnUrl.searchParams.get('filter') || 'all';
+            
+            btn.classList.remove('bg-[#091e65]', 'text-white', 'border-[#091e65]', 'shadow-md', 'bg-white', 'text-slate-600', 'border-slate-300', 'hover:border-[#091e65]/70', 'hover:text-[#091e65]', 'hover:bg-[#091e65]/5');
+            btn.classList.add('focus:ring-[#091e65]/50'); // Common focus style
+
+            if (btnFilter === initialFilter) {
+                btn.classList.add('bg-[#091e65]', 'text-white', 'border-[#091e65]', 'shadow-md');
+            } else {
+                btn.classList.add('bg-white', 'text-slate-600', 'border-slate-300', 'hover:border-[#091e65]/70', 'hover:text-[#091e65]', 'hover:bg-[#091e65]/5');
+            }
+        });
+    }
+
+    if (searchForm && loadingIndicator) {
+        searchForm.addEventListener('submit', function() {
+            if (searchInput && searchInput.value.trim() !== '') {
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

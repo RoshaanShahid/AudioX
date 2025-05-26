@@ -1,0 +1,433 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}User Payment Details - Admin (AudioX){% endblock %}
+
+{% block header_title %}User Payment Records{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-full py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+
+        <div class="mb-8 p-6 bg-white shadow-xl rounded-xl border border-gray-200">
+            <h2 class="text-2xl font-semibold text-[#091e65] mb-6">Search Payment Records</h2>
+            <form method="get" action="{% url 'AudioXApp:admin_user_payment_details' %}" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <div class="md:col-span-2">
+                        <label for="q" class="block text-sm font-medium text-gray-700 mb-1">User Email or Username</label>
+                        <input type="text" name="q" id="q" value="{{ request.GET.q|default:'' }}"
+                               class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm placeholder-gray-400"
+                               placeholder="e.g., user@example.com or johndoe">
+                    </div>
+                    <div>
+                        <button type="submit"
+                                class="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#091e65] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition duration-150 ease-in-out">
+                            <i class="fas fa-search mr-2"></i>Search Records
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {% if messages %}
+        <div class="mb-6 space-y-3">
+            {% for message in messages %}
+            {% if message.tags == 'error' %}
+            <div class="p-4 rounded-lg border border-red-300 bg-red-50 text-red-700" role="alert">
+                <i class="fas fa-times-circle mr-2"></i>{{ message }}
+            </div>
+            {% elif message.tags == 'success' %}
+            <div class="p-4 rounded-lg border border-blue-300 bg-blue-50 text-[#091e65]" role="alert">
+                <i class="fas fa-check-circle mr-2"></i>{{ message }}
+            </div>
+            {% else %} {# Includes warning, info, debug #}
+            <div class="p-4 rounded-lg border border-yellow-300 bg-yellow-50 text-yellow-700" role="alert">
+                <i class="fas {% if message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                {{ message }}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if request.GET.q %}
+            {% if users_found_count > 0 %}
+            <p class="mb-6 text-sm text-gray-600">
+                Found payment records related to <span class="font-semibold text-[#091e65]">{{ users_found_count }}</span> user(s) matching your query.
+            </p>
+
+            <div class="mb-1">
+                <div class="flex border-b border-gray-200" id="paymentDetailsTabsNav">
+                    <button data-tab-target="subscriptionsTab" class="payment-tab-button active text-[#091e65] border-[#091e65]">
+                        <i class="fas fa-id-card-alt mr-2 opacity-75"></i>Subscriptions
+                        <span class="ml-2 px-2 py-0.5 bg-gray-200 text-[#091e65] text-xs font-semibold rounded-full">{{ subscriptions.paginator.count|default:0 }}</span>
+                    </button>
+                    <button data-tab-target="audiobookPurchasesTab" class="payment-tab-button">
+                        <i class="fas fa-book-open mr-2 opacity-75"></i>Audiobook Purchases
+                        <span class="ml-2 px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-semibold rounded-full">{{ audiobook_purchases.paginator.count|default:0 }}</span>
+                    </button>
+                    <button data-tab-target="coinPurchasesTab" class="payment-tab-button">
+                        <i class="fas fa-coins mr-2 opacity-75"></i>Coin Purchases
+                        <span class="ml-2 px-2 py-0.5 bg-gray-200 text-gray-700 text-xs font-semibold rounded-full">{{ coin_purchases.paginator.count|default:0 }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-b-xl rounded-tr-xl border border-gray-200 border-t-0">
+                <div id="subscriptionsTab" class="payment-tab-content p-6 active">
+                    <h3 class="text-xl font-semibold text-[#091e65] mb-4">Subscription Records</h3>
+                    {% if subscriptions.object_list %}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full align-middle">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">User</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Plan</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Dates (Start - End)</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Card</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Stripe Sub ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for sub in subscriptions %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <div class="font-medium text-[#091e65]">{{ sub.user.username|default:"N/A" }}</div>
+                                            <div class="text-xs text-gray-500">{{ sub.user.email|default:"N/A" }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ sub.get_plan_display|default:"N/A" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            {{ sub.start_date|date:"d M, Y H:i"|default:"N/A" }}
+                                            {% if sub.end_date %}
+                                                <br><span class="text-xs text-gray-500">to {{ sub.end_date|date:"d M, Y H:i" }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            {% if sub.status == 'active' %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-[#091e65]">
+                                                    {{ sub.get_status_display|default:sub.status }}
+                                                </span>
+                                            {% elif sub.status == 'canceled' or sub.status == 'expired' %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                    {{ sub.get_status_display|default:sub.status }}
+                                                </span>
+                                            {% elif sub.status == 'failed' or sub.status == 'past_due' %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-700">
+                                                    {{ sub.get_status_display|default:sub.status }}
+                                                </span>
+                                            {% else %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                    {{ sub.get_status_display|default:sub.status }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            {{ sub.stripe_payment_method_brand|default:""|capfirst }}
+                                            {% if sub.stripe_payment_method_last4 %}
+                                                <span class="text-xs text-gray-500"> ending ****{{ sub.stripe_payment_method_last4 }}</span>
+                                            {% endif %}
+                                            {% if not sub.stripe_payment_method_brand and not sub.stripe_payment_method_last4 %}N/A{% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs" title="{{ sub.stripe_subscription_id|default:'N/A' }}">
+                                            {{ sub.stripe_subscription_id|default:"N/A"|truncatechars:20 }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if subscriptions.paginator.num_pages > 1 %}
+                        <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-5">
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div><p class="text-sm text-gray-700">Showing <span class="font-medium">{{ subscriptions.start_index }}</span> to <span class="font-medium">{{ subscriptions.end_index }}</span> of <span class="font-medium">{{ subscriptions.paginator.count }}</span> results</p></div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        {% if subscriptions.has_previous %}
+                                            <a href="?{% for k, v_list_outer in request.GET.lists %}{% for v_inner in v_list_outer %}{% if k != 'sub_page' %}{{ k }}={{ v_inner }}&{% endif %}{% endfor %}{% endfor %}sub_page={{ subscriptions.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><span class="sr-only">Previous</span><i class="fas fa-chevron-left h-5 w-5"></i></a>
+                                        {% else %}
+                                            <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed"><span class="sr-only">Previous</span><i class="fas fa-chevron-left h-5 w-5"></i></span>
+                                        {% endif %}
+                                        {% for num in subscriptions.paginator.page_range %}
+                                            {% if subscriptions.number == num %}
+                                                <span aria-current="page" class="z-10 bg-[#091e65] bg-opacity-10 border-[#091e65] text-[#091e65] relative inline-flex items-center px-4 py-2 border text-sm font-medium">{{ num }}</span>
+                                            {% elif num > subscriptions.number|add:'-3' and num < subscriptions.number|add:'3' %}
+                                                <a href="?{% for k, v_list_outer in request.GET.lists %}{% for v_inner in v_list_outer %}{% if k != 'sub_page' %}{{ k }}={{ v_inner }}&{% endif %}{% endfor %}{% endfor %}sub_page={{ num }}" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">{{ num }}</a>
+                                            {% elif num == subscriptions.number|add:'-3' and subscriptions.number > 4 %}
+                                                 <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                                            {% elif num == subscriptions.number|add:'3' and subscriptions.number < subscriptions.paginator.num_pages|add:'-3' %}
+                                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if subscriptions.has_next %}
+                                            <a href="?{% for k, v_list_outer in request.GET.lists %}{% for v_inner in v_list_outer %}{% if k != 'sub_page' %}{{ k }}={{ v_inner }}&{% endif %}{% endfor %}{% endfor %}sub_page={{ subscriptions.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><span class="sr-only">Next</span><i class="fas fa-chevron-right h-5 w-5"></i></a>
+                                        {% else %}
+                                            <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed"><span class="sr-only">Next</span><i class="fas fa-chevron-right h-5 w-5"></i></span>
+                                        {% endif %}
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-12"><i class="fas fa-folder-open fa-3x text-gray-400 mb-3"></i><p class="text-gray-500">No subscription records found for the current search criteria.</p></div>
+                    {% endif %}
+                </div>
+
+                <div id="audiobookPurchasesTab" class="payment-tab-content p-6 hidden">
+                    <h3 class="text-xl font-semibold text-[#091e65] mb-4">Audiobook Purchase Records</h3>
+                    {% if audiobook_purchases.object_list %}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full align-middle">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">User</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Audiobook</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Date</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Amount Paid</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Stripe Pymt ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for purchase in audiobook_purchases %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <div class="font-medium text-[#091e65]">{{ purchase.user.username|default:"N/A" }}</div>
+                                            <div class="text-xs text-gray-500">{{ purchase.user.email|default:"N/A" }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ purchase.audiobook.title|default:"N/A" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ purchase.purchase_date|date:"d M, Y H:i"|default:"N/A" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">PKR {{ purchase.amount_paid|floatformat:2|intcomma|default:"0.00" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            {% if purchase.status == 'COMPLETED' %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-[#091e65]">Completed</span>
+                                            {% elif purchase.status == 'PENDING' %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                            {% elif purchase.status == 'FAILED' %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-700">Failed</span>
+                                            {% else %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ purchase.get_status_display|default:purchase.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs" title="{{ purchase.stripe_payment_intent_id|default:'N/A' }}">
+                                            {{ purchase.stripe_payment_intent_id|default:"N/A"|truncatechars:20 }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if audiobook_purchases.paginator.num_pages > 1 %}
+                        <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-5">
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div><p class="text-sm text-gray-700">Showing <span class="font-medium">{{ audiobook_purchases.start_index }}</span> to <span class="font-medium">{{ audiobook_purchases.end_index }}</span> of <span class="font-medium">{{ audiobook_purchases.paginator.count }}</span> results</p></div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        {% if audiobook_purchases.has_previous %}
+                                            <a href="?{% for k, v_list_outer in request.GET.lists %}{% for v_inner in v_list_outer %}{% if k != 'abp_page' %}{{ k }}={{ v_inner }}&{% endif %}{% endfor %}{% endfor %}abp_page={{ audiobook_purchases.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><span class="sr-only">Previous</span><i class="fas fa-chevron-left h-5 w-5"></i></a>
+                                        {% else %}
+                                            <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed"><span class="sr-only">Previous</span><i class="fas fa-chevron-left h-5 w-5"></i></span>
+                                        {% endif %}
+                                        {% for num in audiobook_purchases.paginator.page_range %}
+                                            {% if audiobook_purchases.number == num %}
+                                                <span aria-current="page" class="z-10 bg-[#091e65] bg-opacity-10 border-[#091e65] text-[#091e65] relative inline-flex items-center px-4 py-2 border text-sm font-medium">{{ num }}</span>
+                                            {% elif num > audiobook_purchases.number|add:'-3' and num < audiobook_purchases.number|add:'3' %}
+                                                <a href="?{% for k, v_list_outer in request.GET.lists %}{% for v_inner in v_list_outer %}{% if k != 'abp_page' %}{{ k }}={{ v_inner }}&{% endif %}{% endfor %}{% endfor %}abp_page={{ num }}" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">{{ num }}</a>
+                                            {% elif num == audiobook_purchases.number|add:'-3' and audiobook_purchases.number > 4 %}
+                                                 <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                                            {% elif num == audiobook_purchases.number|add:'3' and audiobook_purchases.number < audiobook_purchases.paginator.num_pages|add:'-3' %}
+                                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if audiobook_purchases.has_next %}
+                                            <a href="?{% for k, v_list_outer in request.GET.lists %}{% for v_inner in v_list_outer %}{% if k != 'abp_page' %}{{ k }}={{ v_inner }}&{% endif %}{% endfor %}{% endfor %}abp_page={{ audiobook_purchases.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><span class="sr-only">Next</span><i class="fas fa-chevron-right h-5 w-5"></i></a>
+                                        {% else %}
+                                            <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed"><span class="sr-only">Next</span><i class="fas fa-chevron-right h-5 w-5"></i></span>
+                                        {% endif %}
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-12"><i class="fas fa-folder-open fa-3x text-gray-400 mb-3"></i><p class="text-gray-500">No audiobook purchase records found for the current search criteria.</p></div>
+                    {% endif %}
+                </div>
+
+                <div id="coinPurchasesTab" class="payment-tab-content p-6 hidden">
+                    <h3 class="text-xl font-semibold text-[#091e65] mb-4">Coin Purchase Records</h3>
+                    {% if coin_purchases.object_list %}
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full align-middle">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">User</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Date</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Pack Name</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Coins</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Price (PKR)</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Status</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-[#091e65] uppercase tracking-wider">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for coin_tx in coin_purchases %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <div class="font-medium text-[#091e65]">{{ coin_tx.user.username|default:"N/A" }}</div>
+                                            <div class="text-xs text-gray-500">{{ coin_tx.user.email|default:"N/A" }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ coin_tx.transaction_date|date:"d M, Y H:i"|default:"N/A" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ coin_tx.pack_name|default:"N/A" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ coin_tx.amount|intcomma|default:"0" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ coin_tx.price|floatformat:2|intcomma|default:"0.00" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            {% if coin_tx.status == 'completed' %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-[#091e65]">Completed</span>
+                                            {% elif coin_tx.status == 'pending' or coin_tx.status == 'processing' %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ coin_tx.get_status_display|default:coin_tx.status|capfirst }}</span>
+                                            {% elif coin_tx.status == 'failed' or coin_tx.status == 'rejected' %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-700">{{ coin_tx.get_status_display|default:coin_tx.status|capfirst }}</span>
+                                            {% else %}
+                                                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{{ coin_tx.get_status_display|default:coin_tx.status|capfirst }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-sm" title="{{ coin_tx.description|default:'N/A' }}">
+                                            {{ coin_tx.description|default:"N/A"|truncatechars:40 }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if coin_purchases.paginator.num_pages > 1 %}
+                        <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-5">
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div><p class="text-sm text-gray-700">Showing <span class="font-medium">{{ coin_purchases.start_index }}</span> to <span class="font-medium">{{ coin_purchases.end_index }}</span> of <span class="font-medium">{{ coin_purchases.paginator.count }}</span> results</p></div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        {% if coin_purchases.has_previous %}
+                                            <a href="?{% for k, v_list_outer in request.GET.lists %}{% for v_inner in v_list_outer %}{% if k != 'cp_page' %}{{ k }}={{ v_inner }}&{% endif %}{% endfor %}{% endfor %}cp_page={{ coin_purchases.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><span class="sr-only">Previous</span><i class="fas fa-chevron-left h-5 w-5"></i></a>
+                                        {% else %}
+                                            <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed"><span class="sr-only">Previous</span><i class="fas fa-chevron-left h-5 w-5"></i></span>
+                                        {% endif %}
+                                        {% for num in coin_purchases.paginator.page_range %}
+                                            {% if coin_purchases.number == num %}
+                                                <span aria-current="page" class="z-10 bg-[#091e65] bg-opacity-10 border-[#091e65] text-[#091e65] relative inline-flex items-center px-4 py-2 border text-sm font-medium">{{ num }}</span>
+                                            {% elif num > coin_purchases.number|add:'-3' and num < coin_purchases.number|add:'3' %}
+                                                <a href="?{% for k, v_list_outer in request.GET.lists %}{% for v_inner in v_list_outer %}{% if k != 'cp_page' %}{{ k }}={{ v_inner }}&{% endif %}{% endfor %}{% endfor %}cp_page={{ num }}" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">{{ num }}</a>
+                                            {% elif num == coin_purchases.number|add:'-3' and coin_purchases.number > 4 %}
+                                                 <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                                            {% elif num == coin_purchases.number|add:'3' and coin_purchases.number < coin_purchases.paginator.num_pages|add:'-3' %}
+                                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if coin_purchases.has_next %}
+                                            <a href="?{% for k, v_list_outer in request.GET.lists %}{% for v_inner in v_list_outer %}{% if k != 'cp_page' %}{{ k }}={{ v_inner }}&{% endif %}{% endfor %}{% endfor %}cp_page={{ coin_purchases.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><span class="sr-only">Next</span><i class="fas fa-chevron-right h-5 w-5"></i></a>
+                                        {% else %}
+                                            <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed"><span class="sr-only">Next</span><i class="fas fa-chevron-right h-5 w-5"></i></span>
+                                        {% endif %}
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-12"><i class="fas fa-folder-open fa-3x text-gray-400 mb-3"></i><p class="text-gray-500">No coin purchase records found for the current search criteria.</p></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% elif request.GET.q %}
+            <div class="mt-12 text-center">
+                <div class="inline-flex items-center justify-center p-4 bg-red-100 rounded-full mb-4">
+                    <i class="fas fa-search fa-2x text-red-500"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-[#091e65] mb-2">No Users Found</h3>
+                <p class="text-gray-600">Your search for "<span class="font-medium text-gray-800">{{ request.GET.q }}</span>" did not match any users with payment records.</p>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="mt-12 text-center">
+                 <div class="inline-flex items-center justify-center p-5 bg-[#091e65] bg-opacity-10 rounded-full mb-6">
+                     <i class="fas fa-file-invoice-dollar fa-3x text-[#091e65]"></i>
+                </div>
+                <h3 class="text-2xl font-semibold text-[#091e65] mb-2">View User Payment Details</h3>
+                <p class="text-gray-600 max-w-md mx-auto">Enter a user's email or username above to search for their payment transaction history across subscriptions, audiobook purchases, and coin purchases.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tabButtons = document.querySelectorAll('.payment-tab-button');
+    const tabContents = document.querySelectorAll('.payment-tab-content');
+
+    function setActiveTab(targetId) {
+        tabButtons.forEach(button => {
+            const buttonTarget = button.getAttribute('data-tab-target');
+            if (buttonTarget === targetId) {
+                button.classList.add('active', 'text-[#091e65]', 'border-[#091e65]');
+                button.classList.remove('text-gray-500', 'border-transparent', 'hover:text-gray-700', 'hover:border-gray-300');
+            } else {
+                button.classList.remove('active', 'text-[#091e65]', 'border-[#091e65]');
+                button.classList.add('text-gray-500', 'border-transparent', 'hover:text-gray-700', 'hover:border-gray-300');
+            }
+        });
+
+        tabContents.forEach(content => {
+            if (content.id === targetId) {
+                content.classList.remove('hidden');
+                content.classList.add('active'); // Ensure active class is added if needed for other JS or very specific CSS
+            } else {
+                content.classList.add('hidden');
+                content.classList.remove('active');
+            }
+        });
+        
+        if (history.pushState) {
+            history.pushState(null, null, '#' + targetId);
+        } else {
+            window.location.hash = '#' + targetId;
+        }
+    }
+
+    tabButtons.forEach(button => {
+        // Apply base styling to all tab buttons
+        button.classList.add(
+            'py-3', 'px-4', 'sm:px-6', 'font-medium', 'text-sm', 
+            'border-b-2', 'focus:outline-none', 'transition-colors', 'duration-150', 'ease-in-out'
+        );
+        // Set initial inactive state styling (will be overridden for the active one)
+        if (!button.classList.contains('active')) {
+             button.classList.add('text-gray-500', 'border-transparent', 'hover:text-gray-700', 'hover:border-gray-300');
+        }
+
+
+        button.addEventListener('click', function () {
+            const targetTab = this.getAttribute('data-tab-target');
+            setActiveTab(targetTab);
+        });
+    });
+
+    let initialTab = 'subscriptionsTab'; 
+    if (window.location.hash) {
+        const hashTarget = window.location.hash.substring(1);
+        const targetElement = document.getElementById(hashTarget);
+        if (targetElement && targetElement.classList.contains('payment-tab-content')) {
+            initialTab = hashTarget;
+        }
+    }
+    setActiveTab(initialTab); // This will also apply active styles to the button
+});
+</script>
+{% endblock %}

@@ -1,0 +1,374 @@
+{% extends 'admin/admin_base.html' %} {# Assumes admin_base.html is in templates/admin/ and includes Tailwind CSS, Font Awesome, and sets body class e.g., <body class="bg-slate-100"> #}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+
+{% block title %}Banned Creators - Admin (AudioX){% endblock %}
+
+{% block header_title %}
+    <h1 class="text-2xl md:text-3xl font-bold text-[#091e65]">
+        {{ filter_title|default:"Banned Creators" }}
+    </h1>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+{# All styling is done via Tailwind CSS. Ensure admin_base.html body has bg-slate-100 or similar #}
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+    {# Django Messages #}
+    {% if messages %}
+        <div class="space-y-4">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg shadow-md flex items-start
+                    {% if message.tags == 'success' %} bg-green-50 border-l-4 border-green-500 text-green-800
+                    {% elif message.tags == 'error' %} bg-red-50 border-l-4 border-red-500 text-red-800
+                    {% elif message.tags == 'warning' %} bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800
+                    {% else %} bg-blue-50 border-l-4 border-blue-400 text-blue-800
+                    {% endif %}"
+                    role="alert">
+                    <div class="flex-shrink-0 mr-3 pt-0.5">
+                        <i class="fas 
+                        {% if message.tags == 'success' %} fa-check-circle text-green-600
+                        {% elif message.tags == 'error' %} fa-exclamation-circle text-red-600
+                        {% elif message.tags == 'warning' %} fa-exclamation-triangle text-yellow-600
+                        {% else %} fa-info-circle text-blue-600
+                        {% endif %} text-xl"></i>
+                    </div>
+                    <div class="flex-1 text-sm font-medium">
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Search Form Card #}
+    <div class="bg-white p-6 rounded-xl shadow-xl">
+        <form method="get" action="{% url 'AudioXApp:admin_banned_creators_list' %}" id="search-form" class="space-y-3">
+            <div>
+                <label for="search-input" class="block text-sm font-semibold text-slate-700 mb-1">Search Banned Creators</label>
+                 <p class="text-xs text-slate-500 mb-2">Filter by Name, Email, CID, Username, Ban Reason, or Banning Admin.</p>
+            </div>
+            <div class="flex flex-col sm:flex-row items-stretch gap-3">
+                <div class="relative flex-grow">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <input 
+                        type="search" name="q" id="search-input" 
+                        class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/60 focus:border-[#091e65] focus:outline-none placeholder-slate-400 text-slate-800 text-sm transition duration-150 ease-in-out shadow-sm"
+                        placeholder="Enter search term..." value="{{ search_query|default:'' }}">
+                </div>
+                <button type="submit" class="w-full sm:w-auto flex items-center justify-center px-6 py-2.5 text-white bg-[#091e65] hover:bg-[#071852] rounded-lg text-sm font-semibold transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65]/70 shadow-md hover:shadow-lg">
+                    <i class="fas fa-search mr-2 text-xs"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# Loading Indicator #}
+    <div id="loading-indicator" class="hidden items-center justify-center gap-4 text-slate-700 font-medium py-12 text-center">
+        <svg class="animate-spin h-10 w-10 text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-xl">Searching banned creators...</span>
+    </div>
+
+    {# Section Title for Results #}
+    <div class="flex flex-col sm:flex-row justify-between sm:items-baseline mb-6 border-b-2 border-red-500/40 pb-3">
+        <h2 class="text-2xl font-semibold text-slate-800">
+            {{ filter_title|default:"Banned Creator Accounts" }}
+        </h2>
+        <span class="text-sm font-medium text-slate-500 mt-1 sm:mt-0">Total Found: {{ banned_creators_page.paginator.count }}</span>
+    </div>
+
+    {% if banned_creators_page.object_list %}
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {% for creator in banned_creators_page %}
+            <article class="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out flex flex-col" id="creator-{{ creator.user.user_id }}">
+                <header class="p-5 sm:p-6 border-b border-slate-200">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <a href="{% url 'AudioXApp:admin_view_creator_detail' creator.user.user_id %}" class="flex-shrink-0">
+                                {% if creator.user.profile_pic %}
+                                <img src="{{ creator.user.profile_pic.url }}" alt="{{ creator.creator_name }}" class="w-14 h-14 rounded-full object-cover ring-2 ring-white shadow-md hover:ring-red-500/50 transition-all">
+                                {% else %}
+                                <span class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-500 text-white text-2xl font-semibold shadow-md ring-2 ring-white hover:bg-red-600 transition-colors">
+                                    {{ creator.creator_name|slice:":1"|upper }}
+                                </span>
+                                {% endif %}
+                            </a>
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-800 leading-tight hover:text-[#091e65] transition-colors">
+                                    <a href="{% url 'AudioXApp:admin_view_creator_detail' creator.user.user_id %}">{{ creator.creator_name|default:creator.user.username }}</a>
+                                </h3>
+                                <p class="text-sm font-mono text-slate-500 leading-tight">@{{ creator.creator_unique_name }}</p>
+                                <p class="text-xs text-red-600 font-medium mt-1">Banned</p>
+                            </div>
+                        </div>
+                         <div class="text-xs text-slate-500 text-right flex-shrink-0">
+                            <p>Banned: {{ creator.banned_at|localtime|date:"M d, Y" }}</p>
+                            <p>({{ creator.banned_at|naturaltime }})</p>
+                        </div>
+                    </div>
+                </header>
+                
+                <div class="p-5 sm:p-6 space-y-4 flex-grow">
+                    <section>
+                        <h5 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Ban Details</h5>
+                        <dl class="text-sm space-y-1.5">
+                            <div>
+                                <dt class="inline font-medium text-slate-600">Reason:</dt> 
+                                <dd class="inline text-red-700 font-medium">{{ creator.ban_reason|default:"No reason provided."|truncatechars:100 }}</dd>
+                                {% if creator.ban_reason|length > 100 %}
+                                <span class="text-xs text-slate-400 cursor-pointer hover:underline" onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')">(more)</span>
+                                <div class="hidden mt-1 p-2 text-xs bg-slate-50 border border-slate-200 rounded-md whitespace-pre-wrap">{{ creator.ban_reason }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <dt class="inline font-medium text-slate-600">Banned By:</dt> 
+                                <dd class="inline text-[#091e65]">{{ creator.banned_by.username|default:"System" }}</dd>
+                            </div>
+                        </dl>
+                    </section>
+                    
+                    <section>
+                        <h5 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 pt-3 border-t border-slate-200">Contact</h5>
+                        <dl class="text-sm space-y-1.5">
+                            <div><dt class="inline font-medium text-slate-600">Email:</dt> <dd class="inline text-slate-700 break-all">{{ creator.user.email }}</dd></div>
+                            {% if creator.cid %}
+                            <div><dt class="inline font-medium text-slate-600">Creator ID (CID):</dt> <dd class="inline font-mono text-xs">{{ creator.cid }}</dd></div>
+                            {% endif %}
+                        </dl>
+                    </section>
+                </div>
+
+                <footer class="px-5 sm:px-6 py-4 bg-slate-50 border-t border-slate-200 mt-auto">
+                     <button
+                        type="button"
+                        class="w-full flex items-center justify-center px-6 py-2.5 rounded-lg text-sm font-semibold border border-transparent bg-[#091e65] text-white transition-all duration-200 ease-in-out hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65]/70 shadow-md hover:shadow-lg"
+                        data-creator-id="{{ creator.user.user_id }}"
+                        data-creator-name="{{ creator.creator_name|default:creator.user.username|escapejs }}"
+                        data-unban-url="{% url 'AudioXApp:admin_unban_creator' creator.user.user_id %}"
+                        title="Unban Creator Account"
+                    >
+                        <i class="fas fa-unlock-alt mr-2.5"></i> Unban Creator
+                    </button>
+                </footer>
+            </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center text-slate-500 py-20 px-6 bg-white rounded-xl border-2 border-dashed border-slate-300 shadow-xl">
+            <i class="fas fa-user-slash fa-5x text-slate-300 mb-6"></i>
+            <p class="text-2xl font-semibold text-slate-700 mb-2">No Banned Creators Found</p>
+            {% if search_query %}
+            <p class="text-base text-slate-500">No banned creators found matching your search for "{{search_query}}".</p>
+            {% else %}
+            <p class="text-base text-slate-500">There are currently no banned creators in the system.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# Pagination #}
+    {% if banned_creators_page.has_other_pages %}
+    <div class="mt-12 flex items-center justify-between border-t-2 border-slate-200 pt-8">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if banned_creators_page.has_previous %}
+                <a href="?q={{ search_query|urlencode }}&page={{ banned_creators_page.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-100 transition-colors">
+                    Previous
+                </a>
+            {% else %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-slate-200 text-sm font-medium rounded-md text-slate-400 bg-slate-100 cursor-not-allowed">
+                    Previous
+                </span>
+            {% endif %}
+            {% if banned_creators_page.has_next %}
+                <a href="?q={{ search_query|urlencode }}&page={{ banned_creators_page.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-100 transition-colors">
+                    Next
+                </a>
+            {% else %}
+                <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-200 text-sm font-medium rounded-md text-slate-400 bg-slate-100 cursor-not-allowed">
+                    Next
+                </span>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-slate-600">
+                    Showing
+                    <span class="font-semibold text-[#091e65]">{{ banned_creators_page.start_index }}</span>
+                    to
+                    <span class="font-semibold text-[#091e65]">{{ banned_creators_page.end_index }}</span>
+                    of
+                    <span class="font-semibold text-[#091e65]">{{ banned_creators_page.paginator.count }}</span>
+                    results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px overflow-hidden border border-slate-300" aria-label="Pagination">
+                    {% if banned_creators_page.has_previous %}
+                        <a href="?q={{ search_query|urlencode }}&page={{ banned_creators_page.previous_page_number }}" class="relative inline-flex items-center px-3 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left h-5 w-4"></i>
+                        </a>
+                    {% else %}
+                        <span class="relative inline-flex items-center px-3 py-2 bg-slate-100 text-sm font-medium text-slate-400 cursor-not-allowed border-r border-slate-300">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left h-5 w-4"></i>
+                        </span>
+                    {% endif %}
+
+                    {% for num in banned_creators_page.paginator.get_elided_page_range %}
+                        {% if num == banned_creators_page.paginator.ELLIPSIS %}
+                             <span class="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-slate-700 border-r border-slate-300">...</span>
+                        {% elif banned_creators_page.number == num %}
+                            <span aria-current="page" class="relative z-10 inline-flex items-center px-4 py-2 bg-[#091e65]/10 text-sm font-semibold text-[#091e65] focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                                {{ num }}
+                            </span>
+                        {% else %}
+                            <a href="?q={{ search_query|urlencode }}&page={{ num }}" class="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-[#091e65] transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if banned_creators_page.has_next %}
+                        <a href="?q={{ search_query|urlencode }}&page={{ banned_creators_page.next_page_number }}" class="relative inline-flex items-center px-3 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right h-5 w-4"></i>
+                        </a>
+                    {% else %}
+                         <span class="relative inline-flex items-center px-3 py-2 bg-slate-100 text-sm font-medium text-slate-400 cursor-not-allowed">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right h-5 w-4"></i>
+                        </span>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %} {# End pagination #}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const unbanButtons = document.querySelectorAll('button[data-unban-url]');
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '{{ csrf_token }}';
+
+    unbanButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const creatorName = this.dataset.creatorName;
+            const unbanUrl = this.dataset.unbanUrl;
+
+            Swal.fire({
+                title: `<span class="text-[#091e65] text-xl">Unban Creator: ${creatorName}</span>`,
+                html: `
+                    <p class="text-sm text-slate-600 mb-3 text-left">Please provide a reason for unbanning this creator (for internal records and optionally for the creator).</p>
+                    <textarea id="swal-unban-reason" 
+                              class="w-full p-3 border border-slate-300 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] transition-all duration-150 bg-white shadow-sm" 
+                              placeholder="Reason for unbanning..." 
+                              rows="3"></textarea>
+                `,
+                iconHtml: '<i class="fas fa-user-check text-[#091e65] text-3xl"></i>', // Custom icon for unban
+                showCancelButton: true,
+                confirmButtonText: 'Confirm Unban',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    popup: 'rounded-xl shadow-xl p-5 sm:p-6 bg-white',
+                    title: 'font-semibold text-lg text-[#091e65] mb-1 text-left',
+                    htmlContainer: 'text-sm text-slate-600 text-left mt-0',
+                    confirmButton: 'px-5 py-2.5 rounded-lg text-sm font-semibold bg-[#091e65] hover:bg-[#071852] text-white transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]/50',
+                    cancelButton: 'px-5 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-400',
+                    actions: 'mt-5 space-x-3 w-full flex justify-end',
+                    validationMessage: 'text-red-500 text-xs mt-1 text-left',
+                    icon: 'border-4 border-[#091e65]/20 rounded-full p-2 w-16 h-16 mt-2 mb-2',
+                },
+                buttonsStyling: false, 
+                preConfirm: () => {
+                    const reasonEl = document.getElementById('swal-unban-reason');
+                    const reason = reasonEl.value.trim();
+                    if (!reason) {
+                        Swal.showValidationMessage('<i class="fas fa-exclamation-circle mr-1"></i>Unban reason is required.');
+                        reasonEl.classList.add('!border-red-500', 'focus:!ring-red-500/50');
+                        reasonEl.classList.remove('border-slate-300', 'focus:ring-[#091e65]/50', 'focus:border-[#091e65]');
+                        return false;
+                    }
+                    reasonEl.classList.remove('!border-red-500', 'focus:!ring-red-500/50');
+                    reasonEl.classList.add('border-slate-300', 'focus:ring-[#091e65]/50', 'focus:border-[#091e65]');
+                    return reason;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const unbanReason = result.value;
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = unbanUrl;
+                    form.style.display = 'none';
+
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+
+                    const reasonInput = document.createElement('input');
+                    reasonInput.type = 'hidden';
+                    reasonInput.name = 'unban_reason'; // Ensure your view expects 'unban_reason'
+                    reasonInput.value = unbanReason;
+                    form.appendChild(reasonInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+
+                    Swal.fire({ 
+                        title: '<span class="text-[#091e65]">Processing Unban...</span>', 
+                        html: `<span class="text-slate-600">Attempting to unban ${creatorName}...</span>`, 
+                        allowOutsideClick: false, 
+                        didOpen: () => { Swal.showLoading(); },
+                        customClass: { popup: 'rounded-xl shadow-xl p-6 bg-white' },
+                        buttonsStyling: false,
+                    });
+                }
+            });
+        });
+    });
+
+    // --- Search Loading Indicator ---
+    const searchForm = document.getElementById('search-form'); 
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const searchInput = document.getElementById('search-input'); 
+
+    const getUrlParameter = (name) => {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        const results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    };
+
+    const initialSearchQuery = getUrlParameter('q');
+    if (initialSearchQuery && searchInput) {
+        searchInput.value = initialSearchQuery;
+    }
+
+    if (searchForm && loadingIndicator && searchInput) {
+        searchForm.addEventListener('submit', function() {
+            if (searchInput.value.trim() !== '') {
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

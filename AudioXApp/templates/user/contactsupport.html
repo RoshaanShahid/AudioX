@@ -1,0 +1,503 @@
+{% extends "Homepage.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Contact Support - AudioX{% endblock %}
+
+{% block head_extra %}
+{{ block.super }}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+{# Custom CSS and Tailwind CDN/inline config removed, assuming output.css from Homepage.html handles Tailwind #}
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-off-white-bg text-brand-text-primary w-full font-sans">
+    <header class="py-16 sm:py-20 bg-theme-primary text-theme-text-inverted initial-opacity-transform">
+        <div class="w-full max-w-6xl mx-auto px-6 lg:px-8 text-center">
+            <div class="mb-6 sm:mb-8">
+                <i class="fas fa-headset text-5xl sm:text-6xl text-theme-text-inverted"></i>
+            </div>
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">Support Center</h1>
+            <p class="mt-6 text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto">
+                Welcome. Our dedicated team is ready to provide you with exceptional assistance. Please detail your query below.
+            </p>
+            {% if user.is_authenticated %}
+            <div class="mt-10">
+                <a href="{% url 'AudioXApp:user_ticket_list' %}"
+                   class="inline-flex items-center px-8 py-3 border-2 border-theme-text-inverted text-base font-semibold rounded-xl text-theme-text-inverted bg-transparent hover:bg-theme-text-inverted hover:text-theme-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-theme-primary focus:ring-theme-text-inverted transition-all duration-200 ease-in-out transform hover:scale-105">
+                    <i class="fas fa-receipt mr-2.5"></i> My Support Tickets
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="py-12 sm:py-16">
+        <div class="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {% if messages %}
+            <div class="space-y-5 mb-12 initial-opacity-transform">
+                {% for message in messages %}
+                <div class="w-full p-5 rounded-xl border-2 flex items-start shadow-lg 
+                    {% if message.tags == 'success' %}border-theme-primary bg-brand-surface text-theme-primary-text-on-light
+                    {% elif message.tags == 'error' %}border-theme-error bg-brand-surface text-theme-error-text
+                    {% elif message.tags == 'info' %}border-theme-primary bg-brand-surface text-theme-primary-text-on-light
+                    {% elif message.tags == 'warning' %}border-theme-error bg-brand-surface text-theme-error-text
+                    {% else %}border-border-strong-on-light bg-brand-surface text-text-secondary-on-light{% endif %}" role="alert">
+                    <i class="fas 
+                    {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% elif message.tags == 'info' %}fa-info-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-bell{% endif %} 
+                    mr-4 text-2xl shrink-0 mt-0.5"></i>
+                    <span class="text-base font-medium">{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form id="supportTicketForm" method="POST" action="{% url 'AudioXApp:contact_us' %}" class="space-y-12 md:space-y-16"> 
+                {% csrf_token %}
+
+                {% if user.is_authenticated and is_creator_flag %}
+                <section class="initial-opacity-transform">
+                    <fieldset>
+                        <legend class="text-2xl sm:text-3xl font-semibold text-theme-primary mb-4">Regarding</legend> 
+                        <p class="text-sm text-text-secondary-on-light mb-8">Specify if this issue concerns your general account or creator activities.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5"> 
+                            <div class="relative">
+                                <label for="context_user" 
+                                       class="flex items-center justify-between w-full p-5 text-sm font-medium rounded-xl cursor-pointer transition-all duration-200 ease-in-out border-2 border-border-soft-on-light hover:border-theme-primary bg-brand-surface focus-within:ring-2 focus-within:ring-theme-primary-focus-ring focus-within:border-theme-primary"> 
+                                    <input type="radio" id="context_user" name="ticket_context_type" value="user" class="peer sr-only" {% if not form_data.ticket_context_type or form_data.ticket_context_type == 'user' %}checked{% endif %}>
+                                    <span class="flex items-center text-theme-primary-text-on-light">
+                                        <i class="fas fa-user mr-3 text-xl opacity-80"></i>
+                                        General Account
+                                    </span>
+                                    <span class="flex items-center justify-center w-5 h-5 rounded-full border-2 border-border-strong-on-light text-transparent bg-brand-surface 
+                                                   peer-checked:border-theme-error peer-checked:text-theme-error transition-all duration-200">
+                                        <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="relative"> 
+                                <label for="context_creator" 
+                                       class="flex items-center justify-between w-full p-5 text-sm font-medium rounded-xl cursor-pointer transition-all duration-200 ease-in-out border-2 border-border-soft-on-light hover:border-theme-primary bg-brand-surface focus-within:ring-2 focus-within:ring-theme-primary-focus-ring focus-within:border-theme-primary">
+                                    <input type="radio" id="context_creator" name="ticket_context_type" value="creator" class="peer sr-only" {% if form_data.ticket_context_type == 'creator' %}checked{% endif %}>
+                                    <span class="flex items-center text-theme-primary-text-on-light">
+                                        <i class="fas fa-microphone-alt mr-3 text-xl opacity-80"></i>
+                                        Creator Profile
+                                    </span>
+                                    <span class="flex items-center justify-center w-5 h-5 rounded-full border-2 border-border-strong-on-light text-transparent bg-brand-surface 
+                                                   peer-checked:border-theme-error peer-checked:text-theme-error transition-all duration-200">
+                                        <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <input type="hidden" id="is_creator_input" value="true">
+                </section>
+                {% else %}
+                    <input type="hidden" name="ticket_context_type" value="user">
+                    <input type="hidden" id="is_creator_input" value="false">
+                {% endif %}
+                
+                <section class="initial-opacity-transform">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-wand-magic-sparkles text-3xl text-theme-error mr-3.5"></i>
+                        <h2 class="text-2xl sm:text-3xl font-semibold text-theme-primary">AudioX AI Assistant</h2>
+                    </div>
+                    <p class="text-sm text-text-secondary-on-light mb-8">Need help phrasing your issue? Our AI can assist in drafting your ticket details.</p>
+                    <textarea id="ai_prompt" name="ai_prompt" rows="4"
+                              class="block w-full text-base font-medium text-brand-text-primary bg-off-white-bg border-2 border-border-strong-on-light rounded-xl shadow-sm transition-all duration-200 ease-in-out placeholder-placeholder-text-on-light focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-focus-ring focus:bg-brand-surface px-4 py-3"
+                              placeholder="Briefly describe your problem here (e.g., 'I can't upload my new track')">{{ form_data.ai_prompt|default:'' }}</textarea>
+                    <div class="mt-8 text-center"> 
+                        <button type="button" id="getAISuggestionBtn"
+                                class="group inline-flex items-center justify-center px-8 py-3 border-2 border-theme-error text-base font-semibold rounded-xl text-theme-error bg-brand-surface hover:bg-theme-error hover:text-theme-text-inverted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-error-focus-ring transition-all duration-200 ease-in-out transform hover:scale-105 shadow-md">
+                            <i id="aiBtnIcon" class="fas fa-wand-magic-sparkles mr-2.5 transition-transform duration-200 group-hover:rotate-12"></i>
+                            <span id="aiBtnText">Draft with AI</span>
+                        </button>
+                    </div>
+                    <p id="ai_error_message" class="text-theme-error-text text-sm mt-4 text-center h-5"></p>
+                </section>
+
+                <hr class="border-border-soft-on-light my-12 sm:my-16"/> 
+
+                <section class="initial-opacity-transform space-y-8"> 
+                    <h2 class="text-2xl sm:text-3xl font-semibold text-theme-primary">Ticket Details</h2>
+                    <div>
+                        <label for="ticket_category" class="block text-sm font-semibold text-text-secondary-on-light mb-2.5">
+                            Issue Category<span class="text-theme-error ml-1 font-semibold">*</span>
+                        </label>
+                        <div class="relative">
+                            <select id="ticket_category" name="ticket_category" required
+                                    class="appearance-none block w-full text-base font-medium bg-off-white-bg border-2 border-border-strong-on-light rounded-xl shadow-sm transition-all duration-200 ease-in-out placeholder-placeholder-text-on-light focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-focus-ring focus:bg-brand-surface px-4 py-3.5 pr-10 text-theme-primary"
+                                    style="background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"%3E%3Cpolyline points=\"6 9 12 15 18 9\"%3E%3C/polyline%3E%3C/svg%3E'); background-position: right 1rem center; background-size: 1em 1em; background-repeat: no-repeat;">
+                                <option value="" disabled {% if not form_data.ticket_category %}selected{% endif %} class="text-placeholder-text-on-light">-- Select Category --</option>
+                                {% for category in ticket_categories %}
+                                <option value="{{ category.pk }}" data-is-creator-specific="{{ category.is_creator_specific|yesno:'true,false' }}"
+                                        {% if form_data.ticket_category == category.pk|stringformat:"s" %}selected{% endif %} class="bg-brand-surface text-brand-text-primary">
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <p id="category_warning_message" class="text-theme-error-text text-sm mt-2 h-5"></p>
+                    </div>
+
+                    <div>
+                        <label for="subject" class="block text-sm font-semibold text-text-secondary-on-light mb-2.5">
+                            Subject<span class="text-theme-error ml-1 font-semibold">*</span>
+                        </label>
+                        <input type="text" name="subject" id="subject" required
+                               class="block w-full text-base font-medium text-brand-text-primary bg-off-white-bg border-2 border-border-strong-on-light rounded-xl shadow-sm transition-all duration-200 ease-in-out placeholder-placeholder-text-on-light focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-focus-ring focus:bg-brand-surface px-4 py-3.5"
+                               placeholder="e.g., Login Issue on Mobile App" value="{{ form_data.subject|default:'' }}">
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm font-semibold text-text-secondary-on-light mb-2.5">
+                            Detailed Description<span class="text-theme-error ml-1 font-semibold">*</span>
+                        </label>
+                        <textarea id="description" name="description" rows="6" required
+                                  class="block w-full text-base font-medium text-brand-text-primary bg-off-white-bg border-2 border-border-strong-on-light rounded-xl shadow-sm transition-all duration-200 ease-in-out placeholder-placeholder-text-on-light focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-focus-ring focus:bg-brand-surface px-4 py-3"
+                                  placeholder="Please provide all relevant details, including steps to reproduce the issue, error messages, and any other information that might help us understand the problem.">{{ form_data.description|default:'' }}</textarea>
+                    </div>
+                </section>
+
+                {% if not user.is_authenticated %}
+                 <section class="initial-opacity-transform my-12 sm:my-16"> {/* Consistent large margin */}
+                    <div class="p-6 bg-theme-error-bg-ultra-light border-l-4 border-theme-error rounded-lg shadow-md">
+                        <div class="flex">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <i class="fas fa-user-alt-slash text-theme-error text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-base text-theme-error-text font-medium">
+                                    You are currently not logged in.
+                                    <a href="{% url 'AudioXApp:login' %}?next={{ request.path }}" class="font-semibold text-theme-primary-text-on-light hover:underline">Log in</a> or
+                                    <a href="{% url 'AudioXApp:signup' %}" class="font-semibold text-theme-primary-text-on-light hover:underline">Sign up</a> for a better experience and to track your support tickets.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
+
+                <div class="pt-8 sm:pt-12 text-center initial-opacity-transform">
+                    <button type="submit" id="submitTicketBtn"
+                            class="w-full sm:w-auto group inline-flex items-center justify-center px-12 py-4 border border-transparent text-lg font-semibold rounded-xl text-theme-text-inverted bg-theme-primary hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-focus-ring transition-all duration-200 ease-in-out transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed shadow-button-primary-base hover:shadow-button-primary-hover-elevated">
+                        <i id="submitBtnIcon" class="fas fa-paper-plane mr-3 transition-transform duration-200 group-hover:translate-x-1"></i>
+                        <span id="submitBtnText">Send Support Request</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block javascript_extra %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const themeColors = { 
+        themePrimary: '#091e65',
+    };
+
+    const animatedSections = document.querySelectorAll('.initial-opacity-transform');
+    animatedSections.forEach(section => {
+        section.classList.add('opacity-0', 'translate-y-5', 'transform', 'transition-all', 'duration-700', 'ease-out');
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.classList.remove('opacity-0', 'translate-y-5');
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                }, index * 120); 
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.05 });
+
+    animatedSections.forEach(section => {
+        observer.observe(section);
+    });
+
+    const aiPromptTextarea = document.getElementById('ai_prompt');
+    const getAISuggestionBtn = document.getElementById('getAISuggestionBtn');
+    const aiBtnIcon = document.getElementById('aiBtnIcon');
+    const aiBtnText = document.getElementById('aiBtnText');
+    const aiErrorMessage = document.getElementById('ai_error_message');
+
+    const categorySelect = document.getElementById('ticket_category');
+    const subjectInput = document.getElementById('subject');
+    const descriptionTextarea = document.getElementById('description');
+    const categoryWarningMessage = document.getElementById('category_warning_message');
+
+    const supportTicketForm = document.getElementById('supportTicketForm');
+    const submitTicketBtn = document.getElementById('submitTicketBtn');
+    const submitBtnIcon = document.getElementById('submitBtnIcon');
+    const submitBtnText = document.getElementById('submitBtnText');
+
+    const csrfTokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    const csrfToken = csrfTokenInput ? csrfTokenInput.value : document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    const isCreatorInput = document.getElementById('is_creator_input');
+    const isCreator = isCreatorInput ? isCreatorInput.value === 'true' : false;
+
+    const inputErrorClasses = ['border-theme-error', 'focus:border-theme-error', 'focus:ring-2', 'focus:ring-theme-error-focus-ring', 'bg-theme-error-bg-ultra-light'];
+    const inputNormalClasses = ['border-border-strong-on-light', 'focus:border-theme-primary', 'focus:ring-2', 'focus:ring-theme-primary-focus-ring', 'bg-off-white-bg', 'focus:bg-brand-surface'];
+    const fieldLoadingClasses = ['opacity-60', 'cursor-wait', 'bg-border-soft-on-light', 'animate-pulse', 'pointer-events-none'];
+
+    function getSelectedTicketContextType() {
+        if (isCreator) {
+            const checkedRadio = document.querySelector('input[name="ticket_context_type"]:checked');
+            return checkedRadio ? checkedRadio.value : 'user';
+        }
+        return 'user';
+    }
+
+    function filterCategories() {
+        if (!categorySelect) return;
+        const selectedContext = getSelectedTicketContextType();
+        const currentCategoryValue = categorySelect.value;
+        let currentSelectionStillVisible = false;
+
+        for (let i = 0; i < categorySelect.options.length; i++) {
+            const option = categorySelect.options[i];
+            if (option.value === "") { 
+                option.style.display = "";
+                if (option.value === currentCategoryValue) currentSelectionStillVisible = true;
+                continue;
+            }
+            const isCreatorSpecificCategory = option.dataset.isCreatorSpecific === 'true';
+
+            if (selectedContext === 'creator') {
+                option.style.display = ""; 
+                if (option.value === currentCategoryValue) currentSelectionStillVisible = true;
+            } else { 
+                if (isCreatorSpecificCategory) {
+                    option.style.display = "none"; 
+                } else {
+                    option.style.display = "";
+                    if (option.value === currentCategoryValue) currentSelectionStillVisible = true;
+                }
+            }
+        }
+
+        if (currentCategoryValue && !currentSelectionStillVisible) {
+            categorySelect.value = ""; 
+        }
+    }
+    
+    function applyErrorState(element) {
+        if (!element) return;
+        const focusClassesToRemove = inputNormalClasses.filter(c => c.startsWith('focus:'));
+        const baseClassesToRemove = inputNormalClasses.filter(c => !c.startsWith('focus:'));
+        
+        element.classList.remove(...baseClassesToRemove, ...focusClassesToRemove);
+        element.classList.add(...inputErrorClasses.filter(c => !c.startsWith('focus:')));
+        
+        const errorFocusClasses = inputErrorClasses.filter(c => c.startsWith('focus:'));
+        if (errorFocusClasses.length > 0) {
+            element.classList.add(...errorFocusClasses);
+        } else { 
+            element.classList.add('focus:border-theme-error', 'focus:ring-theme-error-focus-ring');
+        }
+    }
+
+    function removeErrorState(element) {
+        if (!element) return;
+        const focusClassesToRemove = inputErrorClasses.filter(c => c.startsWith('focus:'));
+        const baseClassesToRemove = inputErrorClasses.filter(c => !c.startsWith('focus:'));
+
+        element.classList.remove(...baseClassesToRemove, ...focusClassesToRemove);
+        element.classList.add(...inputNormalClasses.filter(c => !c.startsWith('focus:')));
+
+        const normalFocusClasses = inputNormalClasses.filter(c => c.startsWith('focus:'));
+         if (normalFocusClasses.length > 0) {
+            element.classList.add(...normalFocusClasses);
+        } else { 
+            element.classList.add('focus:border-theme-primary', 'focus:ring-theme-primary-focus-ring', 'focus:bg-brand-surface');
+        }
+    }
+
+    if (isCreator) {
+        document.querySelectorAll('input[name="ticket_context_type"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                filterCategories();
+                if (categoryWarningMessage) categoryWarningMessage.textContent = ''; 
+            });
+        });
+        filterCategories(); 
+    }
+
+    if (getAISuggestionBtn) {
+        getAISuggestionBtn.addEventListener('click', async function () {
+            if (!aiPromptTextarea) return;
+            const prompt = aiPromptTextarea.value.trim();
+            if (!prompt) {
+                if (aiErrorMessage) aiErrorMessage.textContent = 'Please describe your issue for AI assistance.';
+                aiPromptTextarea.focus();
+                applyErrorState(aiPromptTextarea);
+                setTimeout(() => {
+                    if (aiPromptTextarea.value.trim() === "") {
+                         removeErrorState(aiPromptTextarea);
+                         if (aiErrorMessage) aiErrorMessage.textContent = '';
+                    }
+                } , 2500);
+                return;
+            }
+
+            if (aiErrorMessage) aiErrorMessage.textContent = '';
+            if (categoryWarningMessage) categoryWarningMessage.textContent = '';
+            
+            getAISuggestionBtn.disabled = true;
+            if (aiBtnIcon) aiBtnIcon.className = 'fas fa-spinner fa-spin mr-2.5'; 
+            if (aiBtnText) aiBtnText.textContent = 'Drafting...';
+            
+            const elementsToLoad = [subjectInput, descriptionTextarea, categorySelect, aiPromptTextarea].filter(el => el);
+            elementsToLoad.forEach(el => el.classList.add(...fieldLoadingClasses));
+
+            const ticketContextType = getSelectedTicketContextType();
+
+            try {
+                const response = await fetch("{% url 'AudioXApp:ajax_ai_generate_ticket_details' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ prompt: prompt, ticket_context_type: ticketContextType })
+                });
+
+                let errorMsgText = `AI assistance failed (Status: ${response.status}). Please try again or fill the form manually.`;
+                if (!response.ok) {
+                    try { 
+                        const errorData = await response.json(); 
+                        errorMsgText = errorData.error || errorMsgText; 
+                    } catch (e) { /* Response might not be JSON */ }
+                    throw new Error(errorMsgText);
+                }
+                const data = await response.json();
+
+                if (data.error) {
+                    if (aiErrorMessage) aiErrorMessage.textContent = data.error + (data.ai_raw_response ? " (See console for AI raw output)" : "");
+                    if(data.ai_raw_response) console.warn("AI Raw Response:", data.ai_raw_response);
+                } else {
+                    if (subjectInput) subjectInput.value = data.subject || '';
+                    if (descriptionTextarea) descriptionTextarea.value = data.description || '';
+                    let categorySetByAI = false;
+                    if (data.category && categorySelect) {
+                        filterCategories(); 
+                        for (let i = 0; i < categorySelect.options.length; i++) {
+                            const option = categorySelect.options[i];
+                            if (option.style.display !== "none" && 
+                                option.textContent.trim().toLowerCase().includes(data.category.trim().toLowerCase())) {
+                                categorySelect.value = option.value;
+                                categorySetByAI = true;
+                                break;
+                            }
+                        }
+                        if (!categorySetByAI && categoryWarningMessage) {
+                            const suggestedCat = data.category;
+                            const currentContext = getSelectedTicketContextType();
+                            categoryWarningMessage.textContent = `AI suggested '${suggestedCat}'. This may not be suitable for the '${currentContext}' context or isn't available. Please select manually.`;
+                        }
+                    }
+                    if(data.category_warning && !categorySetByAI && categoryWarningMessage){ 
+                        categoryWarningMessage.textContent = data.category_warning;
+                    }
+                    Swal.fire({
+                        toast: true, position: 'top-end', icon: 'success',
+                        title: 'AI suggestions applied!', showConfirmButton: false, timer: 3000,
+                        timerProgressBar: true,
+                        customClass: { 
+                            popup: 'bg-brand-surface text-theme-primary-text-on-light shadow-xl rounded-xl border-2 border-theme-primary',
+                            title: 'text-theme-primary-text-on-light font-semibold',
+                        } 
+                    });
+                }
+            } catch (error) {
+                console.error('AI Suggestion Error:', error);
+                if (aiErrorMessage) aiErrorMessage.textContent = error.message || 'An unexpected error occurred with AI. Please fill manually.';
+            } finally {
+                getAISuggestionBtn.disabled = false;
+                if (aiBtnIcon) aiBtnIcon.className = 'fas fa-wand-magic-sparkles mr-2.5 transition-transform duration-200 group-hover:rotate-6';
+                if (aiBtnText) aiBtnText.textContent = 'Draft with AI';
+                elementsToLoad.forEach(el => el.classList.remove(...fieldLoadingClasses));
+            }
+        });
+    }
+
+    if (supportTicketForm && submitTicketBtn) {
+        supportTicketForm.addEventListener('submit', function(event) {
+            let isValid = true;
+            const fieldsToValidate = [
+                { el: categorySelect, msgEl: categoryWarningMessage, name: 'Category', customValidation: () => categorySelect && !categorySelect.value, errMsg: 'Please select a category.' },
+                { el: subjectInput, msgEl: null, name: 'Subject', customValidation: () => subjectInput && !subjectInput.value.trim(), errMsg: 'Subject cannot be empty.' },
+                { el: descriptionTextarea, msgEl: null, name: 'Description', customValidation: () => descriptionTextarea && !descriptionTextarea.value.trim(), errMsg: 'Description cannot be empty.' }
+            ].filter(f => f.el);
+
+            fieldsToValidate.forEach(field => {
+                removeErrorState(field.el);
+                if (field.msgEl) field.msgEl.textContent = '';
+            });
+            if (categoryWarningMessage && categoryWarningMessage.textContent.startsWith('AI suggested')) {
+                categoryWarningMessage.textContent = '';
+            }
+
+            let firstErrorField = null;
+            for (const field of fieldsToValidate) {
+                if (field.customValidation()) {
+                    isValid = false;
+                    applyErrorState(field.el);
+                    if (field.msgEl && field.errMsg) { 
+                        field.msgEl.textContent = field.errMsg;
+                    }
+                    if (!firstErrorField) firstErrorField = field.el;
+                }
+            }
+            
+            if (!isValid) {
+                event.preventDefault(); 
+                if (firstErrorField) firstErrorField.focus(); 
+                Swal.fire({
+                    icon: 'error', title: 'Missing Information',
+                    text: 'Please fill all required fields (marked with *).',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: themeColors.themePrimary, 
+                    customClass: { 
+                        popup: 'bg-brand-surface text-theme-primary-text-on-light shadow-xl rounded-xl border-2 border-theme-error',
+                        title: 'text-theme-primary-text-on-light font-semibold', 
+                        htmlContainer: 'text-text-secondary-on-light', 
+                        confirmButton: 'bg-theme-primary hover:bg-theme-primary-hover text-theme-text-inverted font-semibold py-2.5 px-6 rounded-lg',
+                    }
+                });
+                return;
+            }
+            submitTicketBtn.disabled = true;
+            if(submitBtnIcon) submitBtnIcon.className = 'fas fa-spinner fa-spin mr-2.5';
+            if(submitBtnText) submitBtnText.textContent = 'Submitting Request...';
+        });
+
+        [categorySelect, subjectInput, descriptionTextarea, aiPromptTextarea].filter(el => el).forEach(inputEl => {
+            const eventType = inputEl.tagName === 'SELECT' ? 'change' : 'input';
+            inputEl.addEventListener(eventType, () => {
+                if ((inputEl.value && inputEl.value.trim() !== "") || (inputEl.tagName === 'SELECT' && inputEl.value !== "")) {
+                     removeErrorState(inputEl);
+                }
+                if (inputEl === categorySelect && categoryWarningMessage && categoryWarningMessage.textContent === 'Please select a category.') {
+                    categoryWarningMessage.textContent = '';
+                }
+                if (inputEl === aiPromptTextarea && aiErrorMessage && aiErrorMessage.textContent === 'Please describe your issue for AI assistance.') {
+                    aiErrorMessage.textContent = '';
+                }
+            });
+        });
+    }
+    console.log("JavaScript for contactsupport.html (Redesigned UI - No Boxes) loaded and parsed successfully.");
+});
+</script>
+{% endblock %}

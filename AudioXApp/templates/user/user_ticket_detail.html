@@ -1,0 +1,252 @@
+{% extends "Homepage.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ ticket.ticket_display_id }}: {{ ticket.subject|truncatewords:5 }} - AudioX{% endblock %}
+
+{% block head_extra %}
+{{ block.super }}
+{# Custom CSS removed - All styling is now via Tailwind CSS #}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="w-full min-h-screen bg-off-white-bg font-sans">
+    <header class="py-10 sm:py-12 bg-brand-surface border-b border-border-soft-on-light">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div>
+                    <a href="{% url 'AudioXApp:user_ticket_list' %}" class="inline-flex items-center text-sm font-medium text-theme-primary hover:text-theme-primary-hover mb-2 group">
+                        <i class="fas fa-arrow-left mr-2 transition-transform duration-150 ease-in-out group-hover:-translate-x-1"></i>
+                        Back to My Tickets
+                    </a>
+                    <h1 class="text-3xl lg:text-4xl font-bold text-theme-primary tracking-tight break-words">{{ ticket.subject }}</h1>
+                    <p class="mt-1 text-sm text-text-secondary-on-light">
+                        Ticket ID: <span class="font-medium text-brand-text-primary">{{ ticket.ticket_display_id }}</span>
+                    </p>
+                </div>
+                <div class="mt-2 sm:mt-0 flex-shrink-0">
+                    {% with ticket_status=ticket.status|lower %}
+                    <span class="px-3.5 py-2 text-sm font-semibold rounded-lg inline-flex items-center tracking-wide border
+                        {% if ticket_status == 'open' %}bg-theme-primary-bg-subtle text-theme-primary-text-on-light border-theme-primary-border-subtle
+                        {% elif ticket_status == 'processing' %}bg-theme-warning-light text-brand-warning-dark border-brand-warning
+                        {% elif ticket_status == 'awaiting_user_response' or ticket_status == 'awaiting_user' %}bg-theme-error-bg-subtle text-theme-error-text border-theme-error-border-subtle
+                        {% elif ticket_status == 'reopened' %}bg-yellow-400 bg-opacity-20 text-yellow-700 border-yellow-400
+                        {% elif ticket_status == 'resolved' %}bg-theme-green-light text-theme-text-icon-green border-theme-green
+                        {% elif ticket_status == 'closed' %}bg-border-soft-on-light text-text-secondary-on-light border-border-strong-on-light
+                        {% else %}bg-gray-100 text-gray-600 border-gray-300{% endif %}">
+                        <i class="fas 
+                            {% if ticket_status == 'open' %}fa-envelope-open-text
+                            {% elif ticket_status == 'processing' %}fa-spinner fa-spin
+                            {% elif ticket_status == 'awaiting_user_response' or ticket_status == 'awaiting_user' %}fa-user-clock
+                            {% elif ticket_status == 'reopened' %}fa-history
+                            {% elif ticket_status == 'resolved' %}fa-check-circle
+                            {% elif ticket_status == 'closed' %}fa-lock
+                            {% else %}fa-info-circle{% endif %} mr-2"></i>
+                        {{ ticket.get_status_display }}
+                    </span>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div class="bg-brand-surface shadow-2xl rounded-2xl">
+            <div class="p-6 lg:p-8 border-b border-border-soft-on-light">
+                <h2 class="text-xl font-semibold text-theme-primary-text-on-light mb-4">Ticket Details</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                    <div class="flex items-center">
+                        <i class="fas fa-tag fa-fw mr-2.5 text-theme-primary opacity-75 w-5 text-center"></i>
+                        <span class="text-text-secondary-on-light">Category:</span>
+                        <span class="ml-2 font-medium text-brand-text-primary">{{ ticket.category.name|default:"N/A" }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-user fa-fw mr-2.5 text-theme-primary opacity-75 w-5 text-center"></i>
+                        <span class="text-text-secondary-on-light">Submitted by:</span>
+                        <span class="ml-2 font-medium text-brand-text-primary">{{ ticket.user.full_name|default:ticket.user.username }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="far fa-calendar-alt fa-fw mr-2.5 text-theme-primary opacity-75 w-5 text-center"></i>
+                        <span class="text-text-secondary-on-light">Created:</span>
+                        <span class="ml-2 font-medium text-brand-text-primary" title="{{ ticket.created_at|date:"N j, Y, P T" }}">{{ ticket.created_at|naturaltime }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="far fa-clock fa-fw mr-2.5 text-theme-primary opacity-75 w-5 text-center"></i>
+                        <span class="text-text-secondary-on-light">Last Updated:</span>
+                        <span class="ml-2 font-medium text-brand-text-primary" title="{{ ticket.updated_at|date:"N j, Y, P T" }}">{{ ticket.updated_at|naturaltime }}</span>
+                    </div>
+                    {% if ticket.resolved_at %}
+                    <div class="flex items-center md:col-span-2">
+                        <i class="fas fa-check-circle fa-fw mr-2.5 text-theme-text-icon-green w-5 text-center"></i>
+                        <span class="text-text-secondary-on-light">Resolved:</span>
+                        <span class="ml-2 font-medium text-brand-text-primary">{{ ticket.resolved_at|date:"N j, Y, P T" }}</span>
+                    </div>
+                    {% endif %}
+                    {% if ticket.assigned_admin_identifier %}
+                    <div class="flex items-center md:col-span-2">
+                        <i class="fas fa-user-shield fa-fw mr-2.5 text-theme-primary opacity-75 w-5 text-center"></i>
+                        <span class="text-text-secondary-on-light">Assigned to:</span>
+                        <span class="ml-2 font-medium text-brand-text-primary">{{ ticket.assigned_admin_identifier }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="p-6 lg:p-8 h-[65vh] overflow-y-auto bg-theme-primary-bg-ultra-light space-y-6" id="message-thread">
+                <div class="flex items-start space-x-3">
+                    {% if ticket.user.profile_pic %}
+                        <img src="{{ ticket.user.profile_pic.url }}" alt="{{ ticket.user.username }} avatar" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                    {% else %}
+                        <img src="{% static 'img/default_profile.png' %}" alt="{{ ticket.user.username }} avatar (default)" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                    {% endif %}
+                    <div class="flex-1">
+                        <div class="p-3.5 rounded-xl rounded-tl-none bg-theme-primary-bg-subtle text-brand-text-primary shadow">
+                            <p class="font-semibold text-sm text-theme-primary-text-on-light mb-1">{{ ticket.user.full_name|default:ticket.user.username }} (Initial Description)</p>
+                            <p class="text-sm whitespace-pre-wrap">{{ ticket.description }}</p>
+                        </div>
+                        <p class="text-xs text-text-secondary-on-light mt-1.5 ml-1">{{ ticket.created_at|naturaltime }}</p>
+                    </div>
+                </div>
+                
+                {% if ticket.messages.all %}
+                <hr class="border-border-soft-on-light">
+                {% endif %}
+
+                {% for message in ticket.messages.all %}
+                    <div class="flex {% if message.user == request.user and not message.is_admin_reply %}justify-end{% else %}justify-start{% endif %}">
+                        <div class="flex items-start space-x-3 {% if message.user == request.user and not message.is_admin_reply %}flex-row-reverse space-x-reverse{% endif %} max-w-[80%] sm:max-w-[70%]">
+                            
+                            {% if message.is_admin_reply %}
+                                <img src="{% static 'img/audiox-favicon.png' %}" alt="Support Avatar" class="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-theme-primary p-1">
+                            {% elif message.user and message.user.profile_pic %}
+                                <img src="{{ message.user.profile_pic.url }}" alt="{{ message.user.username }} avatar" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                            {% elif message.user %}
+                                <img src="{% static 'img/default_profile.png' %}" alt="{{ message.user.username }} avatar (default)" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                            {% else %}
+                                 <span class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex-shrink-0">
+                                    <i class="fas fa-user"></i>
+                                 </span>
+                            {% endif %}
+
+                            <div class="flex-1">
+                                <div class="p-3.5 rounded-xl shadow
+                                    {% if message.user == request.user and not message.is_admin_reply %}
+                                        bg-theme-primary text-theme-text-inverted rounded-br-none
+                                    {% else %}
+                                        bg-brand-surface text-brand-text-primary rounded-bl-none border border-border-soft-on-light
+                                    {% endif %}">
+                                    <p class="font-semibold text-sm mb-1">
+                                        {% if message.is_admin_reply %}AudioX Support{% elif message.user %}{{ message.user.full_name|default:message.user.username }}{% else %}System{% endif %}
+                                    </p>
+                                    <p class="text-sm whitespace-pre-wrap">{{ message.message }}</p>
+                                </div>
+                                <p class="text-xs text-text-secondary-on-light mt-1.5 {% if message.user == request.user and not message.is_admin_reply %}text-right mr-1{% else %}text-left ml-1{% endif %}">{{ message.created_at|naturaltime }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    {% if not ticket.messages.all and ticket.description %}
+                        {# No "No replies yet" message if only the initial description exists #}
+                    {% else %}
+                        <p class="text-text-secondary-on-light text-sm text-center py-6">No replies yet.</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if ticket.status != "CLOSED" and ticket.status != "RESOLVED" %}
+            <div class="p-6 lg:p-8 border-t border-border-soft-on-light bg-brand-surface">
+                <form method="POST" action="{% url 'AudioXApp:user_ticket_detail' ticket.id %}" id="replyForm">
+                    {% csrf_token %}
+                    <h3 class="text-lg font-semibold text-theme-primary-text-on-light mb-3">Your Reply</h3>
+                    <div>
+                        <label for="message_content" class="sr-only">Your Reply</label>
+                        <textarea id="message_content" name="message_content" rows="5" required
+                                  class="block w-full px-4 py-3 text-base text-brand-text-primary bg-off-white-bg border-2 border-border-strong-on-light rounded-xl shadow-sm transition-all duration-200 ease-in-out placeholder-placeholder-text-on-light focus:border-theme-primary focus:ring-2 focus:ring-theme-primary-focus-ring focus:bg-brand-surface"
+                                  placeholder="Type your reply here..."></textarea>
+                    </div>
+                    <div class="mt-5 text-right">
+                        <button type="submit" id="submitReplyBtn"
+                                class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-semibold rounded-xl text-theme-text-inverted bg-theme-primary hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-focus-ring transition-all duration-150 ease-in-out transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed shadow-button-primary-base hover:shadow-button-primary-hover-elevated">
+                            <i id="replyBtnIcon" class="fas fa-paper-plane mr-2.5 transition-transform duration-200 group-hover:translate-x-px"></i>
+                            <span id="replyBtnText">Send Reply</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% elif ticket.status == "RESOLVED" %}
+            <div class="p-6 lg:p-8 text-center border-t border-border-soft-on-light bg-theme-green-lighter">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-theme-green-light rounded-full mb-3">
+                    <i class="fas fa-check-circle text-2xl text-theme-text-icon-green"></i>
+                </div>
+                <p class="text-theme-text-icon-green font-semibold text-lg">This ticket is marked as Resolved.</p>
+                <p class="text-sm text-text-secondary-on-light mt-1.5">If your issue is not fully addressed, you can <a href="{% url 'AudioXApp:contact_us' %}" class="text-theme-primary hover:underline font-medium">create a new ticket</a> referencing this ID ({{ticket.ticket_display_id}}).</p>
+            </div>
+            {% elif ticket.status == "CLOSED" %}
+            <div class="p-6 lg:p-8 text-center border-t border-border-soft-on-light bg-border-soft-on-light">
+                 <div class="inline-flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full mb-3">
+                    <i class="fas fa-lock text-2xl text-text-secondary-on-light"></i>
+                </div>
+                <p class="text-text-secondary-on-light font-semibold text-lg">This ticket is Closed.</p>
+                <p class="text-sm text-gray-600 mt-1.5">If you have a new issue, please <a href="{% url 'AudioXApp:contact_us' %}" class="text-theme-primary hover:underline font-medium">create a new ticket</a>.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript_extra %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const messageThread = document.getElementById('message-thread');
+    if (messageThread) {
+        // Scroll to the bottom of the message thread on page load
+        messageThread.scrollTop = messageThread.scrollHeight;
+    }
+
+    const replyForm = document.getElementById('replyForm');
+    const submitReplyBtn = document.getElementById('submitReplyBtn');
+    const replyBtnIcon = document.getElementById('replyBtnIcon'); // Get icon element
+    const replyBtnText = document.getElementById('replyBtnText'); // Get text span element
+
+    if (replyForm && submitReplyBtn) {
+        replyForm.addEventListener('submit', function(event) {
+            const messageContent = document.getElementById('message_content');
+            if (!messageContent || messageContent.value.trim() === "") {
+                event.preventDefault(); 
+                // Add Tailwind classes for error state
+                messageContent.classList.remove('border-border-strong-on-light', 'focus:border-theme-primary', 'focus:ring-theme-primary-focus-ring');
+                messageContent.classList.add('border-theme-error', 'focus:border-theme-error', 'focus:ring-theme-error-focus-ring');
+                messageContent.focus();
+                // Optionally, display a more prominent error message using SweetAlert or an inline element
+                return;
+            }
+            // Reset error classes if any
+            messageContent.classList.remove('border-theme-error', 'focus:border-theme-error', 'focus:ring-theme-error-focus-ring');
+            messageContent.classList.add('border-border-strong-on-light', 'focus:border-theme-primary', 'focus:ring-theme-primary-focus-ring');
+            
+            submitReplyBtn.disabled = true;
+            if (replyBtnIcon && replyBtnText) {
+                replyBtnIcon.className = 'fas fa-spinner fa-spin mr-2.5'; // Change icon to spinner
+                replyBtnText.textContent = 'Sending...'; // Change text
+            } else { // Fallback if icon/text spans are not found (e.g. if button structure changes)
+                 submitReplyBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
+            }
+        });
+
+        // Clear error styling on input
+        const messageContentInput = document.getElementById('message_content');
+        if (messageContentInput) {
+            messageContentInput.addEventListener('input', function() {
+                if (this.value.trim() !== "") {
+                    this.classList.remove('border-theme-error', 'focus:border-theme-error', 'focus:ring-theme-error-focus-ring');
+                    this.classList.add('border-border-strong-on-light', 'focus:border-theme-primary', 'focus:ring-theme-primary-focus-ring');
+                }
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

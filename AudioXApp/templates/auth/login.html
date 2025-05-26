@@ -45,12 +45,12 @@
                     </div>
                 </div>
                 <div id="notificationIconContainer" class="hidden text-5xl mb-4 mt-2">
-                    {/* Icon will be injected by JS */}
+                    {# Icon will be injected by JS #}
                 </div>
                 <p id="notificationMessage" class="text-sm text-gray-700 leading-relaxed">Message goes here.</p>
             </div>
             <div id="notificationActions" class="mt-6 text-right hidden">
-                   <button id="notificationConfirmButton" type="button" class="px-6 py-2.5 rounded-lg font-semibold text-sm text-white bg-[#091e65] hover:bg-[#0b267a] focus:outline-none focus:ring-2 ring-offset-2 ring-[#091e65] transition-colors">OK</button>
+                    <button id="notificationConfirmButton" type="button" class="px-6 py-2.5 rounded-lg font-semibold text-sm text-white bg-[#091e65] hover:bg-[#0b267a] focus:outline-none focus:ring-2 ring-offset-2 ring-[#091e65] transition-colors">OK</button>
             </div>
         </div>
     </div>
@@ -182,7 +182,7 @@
     const loginForm = document.getElementById('loginForm');
     const otpFormContainer = document.getElementById('otp-form-container');
     const loginFormContainer = document.getElementById('login-form-container');
-    const submitButton = document.getElementById('submitButton'); // This is for your custom form
+    const submitButton = document.getElementById('submitButton'); 
     const verifyOtpButton = document.getElementById('verifyOtpButton');
     const otpEmailDisplay = document.getElementById('otp-email-display');
     const otpInputs = document.querySelectorAll('.otp-input');
@@ -201,7 +201,7 @@
     // --- Custom Notification Functions ---
     function showCustomNotification(title, message, type = 'info', showLoader = false, confirmText = 'OK', callback = null) {
         notificationTitleEl.textContent = title;
-        notificationMessageEl.textContent = message;
+        notificationMessageEl.innerHTML = message; 
         currentNotificationCallback = callback;
 
         notificationLoaderEl.classList.add('hidden');
@@ -240,8 +240,16 @@
                     break;
                 case 'warning':
                     iconClass = 'fas fa-exclamation-triangle'; 
-                    colorClass = 'text-[#091e65]'; 
-                    notificationConfirmButton.classList.add('text-white');
+                    colorClass = 'text-yellow-500'; // Changed warning icon color
+                    notificationConfirmButton.classList.remove('bg-[#091e65]', 'hover:bg-[#0b267a]', 'focus:ring-[#091e65]');
+                    notificationConfirmButton.classList.add('bg-yellow-400', 'hover:bg-yellow-500', 'focus:ring-yellow-400', 'text-black');
+                    notificationConfirmButton.classList.remove('text-white');
+                    break;
+                case 'banned': 
+                    iconClass = 'fas fa-ban'; // Specific icon for banned
+                    colorClass = 'text-red-600'; 
+                    notificationConfirmButton.classList.remove('bg-[#091e65]', 'hover:bg-[#0b267a]', 'focus:ring-[#091e65]');
+                    notificationConfirmButton.classList.add('bg-red-600', 'hover:bg-red-700', 'focus:ring-red-600', 'text-white');
                     notificationConfirmButton.classList.remove('text-black');
                     break;
                 case 'info':
@@ -371,19 +379,19 @@
         clearInterval(resendInterval);
         if(resendTimer) resendTimer.textContent = ''; 
         if (resendOtpButton) {
-             resendOtpButton.disabled = false;
-             resendOtpButton.innerHTML = 'Resend Code';
+            resendOtpButton.disabled = false;
+            resendOtpButton.innerHTML = 'Resend Code';
         }
         const loginIdentifierEl = document.getElementById('loginIdentifier');
         if(loginIdentifierEl) loginIdentifierEl.focus();
-        if(submitButton) { // Check if submitButton exists (it's for the custom form)
+        if(submitButton) { 
             submitButton.disabled = false;
             submitButton.innerHTML = 'Sign In';
         }
     }
 
     // --- Event Listeners for Custom Login Form ---
-    if (loginForm && submitButton) { // Ensure both exist for custom form logic
+    if (loginForm && submitButton) { 
         loginForm.addEventListener('submit', function(event) {
             event.preventDefault();
             clearAllInputErrors();
@@ -397,53 +405,67 @@
                 headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(async response => {
-                const isJson = response.headers.get('content-type')?.includes('application/json');
-                const data = isJson ? await response.json() : null;
+                const responseData = await response.json().catch(() => null); // Try to parse JSON, but don't fail if no body or not JSON
                 if (!response.ok) {
-                    let errorMsg = `Login failed! Status: ${response.status}`;
-                    if (data?.message) errorMsg = data.message;
-                    else if (!isJson && response.status !== 200) errorMsg = await response.text() || errorMsg; 
+                    let errorMsg = "Login failed. Please check your credentials or connection.";
+                    let errorType = 'error';
+                    if (responseData) {
+                        errorMsg = responseData.message || errorMsg;
+                        if (responseData.is_banned) {
+                            errorType = 'banned'; // Use 'banned' type for notification
+                        }
+                    }
                     const error = new Error(errorMsg);
-                    error.status = response.status; error.data = data; throw error;
+                    error.status = response.status;
+                    error.data = responseData; // Attach the parsed data to the error object
+                    error.type = errorType; // Attach our custom error type
+                    throw error;
                 }
-                return data;
+                return responseData;
             })
-            .then(data => {
+            .then(data => { // This block is for response.ok === true
+                hideCustomNotification(); // Hide loading
                 if (data.status === 'success') {
-                    showCustomNotification('Success!', 'Login successful!', 'success', false, 'Go to Home', () => {
+                    showCustomNotification('Success!', 'Login successful! Redirecting...', 'success', false, 'Go to Home', () => {
                         window.location.href = data.redirect_url || "{% url 'AudioXApp:home' %}";
                     });
                 } else if (data.status === '2fa_required') {
-                    hideCustomNotification(); 
                     showOtpForm(data.email);
-                } else {
+                } else if (data.status === 'profile_incomplete') { // Handle profile incomplete
+                    showCustomNotification('Profile Incomplete', data.message || 'Please complete your profile to continue.', 'warning', false, 'Complete Profile', () => {
+                        window.location.href = data.redirect_url || "{% url 'AudioXApp:complete_profile' %}";
+                    });
+                } else { // Other non-200 but ok responses, or 'error' status in a 200 response
                     showCustomNotification('Login Error', data.message || 'An unexpected issue occurred.', 'error');
                     submitButton.disabled = false; submitButton.innerHTML = 'Sign In';
-                    if (data.message && data.message.toLowerCase().includes('password')) {
-                        markInputError(document.getElementById('password'));
-                    } else if (data.message && (data.message.toLowerCase().includes('user') || data.message.toLowerCase().includes('email'))) {
-                        markInputError(document.getElementById('loginIdentifier'));
-                    }
                 }
             })
-            .catch(error => {
+            .catch(error => { // This block catches thrown errors (e.g., from !response.ok or network errors)
                 console.error('Login Fetch Error:', error);
-                showCustomNotification('Login Error', error.message || 'Could not connect. Please try again.', 'error');
+                const message = error.message || 'Could not connect or an unknown error occurred. Please try again.';
+                const type = error.type || 'error'; // Use custom type if set, otherwise 'error'
+                const title = type === 'banned' ? 'Account Blocked' : 'Login Error';
+                
+                showCustomNotification(title, message, type);
                 submitButton.disabled = false; submitButton.innerHTML = 'Sign In';
-                if (error.status === 401 || (error.data && error.data.message && (error.data.message.toLowerCase().includes("credentials") || error.data.message.toLowerCase().includes("password") || error.data.message.toLowerCase().includes("user") ))) {
-                    markInputError(document.getElementById('loginIdentifier'));
-                    markInputError(document.getElementById('password'));
-                } else if (error.data?.errors) {
+
+                if (error.data?.errors) { // If backend sent specific field errors
                     Object.keys(error.data.errors).forEach(fieldName => {
                         const inputField = document.querySelector(`[name=${fieldName}]`);
                         if(inputField) markInputError(inputField);
                     });
+                } else if (error.status === 401 || (error.data && error.data.message && (error.data.message.toLowerCase().includes("credentials") || error.data.message.toLowerCase().includes("password") || error.data.message.toLowerCase().includes("user")))) {
+                     // For generic auth failure not specifically marked as banned
+                    if (type !== 'banned') { // Don't mark inputs if it's a ban message
+                        markInputError(document.getElementById('loginIdentifier'));
+                        markInputError(document.getElementById('password'));
+                    }
                 }
             });
         });
     }
 
-    // --- OTP Form Logic (remains largely the same) ---
+    // --- OTP Form Logic & other existing JS (ensure it's complete as per your file) ---
     otpInputs.forEach((input, index) => {
         input.addEventListener('input', (e) => {
             const value = input.value;
@@ -518,23 +540,35 @@
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(async response => {
-                const isJson = response.headers.get('content-type')?.includes('application/json');
-                const data = isJson ? await response.json() : null;
+                const responseData = await response.json().catch(() => null);
                 if (!response.ok) {
-                    let errorMsg = `Verification failed! Status: ${response.status}`;
-                    if (data?.message) errorMsg = data.message;
-                    else if (!isJson && response.status !== 200) errorMsg = await response.text() || errorMsg;
-                    throw new Error(errorMsg);
+                    let errorMsg = "OTP verification failed.";
+                    let errorType = 'error';
+                    if(responseData) {
+                        errorMsg = responseData.message || errorMsg;
+                        if (responseData.is_banned) errorType = 'banned';
+                    }
+                    const error = new Error(errorMsg); 
+                    error.data = responseData; 
+                    error.type = errorType;
+                    throw error;
                 }
-                return data;
+                return responseData;
             })
             .then(data => {
+                hideCustomNotification();
                 if (data.status === 'success') {
                     showCustomNotification('Success!', data.message || 'Verification successful! Logging in...', 'success', false, 'OK', () => {
-                         setTimeout(() => window.location.href = data.redirect_url || "{% url 'AudioXApp:home' %}", 300);
+                        setTimeout(() => window.location.href = data.redirect_url || "{% url 'AudioXApp:home' %}", 300);
                     });
-                } else {
-                    showCustomNotification('Verification Failed', data.message || 'Invalid OTP entered.', 'error');
+                } else if (data.status === 'profile_incomplete') {
+                     showCustomNotification('Profile Incomplete', data.message || 'Please complete your profile.', 'warning', false, 'Complete Profile', () => {
+                        window.location.href = data.redirect_url || "{% url 'AudioXApp:complete_profile' %}";
+                    });
+                } else { // Includes data.is_banned if backend logic sends it this way for OTP verify failures
+                    const type = data.is_banned ? 'banned' : 'error';
+                    const title = data.is_banned ? 'Account Blocked' : 'Verification Failed';
+                    showCustomNotification(title, data.message || 'Invalid OTP entered.', type);
                     otpInputs.forEach(markInputError);
                     if(fullOtpInput) fullOtpInput.value = '';
                     if(otpInputs.length > 0) otpInputs[0].focus();
@@ -542,17 +576,24 @@
             })
             .catch(error => {
                 console.error('OTP Verification Error:', error);
-                showCustomNotification('Error', error.message || 'Verification error. Please try again.', 'error');
+                const message = error.message || 'Could not connect or an unknown error occurred. Please try again.';
+                const type = error.type || 'error';
+                const title = type === 'banned' ? 'Account Blocked' : 'Error';
+                showCustomNotification(title, message, type);
                 otpInputs.forEach(markInputError);
                 if(fullOtpInput) fullOtpInput.value = '';
                 if(otpInputs.length > 0) otpInputs[0].focus();
             })
             .finally(() => {
                 const isSuccessNotificationVisible = customNotificationModal.classList.contains('opacity-100') && 
-                                                   notificationIconContainerEl.querySelector('.fa-check-circle');
-                if (!isSuccessNotificationVisible) {
+                                                    notificationIconContainerEl.querySelector('.fa-check-circle');
+                const isBannedNotificationVisible = customNotificationModal.classList.contains('opacity-100') &&
+                                                    (notificationTitleEl.textContent === 'Account Blocked');                                        
+                if (!isSuccessNotificationVisible && !isBannedNotificationVisible) { 
                     verifyOtpButton.disabled = false;
                     verifyOtpButton.innerHTML = 'Verify Code';
+                } else if (isBannedNotificationVisible) { 
+                    showLoginForm(); // If banned during OTP, kick back to login form
                 }
             });
         });
@@ -568,18 +609,18 @@
             resendOtpButton.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i>';
             
             fetch("{% url 'AudioXApp:send_otp' %}", {
-                method: 'POST', body: JSON.stringify({ email: userEmail, purpose: 'login' }),
+                method: 'POST', body: JSON.stringify({ email: userEmail, purpose: 'login' }), // Assuming 'login' is the purpose for 2FA
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
             })
             .then(async response => {
-                const isJson = response.headers.get('content-type')?.includes('application/json');
-                const data = isJson ? await response.json() : null;
+                const responseData = await response.json().catch(() => null);
                 if (!response.ok) {
-                    let errorMsg = `Resend failed! Status: ${response.status}`;
-                    if (data?.message) errorMsg = data.message; 
-                    else if (!isJson && response.status !== 200) errorMsg = await response.text() || errorMsg;
-                    throw new Error(errorMsg);
-                } return data;
+                    let errorMsg = "Failed to resend OTP.";
+                     if(responseData?.message) errorMsg = responseData.message;
+                    const error = new Error(errorMsg); 
+                    error.data = responseData; 
+                    throw error;
+                } return responseData;
             })
             .then(data => {
                 if (data.status === 'success') {

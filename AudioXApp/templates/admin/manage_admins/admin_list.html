@@ -1,0 +1,105 @@
+{% extends "admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Manage Administrators - Admin Area{% endblock %}
+
+{% block header_title %}Manage Administrators{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-800">Administrator Accounts</h2>
+        <a href="{% url 'AudioXApp:adminsignup' %}" class="bg-theme-primary hover:bg-theme-primary-hover text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center">
+            <i class="fas fa-plus mr-2"></i> Add New Admin
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-4 rounded-md text-sm font-medium
+                {% if message.tags == 'success' %} bg-green-100 text-green-800 border-l-4 border-green-500 {% endif %}
+                {% if message.tags == 'error' %} bg-red-100 text-red-800 border-l-4 border-red-500 {% endif %}
+                {% if message.tags == 'warning' %} bg-yellow-100 text-yellow-800 border-l-4 border-yellow-500 {% endif %}
+                {% if message.tags == 'info' %} bg-blue-100 text-blue-800 border-l-4 border-blue-500 {% endif %}"
+                role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if admin_list %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Username
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Email
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Roles
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Last Login
+                        </th>
+                        <th scope="col" class="relative px-6 py-3">
+                            <span class="sr-only">Actions</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for admin_account in admin_list %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ admin_account.username }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-700">{{ admin_account.email }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {# *** THIS IS THE CORRECTED LINE *** #}
+                                {% for role_display_name in admin_account.get_display_roles_list %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 mr-1 mb-1">
+                                        {{ role_display_name }}
+                                    </span>
+                                {% empty %}
+                                    <span class="text-xs text-gray-500 italic">No roles assigned</span>
+                                {% endfor %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if admin_account.is_active %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Active
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Inactive
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {{ admin_account.last_login|date:"Y-m-d H:i"|default:"Never" }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                {# Add links for edit/details later #}
+                                <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                                {% if admin_account.adminid != admin_user.adminid %} {# Prevent self-deactivation/deletion #}
+                                    {# Add activate/deactivate or delete links later #}
+                                    <a href="#" class="text-red-600 hover:text-red-900">Deactivate</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-gray-600 text-center py-4">No administrator accounts found.</p>
+    {% endif %}
+</div>
+{% endblock %}

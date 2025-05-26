@@ -18,11 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const getJsonData = (id) => {
         const element = document.getElementById(id);
         if (!element) {
+            console.error(`Element with ID '${id}' not found.`);
             return null;
         }
         try {
             return JSON.parse(element.textContent);
         } catch (e) {
+            console.error(`Error parsing JSON from element with ID '${id}':`, e);
             return null;
         }
     };
@@ -292,6 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 audioPlayer.src = audioUrl;
                 audioPlayer.load();
                 audioPlayer.play().catch(e => {
+                    console.error("Audio playback error:", e);
                     // Display playback error using Swal
                     Swal.fire({ icon: 'error', title: 'Playback Error', text: 'Could not play audio. Please try another episode or check your connection.', customClass: { popup: 'rounded-xl', confirmButton: `bg-[${THEME_COLOR}] hover:bg-opacity-80 rounded-lg text-white py-2 px-4`, icon: 'text-red-500 border-red-300' } });
                     updatePlayerUIState('error');
@@ -306,18 +309,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentChapterIndex < 0 && chapterItems.length > 0) {
                 const firstPlayableChapterButton = chapterItems[0]?.querySelector('.play-button');
                 if (firstPlayableChapterButton) playChapter(firstPlayableChapterButton);
-                 // Display info using Swal
+                // Display info using Swal
                 else Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: 'No playable episodes.', showConfirmButton: false, timer: 2500, timerProgressBar: true, customClass: { popup: 'bg-gray-100 text-gray-800 rounded-lg shadow-lg', title: 'text-sm font-medium', timerProgressBar: `bg-[${THEME_COLOR}]` } });
                 return;
             }
             if (audioPlayer.paused || audioPlayer.ended) {
-                if (audioPlayer.src && audioPlayer.src !== window.location.href) {
+                if (audioPlayer.src && audioPlayer.src !== window.location.href) { // Check if src is valid
                     audioPlayer.play().catch(e => {
+                        console.error("Audio resume error:", e);
                         // Display playback error using Swal
                         Swal.fire({ icon: 'error', title: 'Playback Error', text: 'Could not resume audio.', customClass: { popup: 'rounded-xl', confirmButton: `bg-[${THEME_COLOR}] hover:bg-opacity-80 rounded-lg text-white py-2 px-4`, icon: 'text-red-500 border-red-300' } });
                         updatePlayerUIState('error');
                     });
-                } else if (currentChapterIndex >= 0) {
+                } else if (currentChapterIndex >= 0) { // If src is not set, try to play current chapter
                     const currentButton = chapterItems[currentChapterIndex]?.querySelector('.play-button');
                     if (currentButton) playChapter(currentButton); else closePlayer();
                 }
@@ -396,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
         audioPlayer.addEventListener('timeupdate', () => {
             if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
                 if (playerCurrentTime) playerCurrentTime.textContent = formatTime(audioPlayer.currentTime);
-                if (playerSeekBar && !playerSeekBar.matches(':active')) {
+                if (playerSeekBar && !playerSeekBar.matches(':active')) { // Check if user is not actively dragging the seek bar
                     playerSeekBar.value = audioPlayer.currentTime;
                 }
             }
@@ -409,8 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
         playerSpeedButton?.addEventListener('click', window.cyclePlaybackSpeed);
         playerCloseButton?.addEventListener('click', window.closePlayer);
         playerSeekBar?.addEventListener('input', () => {
-             if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration) && audioPlayer.readyState >= 1) {
-                 audioPlayer.currentTime = playerSeekBar.value;
+             if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration) && audioPlayer.readyState >= 1) { // Ensure audio is ready
+                audioPlayer.currentTime = playerSeekBar.value;
              }
         });
 
@@ -451,6 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handles the click event for editing a review, populating the form
     window.handleEditClick = function(buttonElement) {
         if (!reviewForm || !ratingValueInput || !commentInput || !submitReviewBtn) {
+            console.error("Review form elements not found for editing.");
             return;
         }
 
@@ -466,13 +471,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ratingToLoad = parseInt(buttonElement.dataset.rating || '0', 10);
             commentToLoad = buttonElement.dataset.comment || '';
         } else {
+            console.warn("handleEditClick called with invalid buttonElement.");
             return;
         }
 
         if (typeof updateStarsUI === 'function') {
             updateStarsUI(ratingToLoad);
         } else {
-            ratingValueInput.value = ratingToLoad;
+            ratingValueInput.value = ratingToLoad; // Fallback
         }
         commentInput.value = commentToLoad;
         submitReviewBtn.innerHTML = UPDATE_SUBMIT_BUTTON_HTML;
@@ -522,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 star.classList.toggle('fas', isSelected);
                 star.classList.toggle('text-yellow-400', isSelected);
                 star.classList.toggle('text-gray-300', !isSelected);
-                star.classList.remove('hover:text-yellow-400');
+                star.classList.remove('hover:text-yellow-400'); // Reset hover effect
                 if (!isSelected) star.classList.add('hover:text-yellow-400');
             });
             ratingValueInput.value = rating;
@@ -600,9 +606,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (tempRating >= 1) {
                         starsHtml += '<i class="fas fa-star text-yellow-400"></i>';
                         tempRating -= 1;
-                    } else if (tempRating >= 0.5) {
+                    } else if (tempRating >= 0.5) { // Check for half star
                         starsHtml += '<i class="fas fa-star-half-alt text-yellow-400"></i>';
-                        tempRating = 0;
+                        tempRating = 0; // Consumed the half star
                     } else {
                         starsHtml += '<i class="far fa-star text-gray-300"></i>';
                     }
@@ -611,15 +617,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 for (let i = 0; i < 5; i++) starsHtml += '<i class="far fa-star text-gray-300"></i>';
                 ratingText = `<span class="text-gray-400 italic ml-1.5">No ratings yet</span>`;
-                reviewCountTextBase = '';
+                reviewCountTextBase = ''; // No count text if no ratings
             }
 
             avgRatingDisplays.forEach(el => {
                 const isReviewTabAvg = el.closest('#content-reviews');
                 const avgSuffix = isReviewTabAvg ? ' avg' : '';
                 const reviewCountText = reviewCountTextBase ? `<span class="ml-1">${reviewCountTextBase}${avgSuffix}</span>` : '';
-                const textSizeClass = el.closest('#content-reviews') ? 'text-sm' : 'text-base';
-                el.className = `flex items-center star-rating-display ${textSizeClass}`;
+                const textSizeClass = el.closest('#content-reviews') ? 'text-sm' : 'text-base'; // Adjust text size based on context
+                el.className = `flex items-center star-rating-display ${textSizeClass}`; // Ensure class is set correctly
                 el.innerHTML = starsHtml + ratingText + reviewCountText;
             });
         }
@@ -681,14 +687,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         noReviewsMessage?.classList.add('hidden');
                     }
 
-                    attachEditButtonListeners();
+                    attachEditButtonListeners(); // Re-attach listeners to include the new/updated edit button
 
                     const currentReviewCount = document.querySelectorAll('#reviews-list .review-item').length;
                     if (reviewCountSpan) reviewCountSpan.textContent = currentReviewCount;
                     if (reviewCountTabSpan) reviewCountTabSpan.textContent = currentReviewCount;
                     updateAverageRatingDisplays(result.new_average_rating, currentReviewCount);
 
-                    submitReviewBtn.innerHTML = UPDATE_SUBMIT_BUTTON_HTML;
+                    submitReviewBtn.innerHTML = UPDATE_SUBMIT_BUTTON_HTML; // Should show "Update Review" after successful submission
 
                 } else {
                     if (formMessageDiv) { formMessageDiv.textContent = result.message || `Error: ${response.status} ${response.statusText}`; formMessageDiv.classList.add('text-red-600'); }
@@ -698,13 +704,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (formMessageDiv) { formMessageDiv.textContent = 'Network error or invalid server response. Please try again.'; formMessageDiv.classList.add('text-red-600'); }
             } finally {
                 submitReviewBtn.disabled = false;
-                if (!reviewForm.classList.contains('hidden')) {
-                    const isUpdating = (userReviewData.has_reviewed && userReviewData.rating > 0);
+                // Logic to set button text based on whether form is hidden (meaning review was just submitted/updated)
+                if (!reviewForm.classList.contains('hidden')) { // Form is still visible (e.g., error occurred)
+                    const isUpdating = (userReviewData.has_reviewed && userReviewData.rating > 0 && submitReviewBtn.innerHTML.includes("Update"));
                     submitReviewBtn.innerHTML = isUpdating ? UPDATE_SUBMIT_BUTTON_HTML : DEFAULT_SUBMIT_BUTTON_HTML;
-                } else {
-                    if (userReviewData.has_reviewed) {
+                } else { // Form is hidden (successful submission)
+                     if (userReviewData.has_reviewed) {
                         submitReviewBtn.innerHTML = UPDATE_SUBMIT_BUTTON_HTML;
-                    }
+                     }
                 }
                 setTimeout(() => {
                     if (formMessageDiv && (formMessageDiv.classList.contains('text-green-600') || formMessageDiv.classList.contains('text-red-600'))) {
@@ -743,23 +750,45 @@ document.addEventListener('DOMContentLoaded', () => {
                             'X-CSRFToken': CSRF_TOKEN,
                             'X-Requested-With': 'XMLHttpRequest'
                         },
-                        body: JSON.stringify({ 'audiobook_slug': AUDIOBOOK_SLUG })
+                        body: JSON.stringify({
+                            'item_type': 'audiobook',
+                            'item_id': AUDIOBOOK_SLUG
+                        })
                     });
                     const session = await response.json();
-                    if (session.error || !session.id) { throw new Error(session.error || 'Failed to create checkout session.'); }
-                    const result = await stripe.redirectToCheckout({ sessionId: session.id });
-                    if (result.error) { throw new Error(result.error.message); }
+
+                    // *** CORRECTED TO USE session.sessionId ***
+                    console.log('Stripe session object from server:', session);
+                    console.log('Attempting to redirect with sessionId:', session ? session.sessionId : 'session object is null or undefined, or sessionId is missing');
+
+
+                    if (session.error || !session.sessionId) { // *** CORRECTED TO CHECK session.sessionId ***
+                        console.error('Error from server or missing session ID:', session.error || 'Missing session.sessionId');
+                        Swal.fire({ icon: 'error', title: 'Payment Error', text: session.error || 'Failed to create checkout session. Please check item details or contact support.', customClass: { popup: 'rounded-xl', confirmButton: `bg-[${THEME_COLOR}] hover:bg-opacity-80 rounded-lg text-white py-2 px-4` }});
+                        event.target.disabled = false;
+                        event.target.innerHTML = `<i class="fas fa-shopping-cart mr-2"></i> Purchase Now (PKR ${AUDIOBOOK_PRICE_FORMATTED})`;
+                        return;
+                    }
+
+                    const result = await stripe.redirectToCheckout({ sessionId: session.sessionId }); // *** CORRECTED TO USE session.sessionId ***
+
+                    if (result.error) {
+                        console.error('Stripe redirectToCheckout error:', result.error);
+                        throw new Error(result.error.message);
+                    }
                 } catch (error) {
-                     // Display Stripe error using Swal
+                    console.error('Error during purchase process:', error);
                     Swal.fire({ icon: 'error', title: 'Payment Error', text: error.message || 'Could not initiate payment. Please try again.', customClass: { popup: 'rounded-xl', confirmButton: `bg-[${THEME_COLOR}] hover:bg-opacity-80 rounded-lg text-white py-2 px-4` }});
                     event.target.disabled = false;
                     event.target.innerHTML = `<i class="fas fa-shopping-cart mr-2"></i> Purchase Now (PKR ${AUDIOBOOK_PRICE_FORMATTED})`;
                 }
             });
         } catch (e) {
+            console.error("Stripe initialization failed:", e);
             if (purchaseButton) { purchaseButton.disabled = true; purchaseButton.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> Payment Init Failed'; }
         }
     } else if (purchaseButton) {
+        console.warn("Purchase button found, but Stripe or necessary data is not configured.");
         purchaseButton.disabled = true;
         purchaseButton.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> Payment Unavailable';
     }
@@ -777,10 +806,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 url: urlToShare,
             };
             if (navigator.share) {
-                navigator.share(shareData).catch(() => {}); // Catch and ignore potential errors
+                navigator.share(shareData).catch((error) => {
+                    console.warn('Share API failed:', error)
+                });
             } else {
                 navigator.clipboard.writeText(urlToShare).then(() => {
-                     // Display success message using Swal
+                    // Display success message using Swal
                     Swal.fire({
                         toast: true,
                         position: 'top-end',
@@ -791,8 +822,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         timerProgressBar: true,
                         customClass: { popup: 'bg-gray-100 text-gray-800 rounded-lg shadow-lg', title: 'text-sm font-medium', timerProgressBar: `bg-[${THEME_COLOR}]` }
                     });
-                }).catch(() => {
-                     // Display error message using Swal
+                }).catch((err) => {
+                    console.error('Failed to copy link to clipboard:', err);
+                    // Display error message using Swal
                     Swal.fire({ icon: 'error', title: 'Oops!', text: 'Could not copy link.', customClass: { popup: 'rounded-xl' } });
                 });
             }
@@ -804,38 +836,59 @@ document.addEventListener('DOMContentLoaded', () => {
     function logViewForAudiobook() {
         if (!audioPlayer) { return; }
 
-        const audiobookDbId = audioPlayer.dataset.audiobookDbId;
+        const audiobookDbId = audioPlayer.dataset.audiobookDbId; // This is for creator books only
 
-        if (!audiobookDbId || audiobookDbId.trim() === "") { return; }
-        if (!IS_AUTHENTICATED) { return; }
-        if (!LOG_AUDIOBOOK_VIEW_URL) { return; }
-        if (!CSRF_TOKEN) { return; }
+        if (!AUDIOBOOK_SLUG) { // Log based on slug for all books if no DB ID (e.g., non-creator books)
+            console.warn("Audiobook slug not available for view logging.");
+            return;
+        }
+        if (!LOG_AUDIOBOOK_VIEW_URL) {
+            console.warn("Log audiobook view URL not configured.");
+            return;
+        }
+        if (!CSRF_TOKEN) {
+             console.warn("CSRF token not available for view logging.");
+             return; 
+        }
+
+        const payload = { audiobook_slug: AUDIOBOOK_SLUG };
+        if (audiobookDbId && audiobookDbId.trim() !== "") {
+            payload.audiobook_id = audiobookDbId;
+        }
+
 
         fetch(LOG_AUDIOBOOK_VIEW_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN, 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ audiobook_id: audiobookDbId })
+                body: JSON.stringify(payload)
             })
             .then(response => {
                 if (!response.ok) {
-                    return Promise.reject(new Error(`HTTP error ${response.status}`));
+                    response.json().then(errData => {
+                        console.warn(`Failed to log audiobook view. Status: ${response.status}`, errData);
+                    }).catch(() => {
+                        console.warn(`Failed to log audiobook view. Status: ${response.status}. Could not parse error response.`);
+                    });
+                    return null; 
                 }
                 return response.json();
             })
             .then(data => {
-                if (data.status === 'success') {
+                if (data && data.status === 'success') {
                     if (audiobookTotalViewsSpan && data.total_views !== undefined) {
                         audiobookTotalViewsSpan.textContent = `${data.total_views.toLocaleString()} Views`;
                     }
+                } else if (data && data.message) {
+                     console.info(`View logging info: ${data.message}`);
                 }
             })
-            .catch(() => {
-                // Ignore errors during view logging as it's not critical user functionality
+            .catch((error) => {
+                console.warn("Error during view logging fetch:", error);
             });
     }
 
     // Log view when the page is loaded, if on the details page
-    if (document.getElementById('tab-about')) {
+    if (document.getElementById('tab-about')) { 
         logViewForAudiobook();
     }
 }); // End DOMContentLoaded

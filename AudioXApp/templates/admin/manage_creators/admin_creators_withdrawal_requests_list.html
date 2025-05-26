@@ -1,0 +1,372 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Manage Withdrawal Requests - Admin Dashboard{% endblock %}
+
+{% block header_title %}Manage Creator Withdrawal Requests{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+{% endblock %}
+
+{% block content %}
+<div class="p-6 sm:p-8 lg:p-10 font-sans bg-slate-100 min-h-screen">
+    {% if messages %}
+    <div class="mb-8 space-y-4">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg flex items-center shadow-md
+            {% if message.tags == 'success' %} bg-[#091e65] text-white 
+            {% elif message.tags == 'error' %} bg-red-600 text-white
+            {% elif message.tags == 'warning' %} bg-red-500 text-white 
+            {% else %} bg-[#091e65] text-white {% endif %}"
+            role="alert">
+            <i class="fas 
+            {% if message.tags == 'success' %}fa-check-circle
+            {% elif message.tags == 'error' %}fa-times-circle
+            {% elif message.tags == 'warning' %}fa-exclamation-triangle
+            {% else %}fa-info-circle{% endif %} mr-3 text-xl"></i>
+            <span class="text-sm font-medium">{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="mb-10">
+        <h2 class="text-3xl font-bold text-[#091e65] mb-6">Filter Withdrawal Requests</h2>
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+            <form method="GET" action="{% url 'AudioXApp:admin_manage_withdrawal_requests' %}" class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6 items-end">
+                <div>
+                    <label for="q" class="block text-sm font-semibold text-slate-700 mb-1">Search Requests</label>
+                    <input type="text" name="q" id="q" value="{{ search_query|default:'' }}" placeholder="Creator, Req ID, Amount..."
+                           class="w-full px-1 py-2 text-base border-0 border-b-2 border-slate-300 focus:border-[#091e65] focus:ring-0 bg-transparent placeholder-slate-400 transition-colors duration-150">
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-semibold text-slate-700 mb-1">Filter by Status</label>
+                    <select name="status" id="status" class="w-full px-1 py-2 text-base border-0 border-b-2 border-slate-300 focus:border-[#091e65] focus:ring-0 bg-transparent transition-colors duration-150">
+                        <option value="all" {% if current_status_filter == 'ALL' %}selected{% endif %}>All Statuses</option>
+                        {% for value, display_name in status_choices %}
+                        <option value="{{ value }}" {% if current_status_filter == value %}selected{% endif %}>{{ display_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="md:col-span-1 flex md:justify-end items-end pt-4 md:pt-0">
+                    <button type="submit" class="w-full md:w-auto bg-[#091e65] hover:bg-[#071857] text-white font-semibold py-2.5 px-6 rounded-md text-sm shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center">
+                        <i class="fas fa-filter mr-2"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if withdrawal_requests_page.object_list %}
+    <div>
+        <h2 class="text-3xl font-bold text-[#091e65] mb-6">Withdrawal Requests List</h2>
+        <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="border-b-2 border-[#091e65]">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Request ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Creator</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Amount (PKR)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Requested</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Account</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Processed By/On</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white">
+                    {% for req in withdrawal_requests_page.object_list %}
+                    <tr class="border-b border-slate-200 hover:bg-slate-50 transition-colors duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-[#091e65] font-medium" title="{{ req.id }} (Internal PK)">{{ req.display_request_id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                            <a href="{% url 'AudioXApp:admin_view_creator_detail' user_id=req.creator.user_id %}" class="hover:text-[#071857] hover:underline font-medium" title="View {{ req.creator.creator_name|default:req.creator.user.username }}'s Profile">
+                                {{ req.creator.creator_name|default:req.creator.user.username }}
+                            </a>
+                            <div class="text-xs text-slate-500">{{ req.creator.cid|default:"N/A" }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 font-semibold">{{ req.amount|floatformat:2|intcomma }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ req.request_date|date:"M d, Y, P" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                            {% if req.withdrawal_account %}
+                            {{ req.withdrawal_account.get_account_type_display }} - {{ req.withdrawal_account.account_title }}
+                            <div class="text-xs">(...{{ req.withdrawal_account.account_identifier|slice:"-4:" }})</div>
+                            {% else %}
+                            <span class="text-xs italic">Account Deleted</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <span class="flex items-center
+                                {% if req.status == 'PENDING' %} text-[#091e65]
+                                {% elif req.status == 'PROCESSING' %} text-[#091e65]
+                                {% elif req.status == 'APPROVED' %} text-[#091e65]
+                                {% elif req.status == 'REJECTED' %} text-red-600
+                                {% elif req.status == 'COMPLETED' %} text-[#091e65]
+                                {% elif req.status == 'FAILED' %} text-red-600
+                                {% elif req.status == 'CANCELLED' %} text-slate-500
+                                {% else %} text-slate-600 {% endif %}">
+                                <i class="fas 
+                                {% if req.status == 'PENDING' %} fa-hourglass-half
+                                {% elif req.status == 'PROCESSING' %} fa-sync-alt {% if req.status == 'PROCESSING' %} fa-spin {% endif %}
+                                {% elif req.status == 'APPROVED' %} fa-check-circle
+                                {% elif req.status == 'REJECTED' %} fa-times-circle
+                                {% elif req.status == 'COMPLETED' %} fa-check-double
+                                {% elif req.status == 'FAILED' %} fa-exclamation-circle
+                                {% elif req.status == 'CANCELLED' %} fa-ban
+                                {% else %} fa-question-circle {% endif %} mr-1.5"></i>
+                                {{ req.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                            {% if req.processed_by %}
+                                {{ req.processed_by.username }}
+                                {% if req.processed_date %}
+                                <div class="text-xs">{{ req.processed_date|date:"M d, Y, P" }}</div>
+                                {% endif %}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-xs font-medium space-y-1.5">
+                            {% if req.status == 'PENDING' %}
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-[#091e65] text-[#091e65] hover:bg-[#091e65] hover:text-white" onclick="openActionModal('{{ req.id }}', 'mark_processing', '{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}', '{{ req.amount|floatformat:2 }}')">Mark Processing</button>
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white" onclick="openActionModal('{{ req.id }}', 'reject', '{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}', '{{ req.amount|floatformat:2 }}')">Reject</button>
+                            {% elif req.status == 'PROCESSING' %}
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-[#091e65] text-[#091e65] hover:bg-[#091e65] hover:text-white" onclick="openActionModal('{{ req.id }}', 'approve_and_complete', '{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}', '{{ req.amount|floatformat:2 }}')">Approve & Complete</button>
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white" onclick="openActionModal('{{ req.id }}', 'reject', '{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}', '{{ req.amount|floatformat:2 }}')">Reject</button>
+                            {% endif %}
+
+                            {% if req.payment_slip %}
+                            <a href="{{ req.payment_slip.url }}" target="_blank" class="block w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border border-slate-400 text-slate-600 hover:bg-slate-100" title="View Payment Slip">View Slip</a>
+                            {% endif %}
+                            {% if req.admin_notes %}
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border border-slate-400 text-slate-600 hover:bg-slate-100" onclick="openNotesModal('{{ req.admin_notes|escapejs }}')">View Notes</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-16 sm:py-20">
+        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-slate-200">
+            <i class="fas fa-folder-open text-4xl text-[#091e65]/70"></i>
+        </div>
+        <h3 class="mt-6 text-xl font-semibold text-[#091e65]">No Withdrawal Requests Found</h3>
+        <p class="mt-2 text-sm text-slate-600">
+            {% if search_query or current_status_filter != 'ALL' %}
+            Try adjusting your search or filter criteria.
+            {% else %}
+            There are currently no withdrawal requests to display.
+            {% endif %}
+        </p>
+        {% if search_query or current_status_filter != 'ALL' %}
+        <div class="mt-8">
+            <a href="{% url 'AudioXApp:admin_manage_withdrawal_requests' %}" class="inline-flex items-center rounded-md bg-[#091e65] hover:bg-[#071857] px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071857]">
+                <i class="fas fa-sync-alt mr-2"></i> Clear Filters
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<div id="actionModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg m-4 transform scale-95 transition-transform duration-300 ease-in-out">
+        <form id="actionModalForm" method="POST" action="{% url 'AudioXApp:admin_manage_withdrawal_requests' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="request_id" id="modal_request_id">
+            <input type="hidden" name="action" id="modal_action">
+
+            <div class="px-6 py-4 border-b border-slate-200">
+                <h3 id="modalTitle" class="text-lg font-semibold text-[#091e65]">Action Title</h3>
+            </div>
+            <div class="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
+                <p id="modalPrompt" class="text-sm text-slate-700 leading-relaxed"></p>
+                
+                <div id="notesTextareaContainer" class="hidden space-y-1.5">
+                    <label for="modal_notes_textarea_input" id="modalNotesLabel" class="block text-xs font-medium text-slate-600">Notes/Reason:</label>
+                    <textarea name="" id="modal_notes_textarea_input" rows="3" class="w-full px-2 py-1.5 text-sm border-0 border-b-2 border-slate-300 focus:border-[#091e65] focus:ring-0 bg-transparent placeholder-slate-400"></textarea>
+                </div>
+
+                <div id="completionReferenceContainer" class="hidden space-y-1.5">
+                    <label for="modal_completion_reference_input" class="block text-xs font-medium text-slate-600">Payment Reference/Transaction ID (Optional):</label>
+                    <input type="text" name="" id="modal_completion_reference_input" class="w-full px-2 py-1.5 text-sm border-0 border-b-2 border-slate-300 focus:border-[#091e65] focus:ring-0 bg-transparent placeholder-slate-400">
+                </div>
+
+                <div id="paymentSlipUploadContainer" class="hidden space-y-1.5">
+                    <label for="modal_payment_slip_file_input" class="block text-xs font-medium text-slate-600">Upload Payment Slip (Optional, Max 2MB):</label>
+                    <input type="file" name="payment_slip" id="modal_payment_slip_file_input" accept="image/jpeg,image/png,application/pdf" 
+                           class="w-full text-sm text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#091e65]/10 file:text-[#091e65] hover:file:bg-[#091e65]/20 file:transition-colors file:duration-150 cursor-pointer">
+                    <p class="text-xs text-slate-500">Allowed types: JPG, PNG, PDF.</p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end space-x-3 rounded-b-lg">
+                <button type="button" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md shadow-sm transition-colors" onclick="closeModal('actionModal')">Cancel</button>
+                <button type="submit" id="modalConfirmButton" class="px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm transition-colors">Confirm Action</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="notesDisplayModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md m-4 transform scale-95 transition-transform duration-300 ease-in-out">
+        <div class="px-6 py-4 border-b border-slate-200">
+            <h3 class="text-lg font-semibold text-[#091e65]">Admin Notes</h3>
+        </div>
+        <div id="notesModalBody" class="p-6 text-sm text-slate-700 max-h-[60vh] overflow-y-auto leading-relaxed prose prose-sm">
+            </div>
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end rounded-b-lg">
+            <button type="button" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md shadow-sm transition-colors" onclick="closeModal('notesDisplayModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Function to open a modal
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            document.body.classList.add('overflow-hidden'); 
+            modal.classList.remove('invisible', 'opacity-0');
+            modal.classList.add('visible', 'opacity-100');
+            const modalContent = modal.querySelector('.transform');
+            if (modalContent) {
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }
+            const focusable = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusable) focusable.focus();
+        }
+    }
+
+    // Function to close a modal
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            document.body.classList.remove('overflow-hidden');
+            const modalContent = modal.querySelector('.transform');
+            if (modalContent) {
+                modalContent.classList.remove('scale-100');
+                modalContent.classList.add('scale-95');
+            }
+            modal.classList.add('opacity-0');
+            modal.classList.remove('opacity-100', 'visible');
+            setTimeout(() => {
+                modal.classList.add('invisible');
+            }, 300); 
+        }
+    }
+
+    // Close modal on Escape key press
+    document.addEventListener('keydown', function(event) {
+        if (event.key === "Escape") {
+            const openModals = document.querySelectorAll('#actionModal.visible, #notesDisplayModal.visible');
+            openModals.forEach(modal => closeModal(modal.id));
+        }
+    });
+
+    // Close modal on backdrop click
+    document.querySelectorAll('#actionModal, #notesDisplayModal').forEach(modalEl => {
+        modalEl.addEventListener('click', function(event) {
+            if (event.target === modalEl) {
+                closeModal(modalEl.id);
+            }
+        });
+    });
+
+    // Function to configure and open the action modal
+    function openActionModal(requestIdPk, action, creatorName, amount) {
+        document.getElementById('modal_request_id').value = requestIdPk;
+        document.getElementById('modal_action').value = action;
+
+        const modalTitle = document.getElementById('modalTitle');
+        const modalPrompt = document.getElementById('modalPrompt');
+        const confirmButton = document.getElementById('modalConfirmButton');
+
+        const notesTextareaContainer = document.getElementById('notesTextareaContainer');
+        const notesTextareaInput = document.getElementById('modal_notes_textarea_input');
+        const notesLabel = document.getElementById('modalNotesLabel');
+        
+        const completionReferenceContainer = document.getElementById('completionReferenceContainer');
+        const completionReferenceInput = document.getElementById('modal_completion_reference_input');
+        
+        const paymentSlipUploadContainer = document.getElementById('paymentSlipUploadContainer');
+        const paymentSlipInput = document.getElementById('modal_payment_slip_file_input');
+
+        // Reset fields and visibility
+        notesTextareaContainer.classList.add('hidden');
+        notesTextareaInput.name = ""; 
+        notesTextareaInput.value = "";
+        notesTextareaInput.required = false;
+
+        completionReferenceContainer.classList.add('hidden');
+        completionReferenceInput.name = "";
+        completionReferenceInput.value = "";
+
+        paymentSlipUploadContainer.classList.add('hidden');
+        paymentSlipInput.value = null; 
+
+        let titleText = '';
+        let promptText = `Please confirm the action for withdrawal request by <strong class="text-[#091e65]">${creatorName}</strong> (Amount: <strong class="text-[#091e65]">PKR ${amount}</strong>).`;
+        let confirmButtonText = 'Confirm';
+        
+        // Reset confirm button classes, keeping base style
+        confirmButton.className = 'px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm transition-colors'; 
+
+        if (action === 'mark_processing') {
+            titleText = 'Mark as Processing';
+            promptText = `You are about to mark the withdrawal request of <strong class="text-[#091e65]">PKR ${amount}</strong> for <strong class="text-[#091e65]">${creatorName}</strong> as 'Processing'. This indicates you have started working on it.`;
+            notesTextareaContainer.classList.remove('hidden');
+            notesLabel.textContent = 'Processing Notes (Optional):';
+            notesTextareaInput.name = "processing_notes";
+            confirmButtonText = 'Mark Processing';
+            confirmButton.classList.add('bg-[#091e65]', 'hover:bg-[#071857]');
+        } else if (action === 'approve_and_complete') {
+            titleText = 'Approve & Complete Withdrawal';
+            promptText = `You are about to approve and complete the withdrawal for <strong class="text-[#091e65]">${creatorName}</strong> (Amount: <strong class="text-[#091e65]">PKR ${amount}</strong>). This means payment has been sent.`;
+            
+            notesTextareaContainer.classList.remove('hidden');
+            notesLabel.textContent = 'Completion Notes (Optional):';
+            notesTextareaInput.name = "completion_notes";
+
+            completionReferenceContainer.classList.remove('hidden');
+            completionReferenceInput.name = "completion_reference";
+            
+            paymentSlipUploadContainer.classList.remove('hidden');
+
+            confirmButtonText = 'Approve & Complete';
+            confirmButton.classList.add('bg-[#091e65]', 'hover:bg-[#071857]');
+        } else if (action === 'reject') {
+            titleText = 'Reject Withdrawal Request';
+            promptText = `You are about to reject the withdrawal request of <strong class="text-red-600">PKR ${amount}</strong> for <strong class="text-red-600">${creatorName}</strong>. The amount will be returned to the creator's balance.`;
+            notesTextareaContainer.classList.remove('hidden');
+            notesLabel.textContent = 'Rejection Reason (Required):';
+            notesTextareaInput.name = "rejection_reason";
+            notesTextareaInput.required = true;
+            confirmButtonText = 'Reject Request';
+            confirmButton.classList.add('bg-red-600', 'hover:bg-red-700');
+        }
+
+        modalTitle.textContent = titleText;
+        modalPrompt.innerHTML = promptText; 
+        confirmButton.textContent = confirmButtonText;
+        openModal('actionModal');
+    }
+
+    // Function to open the notes display modal
+    function openNotesModal(notes) {
+        const notesModalBody = document.getElementById('notesModalBody');
+        const escapedNotes = notes.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        notesModalBody.innerHTML = `<div class="prose prose-sm sm:prose-base max-w-none">${escapedNotes.replace(/\n/g, '<br>')}</div>`; 
+        openModal('notesDisplayModal');
+    }
+</script>
+{% endblock %}

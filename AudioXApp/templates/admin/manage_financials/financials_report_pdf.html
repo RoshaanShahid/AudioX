@@ -1,0 +1,442 @@
+{% load humanize %}
+{% load l10n %} {# For localize filter if needed for number formatting based on locale, though intcomma is usually good #}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Financials Report - AudioX</title>
+    <style type="text/css">
+        @page {
+            size: A4 landscape;
+            margin: 1.5cm;
+            @frame footer {
+                -pdf-frame-content: page-footer;
+                bottom: 0.8cm;
+                margin-left: 1cm;
+                margin-right: 1cm;
+                height: 1cm;
+            }
+        }
+
+        body {
+            font-family: "Helvetica", Arial, sans-serif;
+            font-size: 9pt;
+            color: #333333;
+            line-height: 1.3;
+        }
+
+        /* --- Theme Colors (from original, adjust if your theme variables changed) --- */
+        .color-theme-primary { color: #091e65; }
+        .bg-theme-primary { background-color: #091e65; }
+        .border-theme-primary { border-color: #091e65; }
+
+        .color-theme-error { color: #dc2626; }
+        .border-theme-error { border-color: #dc2626; }
+
+        .color-theme-text-inverted { color: #ffffff; }
+        .bg-theme-primary-lightest { background-color: #f0f5ff; }
+        .text-theme-text-secondary { color: #4b5563; }
+        .text-theme-text-light { color: #6B7280; }
+        .border-theme-border { border-color: #e5e7eb; }
+        .border-theme-border-light { border-color: #f3f4f6; }
+
+        /* --- Report Header --- */
+        .report-header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #091e65; /* theme-primary */
+            padding-bottom: 10px;
+        }
+        .report-header h1 {
+            color: #091e65; /* theme-primary */
+            margin: 0 0 5px 0;
+            font-size: 18pt; /* Slightly reduced for landscape */
+            font-weight: bold;
+        }
+        .report-header .platform-name {
+            color: #dc2626; /* theme-error / red */
+        }
+        .report-header p.generation-date {
+            font-size: 9pt;
+            color: #555555;
+            margin-top: 5px;
+        }
+
+        /* --- Filter Criteria --- */
+        .filter-criteria {
+            font-size: 9pt;
+            color: #444444;
+            margin-bottom: 15px;
+            padding: 8px;
+            border: 1px solid #dddddd;
+            background-color: #f9f9f9;
+        }
+        .filter-criteria strong {
+            color: #091e65; /* theme-primary */
+        }
+
+        /* --- Section Titles --- */
+        h2.section-title { /* Renamed from table-title for broader use */
+            font-size: 14pt;
+            color: #091e65; /* theme-primary */
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #dc2626; /* theme-error / red */
+            padding-bottom: 4px;
+            font-weight: bold;
+            -pdf-keep-with-next: true;
+        }
+         h3.subsection-title {
+            font-size: 11pt;
+            color: #333;
+            margin-top: 15px;
+            margin-bottom: 7px;
+            font-weight: bold;
+            -pdf-keep-with-next: true;
+        }
+
+
+        /* --- Summary Boxes --- */
+        .summary-container {
+            margin-bottom: 15px;
+            /* Using table for grid layout in PDF */
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 8px; /* Simulates gap */
+        }
+        .summary-table td {
+            width: 25%; /* For 4 columns */
+            vertical-align: top;
+            padding: 0; /* Reset padding, apply to inner div */
+            border: none; /* No borders for the table cells themselves */
+        }
+        .summary-box {
+            border: 1px solid #e0e0e0; /* theme-border-light adjusted */
+            background-color: #f7f9fc; /* theme-primary-lightest adjusted */
+            padding: 10px;
+            height: 70px; /* Approximate height */
+        }
+        .summary-box.total {
+            border: 2px solid #dc2626; /* theme-error */
+            background-color: #fee2e2; /* theme-error-light */
+        }
+        .summary-box p.label {
+            font-size: 8pt;
+            color: #4b5563; /* theme-text-secondary */
+            margin: 0 0 5px 0;
+        }
+        .summary-box p.value {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #091e65; /* theme-primary */
+            margin: 0;
+            text-align: right;
+        }
+        .summary-box.total p.value {
+            color: #dc2626; /* theme-error */
+        }
+        .summary-box p.note {
+            font-size: 7pt;
+            color: #6B7280; /* theme-text-light */
+            margin-top: 3px;
+            text-align: right;
+        }
+        
+        /* Other Key Financials (simpler list style) */
+        .other-financials-list { list-style-type: none; padding-left: 0; margin-bottom: 10px;}
+        .other-financials-list li { border-bottom: 1px solid #f0f0f0; padding: 5px 0; font-size: 9pt;}
+        .other-financials-list li strong { float: right; color: #333; }
+        .other-financials-list li:last-child { border-bottom: none; }
+
+        /* Subscription Counts */
+        .subscription-counts { font-size: 9pt; color: #4b5563; margin-top: 5px; margin-bottom: 10px; }
+        .subscription-counts strong { color: #091e65; }
+
+
+        /* --- Tables --- */
+        table.data-table { /* Added class for data tables */
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 8pt; /* Default font size for table content */
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #cccccc;
+            padding: 4px 5px; /* Adjusted padding */
+            text-align: left;
+            word-wrap: break-word; /* General wrapping */
+            overflow-wrap: break-word; /* More modern general wrapping */
+            page-break-inside: avoid;
+        }
+        .data-table thead th {
+            background-color: #091e65; /* theme-primary */
+            color: #ffffff; /* theme-text-inverted */
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 7.5pt;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f0f5ff; /* theme-primary-lightest */
+        }
+        .data-table .text-right { text-align: right; }
+        .data-table .currency:before { content: "PKR "; font-size: 7.5pt; color: #555; }
+        .data-table .no-data { text-align: center; color: #777777; padding: 10px; font-style: italic; }
+
+        /* Specific style for ID cells in PDF to prevent overflow */
+        .data-table td.pdf-id-cell {
+            font-size: 7pt; /* Make font smaller for IDs */
+            word-break: break-all; /* Force break for long unbroken strings */
+            overflow-wrap: break-word; /* Ensure wrapping */
+        }
+
+
+        /* --- Status Badges (Simplified for PDF) --- */
+        .status-badge {
+            padding: 1px 3px; border-radius: 2px; font-size: 7pt; color: #ffffff; white-space: nowrap;
+        }
+        .status-active, .status-approved, .status-completed { background-color: #16a34a; } /* Green */
+        .status-pending, .status-canceled { background-color: #f59e0b; } /* Amber/Yellow */
+        .status-processing, .status-past_due { background-color: #2563eb; } /* Blue */
+        .status-rejected, .status-expired, .status-failed { background-color: #dc2626; } /* Red */
+        .status-default { background-color: #6b7280; } /* Gray */
+
+        /* --- Footer --- */
+        #page-footer {
+            text-align: right;
+            font-size: 8pt;
+            color: #777777;
+        }
+        #page-footer .page-number:before {
+            content: "Page " counter(page);
+        }
+
+        hr { border: 0; border-top: 1px solid #e5e7eb; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div id="page-footer"><span class="page-number"></span></div>
+
+    <div class="report-header">
+        <h1>Financial Report - <span class="platform-name">AudioX</span></h1>
+        <p class="generation-date">Generated on: {{ generation_time|date:"F j, Y, g:i a" }} ({{ TIME_ZONE }})</p>
+    </div>
+
+    <div class="filter-criteria">
+        Report Period:
+        {% if date_filter_applied %}
+            <strong>{{ filter_date_from|default:"N/A" }}</strong> to <strong>{{ filter_date_to|default:"N/A" }}</strong>
+        {% else %}
+            <strong>All Time</strong>
+        {% endif %}
+    </div>
+
+    <h2 class="section-title">Platform Revenue Summary</h2>
+    <div class="summary-container">
+        <table class="summary-table">
+            <tr>
+                <td>
+                    <div class="summary-box">
+                        <p class="label">Revenue from Platform Commission</p>
+                        <p class="value currency">{{ revenue_from_platform_commission|floatformat:2|intcomma }}</p>
+                        <p class="note">(From Audiobook Sales)</p>
+                    </div>
+                </td>
+                <td>
+                    <div class="summary-box">
+                        <p class="label">Revenue from Subscription Sales</p>
+                        <p class="value currency">{{ revenue_from_subscription_sales|floatformat:2|intcomma }}</p>
+                        <p class="note">(Via Coin Purchases)</p>
+                    </div>
+                </td>
+                <td>
+                    <div class="summary-box">
+                        <p class="label">Revenue from General Coin Sales</p>
+                        <p class="value currency">{{ revenue_from_general_coin_sales|floatformat:2|intcomma }}</p>
+                        <p class="note">(Excl. Subscriptions)</p>
+                    </div>
+                </td>
+                <td>
+                    <div class="summary-box total">
+                        <p class="label">Grand Total Platform Revenue</p>
+                        <p class="value currency">{{ grand_total_platform_revenue|floatformat:2|intcomma }}</p>
+                        <p class="note">(Total Earnings)</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <h3 class="subsection-title">Other Key Financials</h3>
+    <ul class="other-financials-list">
+        <li>Total Paid by Users (for Audiobooks): <strong class="currency">{{ summary_total_paid_for_audiobooks|floatformat:2|intcomma }}</strong></li>
+        <li>Total Creator Share (from Audiobook Sales): <strong class="currency">{{ summary_creator_share_from_sales|floatformat:2|intcomma }}</strong></li>
+        <li>Total Withdrawn by Creators: <strong class="currency">{{ summary_total_withdrawn_by_creators|floatformat:2|intcomma }}</strong></li>
+    </ul>
+
+    <div class="subscription-counts">
+        Overall Active Subscriptions: <strong>{{ summary_active_subscriptions_count_overall|intcomma }}</strong>
+        <span style="margin: 0 10px; color: #ccc;">|</span>
+        New Subscriptions in Period: <strong>{{ new_subscriptions_in_period_count|intcomma }}</strong>
+    </div>
+    <hr>
+
+    <h2 class="section-title">Platform Commission Log (Audiobook Sales)</h2>
+    {% if detailed_audiobook_purchases %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th><th>Date</th><th>User</th><th>Audiobook</th><th>Creator</th>
+                <th class="text-right">Total Paid</th><th class="text-right">Platform Fee</th><th class="text-right">Creator Share</th>
+                <th>Status</th><th>Stripe ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for purchase in detailed_audiobook_purchases %}
+            <tr>
+                <td class="pdf-id-cell" title="{{ purchase.purchase_id }}">{{ purchase.purchase_id|slice:":6" }}...</td> {# Reduced slice and added class #}
+                <td>{{ purchase.purchase_date|date:"y-m-d H:i" }}</td>
+                <td>{{ purchase.user.username|truncatechars:15 }}</td>
+                <td>{{ purchase.audiobook.title|truncatechars:20 }}</td>
+                <td>{{ purchase.audiobook.creator.creator_name|default:'N/A'|truncatechars:15 }}</td>
+                <td class="text-right currency">{{ purchase.amount_paid|floatformat:2|intcomma }}</td>
+                <td class="text-right currency" style="color: #dc2626;">{{ purchase.platform_fee_amount|floatformat:2|intcomma }}</td>
+                <td class="text-right currency">{{ purchase.creator_share_amount|floatformat:2|intcomma }}</td>
+                <td><span class="status-badge status-completed">{{ purchase.get_status_display }}</span></td> {# Assuming COMPLETED status for this log #}
+                <td title="{{ purchase.stripe_payment_intent_id|default:purchase.stripe_checkout_session_id }}">{{ purchase.stripe_payment_intent_id|slice:":10"|default_if_none:"" }}{% if purchase.stripe_payment_intent_id %}...{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="10" class="no-data">No audiobook sales (commission events) found for the selected criteria.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}<p class="no-data">No audiobook sales data available for the selected criteria.</p>{% endif %}
+    <hr>
+
+    <h2 class="section-title">Subscription Transactions & Status Log</h2>
+    {% if detailed_subscriptions %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>User</th><th>Plan</th><th>Status</th><th>Start Date</th>
+                <th>End Date</th><th>Stripe Sub ID</th><th>Card</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sub in detailed_subscriptions %}
+            <tr>
+                <td>{{ sub.user.username|truncatechars:15 }}</td>
+                <td>{{ sub.get_plan_display }}</td>
+                <td>
+                    <span class="status-badge 
+                        {% if sub.status == 'active' %}status-active
+                        {% elif sub.status == 'canceled' %}status-canceled
+                        {% elif sub.status == 'expired' %}status-expired
+                        {% elif sub.status == 'past_due' %}status-past_due
+                        {% else %}status-default{% endif %}">
+                        {{ sub.get_status_display }}
+                    </span>
+                </td>
+                <td>{{ sub.start_date|date:"Y-m-d" }}</td>
+                <td>{{ sub.end_date|date:"Y-m-d"|default:"N/A" }}</td>
+                <td title="{{ sub.stripe_subscription_id|default:'' }}">{{ sub.stripe_subscription_id|slice:":10"|default_if_none:"" }}{% if sub.stripe_subscription_id %}...{% endif %}</td>
+                <td>{% if sub.stripe_payment_method_brand %}{{ sub.stripe_payment_method_brand }} ...{{ sub.stripe_payment_method_last4|default:"" }}{% else %}N/A{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="no-data">No subscriptions found for the selected criteria.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}<p class="no-data">No subscription data available for the selected criteria.</p>{% endif %}
+    <hr>
+
+    <h2 class="section-title">Coin Transactions Log</h2>
+    {% if detailed_coin_transactions %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="pdf-id-cell">ID</th>{# Applied class here too if PKs are long #}
+                <th>Date</th><th>User</th><th>Type</th><th>Details/Pack</th>
+                <th class="text-right">Coins</th><th class="text-right">Price (PKR)</th><th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in detailed_coin_transactions %}
+            <tr>
+                <td class="pdf-id-cell">{{ transaction.pk }}</td> {# Applied class #}
+                <td>{{ transaction.transaction_date|date:"y-m-d H:i" }}</td>
+                <td>{{ transaction.user.username|truncatechars:15 }}</td>
+                <td>{{ transaction.get_transaction_type_display }}</td>
+                <td title="{{ transaction.pack_name|default:transaction.description|default:'N/A' }}">
+                    {% if transaction.transaction_type == 'purchase' and "Subscription" in transaction.pack_name|default:"" %}
+                        <span style="color: #5b21b6; font-weight: bold;">{{ transaction.pack_name|default:transaction.description|default:'N/A'|truncatechars:20 }}</span>
+                    {% else %}
+                        {{ transaction.pack_name|default:transaction.description|default:'N/A'|truncatechars:20 }}
+                    {% endif %}
+                </td>
+                <td class="text-right">{{ transaction.amount|intcomma }}</td>
+                <td class="text-right">{% if transaction.price is not None %}<span class="currency">{{ transaction.price|floatformat:2|intcomma }}</span>{% else %}N/A{% endif %}</td>
+                <td>
+                    <span class="status-badge 
+                        {% if transaction.status == 'completed' %}status-completed
+                        {% elif transaction.status == 'pending' %}status-pending
+                        {% elif transaction.status == 'failed' %}status-failed
+                        {% else %}status-default{% endif %}">
+                        {{ transaction.get_status_display }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="no-data">No coin transactions found for the selected criteria.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}<p class="no-data">No coin transaction data available for the selected criteria.</p>{% endif %}
+    <hr>
+    
+    <h2 class="section-title">Creator Withdrawal Requests Log</h2>
+    {% if detailed_withdrawal_requests %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="pdf-id-cell">Req. ID</th>{# Applied class here too #}
+                <th>Date</th><th>Creator</th><th class="text-right">Amount (PKR)</th>
+                <th>Status</th><th>Account</th><th>Processed By</th><th>Proc. Date</th><th>Reference</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for withdrawal in detailed_withdrawal_requests %}
+            <tr>
+                <td class="pdf-id-cell">{{ withdrawal.display_request_id }}</td> {# Applied class #}
+                <td>{{ withdrawal.request_date|date:"y-m-d H:i" }}</td>
+                <td>{{ withdrawal.creator.creator_name|truncatechars:15 }}</td>
+                <td class="text-right currency">{{ withdrawal.amount|floatformat:2|intcomma }}</td>
+                <td>
+                    <span class="status-badge 
+                        {% if withdrawal.status == 'APPROVED' %}status-approved
+                        {% elif withdrawal.status == 'PENDING' %}status-pending
+                        {% elif withdrawal.status == 'PROCESSING' %}status-processing
+                        {% elif withdrawal.status == 'REJECTED' %}status-rejected
+                        {% else %}status-default{% endif %}">
+                        {{ withdrawal.get_status_display }}
+                    </span>
+                </td>
+                <td title="{{ withdrawal.withdrawal_account.get_account_type_display }} - {{ withdrawal.withdrawal_account.account_identifier }}">{{ withdrawal.withdrawal_account.get_account_type_display|default:'N/A' }} ...{{ withdrawal.withdrawal_account.account_identifier|slice:"-4:"|default:'N/A' }}</td>
+                <td>{{ withdrawal.processed_by.username|default:'N/A' }}</td>
+                <td>{{ withdrawal.processed_date|date:"y-m-d H:i"|default:'N/A' }}</td>
+                <td>{{ withdrawal.payment_reference|truncatechars:10|default:'N/A' }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" class="no-data">No withdrawal requests found for the selected criteria.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}<p class="no-data">No withdrawal request data available for the selected criteria.</p>{% endif %}
+
+    <div class="report-footer" style="text-align: center; font-size: 8pt; color: #777777; margin-top: 25px; border-top: 1px solid #dddddd; padding-top: 8px;">
+        AudioX Internal Financial Report
+    </div>
+</body>
+</html>

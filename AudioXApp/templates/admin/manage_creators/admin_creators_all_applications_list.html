@@ -1,0 +1,375 @@
+{% extends 'admin/admin_base.html' %} {# Assumes admin_base.html is in templates/admin/ and includes Tailwind CSS, Font Awesome, and sets body class e.g., <body class="bg-slate-100"> #}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+
+{% block title %}Creator Application History - Admin (AudioX){% endblock %}
+
+{% block header_title %}
+    <h1 class="text-2xl md:text-3xl font-bold text-[#091e65]">
+        {{ filter_title|default:"Creator Application History" }}
+    </h1>
+{% endblock %}
+
+{% block extra_head %}
+{# All styling is done via Tailwind CSS. Ensure admin_base.html body has bg-slate-100 or similar #}
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+    {# Django Messages #}
+    {% if messages %}
+        <div class="space-y-4">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg shadow-md flex items-start
+                    {% if message.tags == 'success' %} bg-green-50 border-l-4 border-green-500 text-green-800
+                    {% elif message.tags == 'error' %} bg-red-50 border-l-4 border-red-500 text-red-800
+                    {% elif message.tags == 'warning' %} bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800
+                    {% else %} bg-blue-50 border-l-4 border-blue-400 text-blue-800
+                    {% endif %}"
+                    role="alert">
+                    <div class="flex-shrink-0 mr-3 pt-0.5">
+                        <i class="fas 
+                        {% if message.tags == 'success' %} fa-check-circle text-green-600
+                        {% elif message.tags == 'error' %} fa-exclamation-circle text-red-600
+                        {% elif message.tags == 'warning' %} fa-exclamation-triangle text-yellow-600
+                        {% else %} fa-info-circle text-blue-600
+                        {% endif %} text-xl"></i>
+                    </div>
+                    <div class="flex-1 text-sm font-medium">
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Search Form Section - Redesigned for a cleaner look #}
+    <div class="bg-white p-6 rounded-xl shadow-xl">
+        <form method="get" action="{% url 'AudioXApp:admin_creator_application_history' %}" id="search-form" class="space-y-4">
+            <div>
+                <label for="search-input" class="block text-sm font-semibold text-slate-700 mb-1">Search by Creator Identifier</label>
+                <p class="text-xs text-slate-500 mb-2">Enter Creator's CID, Email, or Username to retrieve their application history.</p>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        id="search-input"
+                        value="{{ search_query|default:'' }}" 
+                        placeholder="e.g., CID123, user@example.com, username" 
+                        class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/60 focus:border-[#091e65] focus:outline-none placeholder-slate-400 text-slate-800 text-sm transition duration-150 ease-in-out shadow-sm"
+                    >
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:justify-end sm:items-center gap-3 pt-2">
+                 {% if search_query %}
+                <a href="{% url 'AudioXApp:admin_creator_application_history' %}" class="w-full sm:w-auto order-2 sm:order-1 flex items-center justify-center px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#091e65]/50" title="Clear Search">
+                    <i class="fas fa-times mr-2 text-xs"></i>Clear Current Search
+                </a>
+                {% endif %}
+                <button 
+                    type="submit" 
+                    class="w-full sm:w-auto order-1 sm:order-2 flex items-center justify-center px-6 py-2.5 text-white bg-[#091e65] hover:bg-[#071852] rounded-lg text-sm font-semibold transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65]/70 shadow-md hover:shadow-lg"
+                    title="Search"
+                >
+                    <i class="fas fa-history mr-2 text-xs"></i>View History
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# Loading Indicator #}
+    <div id="loading-indicator" class="hidden items-center justify-center gap-4 text-slate-700 font-medium py-12 text-center">
+        <svg class="animate-spin h-10 w-10 text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-xl">Searching application history...</span>
+    </div>
+
+    {# Content Area #}
+    {% if found_creator %}
+        {# Creator Summary Card - Refined #}
+        <div class="bg-white rounded-xl shadow-xl mb-10">
+            <div class="px-6 py-5 border-b border-slate-200 bg-slate-50 rounded-t-xl flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-semibold text-[#091e65]">
+                        <a href="{% url 'AudioXApp:admin_view_creator_detail' found_creator.user.user_id %}" class="hover:underline">{{ found_creator.creator_name }}</a>
+                    </h2>
+                    <p class="text-xs text-slate-500 uppercase tracking-wider">Application History Summary</p>
+                </div>
+                <div class="text-right">
+                     <p class="text-sm text-slate-500">CID: <span class="font-medium text-slate-700">{{ found_creator.cid|default:"N/A" }}</span></p>
+                     <p class="text-sm text-slate-500">Unique Name: <span class="font-mono text-[#091e65]">@{{ found_creator.creator_unique_name }}</span></p>
+                </div>
+            </div>
+            <div class="p-6">
+                 <dt class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Current Account Status</dt>
+                 <dd class="text-sm">
+                    {% if found_creator.is_banned %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700 ring-1 ring-inset ring-red-300"><i class="fas fa-ban"></i> Banned</span>
+                    {% elif found_creator.verification_status == 'approved' %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-[#091e65]/10 text-[#091e65] ring-1 ring-inset ring-[#091e65]/30"><i class="fas fa-check-circle"></i> Approved</span>
+                    {% elif found_creator.verification_status == 'rejected' %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-600 ring-1 ring-inset ring-red-300"><i class="fas fa-times-circle"></i> Rejected</span>
+                    {% else %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-300"><i class="fas fa-hourglass-half"></i> Pending</span>
+                    {% endif %}
+                </dd>
+            </div>
+        </div>
+
+        {# History Log Section Title #}
+        <div class="flex justify-between items-baseline mb-6 border-b-2 border-[#091e65]/20 pb-3">
+            <h3 class="text-2xl font-semibold text-slate-800">
+                Application Log <span class="text-lg font-normal text-slate-500">({{ application_logs_page.paginator.count }} entr{{ application_logs_page.paginator.count|pluralize:"y,ies" }})</span>
+            </h3>
+        </div>
+        
+        {% if application_logs_page.object_list %}
+            <div class="space-y-8"> 
+                {% for log in application_logs_page %}
+                <article class="bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200 hover:shadow-2xl transition-shadow duration-200">
+                    <header class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row justify-between md:items-center gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg font-semibold
+                                {% if log.status == 'approved' %} bg-[#091e65]/10 text-[#091e65]
+                                {% elif log.status == 'rejected' %} bg-red-100 text-red-600
+                                {% else %} bg-slate-200 text-slate-600 {% endif %}">
+                                {{ log.attempt_number_monthly }}
+                            </div>
+                            <div>
+                                <h4 class="text-md font-semibold text-slate-800">
+                                    Application Attempt
+                                </h4>
+                                <p class="text-xs text-slate-500">
+                                    Submitted: {{ log.application_date|localtime|date:"F j, Y, g:i A" }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-2 md:mt-0 text-right">
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider
+                                {% if log.status == 'approved' %} bg-[#091e65] text-white 
+                                {% elif log.status == 'rejected' %} bg-red-600 text-white 
+                                {% else %} bg-slate-500 text-white 
+                                {% endif %}">
+                                <i class="fas 
+                                {% if log.status == 'approved' %} fa-check-circle 
+                                {% elif log.status == 'rejected' %} fa-times-circle 
+                                {% else %} fa-paper-plane 
+                                {% endif %} fa-fw text-sm"></i> 
+                                {{ log.status|capfirst }}
+                            </span>
+                        </div>
+                    </header>
+
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
+                            {# Submitted Details Column #}
+                            <section class="space-y-3">
+                                <h6 class="text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 pb-1.5">Applicant Info</h6>
+                                <dl class="text-sm space-y-1.5">
+                                    <div><dt class="inline font-medium text-slate-600">Name:</dt> <dd class="inline text-slate-700">{{ log.creator_name_submitted }}</dd></div>
+                                    <div><dt class="inline font-medium text-slate-600">Unique ID:</dt> <dd class="inline font-mono text-[#091e65]">@{{ log.creator_unique_name_submitted }}</dd></div>
+                                    <div><dt class="inline font-medium text-slate-600">Terms Accepted:</dt> <dd class="inline text-slate-700">{{ log.terms_accepted_at_submission|localtime|date:"M d, Y" }}</dd></div>
+                                </dl>
+                            </section>
+
+                            {# Processing Details Column #}
+                            <section class="space-y-3">
+                                <h6 class="text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 pb-1.5">Processing Details</h6>
+                                {% if log.status != 'submitted' %}
+                                    <dl class="text-sm space-y-1.5">
+                                        <div><dt class="inline font-medium text-slate-600">Processed On:</dt> <dd class="inline text-slate-700">{{ log.processed_at|localtime|date:"M d, Y, g:i A" }}</dd></div>
+                                        <div><dt class="inline font-medium text-slate-600">Processed By:</dt> <dd class="inline text-[#091e65] font-medium">{{ log.processed_by.username|default:"System" }}</dd></div>
+                                    </dl>
+                                    {% if log.status == 'rejected' and log.rejection_reason %}
+                                        <div class="pt-1">
+                                            <h6 class="text-xs font-semibold text-red-600 uppercase tracking-wider">Rejection Reason</h6>
+                                            <div class="mt-1 p-3 rounded-md border border-red-200 bg-red-50/60 text-xs text-red-700 whitespace-pre-wrap shadow-inner">
+                                                {{ log.rejection_reason }}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <p class="text-sm italic text-slate-500 pt-1">Application not yet processed.</p>
+                                {% endif %}
+                            </section>
+
+                            {# Submitted CNIC Column #}
+                            <section class="space-y-3 md:col-span-2 lg:col-span-1">
+                                <h6 class="text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 pb-1.5">Submitted Documents (CNIC)</h6>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p class="text-xs font-medium text-slate-600 mb-1 text-center">Front</p>
+                                        {% if log.cnic_front_submitted %}
+                                            <a href="{{ log.cnic_front_submitted.url }}" target="_blank" class="block group relative w-full aspect-[1.586/1] rounded-lg overflow-hidden border-2 border-slate-300 hover:border-[#091e65]/70 transition-all duration-150 shadow-md hover:shadow-xl" title="View Submitted CNIC Front">
+                                                <img src="{{ log.cnic_front_submitted.url }}" alt="CNIC Front" class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" onerror="this.onerror=null; this.src='https://placehold.co/200x126/e2e8f0/94a3b8?text=Error'; this.classList.add('!border-red-400');">
+                                                <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                    <i class="fas fa-expand-alt text-white text-2xl"></i>
+                                                </div>
+                                            </a>
+                                        {% else %}
+                                            <div class="flex items-center justify-center w-full aspect-[1.586/1] text-xs text-slate-400 bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 p-2">Not Provided</div>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-medium text-slate-600 mb-1 text-center">Back</p>
+                                        {% if log.cnic_back_submitted %}
+                                            <a href="{{ log.cnic_back_submitted.url }}" target="_blank" class="block group relative w-full aspect-[1.586/1] rounded-lg overflow-hidden border-2 border-slate-300 hover:border-[#091e65]/70 transition-all duration-150 shadow-md hover:shadow-xl" title="View Submitted CNIC Back">
+                                                <img src="{{ log.cnic_back_submitted.url }}" alt="CNIC Back" class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105" onerror="this.onerror=null; this.src='https://placehold.co/200x126/e2e8f0/94a3b8?text=Error'; this.classList.add('!border-red-400');">
+                                                <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                    <i class="fas fa-expand-alt text-white text-2xl"></i>
+                                                </div>
+                                            </a>
+                                        {% else %}
+                                            <div class="flex items-center justify-center w-full aspect-[1.586/1] text-xs text-slate-400 bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 p-2">Not Provided</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        {% else %} {# No application logs for this creator #}
+            <div class="text-center text-slate-500 py-16 px-6 bg-white rounded-xl border-2 border-dashed border-slate-300 shadow-xl">
+                <i class="fas fa-file-invoice fa-5x text-slate-300 mb-6"></i>
+                <p class="text-2xl font-semibold text-slate-700 mb-2">No Application History Found</p>
+                <p class="text-base text-slate-500">This creator currently has no application history entries.</p>
+            </div>
+        {% endif %}
+
+    {% elif search_query %} {# Creator not found after a search #}
+        <div class="text-center text-slate-500 py-20 px-6 bg-white rounded-xl border-2 border-dashed border-slate-300 shadow-xl">
+            <i class="fas fa-user-slash fa-5x text-slate-300 mb-6"></i>
+            <p class="text-2xl font-semibold text-slate-700 mb-2">Creator Not Found</p>
+            <p class="text-base text-slate-500">No creator profile matched your search for "{{ search_query }}".</p>
+            <p class="text-sm text-slate-400 mt-3">Please verify the CID, email, or username and try again.</p>
+        </div>
+    {% else %} {# Initial page load, no search performed yet #}
+        <div class="text-center text-slate-500 py-20 px-6 bg-white rounded-xl border-2 border-dashed border-slate-300 shadow-xl">
+            <i class="fas fa-search-location fa-5x text-slate-300 mb-6"></i>
+            <p class="text-2xl font-semibold text-slate-700 mb-2">View Creator Application History</p>
+            <p class="text-base text-slate-500">Enter a Creator CID, Email, or Username in the search bar above to retrieve their history.</p>
+        </div>
+    {% endif %}
+
+    {# Pagination #}
+    {% if application_logs_page.has_other_pages %}
+    <div class="mt-12 flex items-center justify-between border-t-2 border-slate-200 pt-8">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if application_logs_page.has_previous %}
+                <a href="?q={{ search_query|urlencode }}&page={{ application_logs_page.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-100 transition-colors">
+                    Previous
+                </a>
+            {% else %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-slate-200 text-sm font-medium rounded-md text-slate-400 bg-slate-100 cursor-not-allowed">
+                    Previous
+                </span>
+            {% endif %}
+            {% if application_logs_page.has_next %}
+                <a href="?q={{ search_query|urlencode }}&page={{ application_logs_page.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-100 transition-colors">
+                    Next
+                </a>
+            {% else %}
+                <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-200 text-sm font-medium rounded-md text-slate-400 bg-slate-100 cursor-not-allowed">
+                    Next
+                </span>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-slate-600">
+                    Showing
+                    <span class="font-semibold text-[#091e65]">{{ application_logs_page.start_index }}</span>
+                    to
+                    <span class="font-semibold text-[#091e65]">{{ application_logs_page.end_index }}</span>
+                    of
+                    <span class="font-semibold text-[#091e65]">{{ application_logs_page.paginator.count }}</span>
+                    results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px overflow-hidden border border-slate-300" aria-label="Pagination">
+                    {% if application_logs_page.has_previous %}
+                        <a href="?q={{ search_query|urlencode }}&page={{ application_logs_page.previous_page_number }}" class="relative inline-flex items-center px-3 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left h-5 w-4"></i>
+                        </a>
+                    {% else %}
+                        <span class="relative inline-flex items-center px-3 py-2 bg-slate-100 text-sm font-medium text-slate-400 cursor-not-allowed border-r border-slate-300">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left h-5 w-4"></i>
+                        </span>
+                    {% endif %}
+
+                    {% for num in application_logs_page.paginator.get_elided_page_range %}
+                        {% if num == application_logs_page.paginator.ELLIPSIS %}
+                             <span class="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-slate-700 border-r border-slate-300">...</span>
+                        {% elif application_logs_page.number == num %}
+                            <span aria-current="page" class="relative z-10 inline-flex items-center px-4 py-2 bg-[#091e65]/10 text-sm font-semibold text-[#091e65] focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                                {{ num }}
+                            </span>
+                        {% else %}
+                            <a href="?q={{ search_query|urlencode }}&page={{ num }}" class="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-[#091e65] transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if application_logs_page.has_next %}
+                        <a href="?q={{ search_query|urlencode }}&page={{ application_logs_page.next_page_number }}" class="relative inline-flex items-center px-3 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right h-5 w-4"></i>
+                        </a>
+                    {% else %}
+                         <span class="relative inline-flex items-center px-3 py-2 bg-slate-100 text-sm font-medium text-slate-400 cursor-not-allowed">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right h-5 w-4"></i>
+                        </span>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %} {# End pagination #}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('search-form');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const searchInput = document.getElementById('search-input'); 
+
+    const getUrlParameter = (name) => {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        const results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    };
+
+    const initialSearchQuery = getUrlParameter('q');
+    if (initialSearchQuery && searchInput) {
+        searchInput.value = initialSearchQuery;
+    }
+
+    if (searchForm && loadingIndicator && searchInput) {
+        searchForm.addEventListener('submit', function() {
+            if (searchInput.value.trim() !== '') {
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex'); 
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

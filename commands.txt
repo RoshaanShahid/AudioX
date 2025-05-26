@@ -1,3 +1,4 @@
 stripe listen --forward-to localhost:8000/payment/webhook/stripe/ 
 TRUNCATE TABLE audiox_schema."USERS" RESTART IDENTITY CASCADE;
 npm run build:css
+npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch

@@ -1,0 +1,245 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Ticket {{ ticket.ticket_display_id }} - {{ ticket.subject|truncatechars:30 }} - Admin{% endblock %}
+
+{% block header_title %}
+    <h2 class="text-2xl font-bold text-gray-800">Ticket Details: <span class="text-[#091e65]">{{ ticket.ticket_display_id }}</span></h2>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    {% if messages %}
+        <div class="space-y-3">
+            {% for message in messages %}
+            <div class="p-4 rounded-lg border-l-4 
+                        {% if message.tags == 'success' %} bg-green-50 border-green-500 text-green-700 
+                        {% elif message.tags == 'error' %} bg-red-50 border-red-500 text-red-700 
+                        {% elif message.tags == 'warning' %} bg-yellow-50 border-yellow-500 text-yellow-700 
+                        {% else %} bg-blue-50 border-blue-500 text-blue-700 
+                        {% endif %}"
+                 role="alert">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2 mt-0.5"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">{{ message }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-start">
+                <h3 class="text-xl font-semibold text-[#091e65] mb-1 sm:mb-0 break-words">{{ ticket.subject }}</h3>
+                <span class="px-3 py-1.5 text-xs font-bold leading-none rounded-full flex-shrink-0
+                    {% if ticket.status == 'OPEN' %} bg-blue-100 text-[#091e65] 
+                    {% elif ticket.status == 'PROCESSING' %} bg-yellow-100 text-yellow-800 
+                    {% elif ticket.status == 'AWAITING_USER' %} bg-red-100 text-red-700 
+                    {% elif ticket.status == 'REOPENED' %} bg-red-200 text-red-800 
+                    {% elif ticket.status == 'RESOLVED' %} bg-green-100 text-green-800 
+                    {% elif ticket.status == 'CLOSED' %} bg-gray-200 text-gray-700 
+                    {% else %} bg-gray-100 text-gray-700 
+                    {% endif %}">
+                    {{ ticket.get_status_display }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 text-sm">
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticket ID</p>
+                <p class="text-gray-800 mt-0.5">{{ ticket.ticket_display_id }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">User</p>
+                <p class="text-gray-800 mt-0.5">{{ ticket.user.full_name|default:ticket.user.username }} <span class="text-gray-500">({{ ticket.user.email }})</span></p>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</p>
+                <p class="text-gray-800 mt-0.5">{{ ticket.category.name|default:"N/A" }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Created</p>
+                <p class="text-gray-800 mt-0.5" title="{{ ticket.created_at|date:'N j, Y, P T' }}">{{ ticket.created_at|naturaltime }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Updated</p>
+                <p class="text-gray-800 mt-0.5" title="{{ ticket.updated_at|date:'N j, Y, P T' }}">{{ ticket.updated_at|naturaltime }}</p>
+            </div>
+             {% if ticket.assigned_admin_identifier %}
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Handled By</p>
+                <p class="text-gray-800 mt-0.5">{{ ticket.assigned_admin_identifier }}</p>
+            </div>
+            {% endif %}
+            {% if ticket.creator_profile %}
+            <div class="md:col-span-1 lg:col-span-1">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Creator Profile</p>
+                <p class="text-gray-800 mt-0.5">{{ ticket.creator_profile.creator_name }} (@{{ ticket.creator_profile.creator_unique_name }})</p>
+            </div>
+            {% endif %}
+            {% if ticket.resolved_at %}
+            <div class="md:col-span-1 lg:col-span-1">
+                <p class="text-xs font-semibold text-green-600 uppercase tracking-wider">Resolved At</p>
+                <p class="text-gray-800 mt-0.5" title="{{ ticket.resolved_at|date:'N j, Y, P T' }}">{{ ticket.resolved_at|naturaltime }}</p>
+            </div>
+            {% endif %}
+            {% if ticket.closed_at %}
+            <div class="md:col-span-1 lg:col-span-1">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Closed At</p>
+                <p class="text-gray-800 mt-0.5" title="{{ ticket.closed_at|date:'N j, Y, P T' }}">{{ ticket.closed_at|naturaltime }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-[#091e65]">Conversation History</h3>
+            </div>
+            <div class="p-4 md:p-6 space-y-6 max-h-[70vh] overflow-y-auto bg-gray-50" id="message-thread-admin">
+                <div class="flex items-start space-x-3">
+                    {% if ticket.user.profile_pic %}
+                        <img src="{{ ticket.user.profile_pic.url }}" alt="{{ ticket.user.username }}" class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1">
+                    {% else %}
+                        <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-500 text-sm font-semibold flex-shrink-0 mt-1">{{ ticket.user.username|slice:":1"|upper }}</span>
+                    {% endif %}
+                    <div class="flex-1">
+                        <div class="p-3 rounded-lg rounded-tl-none bg-gray-100 text-gray-800 max-w-[85%] shadow-sm">
+                            <p class="font-semibold text-sm text-gray-900 mb-0.5">{{ ticket.user.full_name|default:ticket.user.username }} <span class="text-xs font-normal text-gray-500">(Submitter - Initial Description)</span></p>
+                            <p class="text-sm whitespace-pre-wrap">{{ ticket.description }}</p>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1 ml-1">{{ ticket.created_at|naturaltime }}</p>
+                    </div>
+                </div>
+
+                {% for message in ticket.messages.all %}
+                    <div class="flex {% if message.is_admin_reply %}justify-end{% else %}justify-start{% endif %}">
+                        <div class="flex items-start space-x-3 {% if message.is_admin_reply %}flex-row-reverse space-x-reverse{% endif %} max-w-[85%]">
+                            {% if message.is_admin_reply %}
+                                <img src="{% static 'img/audiox-favicon.png' %}" alt="Admin" class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1">
+                            {% elif message.user and message.user.profile_pic %}
+                                <img src="{{ message.user.profile_pic.url }}" alt="{{ message.user.username }}" class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1">
+                            {% elif message.user %}
+                                 <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-500 text-sm font-semibold flex-shrink-0 mt-1">{{ message.user.username|slice:":1"|upper }}</span>
+                            {% else %}
+                                 <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-300 text-gray-600 text-sm font-semibold flex-shrink-0 mt-1">?</span>
+                            {% endif %}
+                            <div class="flex-1">
+                                <div class="p-3 rounded-lg shadow-sm {% if message.is_admin_reply %}bg-[#091e65] text-white rounded-tr-none{% else %}bg-gray-100 text-gray-800 rounded-tl-none{% endif %}">
+                                    <p class="font-semibold text-sm mb-0.5 {% if message.is_admin_reply %}text-blue-100{% else %}text-gray-900{% endif %}">
+                                        {% if message.is_admin_reply %}AudioX Support <span class="text-xs font-normal opacity-70">({{ admin_user.username|default:"Admin" }})</span> {% elif message.user %}{{ message.user.full_name|default:message.user.username }}{% else %}System{% endif %}
+                                    </p>
+                                    <p class="text-sm whitespace-pre-wrap">{{ message.message }}</p>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1 {% if message.is_admin_reply %}text-right mr-1{% else %}text-left ml-1{% endif %}">{{ message.created_at|naturaltime }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    {% if not ticket.description %}
+                    <p class="text-gray-500 text-sm text-center py-4">No messages in this conversation yet.</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="lg:col-span-1 space-y-6">
+            <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-[#091e65]">Admin Actions</h3>
+                </div>
+                <form method="POST" action="{% url 'AudioXApp:admin_ticket_detail' ticket.id %}" class="p-6 space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_status">
+                    <div>
+                        <label for="new_status" class="block text-sm font-medium text-gray-700 mb-1">Change Ticket Status:</label>
+                        <select name="new_status" id="new_status" class="w-full bg-gray-100 border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] p-2.5 shadow-sm appearance-none transition-colors duration-150">
+                            {% for status_val, status_display in ticket_statuses %}
+                                <option value="{{ status_val }}" {% if ticket.status == status_val %}selected{% endif %}>{{ status_display }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="admin_notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional, visible to user if status changes):</label>
+                        <textarea name="admin_notes" id="admin_notes" rows="2" class="w-full bg-gray-100 border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] p-2.5 shadow-sm transition-colors duration-150" placeholder="Reason for status change..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-semibold rounded-lg text-sm px-5 py-2.5 text-center shadow-md hover:shadow-lg transition duration-150 ease-in-out">
+                        <i class="fas fa-save mr-2"></i>Update Status
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-[#091e65]">Add Reply</h3>
+                </div>
+                <form method="POST" action="{% url 'AudioXApp:admin_ticket_detail' ticket.id %}" class="p-6 space-y-4" id="adminReplyForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_reply">
+                    <div>
+                        <label for="message_content_admin" class="sr-only">Your Reply</label>
+                        <textarea name="message_content" id="message_content_admin" rows="5" required class="w-full bg-gray-100 border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] p-2.5 shadow-sm transition-colors duration-150" placeholder="Type your reply to the user..."></textarea>
+                    </div>
+                    <button type="submit" id="submitAdminReplyBtn" class="w-full text-white bg-[#091e65] hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-2.5 text-center shadow-md hover:shadow-lg transition duration-150 ease-in-out disabled:opacity-50">
+                        <i class="fas fa-paper-plane mr-2"></i>Send Reply
+                    </button>
+                </form>
+            </div>
+             <div class="mt-6 text-center">
+                {% url 'AudioXApp:admin_all_tickets_list' as final_fallback_url %}
+                {% with session_list_url=request.session.last_admin_ticket_list_url|default:final_fallback_url %}
+                {% with next_param_url=request.GET.next|default:session_list_url %}
+                <a href="{{ request.META.HTTP_REFERER|default:next_param_url }}" class="text-sm text-[#091e65] hover:text-blue-700 font-medium flex items-center justify-center transition duration-150 ease-in-out group">
+                    <i class="fas fa-arrow-left mr-2 text-gray-400 group-hover:text-[#091e65] transition-colors"></i> Back to Ticket List
+                </a>
+                {% endwith %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const messageThreadAdmin = document.getElementById('message-thread-admin');
+    if (messageThreadAdmin) {
+        messageThreadAdmin.scrollTop = messageThreadAdmin.scrollHeight;
+    }
+
+    const adminReplyForm = document.getElementById('adminReplyForm');
+    const submitAdminReplyBtn = document.getElementById('submitAdminReplyBtn');
+    const messageContentTextarea = document.getElementById('message_content_admin');
+
+    if (adminReplyForm && submitAdminReplyBtn && messageContentTextarea) {
+        adminReplyForm.addEventListener('submit', function(event) {
+            if (messageContentTextarea.value.trim() === "") {
+                event.preventDefault(); 
+                if(typeof Swal !== 'undefined') {
+                    Swal.fire({icon: 'error', title: 'Empty Reply', text: 'Your reply message cannot be empty.', confirmButtonColor: '#091e65'});
+                } else {
+                    alert('Your reply message cannot be empty.');
+                }
+                messageContentTextarea.style.borderColor = 'rgb(239 68 68)'; // red-500
+                messageContentTextarea.focus();
+                return;
+            }
+            messageContentTextarea.style.borderColor = ''; // Reset border
+            submitAdminReplyBtn.disabled = true;
+            submitAdminReplyBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
+        });
+    }
+});
+</script>
+{% endblock %}

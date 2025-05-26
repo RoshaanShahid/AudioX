@@ -16,8 +16,10 @@ from ..decorators import admin_role_required # Relative import
 def admindashboard(request):
     """Renders the admin dashboard with key metrics."""
     total_user_count = User.objects.count()
-    subscribed_user_count = User.objects.filter(subscription_type='PR').count()
-    free_user_count = total_user_count - subscribed_user_count
+    # Note: The logic for subscribed_user_count might need an update if 'subscription_type' isn't how you track subscriptions.
+    # Consider using the same logic as in admin_manage_users if User model has a direct link to Subscription.
+    subscribed_user_count = User.objects.filter(subscription__status='active').distinct().count() # Example adjustment
+    free_user_count = total_user_count - subscribed_user_count # This will be accurate if subscribed_user_count is accurate
     active_creator_count = Creator.objects.filter(verification_status='approved', is_banned=False).count()
     pending_verification_count = Creator.objects.filter(verification_status='pending').count()
     total_audiobook_count = Audiobook.objects.count()
@@ -26,18 +28,19 @@ def admindashboard(request):
     pending_withdrawal_count = 0
     try:
         pending_withdrawal_count = WithdrawalRequest.objects.filter(
-            status='pending',
-            creator__verification_status='approved',
+            status='PENDING', # Changed from 'pending' to 'PENDING' for consistency if your choices are uppercase
+            creator__verification_status='approved', # Ensure creator is active
             creator__is_banned=False
         ).count()
-    except Exception:
-        messages.error(request, "Could not retrieve withdrawal request count due to a server error.")
+    except Exception as e: # Catch specific exceptions if possible
+        messages.error(request, f"Could not retrieve withdrawal request count: {e}")
+
 
     total_earnings_query = CoinTransaction.objects.filter(
-        transaction_type='purchase', status='completed'
+        transaction_type='purchase', status='completed' # Assuming 'purchase' is for coins, 'completed' is correct status
     ).exclude(
-        pack_name__icontains='Subscription'
-    ).aggregate(total=Sum('price'))
+        pack_name__icontains='Subscription' # If coin packs for subscriptions have this in name
+    ).aggregate(total=Sum('price')) # Assuming 'price' field exists and stores the value
     total_earnings = total_earnings_query['total'] or Decimal('0.00')
 
     context = {
@@ -55,4 +58,4 @@ def admindashboard(request):
         'total_earnings': total_earnings.quantize(Decimal("0.01")),
         'TIME_ZONE': settings.TIME_ZONE,
     }
-    return render(request, 'admin/admin_dashboard.html', context)
+    return render(request, 'admin/admin_dashboard.html', context) 

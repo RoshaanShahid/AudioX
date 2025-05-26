@@ -1,0 +1,310 @@
+{% extends "admin/admin_base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Financials Overview - Admin Area{% endblock %}
+
+{% block header_title %}{{ header_title|default:"Financials Overview" }}{% endblock %}
+
+{% block content %}
+
+<div class="bg-theme-bg-card p-4 sm:p-6 rounded-xl shadow border border-theme-border mb-6">
+    <h2 class="text-xl font-semibold text-theme-text-primary mb-4">Filters</h2>
+    <form method="GET" action="{% url 'AudioXApp:admin_financials_overview' %}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+        <div>
+            <label for="date_from" class="block text-sm font-medium text-theme-text-secondary">Date From</label>
+            <input type="date" name="date_from" id="date_from" value="{{ filter_date_from|default_if_none:'' }}"
+                   class="mt-1 block w-full px-3 py-2 bg-theme-input-bg border border-theme-border rounded-md shadow-sm focus:outline-none focus:ring-theme-error focus:border-theme-error sm:text-sm">
+        </div>
+        <div>
+            <label for="date_to" class="block text-sm font-medium text-theme-text-secondary">Date To</label>
+            <input type="date" name="date_to" id="date_to" value="{{ filter_date_to|default_if_none:'' }}"
+                   class="mt-1 block w-full px-3 py-2 bg-theme-input-bg border border-theme-border rounded-md shadow-sm focus:outline-none focus:ring-theme-error focus:border-theme-error sm:text-sm">
+        </div>
+        <div class="flex space-x-2 sm:col-span-2 md:col-span-1 lg:col-span-2">
+            <button type="submit"
+                    class="w-auto inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-theme-text-inverted bg-theme-error hover:bg-theme-error-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-error">
+                <i class="fas fa-filter mr-2"></i>Apply Filters
+            </button>
+            <a href="{% url 'AudioXApp:admin_financials_overview' %}"
+               class="w-auto inline-flex justify-center py-2 px-4 border border-theme-border shadow-sm text-sm font-medium rounded-md text-theme-text-secondary bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-error"
+               title="Clear filters and show all data">
+                <i class="fas fa-times mr-2"></i>Show All Data
+            </a>
+        </div>
+    </form>
+    {% if date_filter_applied %}
+    <p class="text-sm text-theme-text-light mt-3">
+        Showing results from <strong class="text-theme-primary">{{ filter_date_from }}</strong> to <strong class="text-theme-primary">{{ filter_date_to }}</strong>.
+        Displaying up to {{ max_table_rows }} rows per table in this view. Full data in PDF report.
+    </p>
+    {% else %}
+    <p class="text-sm text-theme-text-light mt-3">
+        Showing all data. Apply date filters to narrow results. Displaying up to {{ max_table_rows }} rows per table in this view. Full data in PDF report.
+    </p>
+    {% endif %}
+</div>
+
+<div class="bg-theme-bg-card p-4 sm:p-6 rounded-xl shadow border border-theme-border mb-6">
+    <h3 class="text-xl font-semibold text-theme-text-primary mb-4">Platform Revenue Summary {% if date_filter_applied %} ({{ filter_date_from }} - {{ filter_date_to }}){% else %} (All Time){% endif %}</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="p-4 border border-theme-border-light rounded-lg bg-theme-primary-lightest">
+            <p class="text-sm font-medium text-theme-text-secondary">Revenue from Platform Commission</p>
+            <p class="text-2xl font-bold text-theme-primary">PKR {{ revenue_from_platform_commission|intcomma }}</p>
+            <p class="text-xs text-theme-text-light mt-1">(From Audiobook Sales)</p>
+        </div>
+        <div class="p-4 border border-theme-border-light rounded-lg bg-theme-primary-lightest">
+            <p class="text-sm font-medium text-theme-text-secondary">Revenue from Subscription Sales</p>
+            <p class="text-2xl font-bold text-theme-primary">PKR {{ revenue_from_subscription_sales|intcomma }}</p>
+            <p class="text-xs text-theme-text-light mt-1">(Direct Subscription Purchases)</p>
+        </div>
+        <div class="p-4 border border-theme-border-light rounded-lg bg-theme-primary-lightest">
+            <p class="text-sm font-medium text-theme-text-secondary">Revenue from General Coin Sales</p>
+            <p class="text-2xl font-bold text-theme-primary">PKR {{ revenue_from_general_coin_sales|intcomma }}</p>
+            <p class="text-xs text-theme-text-light mt-1">(Coin Packs, excluding subscriptions)</p>
+        </div>
+        <div class="p-4 border-2 border-theme-error rounded-lg bg-theme-error-light">
+            <p class="text-sm font-medium text-theme-text-secondary">Grand Total Platform Revenue</p>
+            <p class="text-2xl font-bold text-theme-error">PKR {{ grand_total_platform_revenue|intcomma }}</p>
+            <p class="text-xs text-theme-text-light mt-1">(Commission + Subscriptions + Coins)</p>
+        </div>
+    </div>
+
+    <h3 class="text-lg font-semibold text-theme-text-primary mb-3 pt-4 border-t border-theme-border">Other Key Financials {% if date_filter_applied %} ({{ filter_date_from }} - {{ filter_date_to }}){% else %} (All Time){% endif %}</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+        <div class="p-3 border border-theme-border-light rounded-md">
+            <p class="font-medium text-theme-text-secondary">Total Paid by Users (Audiobooks):</p>
+            <p class="text-base font-semibold text-theme-text-primary">PKR {{ summary_total_paid_for_audiobooks|intcomma }}</p>
+        </div>
+        <div class="p-3 border border-theme-border-light rounded-md">
+            <p class="font-medium text-theme-text-secondary">Total Creator Share (Audiobook Sales):</p>
+            <p class="text-base font-semibold text-theme-text-primary">PKR {{ summary_creator_share_from_sales|intcomma }}</p>
+        </div>
+        <div class="p-3 border border-theme-border-light rounded-md">
+            <p class="font-medium text-theme-text-secondary">Total Withdrawn by Creators:</p>
+            <p class="text-base font-semibold text-theme-text-primary">PKR {{ summary_total_withdrawn_by_creators|intcomma }}</p>
+        </div>
+    </div>
+
+    <div class="mt-4 pt-4 border-t border-theme-border">
+         <p class="text-sm text-theme-text-secondary">
+             Overall Active Subscriptions: <strong class="text-theme-primary">{{ summary_active_subscriptions_count_overall|intcomma }}</strong>
+             <span class="mx-2 text-gray-300">|</span>
+             New Subscriptions in Period: <strong class="text-theme-primary">{{ new_subscriptions_in_period_count|intcomma }}</strong>
+         </p>
+    </div>
+</div>
+
+
+<div class="bg-theme-bg-card p-4 sm:p-6 rounded-xl shadow border border-theme-border mb-6">
+    <h3 class="text-lg font-semibold text-theme-text-primary mb-3 border-b border-theme-border pb-2">Platform Commission Log (Audiobook Sales)</h3>
+    {% if detailed_audiobook_purchases %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-theme-border-light text-sm">
+            <thead class="bg-theme-primary-lightest">
+                <tr>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Purchase ID</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Date</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">User</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Audiobook</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Creator</th>
+                    <th class="px-3 py-2 text-right font-medium text-theme-primary uppercase tracking-wider">Total Paid</th>
+                    <th class="px-3 py-2 text-right font-medium text-theme-primary uppercase tracking-wider" title="Platform Commission">Platform Fee</th>
+                    <th class="px-3 py-2 text-right font-medium text-theme-primary uppercase tracking-wider">Creator Share</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Status</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Stripe ID</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-theme-border-light">
+                {% for purchase in detailed_audiobook_purchases %}
+                <tr>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary" title="{{ purchase.purchase_id }}">{{ purchase.purchase_id|slice:":8" }}...</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ purchase.purchase_date|date:"Y-m-d H:i" }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-primary" title="{{ purchase.user.email }}">{{ purchase.user.username }} ({{ purchase.user.email|truncatechars:15 }})</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-primary" title="{{ purchase.audiobook.title }}">{{ purchase.audiobook.title|truncatechars:25 }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-primary" title="{{ purchase.audiobook.creator.creator_name|default:'N/A' }}">{{ purchase.audiobook.creator.creator_name|default:'N/A'|truncatechars:20 }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary text-right">PKR {{ purchase.amount_paid|intcomma }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-error text-right">PKR {{ purchase.platform_fee_amount|intcomma }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary text-right">PKR {{ purchase.creator_share_amount|intcomma }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-theme-success-light text-theme-success">{{ purchase.get_status_display }}</span></td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary" title="{{ purchase.stripe_payment_intent_id|default:purchase.stripe_checkout_session_id }}">{{ purchase.stripe_payment_intent_id|slice:":10"|default_if_none:"" }}{% if purchase.stripe_payment_intent_id %}...{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-theme-text-light">No audiobook sales (commission events) found for the selected criteria.</p>
+    {% endif %}
+</div>
+
+<div class="bg-theme-bg-card p-4 sm:p-6 rounded-xl shadow border border-theme-border mb-6">
+    <h3 class="text-lg font-semibold text-theme-text-primary mb-3 border-b border-theme-border pb-2">Subscription Transactions & Status Log</h3>
+    {% if detailed_subscriptions %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-theme-border-light text-sm">
+            <thead class="bg-theme-primary-lightest">
+                <tr>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">User</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Plan</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Status</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Start Date</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">End Date</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Stripe Sub ID</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Card</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-theme-border-light">
+                {% for sub in detailed_subscriptions %}
+                <tr>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-primary" title="{{ sub.user.email }}">{{ sub.user.username }} ({{ sub.user.email|truncatechars:15 }})</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ sub.get_plan_display }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if sub.status == 'active' %}bg-theme-success-light text-theme-success
+                            {% elif sub.status == 'canceled' %}bg-theme-warning-light text-theme-warning
+                            {% elif sub.status == 'expired' %}bg-theme-error-light text-theme-error
+                            {% elif sub.status == 'past_due' %}bg-orange-100 text-orange-700
+                            {% else %}bg-gray-100 text-gray-700{% endif %}">
+                            {{ sub.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ sub.start_date|date:"Y-m-d" }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ sub.end_date|date:"Y-m-d"|default:"N/A" }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary" title="{{ sub.stripe_subscription_id|default:'' }}">{{ sub.stripe_subscription_id|slice:":10"|default_if_none:"" }}{% if sub.stripe_subscription_id %}...{% endif %}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">
+                        {% if sub.stripe_payment_method_brand %}{{ sub.stripe_payment_method_brand }} ...{{ sub.stripe_payment_method_last4|default:"" }}{% else %}N/A{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-theme-text-light">No subscriptions found for the selected criteria.</p>
+    {% endif %}
+</div>
+
+<div class="bg-theme-bg-card p-4 sm:p-6 rounded-xl shadow border border-theme-border mb-6">
+    <h3 class="text-lg font-semibold text-theme-text-primary mb-3 border-b border-theme-border pb-2">Coin Transactions Log</h3>
+    {% if detailed_coin_transactions %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-theme-border-light text-sm">
+            <thead class="bg-theme-primary-lightest">
+                <tr>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Trans. ID</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Date</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">User</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Type</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Details/Pack</th>
+                    <th class="px-3 py-2 text-right font-medium text-theme-primary uppercase tracking-wider">Amount (Coins)</th>
+                    <th class="px-3 py-2 text-right font-medium text-theme-primary uppercase tracking-wider">Price (PKR)</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-theme-border-light">
+                {% for transaction in detailed_coin_transactions %}
+                <tr>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ transaction.pk }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ transaction.transaction_date|date:"Y-m-d H:i" }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-primary" title="{{ transaction.user.email }}">{{ transaction.user.username }} ({{ transaction.user.email|truncatechars:15 }})</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ transaction.get_transaction_type_display }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-primary" title="{{ transaction.pack_name|default:transaction.description|default:'N/A' }}">
+                        {% if transaction.transaction_type == 'purchase' and "Subscription" in transaction.pack_name|default:"" %}
+                            <span class="text-purple-600 font-semibold">{{ transaction.pack_name|default:transaction.description|default:'N/A'|truncatechars:25 }}</span>
+                        {% else %}
+                            {{ transaction.pack_name|default:transaction.description|default:'N/A'|truncatechars:25 }}
+                        {% endif %}
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary text-right">{{ transaction.amount|intcomma }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary text-right">
+                        {% if transaction.price is not None %}PKR {{ transaction.price|intcomma }}{% else %}N/A{% endif %}
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        {% if transaction.status == 'completed' %}bg-theme-success-light text-theme-success
+                        {% elif transaction.status == 'pending' %}bg-theme-warning-light text-theme-warning
+                        {% elif transaction.status == 'failed' %}bg-theme-error-light text-theme-error
+                        {% else %}bg-gray-100 text-gray-700{% endif %}">
+                        {{ transaction.get_status_display }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-theme-text-light">No relevant coin transactions found for the selected criteria.</p>
+    {% endif %}
+</div>
+
+<div class="bg-theme-bg-card p-4 sm:p-6 rounded-xl shadow border border-theme-border mb-6">
+    <h3 class="text-lg font-semibold text-theme-text-primary mb-3 border-b border-theme-border pb-2">Creator Withdrawal Requests Log</h3>
+    {% if detailed_withdrawal_requests %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-theme-border-light text-sm">
+            <thead class="bg-theme-primary-lightest">
+                <tr>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Req. ID</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Request Date</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Creator</th>
+                    <th class="px-3 py-2 text-right font-medium text-theme-primary uppercase tracking-wider">Amount (PKR)</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Status</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Account</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Processed By</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Processed Date</th>
+                    <th class="px-3 py-2 text-left font-medium text-theme-primary uppercase tracking-wider">Reference</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-theme-border-light">
+                {% for withdrawal in detailed_withdrawal_requests %}
+                <tr>
+                    <td class="px-3 py-2 whitespace-nowrap text-blue-600">
+                         <a href="{% url 'AudioXApp:admin_manage_withdrawal_requests' %}?search_query={{ withdrawal.display_request_id }}" class="hover:underline" title="View Details (if applicable)">
+                             {{ withdrawal.display_request_id }}
+                         </a>
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ withdrawal.request_date|date:"Y-m-d H:i" }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-primary" title="{{ withdrawal.creator.user.email }}">{{ withdrawal.creator.creator_name }} ({{ withdrawal.creator.user.email|truncatechars:15 }})</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary text-right">PKR {{ withdrawal.amount|intcomma }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if withdrawal.status == 'APPROVED' %}bg-theme-success-light text-theme-success
+                            {% elif withdrawal.status == 'PENDING' %}bg-theme-warning-light text-theme-warning
+                            {% elif withdrawal.status == 'PROCESSING' %}bg-theme-primary-light text-theme-primary {% elif withdrawal.status == 'REJECTED' %}bg-theme-error-light text-theme-error
+                            {% else %}bg-gray-100 text-gray-700{% endif %}">
+                            {{ withdrawal.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary" title="{{ withdrawal.withdrawal_account.get_account_type_display }} - {{ withdrawal.withdrawal_account.account_identifier }}">
+                        {{ withdrawal.withdrawal_account.get_account_type_display|default:'N/A' }} ...{{ withdrawal.withdrawal_account.account_identifier|slice:"-4:"|default:'N/A' }}
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ withdrawal.processed_by.username|default:'N/A' }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary">{{ withdrawal.processed_date|date:"Y-m-d H:i"|default:'N/A' }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-theme-text-secondary" title="{{withdrawal.payment_reference|default:''}}">{{ withdrawal.payment_reference|truncatechars:15|default:'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-theme-text-light">No withdrawal requests found for the selected criteria.</p>
+    {% endif %}
+</div>
+
+<div class="bg-theme-bg-card p-4 sm:p-6 rounded-xl shadow border border-theme-border mb-6">
+    <h3 class="text-lg font-semibold text-theme-text-primary mb-3">Generate PDF Report</h3>
+    <p class="text-sm text-theme-text-secondary mb-3">
+        Click the button below to generate a PDF report based on the currently applied filters. The PDF will contain all records matching the filters, not just the preview shown on this page.
+    </p>
+    <form method="GET" action="{% url 'AudioXApp:admin_generate_financials_report_pdf' %}" id="pdfReportForm" target="_blank">
+        <input type="hidden" name="date_from" value="{{ filter_date_from|default_if_none:'' }}">
+        <input type="hidden" name="date_to" value="{{ filter_date_to|default_if_none:'' }}">
+        <button type="submit"
+                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-theme-text-inverted bg-theme-error hover:bg-theme-error-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-error">
+            <i class="fas fa-file-pdf mr-2"></i>Download PDF Report
+        </button>
+    </form>
+</div>
+
+{% endblock %}

@@ -335,3 +335,13 @@ PROFILE_COMPLETION_EXEMPT_URLS.append(reverse_lazy('admin:index'))
 # Creator Application Settings
 MAX_CREATOR_APPLICATION_ATTEMPTS = int(os.getenv('MAX_CREATOR_APPLICATION_ATTEMPTS', 3))
 WITHDRAWAL_REQUEST_COOLDOWN_DAYS = int(os.getenv('WITHDRAWAL_REQUEST_COOLDOWN_DAYS', 15))
+
+# --- Google Gemini AI Configuration ---
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
+if not GEMINI_API_KEY and not DEBUG:
+    # In production, you might want to raise an error or log a critical warning
+    # if the AI service is essential and the key is missing.
+    logger.critical("CRITICAL (PRODUCTION): GEMINI_API_KEY is not set in .env. AI features will fail.")
+elif not GEMINI_API_KEY and DEBUG:
+    logger.warning("Warning (DEBUG): GEMINI_API_KEY is not set in .env. AI features will be unavailable.")

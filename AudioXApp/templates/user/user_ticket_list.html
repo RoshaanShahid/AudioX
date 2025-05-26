@@ -1,0 +1,127 @@
+{% extends "Homepage.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}My Support Tickets - AudioX{% endblock %}
+
+{% block head_extra %}
+{{ block.super }}
+{# Custom CSS removed - All styling is now via Tailwind CSS #}
+{% endblock %}
+
+{% block content %}
+<div class="w-full min-h-screen bg-off-white-bg font-sans">
+    <header class="py-10 sm:py-16 bg-brand-surface border-b border-border-soft-on-light">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <h1 class="text-4xl lg:text-5xl font-bold text-theme-primary tracking-tight">My Support Tickets</h1>
+            <a href="{% url 'AudioXApp:contact_us' %}"
+               class="inline-flex items-center px-6 py-3 border border-transparent text-base font-semibold rounded-xl shadow-md text-theme-text-inverted bg-theme-primary hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-focus-ring transition-all duration-150 ease-in-out transform hover:scale-105 whitespace-nowrap">
+                <i class="fas fa-plus mr-2.5"></i> Create New Ticket
+            </a>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+
+        {% if messages %}
+        <div class="space-y-5 mb-8 sm:mb-12">
+            {% for message in messages %}
+            <div class="w-full p-5 rounded-xl border-2 flex items-start shadow-lg 
+                {% if message.tags == 'success' %}border-theme-primary bg-brand-surface text-theme-primary-text-on-light
+                {% elif message.tags == 'error' %}border-theme-error bg-brand-surface text-theme-error-text
+                {% elif message.tags == 'info' %}border-theme-primary bg-brand-surface text-theme-primary-text-on-light
+                {% elif message.tags == 'warning' %}border-theme-warning bg-brand-surface text-brand-warning-dark border-brand-warning
+                {% else %}border-border-strong-on-light bg-brand-surface text-text-secondary-on-light{% endif %}" role="alert">
+                <i class="fas 
+                {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% elif message.tags == 'info' %}fa-info-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-bell{% endif %} 
+                mr-4 text-2xl shrink-0 mt-0.5"></i>
+                <span class="text-base font-medium">{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="bg-brand-surface shadow-2xl rounded-2xl overflow-hidden">
+            {% if user_tickets %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-border-soft-on-light">
+                        <thead class="bg-theme-primary-bg-ultra-light">
+                            <tr>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-theme-primary-text-on-light uppercase tracking-wider">Ticket ID</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-theme-primary-text-on-light uppercase tracking-wider">Subject</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-theme-primary-text-on-light uppercase tracking-wider">Category</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-theme-primary-text-on-light uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-theme-primary-text-on-light uppercase tracking-wider">Last Updated</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-theme-primary-text-on-light uppercase tracking-wider">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border-soft-on-light">
+                            {% for ticket in user_tickets %}
+                            <tr class="ticket-row hover:bg-theme-primary-bg-ultra-light transition-colors duration-150 ease-in-out cursor-pointer" data-url="{% url 'AudioXApp:user_ticket_detail' ticket.id %}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-theme-primary hover:text-theme-primary-hover align-middle">
+                                    {{ ticket.ticket_display_id }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-brand-text-primary max-w-xs truncate align-middle" title="{{ ticket.subject }}">
+                                    {{ ticket.subject|truncatewords:8 }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-secondary-on-light align-middle">
+                                    {{ ticket.category.name|default:"N/A" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap align-middle">
+                                    {% with ticket_status=ticket.status|lower %}
+                                    <span class="px-3 py-1.5 text-xs font-semibold rounded-lg inline-block tracking-wide border
+                                        {% if ticket_status == 'open' %}bg-theme-primary-bg-subtle text-theme-primary-text-on-light border-theme-primary-border-subtle
+                                        {% elif ticket_status == 'processing' %}bg-theme-warning-light text-brand-warning-dark border-brand-warning
+                                        {% elif ticket_status == 'awaiting_user_response' or ticket_status == 'awaiting_user' %}bg-theme-error-bg-subtle text-theme-error-text border-theme-error-border-subtle
+                                        {% elif ticket_status == 'reopened' %}bg-yellow-400 bg-opacity-20 text-yellow-700 border-yellow-400
+                                        {% elif ticket_status == 'resolved' %}bg-theme-green-light text-theme-text-icon-green border-theme-green
+                                        {% elif ticket_status == 'closed' %}bg-border-soft-on-light text-text-secondary-on-light border-border-strong-on-light
+                                        {% else %}bg-gray-100 text-gray-600 border-gray-300{% endif %}">
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                    {% endwith %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-secondary-on-light align-middle" title="{{ ticket.updated_at|date:'N j, Y, P T' }}">
+                                    {{ ticket.updated_at|naturaltime }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-secondary-on-light align-middle" title="{{ ticket.created_at|date:'N j, Y, P T' }}">
+                                    {{ ticket.created_at|date:"M d, Y" }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {# Pagination can be added here and styled with Tailwind if needed #}
+            {% else %}
+                <div class="text-center py-16 px-6">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-theme-primary-bg-ultra-light rounded-full mb-6">
+                        <i class="fas fa-ticket-alt fa-3x text-theme-primary opacity-75"></i>
+                    </div>
+                    <p class="text-xl font-semibold text-brand-text-primary mb-2">No Support Tickets Yet</p>
+                    <p class="text-text-secondary-on-light max-w-md mx-auto">
+                        You haven't submitted any support tickets. If you need assistance, please create a new ticket, and we'll be happy to help.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript_extra %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ticketRows = document.querySelectorAll('.ticket-row');
+    ticketRows.forEach(function(row) {
+        row.addEventListener('click', function() {
+            const url = this.dataset.url;
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,430 @@
+{% extends 'admin/admin_base.html' %} {# Assumes admin_base.html is in templates/admin/ and includes Tailwind CSS, Font Awesome, and sets body class e.g., <body class="bg-slate-50"> #}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+
+{% block title %}Creator Details: {{ creator.creator_name }} - Admin (AudioX){% endblock %}
+
+{% block header_title %}
+    <h1 class="text-2xl md:text-3xl font-bold text-[#091e65]">
+        Creator Details: <span class="text-slate-700 font-medium">{{ creator.creator_name }}</span>
+    </h1>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+{# All styling is done via Tailwind CSS. Ensure admin_base.html body has bg-slate-50 or similar #}
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto p-4 sm:p-6 lg:p-8 space-y-6 md:space-y-8">
+
+    {# Django Messages #}
+    {% if messages %}
+        <div class="space-y-4">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg shadow-lg flex items-start
+                    {% if message.tags == 'success' %} bg-white border-l-4 border-[#091e65] text-slate-800
+                    {% elif message.tags == 'error' %} bg-red-50 border-l-4 border-red-500 text-red-800
+                    {% elif message.tags == 'warning' %} bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800
+                    {% else %} bg-slate-100 border-l-4 border-slate-400 text-slate-800
+                    {% endif %}"
+                    role="alert">
+                    <div class="flex-shrink-0 mr-3 pt-0.5">
+                        <i class="fas 
+                        {% if message.tags == 'success' %} fa-check-circle text-[#091e65]
+                        {% elif message.tags == 'error' %} fa-exclamation-circle text-red-500
+                        {% elif message.tags == 'warning' %} fa-exclamation-triangle text-yellow-500
+                        {% else %} fa-info-circle text-slate-500
+                        {% endif %} text-xl"></i>
+                    </div>
+                    <div class="flex-1 text-sm">
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Action Buttons Bar #}
+    <div class="bg-white p-4 rounded-xl shadow-xl flex flex-wrap items-center justify-start gap-3 print:hidden">
+        <a href="{% url 'AudioXApp:admin_all_creators_list' %}" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#091e65]/50">
+            <i class="fas fa-arrow-left mr-2 text-xs"></i>Back to All Creators
+        </a>
+        <a href="{% url 'AudioXApp:admin_creator_application_history' %}?q={{ creator.cid|default:creator.user.user_id }}" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-[#091e65]/30 bg-white text-[#091e65] hover:bg-[#091e65]/5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#091e65]/50">
+            <i class="fas fa-history mr-2 text-xs"></i>View History
+        </a>
+        {% if creator.is_banned %}
+            <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-[#091e65] hover:bg-[#071852] text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#091e65]/50"
+                    data-creator-id="{{ creator.user.user_id }}" 
+                    data-creator-name="{{ creator.creator_name|default:creator.user.username|escapejs }}" 
+                    data-unban-url="{% url 'AudioXApp:admin_unban_creator' creator.user.user_id %}">
+                <i class="fas fa-unlock-alt mr-2 text-xs"></i>Unban Creator
+            </button>
+        {% else %}
+            <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                    onclick="openBanModal('{{ creator.user.user_id }}', '{{ creator.creator_name|escapejs }}')">
+                <i class="fas fa-user-slash mr-2 text-xs"></i>Ban Creator
+            </button>
+        {% endif %}
+    </div>
+
+    {# Main Details Grid - For better layout of cards #}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        {# Left Column - Profile & User Account #}
+        <div class="lg:col-span-2 space-y-6 md:space-y-8">
+            {# Profile Information Card #}
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/70">
+                    <h3 class="text-lg font-semibold text-[#091e65]">Profile Information</h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-x-6 gap-y-6 items-center">
+                        <div class="sm:col-span-4 lg:col-span-3 flex flex-col items-center sm:items-start">
+                            {% if creator.creator_profile_pic %}
+                                <img src="{{ creator.creator_profile_pic.url }}" alt="{{ creator.creator_name }} profile" class="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-lg mb-3">
+                            {% elif creator.user.profile_pic %}
+                                <img src="{{ creator.user.profile_pic.url }}" alt="{{ creator.creator_name }} profile" class="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-lg mb-3">
+                            {% else %}
+                                <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#091e65]/10 text-[#091e65] flex items-center justify-center font-bold text-4xl border-2 border-[#091e65]/20 shadow-sm mb-3">
+                                    {{ creator.creator_name|slice:":1"|upper }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <dl class="sm:col-span-8 lg:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                            <div>
+                                <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Creator Name</dt>
+                                <dd class="mt-1 text-base font-semibold text-slate-800">{{ creator.creator_name }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Unique Name</dt>
+                                <dd class="mt-1 text-base font-mono text-[#091e65]">@{{ creator.creator_unique_name }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Creator ID (CID)</dt>
+                                <dd class="mt-1 text-sm font-mono text-slate-700">{{ creator.cid|default:"Not Assigned" }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</dt>
+                                <dd class="mt-1 text-sm">
+                                    {% if creator.is_banned %}
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 ring-1 ring-inset ring-red-200"><i class="fas fa-ban"></i> Banned</span>
+                                    {% elif creator.verification_status == 'approved' %}
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#091e65]/10 text-[#091e65] ring-1 ring-inset ring-[#091e65]/20"><i class="fas fa-check-circle"></i> Approved</span>
+                                    {% elif creator.verification_status == 'pending' %}
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200"><i class="fas fa-hourglass-half"></i> Pending</span>
+                                    {% elif creator.verification_status == 'rejected' %}
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-600 ring-1 ring-inset ring-red-200"><i class="fas fa-times-circle"></i> Rejected</span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200">{{ creator.get_verification_status_display }}</span>
+                                    {% endif %}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            {# User Account Information Card #}
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/70">
+                    <h3 class="text-lg font-semibold text-[#091e65]">User Account</h3>
+                </div>
+                <dl class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Full Name</dt>
+                        <dd class="mt-1 text-sm text-slate-700">{{ creator.user.full_name|default:"N/A" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Username</dt>
+                        <dd class="mt-1 text-sm font-mono text-slate-600">{{ creator.user.username }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email Address</dt>
+                        <dd class="mt-1 text-sm text-slate-700">{{ creator.user.email }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">User ID (UID)</dt>
+                        <dd class="mt-1 text-xs font-mono text-slate-500">{{ creator.user.user_id }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined Date</dt>
+                        <dd class="mt-1 text-sm text-slate-700">{{ creator.user.date_joined|date:"F j, Y, P" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">2FA Enabled</dt>
+                        <dd class="mt-1 text-sm font-medium">
+                            {% if creator.user.is_2fa_enabled %}
+                                <span class="text-[#091e65] font-semibold">Yes</span>
+                            {% else %}
+                                <span class="text-red-600">No</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        {# Right Column - Financials, Verification & Docs #}
+        <div class="lg:col-span-1 space-y-6 md:space-y-8">
+            {# Financials & Content Card #}
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/70">
+                    <h3 class="text-lg font-semibold text-[#091e65]">Financials & Content</h3>
+                </div>
+                <dl class="p-6 grid grid-cols-1 gap-y-5">
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Available Balance</dt>
+                        <dd class="mt-1 text-lg font-semibold text-slate-800">PKR {{ creator.available_balance|default:"0.00"|floatformat:2|intcomma }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Earnings</dt>
+                        <dd class="mt-1 text-lg font-semibold text-slate-800">PKR {{ creator.total_earning|default:"0.00"|floatformat:2|intcomma }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Audiobooks Uploaded</dt>
+                        <dd class="mt-1 text-sm font-medium text-slate-700">{{ total_audiobooks|intcomma }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">User Reports</dt>
+                        <dd class="mt-1 text-sm text-slate-500 italic">N/A (Future Feature)</dd>
+                    </div>
+                </dl>
+            </div>
+
+            {# Verification & Documents Card #}
+            <div class="bg-white rounded-xl shadow-xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/70">
+                    <h3 class="text-lg font-semibold text-[#091e65]">Verification & Documents</h3>
+                </div>
+                <dl class="p-6 space-y-5">
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Terms Accepted At</dt>
+                        <dd class="mt-1 text-sm text-slate-700">{{ creator.terms_accepted_at|date:"F j, Y, P"|default:"N/A" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Application Date</dt>
+                        <dd class="mt-1 text-sm text-slate-700">{{ creator.last_application_date|date:"F j, Y, P"|default:"N/A" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Approved By</dt>
+                        <dd class="mt-1 text-sm text-slate-700">{{ creator.approved_by.username|default:"N/A" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Approved At</dt>
+                        <dd class="mt-1 text-sm text-slate-700">{{ creator.approved_at|date:"F j, Y, P"|default:"N/A" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Rejection Reason</dt>
+                        <dd class="mt-1 text-sm text-slate-700">{{ creator.rejection_reason|default:"N/A" }}</dd>
+                    </div>
+                    
+                    {# CNIC Images #}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
+                        <div>
+                            <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">CNIC Front</dt>
+                            <dd>
+                                {% if creator.cnic_front %}
+                                    <a href="{{ creator.cnic_front.url }}" target="_blank" title="View Full Size CNIC Front" class="block group relative w-full aspect-[1.586/1] rounded-lg overflow-hidden border-2 border-slate-200 hover:border-[#091e65]/50 transition-all duration-150 shadow hover:shadow-md">
+                                        <img src="{{ creator.cnic_front.url }}" alt="CNIC Front" class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105">
+                                        <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                            <i class="fas fa-eye text-white text-xl"></i>
+                                        </div>
+                                    </a>
+                                {% else %}
+                                    <div class="flex items-center justify-center w-full aspect-[1.586/1] text-xs text-slate-400 bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 p-2">Not Provided</div>
+                                {% endif %}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">CNIC Back</dt>
+                            <dd>
+                                {% if creator.cnic_back %}
+                                    <a href="{{ creator.cnic_back.url }}" target="_blank" title="View Full Size CNIC Back" class="block group relative w-full aspect-[1.586/1] rounded-lg overflow-hidden border-2 border-slate-200 hover:border-[#091e65]/50 transition-all duration-150 shadow hover:shadow-md">
+                                        <img src="{{ creator.cnic_back.url }}" alt="CNIC Back" class="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105">
+                                        <div class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                            <i class="fas fa-eye text-white text-xl"></i>
+                                        </div>
+                                    </a>
+                                {% else %}
+                                    <div class="flex items-center justify-center w-full aspect-[1.586/1] text-xs text-slate-400 bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 p-2">Not Provided</div>
+                                {% endif %}
+                            </dd>
+                        </div>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    {# Ban Creator Modal - Reusing the same modal structure #}
+    <div id="ban-modal-overlay" class="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-[100] p-4 transition-opacity duration-300 ease-out opacity-0 invisible pointer-events-none print:hidden">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md transition-all duration-300 ease-out scale-95 opacity-0" id="ban-modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="ban-modal-title" class="text-xl font-semibold text-[#091e65]">Ban Creator</h2>
+                <button onclick="closeBanModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#091e65]/50">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="ban-form" method="post" action=""> {# Action set by JS #}
+                {% csrf_token %}
+                <div class="mb-5">
+                    <label for="ban_reason_input" class="block text-sm font-medium text-slate-700 mb-1.5">Reason for Ban <span class="text-red-500">*</span></label>
+                    <textarea id="ban_reason_input" name="ban_reason" rows="4" required
+                              class="w-full p-3 border border-slate-300 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] transition-all duration-150 shadow-sm"
+                              placeholder="Provide a clear and concise reason for banning..."></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-5 border-t border-slate-200">
+                    <button type="button" onclick="closeBanModal()" class="px-4 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white text-slate-700 transition-all duration-150 ease-in-out hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-400">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold border border-transparent bg-red-600 text-white transition-all duration-150 ease-in-out hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 shadow-sm hover:shadow-md">
+                        <i class="fas fa-user-slash mr-1.5"></i>Confirm Ban
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Ban Modal Logic (same as list view)
+    const banModalOverlay = document.getElementById('ban-modal-overlay');
+    const banModalContent = document.getElementById('ban-modal-content');
+    const banModalTitle = document.getElementById('ban-modal-title');
+    const banForm = document.getElementById('ban-form');
+    const banReasonInput = document.getElementById('ban_reason_input');
+
+    window.openBanModal = function(userId, creatorName) {
+        if (!banModalOverlay || !banModalContent || !banModalTitle || !banForm || !banReasonInput) {
+            console.error("Ban modal elements not found!");
+            return;
+        }
+        banModalTitle.textContent = `Ban Creator: ${creatorName}`;
+        banForm.action = `/admin/creators/${userId}/ban/`; 
+        banReasonInput.value = '';
+        
+        banModalOverlay.classList.remove('invisible', 'opacity-0', 'pointer-events-none');
+        banModalOverlay.classList.add('opacity-100', 'pointer-events-auto');
+        banModalContent.classList.remove('scale-95', 'opacity-0');
+        banModalContent.classList.add('scale-100', 'opacity-100');
+        
+        setTimeout(() => banReasonInput.focus(), 50);
+    }
+
+    window.closeBanModal = function() {
+        if (!banModalOverlay || !banModalContent) return;
+        
+        banModalOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+        banModalOverlay.classList.add('opacity-0');
+        banModalContent.classList.remove('scale-100', 'opacity-100');
+        banModalContent.classList.add('scale-95', 'opacity-0');
+        
+        setTimeout(() => {
+            banModalOverlay.classList.add('invisible', 'pointer-events-none');
+        }, 300);
+    }
+
+    if (banModalOverlay) {
+        banModalOverlay.addEventListener('click', (event) => {
+            if (event.target === banModalOverlay) {
+                closeBanModal();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && banModalOverlay && !banModalOverlay.classList.contains('invisible')) {
+            closeBanModal();
+        }
+    });
+
+    // Unban logic using SweetAlert2
+    const unbanButtons = document.querySelectorAll('button[data-unban-url]');
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '{{ csrf_token }}';
+
+    unbanButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const creatorName = this.dataset.creatorName;
+            const unbanUrl = this.dataset.unbanUrl;
+
+            Swal.fire({
+                title: `<span class="text-[#091e65] text-xl">Unban: ${creatorName}</span>`,
+                html: `
+                    <p class="text-sm text-slate-600 mb-3 text-left">Provide a reason for unbanning this creator (for internal records).</p>
+                    <textarea id="swal-unban-reason" 
+                              class="w-full p-3 border border-slate-300 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] transition-all duration-150 shadow-sm" 
+                              placeholder="Reason for unbanning..." 
+                              rows="3"></textarea>
+                `,
+                iconHtml: '<i class="fas fa-unlock-alt text-[#091e65] text-3xl"></i>',
+                showCancelButton: true,
+                confirmButtonText: 'Confirm Unban',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    popup: 'rounded-xl shadow-xl p-5 sm:p-6 bg-white',
+                    title: 'font-semibold text-lg text-[#091e65] mb-1 text-left',
+                    htmlContainer: 'text-sm text-slate-600 text-left mt-0',
+                    confirmButton: 'px-4 py-2 rounded-lg text-sm font-semibold bg-[#091e65] hover:bg-[#071852] text-white transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]/50',
+                    cancelButton: 'px-4 py-2 rounded-lg text-sm font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-slate-400',
+                    actions: 'mt-5 space-x-3 w-full flex justify-end',
+                    validationMessage: 'text-red-500 text-xs mt-1 text-left',
+                    icon: 'border-4 border-[#091e65]/20 rounded-full p-2 w-16 h-16 mt-2 mb-2',
+                },
+                buttonsStyling: false, 
+                preConfirm: () => {
+                    const reasonEl = document.getElementById('swal-unban-reason');
+                    const reason = reasonEl.value.trim();
+                    if (!reason) {
+                        Swal.showValidationMessage('<i class="fas fa-exclamation-circle mr-1"></i>Unban reason is required.');
+                        reasonEl.classList.add('!border-red-500', 'focus:!ring-red-500/50');
+                        reasonEl.classList.remove('border-slate-300', 'focus:ring-[#091e65]/50', 'focus:border-[#091e65]');
+                        return false;
+                    }
+                    reasonEl.classList.remove('!border-red-500', 'focus:!ring-red-500/50');
+                    reasonEl.classList.add('border-slate-300', 'focus:ring-[#091e65]/50', 'focus:border-[#091e65]');
+                    return reason;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const unbanReason = result.value;
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = unbanUrl;
+                    form.style.display = 'none';
+
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+
+                    const reasonInput = document.createElement('input');
+                    reasonInput.type = 'hidden';
+                    reasonInput.name = 'unban_reason';
+                    reasonInput.value = unbanReason;
+                    form.appendChild(reasonInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+
+                    Swal.fire({ 
+                        title: '<span class="text-[#091e65]">Processing...</span>', 
+                        html: `<span class="text-slate-600">Attempting to unban ${creatorName}...</span>`, 
+                        allowOutsideClick: false, 
+                        didOpen: () => { Swal.showLoading(); },
+                        customClass: { popup: 'rounded-xl shadow-xl p-6 bg-white' },
+                        buttonsStyling: false,
+                    });
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

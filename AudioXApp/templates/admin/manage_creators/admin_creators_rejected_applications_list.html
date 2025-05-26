@@ -1,0 +1,308 @@
+{% extends 'admin/admin_base.html' %} {# Assumes admin_base.html is in templates/admin/ and includes Tailwind CSS, Font Awesome, and sets body class e.g., <body class="bg-slate-100"> #}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+
+{% block title %}Rejected Creator Applications - Admin (AudioX){% endblock %}
+
+{% block header_title %}
+    <h1 class="text-2xl md:text-3xl font-bold text-[#091e65]">
+        Rejected Creator Applications
+    </h1>
+{% endblock %}
+
+{% block extra_head %}
+{# All styling is done via Tailwind CSS. Ensure admin_base.html body has bg-slate-100 or similar #}
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+    {# Django Messages #}
+    {% if messages %}
+        <div class="space-y-4">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg shadow-md flex items-start
+                    {% if message.tags == 'success' %} bg-green-50 border-l-4 border-green-500 text-green-800
+                    {% elif message.tags == 'error' %} bg-red-50 border-l-4 border-red-500 text-red-800
+                    {% elif message.tags == 'warning' %} bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800
+                    {% else %} bg-blue-50 border-l-4 border-blue-400 text-blue-800
+                    {% endif %}"
+                    role="alert">
+                    <div class="flex-shrink-0 mr-3 pt-0.5">
+                        <i class="fas 
+                        {% if message.tags == 'success' %} fa-check-circle text-green-600
+                        {% elif message.tags == 'error' %} fa-exclamation-circle text-red-600
+                        {% elif message.tags == 'warning' %} fa-exclamation-triangle text-yellow-600
+                        {% else %} fa-info-circle text-blue-600
+                        {% endif %} text-xl"></i>
+                    </div>
+                    <div class="flex-1 text-sm font-medium">
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Search Form Card - Refined #}
+    <div class="bg-white p-6 rounded-xl shadow-xl">
+        <form method="GET" action="{% url 'AudioXApp:admin_rejected_creator_applications' %}" id="search-form" class="space-y-3">
+            <div>
+                <label for="search-input" class="block text-sm font-semibold text-slate-700 mb-1">Search Rejected Applications</label>
+                 <p class="text-xs text-slate-500 mb-2">Filter by Creator Name, Email, CID, Username, or Rejection Reason.</p>
+            </div>
+            <div class="flex flex-col sm:flex-row items-stretch gap-3">
+                <div class="relative flex-grow">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <input 
+                        type="search" name="q" id="search-input" 
+                        class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/60 focus:border-[#091e65] focus:outline-none placeholder-slate-400 text-slate-800 text-sm transition duration-150 ease-in-out shadow-sm"
+                        placeholder="Enter search term..." value="{{ search_query|default:'' }}">
+                </div>
+                <button type="submit" class="w-full sm:w-auto flex items-center justify-center px-6 py-2.5 text-white bg-[#091e65] hover:bg-[#071852] rounded-lg text-sm font-semibold transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65]/70 shadow-md hover:shadow-lg">
+                    <i class="fas fa-search mr-2 text-xs"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# Loading Indicator #}
+    <div id="loading-indicator" class="hidden items-center justify-center gap-4 text-slate-700 font-medium py-12 text-center">
+        <svg class="animate-spin h-10 w-10 text-[#091e65]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-xl">Searching rejected applications...</span>
+    </div>
+
+    {# Section Title for Results #}
+    <div class="flex flex-col sm:flex-row justify-between sm:items-baseline mb-6 border-b-2 border-red-500/40 pb-3">
+        <h2 class="text-2xl font-semibold text-slate-800">
+            {{ filter_title|default:"Rejected Applications" }}
+        </h2>
+        <span class="text-sm font-medium text-slate-500 mt-1 sm:mt-0">Total Found: {{ rejected_creators.paginator.count }}</span>
+    </div>
+
+    {% if rejected_creators.object_list %}
+        <div class="space-y-6">
+            {% for creator in rejected_creators %}
+            {% with latest_rejected_log=creator.latest_rejected_log_list.0 %}
+            <article class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200 ease-in-out" id="creator-{{ creator.user.user_id }}">
+                <div class="flex">
+                    {# Status Indicator Column #}
+                    <div class="w-16 flex-shrink-0 bg-red-500 rounded-l-xl flex flex-col items-center justify-center p-4 text-white text-center">
+                        <i class="fas fa-times-circle fa-3x mb-2"></i>
+                        <span class="text-xs font-bold uppercase tracking-wider">Rejected</span>
+                    </div>
+
+                    {# Main Content Column #}
+                    <div class="flex-grow p-5 sm:p-6">
+                        <header class="mb-4 pb-3 border-b border-slate-200">
+                            <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-slate-800 leading-tight hover:text-[#091e65] transition-colors">
+                                        <a href="{% url 'AudioXApp:admin_view_creator_detail' creator.user.user_id %}">{{ creator.creator_name }}</a>
+                                    </h3>
+                                    <p class="text-sm font-mono text-slate-500 leading-tight">@{{ creator.creator_unique_name }}</p>
+                                </div>
+                                <div class="text-xs text-slate-500 sm:text-right mt-1 sm:mt-0">
+                                    {% if latest_rejected_log and latest_rejected_log.processed_at %}
+                                        <p>Rejected: {{ latest_rejected_log.processed_at|localtime|date:"M d, Y" }}</p>
+                                        <p>({{ latest_rejected_log.processed_at|naturaltime }})</p>
+                                    {% else %}
+                                        <p>Date N/A</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </header>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 text-sm">
+                            {# Applicant Information #}
+                            <section class="space-y-2">
+                                <h5 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Applicant Details</h5>
+                                <p><strong class="font-medium text-slate-600">Full Name:</strong> {{ creator.user.full_name|default:"N/A" }}</p>
+                                <p><strong class="font-medium text-slate-600">Email:</strong> <span class="break-all">{{ creator.user.email }}</span></p>
+                                <p><strong class="font-medium text-slate-600">User ID:</strong> <span class="font-mono text-xs">{{ creator.user.user_id }}</span></p>
+                                {% if creator.cid %}
+                                <p><strong class="font-medium text-slate-600">Creator ID (CID):</strong> <span class="font-mono text-xs">{{ creator.cid }}</span></p>
+                                {% endif %}
+                            </section>
+
+                            {# Rejection Details #}
+                            <section class="space-y-2">
+                                <h5 class="text-xs font-semibold text-red-500 uppercase tracking-wider">Rejection Information</h5>
+                                {% if latest_rejected_log %}
+                                <p><strong class="font-medium text-slate-600">Rejected By:</strong> <span class="text-[#091e65]">{{ latest_rejected_log.processed_by.username|default:"System" }}</span></p>
+                                <p><strong class="font-medium text-slate-600">Attempt #:</strong> {{ latest_rejected_log.attempt_number_monthly|default:"N/A" }}</p>
+                                {% endif %}
+                                <div>
+                                    <p class="font-medium text-slate-600 mb-0.5">Reason Provided:</p>
+                                    <div class="p-3 rounded-md border border-red-200 bg-red-50/60 text-xs text-red-700 whitespace-pre-wrap shadow-inner">
+                                        {{ latest_rejected_log.rejection_reason|default:creator.rejection_reason|default:"No specific reason provided." }}
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        {# CNIC and History Link - Footer of content area #}
+                        <footer class="mt-6 pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div class="flex flex-wrap gap-3">
+                                {% with cnic_front_to_display=latest_rejected_log.cnic_front_submitted.url|default:creator.cnic_front.url %}
+                                {% if cnic_front_to_display %}
+                                    <a href="{{ cnic_front_to_display }}" target="_blank" class="block group relative w-28 h-[70px] rounded-md overflow-hidden border-2 border-slate-300 hover:border-[#091e65]/70 transition shadow hover:shadow-md" title="View CNIC Front">
+                                        <img src="{{ cnic_front_to_display }}" alt="CNIC Front" class="w-full h-full object-cover transition-transform group-hover:scale-105" onerror="this.onerror=null; this.src='https://placehold.co/112x70/e2e8f0/94a3b8?text=Front'; this.classList.add('!border-red-400');">
+                                        <div class="absolute inset-0 bg-slate-900/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-eye text-white text-lg"></i></div>
+                                    </a>
+                                {% else %}
+                                    <div class="flex items-center justify-center w-28 h-[70px] text-[10px] text-slate-400 bg-slate-100 rounded-md border-2 border-dashed border-slate-300 p-1 text-center">Front N/A</div>
+                                {% endif %}
+                                {% endwith %}
+                                {% with cnic_back_to_display=latest_rejected_log.cnic_back_submitted.url|default:creator.cnic_back.url %}
+                                {% if cnic_back_to_display %}
+                                    <a href="{{ cnic_back_to_display }}" target="_blank" class="block group relative w-28 h-[70px] rounded-md overflow-hidden border-2 border-slate-300 hover:border-[#091e65]/70 transition shadow hover:shadow-md" title="View CNIC Back">
+                                        <img src="{{ cnic_back_to_display }}" alt="CNIC Back" class="w-full h-full object-cover transition-transform group-hover:scale-105" onerror="this.onerror=null; this.src='https://placehold.co/112x70/e2e8f0/94a3b8?text=Back'; this.classList.add('!border-red-400');">
+                                        <div class="absolute inset-0 bg-slate-900/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-eye text-white text-lg"></i></div>
+                                    </a>
+                                {% else %}
+                                    <div class="flex items-center justify-center w-28 h-[70px] text-[10px] text-slate-400 bg-slate-100 rounded-md border-2 border-dashed border-slate-300 p-1 text-center">Back N/A</div>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                            <a href="{% url 'AudioXApp:admin_creator_application_history' %}?q={{ creator.user.user_id }}" class="w-full sm:w-auto mt-3 sm:mt-0 flex items-center justify-center px-4 py-2 rounded-lg text-xs font-semibold border border-[#091e65]/50 bg-white text-[#091e65] transition-all duration-200 ease-in-out hover:bg-[#091e65]/5 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]/50 shadow-sm hover:shadow-md">
+                                <i class="fas fa-history mr-2"></i> View Full History
+                            </a>
+                        </footer>
+                    </div>
+                </div>
+            </article>
+            {% endwith %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center text-slate-500 py-20 px-6 bg-white rounded-xl border-2 border-dashed border-slate-300 shadow-xl">
+            <i class="fas fa-folder-open fa-5x text-slate-300 mb-6"></i>
+            <p class="text-2xl font-semibold text-slate-700 mb-2">No Rejected Applications Found</p>
+            {% if search_query %}
+            <p class="text-base text-slate-500">No rejected applications found matching your search for "{{search_query}}".</p>
+            {% else %}
+            <p class="text-base text-slate-500">There are currently no rejected creator applications.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# Pagination #}
+    {% if rejected_creators.has_other_pages %}
+    <div class="mt-12 flex items-center justify-between border-t-2 border-slate-200 pt-8">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if rejected_creators.has_previous %}
+                <a href="?q={{ search_query|urlencode }}&page={{ rejected_creators.previous_page_number }}" class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-100 transition-colors">
+                    Previous
+                </a>
+            {% else %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-slate-200 text-sm font-medium rounded-md text-slate-400 bg-slate-100 cursor-not-allowed">
+                    Previous
+                </span>
+            {% endif %}
+            {% if rejected_creators.has_next %}
+                <a href="?q={{ search_query|urlencode }}&page={{ rejected_creators.next_page_number }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-100 transition-colors">
+                    Next
+                </a>
+            {% else %}
+                <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-200 text-sm font-medium rounded-md text-slate-400 bg-slate-100 cursor-not-allowed">
+                    Next
+                </span>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-slate-600">
+                    Showing
+                    <span class="font-semibold text-[#091e65]">{{ rejected_creators.start_index }}</span>
+                    to
+                    <span class="font-semibold text-[#091e65]">{{ rejected_creators.end_index }}</span>
+                    of
+                    <span class="font-semibold text-[#091e65]">{{ rejected_creators.paginator.count }}</span>
+                    results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px overflow-hidden border border-slate-300" aria-label="Pagination">
+                    {% if rejected_creators.has_previous %}
+                        <a href="?q={{ search_query|urlencode }}&page={{ rejected_creators.previous_page_number }}" class="relative inline-flex items-center px-3 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left h-5 w-4"></i>
+                        </a>
+                    {% else %}
+                        <span class="relative inline-flex items-center px-3 py-2 bg-slate-100 text-sm font-medium text-slate-400 cursor-not-allowed border-r border-slate-300">
+                            <span class="sr-only">Previous</span>
+                            <i class="fas fa-chevron-left h-5 w-4"></i>
+                        </span>
+                    {% endif %}
+
+                    {% for num in rejected_creators.paginator.get_elided_page_range %}
+                        {% if num == rejected_creators.paginator.ELLIPSIS %}
+                             <span class="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-slate-700 border-r border-slate-300">...</span>
+                        {% elif rejected_creators.number == num %}
+                            <span aria-current="page" class="relative z-10 inline-flex items-center px-4 py-2 bg-[#091e65]/10 text-sm font-semibold text-[#091e65] focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                                {{ num }}
+                            </span>
+                        {% else %}
+                            <a href="?q={{ search_query|urlencode }}&page={{ num }}" class="relative inline-flex items-center px-4 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-[#091e65] transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50 border-r border-slate-300">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if rejected_creators.has_next %}
+                        <a href="?q={{ search_query|urlencode }}&page={{ rejected_creators.next_page_number }}" class="relative inline-flex items-center px-3 py-2 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-1 focus:ring-[#091e65]/50 focus:border-[#091e65]/50">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right h-5 w-4"></i>
+                        </a>
+                    {% else %}
+                         <span class="relative inline-flex items-center px-3 py-2 bg-slate-100 text-sm font-medium text-slate-400 cursor-not-allowed">
+                            <span class="sr-only">Next</span>
+                            <i class="fas fa-chevron-right h-5 w-4"></i>
+                        </span>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %} {# End pagination #}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('search-form'); // Ensure this ID is on your form
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const searchInput = document.getElementById('search-input');
+
+    const getUrlParameter = (name) => {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        const results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    };
+
+    const initialSearchQuery = getUrlParameter('q');
+    if (initialSearchQuery && searchInput) {
+        searchInput.value = initialSearchQuery;
+    }
+
+    if (searchForm && loadingIndicator) {
+        searchForm.addEventListener('submit', function() {
+            if (searchInput && searchInput.value.trim()) {
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

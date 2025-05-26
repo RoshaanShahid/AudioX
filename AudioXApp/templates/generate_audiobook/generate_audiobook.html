@@ -7,7 +7,7 @@
     <aside class="w-full md:w-1/3 lg:w-2/5 bg-[#091e65] text-white p-8 sm:p-12 flex flex-col justify-between overflow-y-auto">
         <div>
             <div class="mb-12">
-                <a href="#" class="inline-flex items-center space-x-3 mb-3">
+                <a href="{% url 'AudioXApp:home' %}" class="inline-flex items-center space-x-3 mb-3"> {# Ensure 'AudioXApp:home' is your correct homepage URL name #}
                     <span class="bg-white/20 p-3 rounded-xl">
                         <svg class="h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
@@ -25,7 +25,7 @@
                     <svg class="h-7 w-7 text-white/90 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.5 3.75a2.25 2.25 0 00-2.25 2.25v12a2.25 2.25 0 002.25 2.25h3a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25h-3zm-2.25 2.25V18h7.5V6H8.25zm6.75-1.5h-3a.75.75 0 000 1.5h3a.75.75 0 000-1.5z" clip-rule="evenodd" /></svg>
                     <div>
                         <h3 class="text-xl font-semibold">Simple Upload</h3>
-                        <p class="text-white/70 text-sm">Easily select your PDF or Image document.</p>
+                        <p class="text-white/70 text-sm">Easily select your PDF, DOC, or DOCX document.</p>
                     </div>
                 </div>
                 <div class="flex items-start space-x-3">
@@ -46,14 +46,14 @@
         </div>
         <footer class="mt-12 text-center text-sm text-white/60">
             <p>&copy; {% now "Y" %} AudioXApp. All rights reserved.</p>
-            <p>A YourBrand Innovation.</p>
+            <p>An Innovation by AudioX.</p>
         </footer>
     </aside>
 
     <main class="w-full md:w-2/3 lg:w-3/5 bg-white flex-1 p-8 sm:p-12 lg:p-16 overflow-y-auto">
         <header class="mb-10 md:mb-12">
             <h2 class="text-4xl font-bold text-gray-800">Generate Audio from Document</h2>
-            <p class="text-lg text-gray-500 mt-2">Upload a PDF or Image. Follow the simple steps below.</p>
+            <p class="text-lg text-gray-500 mt-2">Upload your PDF, DOC, or DOCX document and convert it to audio.</p>
         </header>
 
         <section id="uploadSection" class="mb-12">
@@ -61,14 +61,17 @@
                 <span class="flex items-center justify-center w-10 h-10 border-2 border-[#091e65] text-[#091e65] rounded-lg text-xl font-bold mr-4">1</span>
                 <h3 class="text-2xl font-semibold text-gray-700">Upload & Configure</h3>
             </div>
+            {# The form action points to the URL name for the view that handles GET and POST #}
             <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:generate_audio_from_document' %}" class="space-y-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
                 {% csrf_token %}
                 <div>
                     <label for="{{ form.document_file.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                        {{ form.document_file.label|default:"Document (PDF or Image)" }}
+                        {{ form.document_file.label|default:"Document (PDF, DOC, DOCX)" }}
+                         <span class="text-red-500">*</span>
                     </label>
                     {{ form.document_file }} {# Renders the file input field #}
                     <script>
+                        // Apply styling to Django form field if needed, or rely on global styles
                         var fileInput = document.getElementById("{{ form.document_file.id_for_label }}");
                         if (fileInput) {
                             fileInput.className = 'block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/50 file:mr-4 file:py-2.5 file:px-5 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#091e65] file:text-white hover:file:bg-[#0d2a8a] file:transition-colors file:duration-150 p-1';
@@ -77,16 +80,19 @@
                     {% if form.document_file.help_text %}
                         <p class="text-xs text-gray-500 mt-1.5">{{ form.document_file.help_text }}</p>
                     {% endif %}
-                    {% if form.document_file.errors %}
-                        {% for error in form.document_file.errors %}
-                            <p class="text-red-600 text-xs font-medium mt-1.5 error-message-file">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
+                    <div class="text-red-600 text-xs font-medium mt-1.5 error-message-file">
+                        {% if form.document_file.errors %}
+                            {% for error in form.document_file.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div>
                     <label for="{{ form.language.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
                         {{ form.language.label|default:"Audio Language" }}
+                        <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
                         {{ form.language }} {# Renders the language select field #}
@@ -97,19 +103,22 @@
                     <script>
                         var langSelect = document.getElementById("{{ form.language.id_for_label }}");
                         if (langSelect) {
-                             langSelect.className = 'block w-full p-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] appearance-none pr-10';
+                            langSelect.className = 'block w-full p-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] appearance-none pr-10';
                         }
                     </script>
-                    {% if form.language.errors %}
-                        {% for error in form.language.errors %}
-                            <p class="text-red-600 text-xs font-medium mt-1.5 error-message-lang">{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
+                    <div class="text-red-600 text-xs font-medium mt-1.5 error-message-lang">
+                        {% if form.language.errors %}
+                            {% for error in form.language.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div id="narratorGenderContainer" class="hidden"> {# Initially hidden, JS will show/hide #}
                     <label for="{{ form.narrator_gender.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
                         {{ form.narrator_gender.label|default:"Narrator Gender" }}
+                        <span id="narratorGenderRequiredAsterisk" class="text-red-500 hidden">*</span> {# JS will show this if field becomes required #}
                     </label>
                     <div class="relative">
                         {{ form.narrator_gender }} {# Renders the gender select field #}
@@ -123,19 +132,22 @@
                             genderSelectEl.className = 'block w-full p-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] appearance-none pr-10';
                         }
                     </script>
-                    {% if form.narrator_gender.errors %}
-                        {% for error in form.narrator_gender.errors %}
-                            <p class="text-red-600 text-xs font-medium mt-1.5 error-message-gender">{{ error }}</p>
+                    <div class="text-red-600 text-xs font-medium mt-1.5 error-message-gender">
+                         {% if form.narrator_gender.errors %}
+                            {% for error in form.narrator_gender.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="text-red-600 text-sm font-medium error-message-nonfield">
+                    {% if form.non_field_errors %} {# Display non-field errors (e.g., from form.clean()) #}
+                        {% for error in form.non_field_errors %}
+                            <p>{{ error }}</p>
                         {% endfor %}
                     {% endif %}
                 </div>
-
-
-                {% if form.non_field_errors %} {# Display non-field errors #}
-                    {% for error in form.non_field_errors %}
-                        <p class="text-red-600 text-sm font-medium error-message-nonfield">{{ error }}</p>
-                    {% endfor %}
-                {% endif %}
 
                 <button type="submit" id="convertButton"
                         class="w-full flex items-center justify-center bg-white text-[#091e65] border-2 border-[#091e65] hover:bg-[#091e65] hover:text-white font-semibold py-3 px-6 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#091e65]/30 transition-all duration-200 ease-in-out transform active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed text-base group">
@@ -168,13 +180,13 @@
                     </p>
                 </div>
                 <div>
-                    <label for="chapterNameInput" class="block text-sm font-medium text-gray-700 mb-2">Audio Filename (Chapter Name):</label>
+                    <label for="chapterNameInput" class="block text-sm font-medium text-gray-700 mb-2">Audio Filename (for download):</label>
                     <input type="text" id="chapterNameInput" class="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] bg-white" placeholder="e.g., My_Audio_Chapter_1">
                 </div>
             </div>
         </section>
 
-        <section id="downloadButtonSection" class="hidden">
+        <section id="downloadButtonSection" class="mt-6 hidden"> {# Added mt-6 for spacing #}
              <button id="downloadButton"
                     class="w-full flex items-center justify-center bg-[#091e65] text-white hover:bg-[#0d2a8a] font-semibold py-3.5 px-6 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#091e65]/30 transition-colors duration-200 ease-in-out text-base">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2.5">
@@ -185,11 +197,12 @@
             </button>
         </section>
 
-        <div id="errorMessage" class="mt-8 text-red-700 font-medium hidden p-4 bg-red-50 border border-red-300 rounded-lg text-sm items-center justify-start">
+        {# General error message display area (for non-field errors or fallback) #}
+        <div id="generalErrorMessage" class="mt-8 text-red-700 font-medium hidden p-4 bg-red-50 border border-red-300 rounded-lg text-sm items-center justify-start">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2.5 flex-shrink-0">
                 <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
             </svg>
-            <span id="errorTextContent" class="flex-1"></span>
+            <span id="generalErrorTextContent" class="flex-1"></span>
         </div>
     </main>
 </div>
@@ -198,8 +211,17 @@
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('uploadForm');
     const audioPlayer = document.getElementById('audioPlayer');
-    const errorMessageDiv = document.getElementById('errorMessage');
-    const errorTextContentSpan = document.getElementById('errorTextContent');
+    
+    // Specific error message divs next to fields (or use Django's default rendering)
+    const fileErrorDiv = document.querySelector('.error-message-file');
+    const langErrorDiv = document.querySelector('.error-message-lang');
+    const genderErrorDiv = document.querySelector('.error-message-gender');
+    const nonFieldErrorDiv = document.querySelector('.error-message-nonfield'); // For form.non_field_errors()
+
+    // General error display area
+    const generalErrorMessageDiv = document.getElementById('generalErrorMessage');
+    const generalErrorTextContentSpan = document.getElementById('generalErrorTextContent');
+
     const convertButton = document.getElementById('convertButton');
     const buttonText = convertButton.querySelector('.button-text');
     const buttonLoader = convertButton.querySelector('.button-loader');
@@ -207,90 +229,103 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const generatedAudioSection = document.getElementById('generatedAudioSection');
     const audioDurationElement = document.getElementById('audioDurationDisplay');
-    const chapterNameInput = document.getElementById('chapterNameInput');
+    const chapterNameInput = document.getElementById('chapterNameInput'); // Filename input for download
 
     const downloadButtonSection = document.getElementById('downloadButtonSection');
     const downloadButton = document.getElementById('downloadButton');
 
-    const languageSelect = document.getElementById("{{ form.language.id_for_label }}");
+    const languageSelect = document.getElementById("{{ form.language.id_for_label }}"); // Use Django form field ID
     const narratorGenderContainer = document.getElementById('narratorGenderContainer');
-    const narratorGenderSelect = document.getElementById("{{ form.narrator_gender.id_for_label }}");
+    const narratorGenderSelect = document.getElementById("{{ form.narrator_gender.id_for_label }}"); // Use Django form field ID
+    const narratorGenderRequiredAsterisk = document.getElementById('narratorGenderRequiredAsterisk');
 
-    // Narrator display names configuration - UPDATED
+
+    // Narrator display names configuration - Keys updated to match form values
     const narratorDisplayNames = {
-        en: {
-            male: "Male (Natural, Engaging)",   // Updated for en-US-DavisNeural
-            female: "Female (Clear, Expressive)" // Updated for en-US-AriaNeural
+        'English': { // Key is now 'English'
+            male: "Male (Engaging, Clear)",
+            female: "Female (Expressive, Warm)"
         },
-        ur: {
-            male: "Male (Asad)",        // Kept specific name example for Urdu
-            female: "Female (Uzma)"     // Kept specific name example for Urdu
+        'Urdu': { // Key is now 'Urdu'
+            male: "Male (Asad - Standard)",
+            female: "Female (Uzma - Standard)"
         }
-        // Add other languages here if needed
+        // Add other languages here if they have gender-specific display names.
+        // e.g., 'Punjabi': { male: "Male (Punjabi)", female: "Female (Punjabi)"}
     };
 
     let currentAudioBlob = null;
     let currentAudioUrl = null;
 
-    function setErrorMessage(message, field = null) {
-        document.querySelectorAll('.error-message-file, .error-message-lang, .error-message-gender, .error-message-nonfield').forEach(el => el.textContent = '');
-        if (field) {
-            const errorEl = document.querySelector(`.error-message-${field}`);
-            if (errorEl) { errorEl.textContent = message; }
-            else {
-                if (errorTextContentSpan) errorTextContentSpan.textContent = message;
-                else errorMessageDiv.textContent = message; // Fallback if span not found
-                errorMessageDiv.classList.remove('hidden'); errorMessageDiv.classList.add('flex');
+    function clearAllErrorMessages() {
+        if (fileErrorDiv) fileErrorDiv.textContent = '';
+        if (langErrorDiv) langErrorDiv.textContent = '';
+        if (genderErrorDiv) genderErrorDiv.textContent = '';
+        if (nonFieldErrorDiv) nonFieldErrorDiv.innerHTML = ''; // Might contain <p> tags
+
+        if (generalErrorMessageDiv) {
+            generalErrorMessageDiv.classList.add('hidden');
+            generalErrorMessageDiv.classList.remove('flex');
+        }
+        if (generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = '';
+    }
+
+    function displayFieldError(fieldKey, errors) {
+        const errorContent = errors.map(err => err.message || err).join(' ');
+        if (fieldKey === 'document_file' && fileErrorDiv) fileErrorDiv.textContent = errorContent;
+        else if (fieldKey === 'language' && langErrorDiv) langErrorDiv.textContent = errorContent;
+        else if (fieldKey === 'narrator_gender' && genderErrorDiv) genderErrorDiv.textContent = errorContent;
+        else if (fieldKey === '__all__' && nonFieldErrorDiv) {
+             nonFieldErrorDiv.innerHTML = errors.map(err => `<p>${err.message || err}</p>`).join('');
+        }
+        else { // Fallback to general error display for unmapped fields
+            if (generalErrorTextContentSpan) {
+                generalErrorTextContentSpan.textContent = (generalErrorTextContentSpan.textContent ? generalErrorTextContentSpan.textContent + '; ' : '') + `${fieldKey}: ${errorContent}`;
             }
-        } else {
-            if (errorTextContentSpan) errorTextContentSpan.textContent = message;
-            else errorMessageDiv.textContent = message; // Fallback if span not found
-            errorMessageDiv.classList.remove('hidden'); errorMessageDiv.classList.add('flex');
-        }
-        // Ensure general error message div is shown if message is present and it was hidden
-        if (!field && message && errorMessageDiv.classList.contains('hidden')) {
-            errorMessageDiv.classList.remove('hidden'); errorMessageDiv.classList.add('flex');
+            if (generalErrorMessageDiv) {
+                generalErrorMessageDiv.classList.remove('hidden');
+                generalErrorMessageDiv.classList.add('flex');
+            }
         }
     }
 
-    function clearErrorMessage() {
-        errorMessageDiv.classList.add('hidden'); errorMessageDiv.classList.remove('flex');
-        if(errorTextContentSpan) errorTextContentSpan.textContent = ''; else errorMessageDiv.textContent = '';
-        document.querySelectorAll('.error-message-file, .error-message-lang, .error-message-gender, .error-message-nonfield').forEach(el => el.textContent = '');
-    }
 
-    // Function to update the display text of narrator gender options
     function updateNarratorGenderOptions() {
-        const selectedLang = languageSelect.value;
-        const genderOptionsConfig = narratorDisplayNames[selectedLang];
+        const selectedLang = languageSelect.value; // This will be 'English', 'Urdu', etc.
+        const genderOptionsConfig = narratorDisplayNames[selectedLang]; // Use updated keys
 
         // Iterate over the options in the select element
         for (let i = 0; i < narratorGenderSelect.options.length; i++) {
             const option = narratorGenderSelect.options[i];
-            if (option.value === 'male') {
-                option.textContent = genderOptionsConfig ? genderOptionsConfig.male : 'Male';
-            } else if (option.value === 'female') {
-                option.textContent = genderOptionsConfig ? genderOptionsConfig.female : 'Female';
+            if (option.value === "") continue; // Skip the placeholder
+
+            if (genderOptionsConfig && genderOptionsConfig[option.value]) {
+                 option.textContent = genderOptionsConfig[option.value];
+            } else { // Fallback if no specific display name for this language/gender combination
+                 option.textContent = option.value.charAt(0).toUpperCase() + option.value.slice(1); // e.g., "Male", "Female"
             }
-            // The placeholder option (value="") will retain its original text (e.g., "Select Gender")
         }
     }
 
-    // Function to toggle visibility and update options for narrator gender field
     function toggleNarratorGenderField() {
-        const selectedLang = languageSelect.value;
-        if (selectedLang === 'en' || selectedLang === 'ur') { // Languages that support gender selection
+        const selectedLang = languageSelect.value; // Will be 'English', 'Urdu', etc.
+        // Languages that require gender selection (must match keys in EDGE_TTS_VOICES_BY_LANGUAGE that have gender differentiation)
+        const languagesRequiringGender = ['English', 'Urdu']; // Adjust as per your TTS setup
+
+        if (languagesRequiringGender.includes(selectedLang)) {
             narratorGenderContainer.classList.remove('hidden');
-            narratorGenderSelect.required = true;
-            updateNarratorGenderOptions(); // Update display names when language changes
+            narratorGenderSelect.required = true; // Make it HTML5 required
+            if (narratorGenderRequiredAsterisk) narratorGenderRequiredAsterisk.classList.remove('hidden');
+            updateNarratorGenderOptions();
         } else {
             narratorGenderContainer.classList.add('hidden');
             narratorGenderSelect.required = false;
             narratorGenderSelect.value = ''; // Reset selection if field is hidden
+            if (narratorGenderRequiredAsterisk) narratorGenderRequiredAsterisk.classList.add('hidden');
         }
     }
 
-    if (languageSelect) {
+    if (languageSelect && narratorGenderContainer && narratorGenderSelect) {
         languageSelect.addEventListener('change', toggleNarratorGenderField);
         toggleNarratorGenderField(); // Call on page load to set initial state
     }
@@ -298,16 +333,20 @@ document.addEventListener('DOMContentLoaded', function () {
     async function processDocumentForAudio(event) {
         event.preventDefault();
         const formData = new FormData(form);
-        clearErrorMessage();
+        clearAllErrorMessages();
+
         generatedAudioSection.classList.add('hidden');
         downloadButtonSection.classList.add('hidden');
-        audioPlayer.classList.add('hidden');
+        if(audioPlayer) audioPlayer.classList.add('hidden');
         if (currentAudioUrl) { URL.revokeObjectURL(currentAudioUrl); }
-        audioPlayer.src = ''; currentAudioBlob = null; currentAudioUrl = null;
+        if(audioPlayer) audioPlayer.src = '';
+        currentAudioBlob = null; currentAudioUrl = null;
+        
         const durationIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2 text-gray-400"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>`;
-        audioDurationElement.innerHTML = `${durationIconSvg} Calculating...`;
-        audioDurationElement.className = 'text-base text-gray-700 font-semibold bg-white p-3 rounded-md border border-gray-200 inline-flex items-center';
-
+        if(audioDurationElement) {
+            audioDurationElement.innerHTML = `${durationIconSvg} Calculating...`;
+            audioDurationElement.className = 'text-base text-gray-700 font-semibold bg-white p-3 rounded-md border border-gray-200 inline-flex items-center';
+        }
 
         if(buttonText) buttonText.classList.add('hidden');
         if(buttonIcon) buttonIcon.classList.add('hidden');
@@ -319,33 +358,40 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch(form.action, {
                 method: form.method, body: formData, headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
             });
-            if (response.ok) {
+
+            if (response.ok) { // View returned audio blob directly
                 const audioBlob = await response.blob();
                 if (audioBlob.type.startsWith('audio/')) {
                     currentAudioBlob = audioBlob; currentAudioUrl = URL.createObjectURL(currentAudioBlob);
-                    audioPlayer.src = currentAudioUrl;
-                    audioPlayer.classList.remove('hidden');
+                    if(audioPlayer) {
+                        audioPlayer.src = currentAudioUrl;
+                        audioPlayer.classList.remove('hidden');
+                    }
                     generatedAudioSection.classList.remove('hidden');
                     downloadButtonSection.classList.remove('hidden');
-                    audioPlayer.onloadedmetadata = () => {
-                        const duration = audioPlayer.duration;
-                        audioDurationElement.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
-                        if (isFinite(duration)) {
-                            const minutes = Math.floor(duration / 60);
-                            const seconds = Math.floor(duration % 60).toString().padStart(2, '0');
-                            audioDurationElement.innerHTML = `${durationIconSvg} ${minutes} min ${seconds} sec`;
-                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-green-50 text-green-700 border-green-200';
-                        } else {
-                            audioDurationElement.innerHTML = `${durationIconSvg} Duration N/A`;
-                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-yellow-50 text-yellow-700 border-yellow-200';
+                    
+                    if(audioPlayer && audioDurationElement) {
+                        audioPlayer.onloadedmetadata = () => {
+                            const duration = audioPlayer.duration;
+                            audioDurationElement.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+                            if (isFinite(duration)) {
+                                const minutes = Math.floor(duration / 60);
+                                const seconds = Math.floor(duration % 60).toString().padStart(2, '0');
+                                audioDurationElement.innerHTML = `${durationIconSvg} ${minutes} min ${seconds} sec`;
+                                audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-green-50 text-green-700 border-green-200';
+                            } else {
+                                audioDurationElement.innerHTML = `${durationIconSvg} Duration N/A`;
+                                audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-yellow-50 text-yellow-700 border-yellow-200';
+                            }
+                        };
+                        audioPlayer.onerror = () => {
+                             audioDurationElement.innerHTML = `${durationIconSvg} Error loading audio`;
+                             audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-red-50 text-red-700 border-red-200';
                         }
-                    };
-                    audioPlayer.onerror = () => {
-                         audioDurationElement.innerHTML = `${durationIconSvg} Error loading audio`;
-                         audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-red-50 text-red-700 border-red-200';
                     }
+
                     const fileInputField = document.getElementById("{{ form.document_file.id_for_label }}");
-                    let uploadedFileName = "generated_audio_chapter";
+                    let uploadedFileName = "generated_audio_output"; // Default filename
                     if (fileInputField && fileInputField.files && fileInputField.files[0]) {
                         const completeFileName = fileInputField.files[0].name;
                         const lastDotIndex = completeFileName.lastIndexOf('.');
@@ -355,31 +401,33 @@ document.addEventListener('DOMContentLoaded', function () {
                             uploadedFileName = completeFileName.replace(/[\s_]+/g, '_').replace(/[^\w-]/g, '');
                         }
                     }
-                    chapterNameInput.value = uploadedFileName || "audio_chapter";
-                } else {
+                    if (chapterNameInput) chapterNameInput.value = uploadedFileName || "audio_output";
+
+                } else { // Response was ok, but not an audio blob (e.g. wrong content type)
                     const errorText = await response.text();
-                    setErrorMessage('Server Error: Received unexpected content type: ' + audioBlob.type + ". Details: " + (errorText || "No details from server."));
+                    if(generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = 'Server Error: Received unexpected content type: ' + audioBlob.type + ". Details: " + (errorText || "No details.");
+                    if(generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
                 }
-            } else {
-                const errorText = await response.text();
-                try {
-                    const errorJson = JSON.parse(errorText);
-                    if (errorJson.errors) {
-                        clearErrorMessage();
-                        for (const field in errorJson.errors) {
-                            const fieldErrors = errorJson.errors[field].join(' ');
-                            if (field === '__all__') { setErrorMessage(fieldErrors, 'nonfield'); }
-                            else if (field === 'document_file') { setErrorMessage(fieldErrors, 'file'); }
-                            else if (field === 'language') { setErrorMessage(fieldErrors, 'lang'); }
-                            else if (field === 'narrator_gender') { setErrorMessage(fieldErrors, 'gender'); }
-                            else { setErrorMessage(`${field}: ${fieldErrors}`); }
-                        }
-                    } else { setErrorMessage(`Error (Status: ${response.status}). ${errorText || 'No additional details from server.'}`); }
-                } catch (e) { setErrorMessage(`Error (Status: ${response.status}). ${errorText || 'No additional details from server.'}`); }
+            } else { // Response not ok (e.g., 400 for form errors, 500 for server error)
+                const errorData = await response.json(); // Expecting JSON error response from the view
+                clearAllErrorMessages(); // Clear previous errors before displaying new ones
+
+                if (errorData.errors) { // Django form validation errors
+                    for (const field in errorData.errors) {
+                        displayFieldError(field, errorData.errors[field]);
+                    }
+                }
+                // Display general message if available, or a default one
+                const generalMsg = errorData.message || `Error (Status: ${response.status}). Please check the form and try again.`;
+                if (generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = generalMsg;
+                if (generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
+
             }
         } catch (error) {
             console.error('Network or Fetch error:', error);
-            setErrorMessage('A network error occurred. Please check your connection and try again. Details: ' + error.message);
+            clearAllErrorMessages();
+            if(generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = 'A network error occurred. Please check your connection and try again. Details: ' + error.message;
+            if(generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
         } finally {
             if(buttonText) buttonText.classList.remove('hidden');
             if(buttonIcon) buttonIcon.classList.remove('hidden');
@@ -389,24 +437,33 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    form.addEventListener('submit', processDocumentForAudio);
+    if (form) {
+        form.addEventListener('submit', processDocumentForAudio);
+    }
 
-    downloadButton.addEventListener('click', () => {
-        if (currentAudioUrl && currentAudioBlob) {
-            const link = document.createElement('a');
-            link.href = currentAudioUrl;
-            let chapterName = chapterNameInput.value.trim().replace(/[\s]+/g, '_').replace(/[^\w-]/g, '');
-            if (!chapterName) chapterName = "generated_audio_chapter";
-            let extension = '.mp3';
-            if (currentAudioBlob.type === 'audio/mpeg') { extension = '.mp3'; }
-            else if (currentAudioBlob.type === 'audio/wav') { extension = '.wav'; }
-            link.download = `${chapterName}${extension}`;
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        } else {
-            setErrorMessage('No audio data available to download.');
-            downloadButtonSection.classList.add('hidden');
-        }
-    });
+    if (downloadButton) {
+        downloadButton.addEventListener('click', () => {
+            if (currentAudioUrl && currentAudioBlob) {
+                const link = document.createElement('a');
+                link.href = currentAudioUrl;
+                let chapterName = chapterNameInput.value.trim().replace(/[\s]+/g, '_').replace(/[^\w-]/g, '');
+                if (!chapterName) chapterName = "generated_audio_output";
+                
+                let extension = '.mp3'; // Default
+                if (currentAudioBlob.type === 'audio/mpeg') { extension = '.mp3'; }
+                else if (currentAudioBlob.type === 'audio/wav') { extension = '.wav'; }
+                else if (currentAudioBlob.type === 'audio/ogg') { extension = '.ogg'; }
+                // Add more types if your TTS can produce them
+
+                link.download = `${chapterName}${extension}`;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            } else {
+                if(generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = 'No audio data available to download.';
+                if(generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
+                downloadButtonSection.classList.add('hidden');
+            }
+        });
+    }
 });
 </script>
 

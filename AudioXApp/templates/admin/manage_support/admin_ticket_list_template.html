@@ -1,0 +1,195 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ list_title|default:"Manage Tickets" }} - Admin (AudioX){% endblock %}
+
+{% block header_title %}
+    <h2 class="text-2xl font-bold text-gray-800">{{ list_title|default:"Support Tickets" }}</h2>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6"> {# This div replaces the previous bg-gray-50 wrapper, inheriting padding from admin_base.html #}
+    
+    {% if messages %}
+        <div class="space-y-3">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg border-l-4 
+                            {% if message.tags == 'success' %} bg-green-50 border-green-500 text-green-700 
+                            {% elif message.tags == 'error' %} bg-red-50 border-red-500 text-red-700 
+                            {% elif message.tags == 'warning' %} bg-yellow-50 border-yellow-500 text-yellow-700 
+                            {% else %} bg-blue-50 border-blue-500 text-blue-700 
+                            {% endif %}"
+                     role="alert">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2 mt-0.5"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium">{{ message }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <h3 class="text-xl font-semibold text-[#091e65]">{{ list_title|default:"Ticket List" }}</h3>
+            <a href="{% url 'AudioXApp:admin_manage_tickets_overview' %}" class="text-sm text-[#091e65] hover:text-blue-700 font-medium flex items-center transition duration-150 ease-in-out group">
+                <i class="fas fa-arrow-left mr-2 text-gray-400 group-hover:text-[#091e65] transition-colors"></i> Back to Support Overview
+            </a>
+        </div>
+
+        <div class="px-6 py-5 border-b border-gray-200">
+            <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-x-6 gap-y-4 items-end">
+                <div class="xl:col-span-2">
+                    <label for="search_query" class="block text-xs font-semibold text-gray-500 mb-1.5 tracking-wide">Search</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" name="search_query" id="search_query" value="{{ current_search_query|default:'' }}" class="w-full bg-gray-100 border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] p-2.5 pl-10 shadow-sm transition-colors duration-150" placeholder="ID, User, Email...">
+                    </div>
+                </div>
+                <div>
+                    <label for="status_filter" class="block text-xs font-semibold text-gray-500 mb-1.5 tracking-wide">Status</label>
+                    <select name="status" id="status_filter" class="w-full bg-gray-100 border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] p-2.5 shadow-sm appearance-none transition-colors duration-150">
+                        <option value="">All Statuses</option>
+                        {% for status_val, status_display in statuses %}
+                            <option value="{{ status_val }}" {% if current_status_filter == status_val %}selected{% endif %}>{{ status_display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="category_filter" class="block text-xs font-semibold text-gray-500 mb-1.5 tracking-wide">Category</label>
+                    <select name="category_id" id="category_filter" class="w-full bg-gray-100 border-gray-300 text-gray-800 text-sm rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] p-2.5 shadow-sm appearance-none transition-colors duration-150">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category.pk }}" {% if current_category_filter == category.pk %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-end gap-3 xl:col-span-1">
+                    <button type="submit" class="w-full sm:w-auto text-white bg-[#091e65] hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-sm px-5 py-2.5 text-center shadow-md hover:shadow-lg transition duration-150 ease-in-out flex items-center justify-center">
+                        <i class="fas fa-filter mr-2 text-xs"></i> Apply
+                    </button>
+                    {% if request.GET.status or request.GET.category_id or request.GET.search_query %}
+                        <a href="{{ request.path }}" class="w-full sm:w-auto text-xs text-gray-600 hover:text-[#091e65] py-2.5 px-3 text-center rounded-lg border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 shadow-sm transition-colors duration-150">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticket ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Updated</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Created</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for ticket in page_obj %}
+                    <tr class="hover:bg-gray-50/50 transition duration-150 ease-in-out">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#091e65]">
+                            <a href="{% url 'AudioXApp:admin_ticket_detail' ticket.id %}" class="hover:underline" title="View Ticket Details">
+                                {{ ticket.ticket_display_id }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700 max-w-xs truncate" title="{{ ticket.subject }}">{{ ticket.subject|truncatechars:45 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                            <div class="font-semibold text-gray-800">{{ ticket.user.username|default:"N/A" }}</div>
+                            <div class="text-xs text-gray-500">{{ ticket.user.email|default:"" }}</div>
+                            {% if ticket.creator_profile %}
+                                <span class="mt-1 inline-block px-2 py-0.5 text-xs font-semibold text-purple-700 bg-purple-100 rounded-full" title="Creator Ticket">Creator</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ ticket.category.name|default:"N/A" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-3 py-1.5 text-xs font-bold leading-none rounded-full
+                                {% if ticket.status == 'OPEN' %} bg-blue-100 text-[#091e65] 
+                                {% elif ticket.status == 'PROCESSING' %} bg-yellow-100 text-yellow-800 
+                                {% elif ticket.status == 'AWAITING_USER' %} bg-red-100 text-red-700 
+                                {% elif ticket.status == 'REOPENED' %} bg-red-200 text-red-800 
+                                {% elif ticket.status == 'RESOLVED' %} bg-green-100 text-green-800 
+                                {% elif ticket.status == 'CLOSED' %} bg-gray-200 text-gray-700 
+                                {% else %} bg-gray-100 text-gray-700 
+                                {% endif %}">
+                                {{ ticket.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700" title="{{ ticket.updated_at|date:'N j, Y, P T' }}">{{ ticket.updated_at|naturaltime }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700" title="{{ ticket.created_at|date:'N j, Y, P T' }}">{{ ticket.created_at|date:"M d, Y" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <a href="{% url 'AudioXApp:admin_ticket_detail' ticket.id %}" class="text-[#091e65] hover:text-blue-700 font-medium transition duration-150 ease-in-out inline-flex items-center px-3 py-1.5 rounded-lg hover:bg-blue-50 border border-transparent hover:border-[#091e65]/30">
+                                <i class="fas fa-eye mr-1.5 text-xs opacity-70"></i>View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-16 text-center text-sm text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-12 h-12 text-gray-300 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6.75c0-1.242.988-2.25 2.216-2.25h15.134c1.228 0 2.216 1.008 2.216 2.25v3.026m-16.5 0v6.17A2.25 2.25 0 0 0 5.53 18h12.94a2.25 2.25 0 0 0 2.227-1.932V9.776c-.112-.017-.227-.026-.344-.026H3.444c-.117 0-.232.009-.344.026Z" />
+                                </svg>
+                                <p class="font-semibold text-gray-700 text-base">No tickets found.</p>
+                                <p class="text-xs text-gray-500 mt-1">Try adjusting your filters or search term.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+            <nav class="flex items-center justify-between text-sm text-gray-700">
+                <div class="text-xs text-gray-600">
+                    Page <span class="font-semibold text-gray-800">{{ page_obj.number }}</span> of <span class="font-semibold text-gray-800">{{ page_obj.paginator.num_pages }}</span>.
+                    (<span class="font-semibold text-gray-800">{{ page_obj.paginator.count|intcomma }}</span> total tickets)
+                </div>
+                <div class="flex space-x-1">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&amp;{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-800 text-xs shadow-sm"><i class="fas fa-angle-double-left"></i></a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&amp;{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-800 text-xs shadow-sm">Prev</a>
+                    {% else %}
+                        <span class="px-3 py-1.5 rounded-md border border-gray-200 text-gray-400 cursor-not-allowed text-xs bg-gray-100"><i class="fas fa-angle-double-left"></i></span>
+                        <span class="px-3 py-1.5 rounded-md border border-gray-200 text-gray-400 cursor-not-allowed text-xs bg-gray-100">Prev</span>
+                    {% endif %}
+
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <span class="px-3 py-1.5 rounded-md bg-[#091e65] text-white border border-[#091e65] text-xs font-semibold shadow-sm">{{ i }}</span>
+                        {% elif i > page_obj.number|add:'-2' and i < page_obj.number|add:'3' %}
+                            <a href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&amp;{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-800 text-xs shadow-sm">{{ i }}</a>
+                        {% elif i == 1 or i == page_obj.paginator.num_pages %}
+                            {% if page_obj.number|add:'-3' == i and i != 1 and page_obj.number|add:'-2' != 1 %} <span class="px-2 py-1.5 text-gray-400 text-xs">...</span> {% endif %}
+                            <a href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&amp;{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-800 text-xs shadow-sm">{{ i }}</a>
+                            {% if page_obj.number|add:'2' == i and i != page_obj.paginator.num_pages and page_obj.number|add:'1' != page_obj.paginator.num_pages %} <span class="px-2 py-1.5 text-gray-400 text-xs">...</span> {% endif %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&amp;{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-800 text-xs shadow-sm">Next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&amp;{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-1.5 rounded-md border border-gray-300 bg-white hover:bg-gray-100 transition-colors text-gray-600 hover:text-gray-800 text-xs shadow-sm"><i class="fas fa-angle-double-right"></i></a>
+                    {% else %}
+                         <span class="px-3 py-1.5 rounded-md border border-gray-200 text-gray-400 cursor-not-allowed text-xs bg-gray-100">Next</span>
+                         <span class="px-3 py-1.5 rounded-md border border-gray-200 text-gray-400 cursor-not-allowed text-xs bg-gray-100"><i class="fas fa-angle-double-right"></i></span>
+                    {% endif %}
+                </div>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
