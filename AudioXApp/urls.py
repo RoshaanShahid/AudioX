@@ -4,14 +4,16 @@ from .views import (
     content_views,
     audio_views,
     library_views, # Added from friend's branch
-    history_views  # Added from friend's branch
+    history_views,  # Added from friend's branch
+    download_views, # <<< --- ADDED IMPORT FOR DOWNLOAD VIEWS
+    summary_views # <<< --- ADDED IMPORT FOR SUMMARY VIEWS
 )
 # Import the admin view modules
 from .views.admin_views import (
     admin_auth_views,
     admin_dashboard_views,
     admin_creator_manage_views, # Common, HEAD had more specific list below
-    admin_users_manage_views,         # From HEAD
+    admin_users_manage_views,       # From HEAD
     admin_manage_financials_views,    # From HEAD
     admin_ticket_management_views,    # From HEAD
     admin_management_views            # From HEAD
@@ -59,6 +61,25 @@ urlpatterns = [
     path('punjabi/', content_views.punjabi_page, name='punjabi_page'),
     path('sindhi/', content_views.sindhi_page, name='sindhi_page'),
 
+        # --- NEW LANGUAGE-SPECIFIC GENRE URLS ---
+    # Urdu Genres
+    path('urdu/genre/novel-afsana/', content_views.urdu_genre_novel_afsana, name='urdu_genre_novel_afsana'),
+    path('urdu/genre/shayari/', content_views.urdu_genre_shayari, name='urdu_genre_shayari'),
+    path('urdu/genre/tareekh/', content_views.urdu_genre_tareekh, name='urdu_genre_tareekh'),
+    path('urdu/genre/safarnama/', content_views.urdu_genre_safarnama, name='urdu_genre_safarnama'),
+    path('urdu/genre/mazah/', content_views.urdu_genre_mazah, name='urdu_genre_mazah'),
+    path('urdu/genre/bachon-ka-adab/', content_views.urdu_genre_bachon_ka_adab, name='urdu_genre_bachon_ka_adab'),
+    path('urdu/genre/mazhabi-adab/', content_views.urdu_genre_mazhabi_adab, name='urdu_genre_mazhabi_adab'),
+
+    # Punjabi Genres
+    path('punjabi/genre/qissa-lok/', content_views.punjabi_genre_qissalok, name='punjabi_genre_qissalok'),
+    path('punjabi/genre/geet/', content_views.punjabi_genre_geet, name='punjabi_genre_geet'),
+
+    # Sindhi Genres
+    path('sindhi/genre/lok-adab/', content_views.sindhi_genre_lok_adab, name='sindhi_genre_lok_adab'),
+    path('sindhi/genre/shayari/', content_views.sindhi_genre_shayari, name='sindhi_genre_shayari'),
+    # --- END NEW LANGUAGE-SPECIFIC GENRE URLS ---
+
     # Genre pages
     path('genre/fiction/', content_views.genre_fiction, name='genre_fiction'),
     path('genre/mystery/', content_views.genre_mystery, name='genre_mystery'),
@@ -80,6 +101,10 @@ urlpatterns = [
     path('generate-audio/', audio_views.generate_audio_from_document, name='general_generate_audio_from_document' ),
     # --- END MERGED SECTION ---
 
+    # --- AI Summary URL ---
+    # This URL will be used by the frontend to fetch the AI-generated summary for an audiobook.
+    # It expects an integer 'audiobook_id' as part of the URL.
+   path('audiobook/<int:audiobook_id>/get-ai-summary/', summary_views.get_ai_summary, name='get_ai_summary'),
     # --- Legal, Company, and Contact Pages ---
     path('ourteam/', static_pages_views.ourteam_view, name='ourteam'),
     path('paymentpolicy/', static_pages_views.paymentpolicy_view, name='paymentpolicy'),
@@ -124,7 +149,7 @@ urlpatterns = [
 
     # --- User Account Activity Views ---
     path('billing-history/', account_activity_views.billing_history, name='billing_history'),
-    path('my-downloads/', account_activity_views.my_downloads, name='my_downloads'),
+    path('my-downloads/', account_activity_views.my_downloads, name='my_downloads'), # This page will likely use the new download APIs
     # Original 'my-library' from HEAD, path and name changed to avoid conflict with new library page
     path('my-account-library/', account_activity_views.my_library, name='my_account_library'),
 
@@ -161,6 +186,13 @@ urlpatterns = [
     path('api/audiobook/log-view/', creator_audiobook_views.log_audiobook_view, name='log_audiobook_view'),
     path('api/creator/generate-tts-preview/', creator_tts_views.generate_tts_preview_audio, name='generate_tts_preview_audio'),
     path('api/creator/generate-document-tts-preview/', creator_tts_views.generate_document_tts_preview_audio, name='generate_document_tts_preview_audio'),
+
+    # --- Download API Endpoints ---
+    path('api/v1/audiobooks/downloadable/', download_views.DownloadableAudiobooksListView.as_view(), name='list_downloadable_audiobooks'),
+    path('api/v1/audiobooks/<int:audiobook_id>/download-info/', download_views.AudiobookDownloadInfoView.as_view(), name='audiobook_download_info'),
+    path('api/v1/chapters/<int:chapter_id>/serve-file/', download_views.ServeChapterAudioFileView.as_view(), name='serve_chapter_audio_file'),
+    path('api/v1/audiobooks/<int:audiobook_id>/confirm-downloaded/', download_views.ConfirmAudiobookDownloadedView.as_view(), name='confirm_audiobook_downloaded'),
+    # --- END Download API Endpoints ---
 
     # --- Admin Area Views ---
     path('admin/welcome/', admin_auth_views.admin_welcome_view, name='admin_welcome'),

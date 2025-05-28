@@ -40,13 +40,11 @@ def billing_history(request):
                 start_date = start_datetime_naive
         except ValueError:
             messages.error(request, "Invalid start date format. Please use YYYY-MM-DD.")
-            # Potentially redirect or just show unfiltered if date is invalid
-            pass 
+            pass
 
     if end_date_str:
         try:
             end_datetime_naive = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
-            # To include the whole end day, set time to end of day
             end_datetime_naive_eod = datetime.datetime.combine(end_datetime_naive, datetime.time.max)
             if settings.USE_TZ:
                 end_date = timezone.make_aware(end_datetime_naive_eod, timezone.get_default_timezone())
@@ -56,7 +54,6 @@ def billing_history(request):
             messages.error(request, "Invalid end date format. Please use YYYY-MM-DD.")
             pass
 
-    # 1. Audiobook Purchases (Direct via Stripe, not coins)
     audiobook_purchases_qs = AudiobookPurchase.objects.filter(user=user, status='COMPLETED').select_related('audiobook', 'audiobook__creator')
     if start_date: audiobook_purchases_qs = audiobook_purchases_qs.filter(purchase_date__gte=start_date)
     if end_date: audiobook_purchases_qs = audiobook_purchases_qs.filter(purchase_date__lte=end_date)
@@ -66,19 +63,13 @@ def billing_history(request):
             'type': 'Audiobook Purchase',
             'description': f"'{purchase.audiobook.title}' by {purchase.audiobook.creator.creator_name if purchase.audiobook.creator else 'N/A'}",
             'date': purchase.purchase_date,
-            'amount_pkr': purchase.amount_paid, # This is the actual amount paid
-            'coins_received': None, # No coins involved in direct purchase
+            'amount_pkr': purchase.amount_paid,
+            'coins_received': None,
             'details_url': reverse('AudioXApp:audiobook_detail', kwargs={'audiobook_slug': purchase.audiobook.slug}),
-            'status': purchase.get_status_display(), # Use model's display method
-            'status_class': 'bg-green-100 text-green-700' # Assuming COMPLETED is green
+            'status': purchase.get_status_display(),
+            'status_class': 'bg-green-100 text-green-700'
         })
 
-    # 2. Coin Transactions (Purchases, Gifts, Spent - excluding Subscriptions handled by their own history)
-    # We need to be careful not to double-count if audiobook purchases via coins are also logged here.
-    # Assuming CoinTransaction for 'spent' on audiobooks is distinct from AudiobookPurchase.
-    
-    # Define subscription pack names to exclude from general coin transaction history
-    # These might be better defined in settings or a constants file.
     subscription_pack_names_lower = [
         name.lower() for name in [
             'Monthly Premium Subscription', 'Annual Premium Subscription',
@@ -91,40 +82,39 @@ def billing_history(request):
     if end_date: all_coin_transactions_qs = all_coin_transactions_qs.filter(transaction_date__lte=end_date)
 
     for txn in all_coin_transactions_qs.order_by('-transaction_date'):
-        # Skip if it's a subscription-related coin transaction (these are usually 0 amount with price)
         if txn.pack_name and txn.pack_name.lower() in subscription_pack_names_lower:
             item_type_display = 'Subscription'
             description = txn.pack_name
             details_url = reverse('AudioXApp:managesubscription')
-            coins_change = None # No direct coin change for user wallet from subscription record itself
+            coins_change = None
         elif txn.transaction_type == 'purchase':
             item_type_display = 'Coin Purchase'
             description = txn.pack_name or f"{txn.amount} Coins"
             details_url = reverse('AudioXApp:buycoins')
-            coins_change = txn.amount # Positive
+            coins_change = txn.amount
         elif txn.transaction_type == 'gift_sent':
             item_type_display = 'Coins Gifted'
             description = f"Gifted to {txn.recipient.username if txn.recipient else 'Unknown User'}"
-            details_url = reverse('AudioXApp:mywallet') # Or a specific gift history page
-            coins_change = txn.amount # Negative
+            details_url = reverse('AudioXApp:mywallet')
+            coins_change = txn.amount
         elif txn.transaction_type == 'gift_received':
             item_type_display = 'Coins Received'
             description = f"Received from {txn.sender.username if txn.sender else 'Unknown User'}"
             details_url = reverse('AudioXApp:mywallet')
-            coins_change = txn.amount # Positive
-        elif txn.transaction_type == 'spent': # Example: if you log coin spending on audiobooks
+            coins_change = txn.amount
+        elif txn.transaction_type == 'spent':
             item_type_display = 'Coins Spent'
-            description = txn.description or "Spent on Audiobook/Feature" # Make description more specific if possible
-            details_url = "#" # Link to the item if applicable
-            coins_change = txn.amount # Negative
-        else: # Other transaction types if any
+            description = txn.description or "Spent on Audiobook/Feature"
+            details_url = "#"
+            coins_change = txn.amount
+        else:
             item_type_display = txn.get_transaction_type_display()
             description = txn.description or txn.pack_name or "General Transaction"
             details_url = "#"
             coins_change = txn.amount
 
         status_display = txn.get_status_display()
-        status_class = 'bg-gray-100 text-gray-700' # Default
+        status_class = 'bg-gray-100 text-gray-700'
         if txn.status == 'completed': status_class = 'bg-green-100 text-green-700'
         elif txn.status == 'pending': status_class = 'bg-yellow-100 text-yellow-700'
         elif txn.status in ['failed', 'rejected']: status_class = 'bg-red-100 text-red-700'
@@ -133,34 +123,33 @@ def billing_history(request):
             'type': item_type_display,
             'description': description,
             'date': txn.transaction_date,
-            'amount_pkr': txn.price, # Price of the pack/item, if applicable
-            'coins_change': coins_change, # How many coins were added/removed
+            'amount_pkr': txn.price,
+            'coins_change': coins_change,
             'details_url': details_url,
             'status': status_display,
             'status_class': status_class
         })
 
-    # Sort all collected items by date
     billing_items_list.sort(key=lambda x: x['date'], reverse=True)
 
     context = _get_full_context(request)
     context['billing_items'] = billing_items_list
-    context['start_date_str'] = start_date_str # For repopulating filter fields
-    context['end_date_str'] = end_date_str   # For repopulating filter fields
+    context['start_date_str'] = start_date_str
+    context['end_date_str'] = end_date_str
 
     return render(request, 'user/billing_history.html', context)
 
 
 @login_required
 def my_downloads(request):
-    """Renders the user's downloads page (placeholder)."""
+    """Renders the user's downloads page."""
+    print(f"--- [VIEW] Reached my_downloads view for user: {request.user}, Authenticated: {request.user.is_authenticated} ---")
     context = _get_full_context(request)
-    # This view is a placeholder as actual download tracking is complex
-    # and depends on how downloads are implemented (e.g., direct file, temporary links).
-    context['downloaded_audiobooks'] = [] # Empty list for now
-    messages.info(request, "My Downloads page is currently under construction and will be available soon.")
-    # Redirect to a more relevant page if this one is truly just a placeholder
-    return redirect('AudioXApp:myprofile') # Or 'AudioXApp:home' or 'AudioXApp:my_library'
+    # The actual list of downloads will be populated by client-side JavaScript
+    # (offlineLibrary.js) by reading from IndexedDB.
+    # This Django view just needs to render the container template.
+    # messages.info(request, "Your offline downloads are listed below.") # Optional message
+    return render(request, 'user/my_downloads.html', context)
 
 
 @login_required
@@ -168,14 +157,13 @@ def my_library(request):
     """Renders the user's library page showing purchased audiobooks."""
     context = _get_full_context(request)
     
-    # Fetch audiobooks for which the user has a completed purchase record
-    # Using AudiobookPurchase as the source of truth for "owned" audiobooks
     purchased_audiobooks_qs = Audiobook.objects.filter(
         audiobook_sales__user=request.user, 
-        audiobook_sales__status='COMPLETED' # Ensure purchase was completed
+        audiobook_sales__status='COMPLETED'
     ).distinct().prefetch_related(
-        Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order')) # Pre-fetch chapters
-    ).order_by('-audiobook_sales__purchase_date') # Order by most recent purchase
+        Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order'))
+    ).order_by('-audiobook_sales__purchase_date')
 
     context['library_audiobooks'] = purchased_audiobooks_qs
     return render(request, 'user/my_library.html', context)
+

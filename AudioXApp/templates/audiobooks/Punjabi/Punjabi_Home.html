@@ -1,4 +1,4 @@
-{% extends "homepage.html" %}
+{% extends "Homepage.html" %}
 {% load static %}
 {% load humanize %}
 {% load mathfilters %}
@@ -6,8 +6,30 @@
 {% block title %}{{ display_name|default:"پنجابی" }} آڈیو کتاباں - آڈیو ایکس{% endblock %}
 
 {% block extra_head %}
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;700&display=swap" rel="stylesheet"> {# Kept for potential fallback or specific cases #}
+<style>
+    .marquee-container {
+        width: 100%;
+        overflow: hidden;
+    }
+    .marquee-content {
+        display: flex;
+        align-items: center; /* Vertically align items */
+        /* animation will be applied by JS if content overflows */
+    }
+    /* Keyframes will be injected by JS if needed */
+    .font-punjabi-hero {
+        font-family: 'Noto Nastaliq Urdu', 'Noto Sans Gurmukhi', sans-serif; /* Prioritize Nastaliq for Shahmukhi */
+    }
+    .font-punjabi-body {
+        font-family: 'Noto Nastaliq Urdu', 'Noto Sans Gurmukhi', sans-serif; /* Prioritize Nastaliq for Shahmukhi */
+    }
+    .font-punjabi-links { /* For marquee links if they need specific styling - assuming Roman Punjabi for these */
+        font-family: 'Arial', sans-serif; 
+    }
+
+</style>
 {% endblock %}
 
 {% block content %}
@@ -24,25 +46,25 @@
         </div>
 
         <div class="relative flex flex-col items-center justify-center h-[700px] md:h-[800px] px-6 md:px-12 text-center">
-            <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight tracking-tighter"
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight tracking-tighter font-punjabi-hero text-right"
                 style="text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);">
-                آڈیو کتاباں دی دنیا تہاڈا انتظار کر رئی اے۔
+                آڈیو کتاباں دی دنیا تہاڈا انتظار کر رہی اے۔
             </h1>
-            <p class="text-xl md:text-2xl lg:text-3xl text-white mb-10 max-w-4xl mx-auto leading-relaxed text-center"
+            <p class="text-xl md:text-2xl lg:text-3xl text-white mb-10 max-w-4xl mx-auto leading-relaxed text-center font-punjabi-hero text-right"
                style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);">
-               دلکش کہانیاں دریافت کرو، جہڑیاں آرٹ دے ماہرین نے بیان کیتیاں نیں۔
+                دلکش کہانیاں لبھو، جہڑیاں کلا دے ماہراں نے بیان کیتیاں نیں۔
             </p>
             <a href="{% url 'AudioXApp:subscribe' %}"
-               class="inline-block bg-[#091e65] hover:bg-[#071852] text-white font-bold py-4 px-12 rounded-full text-lg tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl text-center">
-                ہنے سبسکرائب کرو
+               class="inline-block bg-[#091e65] hover:bg-[#071852] text-white font-bold py-4 px-12 rounded-full text-lg tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl text-center font-punjabi-body">
+                ہُنے سبسکرائب کرو
             </a>
             <div class="mt-12 w-full overflow-hidden">
                 <div class="marquee-container">
                     {# Added justify-center to center the items when not overflowing #}
                     <div class="marquee-content flex items-center whitespace-nowrap space-x-8 justify-center">
-                        {# Pakistani Roman Punjabi Genres - Reduced to Qissa and Lok Geet, duplicates removed #}
-                        <a href="{% url 'AudioXApp:punjabi_page' %}?genre=Qissa" class="text-lg md:text-xl font-bold text-white flex-shrink-0 px-2 text-center">Qissa</a>
-                        <a href="{% url 'AudioXApp:punjabi_page' %}?genre=Lok-Geet" class="text-lg md:text-xl font-bold text-white flex-shrink-0 px-2 text-center">Lok Geet</a>
+                        {# Punjabi Genre Links - Kept in Roman for consistency with previous version, can be changed to Shahmukhi if needed #}
+                        <a href="{% url 'AudioXApp:punjabi_genre_qissalok' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0 px-2 text-center hover:text-yellow-300 transition-colors font-punjabi-links">Qissa Lok</a>
+                        <a href="{% url 'AudioXApp:punjabi_genre_geet' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0 px-2 text-center hover:text-yellow-300 transition-colors font-punjabi-links">Lok Geet</a>
                     </div>
                 </div>
             </div>
@@ -51,12 +73,12 @@
 
     {# --- Main Content Area for Audiobooks --- #}
     <div class="container mx-auto px-4 py-12">
-        <h1 class="text-4xl font-bold text-center text-[#091e65] mb-12 tracking-tight text-center">
-            Punjabi Audio Kitaban
+        <h1 class="text-4xl font-bold text-center text-[#091e65] mb-12 tracking-tight text-center font-punjabi-hero">
+            پنجابی آڈیو کتاباں
         </h1>
 
         {% if error_message and not audiobooks_list and not creator_audiobooks %}
-            <div class="text-center text-gray-600 bg-yellow-50 p-6 rounded-xl shadow-sm border border-yellow-200 font-['Noto Sans Gurmukhi'] text-right">
+            <div class="text-center text-gray-600 bg-yellow-50 p-6 rounded-xl shadow-sm border border-yellow-200 font-punjabi-body text-right">
                 <i class="fas fa-exclamation-triangle text-3xl text-yellow-500 mb-3"></i>
                 <p class="text-lg">{{ error_message }}</p>
             </div>
@@ -65,8 +87,8 @@
         {# --- External Audiobooks Section (e.g., Archive.org) --- #}
         {% if audiobooks_list %}
             <div class="mb-16">
-                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300 font-['Noto Sans Gurmukhi'] text-right">
-                    ਪਬਲਿਕ ਆਰਕਾਈਵਜ਼ ਤੋਂ
+                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300 font-punjabi-hero text-right">
+                    پبلک آرکائیوز توں
                 </h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
                     {% for book in audiobooks_list %}
@@ -86,7 +108,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="p-5 flex-grow flex flex-col font-['Noto Sans Gurmukhi'] text-right"> {# Titles/authors might be in Punjabi script #}
+                                <div class="p-5 flex-grow flex flex-col font-punjabi-body text-right">
                                     <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ book.title }}">{{ book.title }}</h3>
                                     <p class="text-sm text-gray-600 truncate mb-2" title="{{ book.author|default:'نامعلوم لکھاری' }}">
                                         لکھاری: {{ book.author|default:"نامعلوم لکھاری" }}
@@ -99,14 +121,14 @@
                 </div>
             </div>
         {% elif not error_message and not creator_audiobooks %}
-            <p class="text-center text-gray-500 py-8 font-['Noto Sans Gurmukhi'] text-right">فی الحال اس زبان وچ پبلک آركائیوز توں کوئی آڈیو کتاباں دستیاب نہیں۔</p>
+            <p class="text-center text-gray-500 py-8 font-punjabi-body text-right">فی الحال ایس زبان وچ پبلک آرکائیوز توں کوئی آڈیو کتاباں دستیاب نئیں۔</p>
         {% endif %}
 
         {# --- Creator Audiobooks Section --- #}
         {% if creator_audiobooks %}
             <div class="mb-16">
-                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300 text-center">
-                    Saday Takhleeqkaron Di Janib Se
+                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300 text-center font-punjabi-hero">
+                    ساڈے تخلیق کاراں دی طرفوں
                 </h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
                     {% for creator_book in creator_audiobooks %}
@@ -114,7 +136,7 @@
                             <div class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out group-hover:shadow-2xl hover:-translate-y-1 h-full flex flex-col">
                                 <div class="relative h-72 w-full">
                                     {% if creator_book.cover_image %}
-                                    <img src="{{ creator_book.cover_image }}"
+                                    <img src="{{ creator_book.cover_image.url }}" 
                                          alt="{{ creator_book.title }} Cover"
                                          class="w-full h-full object-cover"
                                          loading="lazy"
@@ -132,18 +154,18 @@
                                         </button>
                                     </div>
                                     {% if creator_book.is_paid %}
-                                        <span class="absolute top-3 right-3 bg-[#091e65] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow font-['Noto Sans Gurmukhi'] text-right">قیمت: {{ creator_book.price|floatformat:2 }}</span>
+                                        <span class="absolute top-3 right-3 bg-[#091e65] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow font-punjabi-body text-right">قیمت: {{ creator_book.price|floatformat:2 }}</span>
                                     {% else %}
-                                         <span class="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow font-['Noto Sans Gurmukhi'] text-right">مُفت</span>
+                                         <span class="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow font-punjabi-body text-right">مُفت</span>
                                     {% endif %}
                                 </div>
-                                <div class="p-5 flex-grow flex flex-col font-['Noto Sans Gurmukhi'] text-right"> {# Card content can use Punjabi script if titles are in Punjabi #}
+                                <div class="p-5 flex-grow flex flex-col font-punjabi-body text-right"> 
                                     <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ creator_book.title }}">{{ creator_book.title }}</h3>
                                     <p class="text-sm text-gray-600 truncate" title="{{ creator_book.author|default:'نامعلوم لکھاری' }}">
                                         لکھاری: {{ creator_book.author|default:"نامعلوم لکھاری" }}
                                     </p>
                                     {% if creator_book.creator.creator_name %}
-                                         <p class="text-xs text-[#091e65] mt-1 font-medium">گائیک: {{ creator_book.creator.creator_name }}</p>
+                                         <p class="text-xs text-[#091e65] mt-1 font-medium">آواز: {{ creator_book.creator.creator_name }}</p>
                                     {% endif %}
 
                                     <div class="mt-auto pt-3 flex justify-between items-center text-xs text-gray-500">
@@ -152,19 +174,19 @@
                                                  {% if rating is not None %}
                                                      {% with full_stars=rating|floatformat:0|add:"0" decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
                                                      {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                                          {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                                          {% if decimal_part_int >= 5 %}
-                                                              <i class="fas fa-star-half-alt text-yellow-400"></i>
-                                                              {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
-                                                                   {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                              {% endwith %}
-                                                          {% else %}
-                                                              {% with empty_stars=5|sub:full_stars %}
-                                                                   {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                              {% endwith %}
-                                                          {% endif %}
-                                                     {% endwith %}{# end decimal_part_int #}
-                                                     {% endwith %}{# end full_stars & decimal_part_str #}
+                                                         {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+                                                         {% if decimal_part_int >= 5 %} 
+                                                             <i class="fas fa-star-half-alt text-yellow-400"></i>
+                                                             {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
+                                                                 {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                             {% endwith %}
+                                                         {% else %}
+                                                             {% with empty_stars=5|sub:full_stars %}
+                                                                 {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                             {% endwith %}
+                                                         {% endif %}
+                                                     {% endwith %}
+                                                     {% endwith %}
                                                      <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
                                                  {% else %}
                                                      <span class="text-gray-400 italic">کوئی درجہ بندی نہیں</span>
@@ -186,14 +208,14 @@
                 </div>
             </div>
         {% elif not error_message and not audiobooks_list %}
-            <p class="text-center text-gray-500 py-8 font-['Noto Sans Gurmukhi'] text-right">فی الحال ساڈے تخلیق کاراں ولوں اس زبان وچ کوئی آڈیو کتاباں دستیاب نہیں۔</p>
+            <p class="text-center text-gray-500 py-8 font-punjabi-body text-right">فی الحال ساڈے تخلیق کاراں ولوں ایس زبان وچ کوئی آڈیو کتاباں دستیاب نئیں۔</p>
         {% endif %}
 
         {% if not audiobooks_list and not creator_audiobooks and not error_message %}
-            <div class="text-center text-gray-600 bg-blue-50 p-8 rounded-xl shadow font-['Noto Sans Gurmukhi'] text-right">
+            <div class="text-center text-gray-600 bg-blue-50 p-8 rounded-xl shadow font-punjabi-body text-right">
                 <i class="fas fa-book-open text-4xl text-blue-400 mb-4"></i>
-                <p class="text-xl font-semibold">کوئی {{ display_name|default:"پنجابی" }} آڈیو کتاباں نہیں ملیاں</p>
-                <p class="mt-2">سانوں فی الحال اس زبان وچ کوئی آڈیو کتاباں نہیں مل سکیاں۔ مہربانی کرکے بعد وچ دوبارہ کوشش کرو یا دیگر زباناں ویکھو!</p>
+                <p class="text-xl font-semibold">کوئی {{ display_name|default:"پنجابی" }} آڈیو کتاباں نئیں ملیاں۔</p>
+                <p class="mt-2">سانوں فی الحال ایس زبان وچ کوئی آڈیو کتاباں نئیں مل سکیاں۔ مہربانی کر کے بعد وچ دوبارہ کوشش کرو یا ہور زباناں ویکھو!</p>
             </div>
         {% endif %}
     </div>
@@ -205,115 +227,99 @@
         const marqueeContainer = document.querySelector('.marquee-container');
         const marqueeContent = document.querySelector('.marquee-content');
         if (marqueeContainer && marqueeContent) {
-            // Calculate animation duration based on content width
-            // Note: Removing duplicates means the seamless loop effect will be lost
-            let actualContentWidth = marqueeContent.scrollWidth; // Use full width as no duplicates
-            let animationDuration = actualContentWidth / 50; // Adjust 50 for speed
+            let actualContentWidth = marqueeContent.scrollWidth; 
+            let animationDuration = actualContentWidth / 50; 
 
             if (actualContentWidth > 0 && animationDuration > 0) {
-                 // Check if animation rule already exists to avoid adding duplicates
-                let ruleExists = false;
-                const styleSheets = document.styleSheets;
-                for (let i = 0; i < styleSheets.length; i++) {
-                    try {
-                        const rules = styleSheets[i].cssRules;
-                        for (let j = 0; j < rules.length; j++) {
-                            if (rules[j].name === 'marquee_scroll_left') {
-                                ruleExists = true;
-                                break;
-                            }
-                        }
-                    } catch (e) {
-                        // Handle potential security errors accessing cross-origin stylesheets
-                        console.warn("Could not access stylesheet rules:", e);
-                    }
-                    if (ruleExists) break;
-                }
-
-                if (!ruleExists) {
-                    // Define the keyframes dynamically if they don't exist
-                    const styleSheet = document.styleSheets[0]; // Assuming the first stylesheet is where we want to add the rule
-                     if (styleSheet) {
-                         const keyframes = `@keyframes marquee_scroll_left {
-                             from { transform: translateX(0%); }
-                             to { transform: translateX(-${actualContentWidth}px); } /* Animate based on actual width */
-                         }`;
-                         try {
-                             styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
-                         } catch (e) {
-                              console.error("Failed to insert keyframe rule:", e);
-                         }
-                     }
-                }
-
-
-                // Apply the animation
-                // Check if content overflows before applying animation
                 if (marqueeContent.scrollWidth > marqueeContainer.clientWidth) {
-                     marqueeContent.style.animation = `marquee_scroll_left ${animationDuration}s linear infinite`;
+                    let ruleExists = false;
+                    const styleSheets = document.styleSheets;
+                    for (let i = 0; i < styleSheets.length; i++) {
+                        try {
+                            const rules = styleSheets[i].cssRules;
+                            for (let j = 0; j < rules.length; j++) {
+                                if (rules[j].name === 'marquee_scroll_left') {
+                                    styleSheets[i].deleteRule(j);
+                                    break;
+                                }
+                            }
+                        } catch (e) {
+                             console.warn("Could not access stylesheet rules during load:", e);
+                        }
+                    }
+
+                    const styleSheet = document.styleSheets[0]; 
+                    if (styleSheet) {
+                        const keyframes = `@keyframes marquee_scroll_left {
+                            from { transform: translateX(0%); }
+                            to { transform: translateX(-${actualContentWidth}px); } 
+                        }`;
+                        try {
+                            styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
+                        } catch (e) {
+                             console.error("Failed to insert keyframe rule:", e);
+                        }
+                    }
+
+                    marqueeContent.style.animation = `marquee_scroll_left ${animationDuration}s linear infinite`;
+                    marqueeContent.style.justifyContent = 'flex-start'; 
                 } else {
-                     // If content does not overflow, remove animation and ensure centering
-                     marqueeContent.style.animation = 'none';
-                     marqueeContent.style.justifyContent = 'center'; // Ensure centering is applied
+                    marqueeContent.style.animation = 'none';
+                    marqueeContent.style.justifyContent = 'center'; 
                 }
+            } else {
+                marqueeContent.style.animation = 'none';
+                marqueeContent.style.justifyContent = 'center';
             }
         }
     });
 
-     // Also handle resize events to adjust animation or centering
      window.addEventListener('resize', () => {
-         const marqueeContainer = document.querySelector('.marquee-container');
-         const marqueeContent = document.querySelector('.marquee-content');
-         if (marqueeContainer && marqueeContent) {
-              // Recalculate and apply logic similar to load event
-              let actualContentWidth = marqueeContent.scrollWidth;
-              let animationDuration = actualContentWidth / 50;
+        const marqueeContainer = document.querySelector('.marquee-container');
+        const marqueeContent = document.querySelector('.marquee-content');
+        if (marqueeContainer && marqueeContent) {
+            let actualContentWidth = marqueeContent.scrollWidth;
+            let animationDuration = actualContentWidth / 50;
 
-              if (actualContentWidth > 0 && animationDuration > 0) {
-                   if (marqueeContent.scrollWidth > marqueeContainer.clientWidth) {
-                        // Update keyframes if necessary (though animating by px is more stable on resize)
-                         const styleSheets = document.styleSheets;
-                         for (let i = 0; i < styleSheets.length; i++) {
-                             try {
-                                 const rules = styleSheets[i].cssRules;
-                                 for (let j = 0; j < rules.length; j++) {
-                                     if (rules[j].name === 'marquee_scroll_left') {
-                                         // Remove old rule
-                                         styleSheets[i].deleteRule(j);
-                                         break;
-                                     }
-                                 }
-                             } catch (e) {
-                                  console.warn("Could not access stylesheet rules during resize:", e);
-                             }
-                         }
-                         // Insert new rule based on current width
-                         const styleSheet = document.styleSheets[0];
-                         if (styleSheet) {
-                             const keyframes = `@keyframes marquee_scroll_left {
-                                 from { transform: translateX(0%); }
-                                 to { transform: translateX(-${actualContentWidth}px); }
-                             }`;
-                             try {
-                                 styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
-                             } catch (e) {
-                                  console.error("Failed to insert keyframe rule during resize:", e);
-                             }
-                         }
-
-
-                        marqueeContent.style.animation = `marquee_scroll_left ${animationDuration}s linear infinite`;
-                        marqueeContent.style.justifyContent = 'flex-start'; // Reset justify-content when animating
-                   } else {
-                        marqueeContent.style.animation = 'none';
-                        marqueeContent.style.justifyContent = 'center';
-                   }
-              } else {
-                   // If content width or duration is zero/negative, ensure no animation and center
-                   marqueeContent.style.animation = 'none';
-                   marqueeContent.style.justifyContent = 'center';
-              }
-         }
-     });
+            if (actualContentWidth > 0 && animationDuration > 0) {
+                if (marqueeContent.scrollWidth > marqueeContainer.clientWidth) {
+                    const styleSheets = document.styleSheets;
+                    for (let i = 0; i < styleSheets.length; i++) {
+                        try {
+                            const rules = styleSheets[i].cssRules;
+                            for (let j = 0; j < rules.length; j++) {
+                                if (rules[j].name === 'marquee_scroll_left') {
+                                    styleSheets[i].deleteRule(j);
+                                    break;
+                                }
+                            }
+                        } catch (e) {
+                             console.warn("Could not access stylesheet rules during resize:", e);
+                        }
+                    }
+                    const styleSheet = document.styleSheets[0];
+                    if (styleSheet) {
+                        const keyframes = `@keyframes marquee_scroll_left {
+                            from { transform: translateX(0%); }
+                            to { transform: translateX(-${actualContentWidth}px); }
+                        }`;
+                        try {
+                            styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
+                        } catch (e) {
+                             console.error("Failed to insert keyframe rule during resize:", e);
+                        }
+                    }
+                    marqueeContent.style.animation = `marquee_scroll_left ${animationDuration}s linear infinite`;
+                    marqueeContent.style.justifyContent = 'flex-start'; 
+                } else {
+                    marqueeContent.style.animation = 'none';
+                    marqueeContent.style.justifyContent = 'center';
+                }
+            } else {
+                marqueeContent.style.animation = 'none';
+                marqueeContent.style.justifyContent = 'center';
+            }
+        }
+    });
 </script>
 {% endblock %}

@@ -595,7 +595,7 @@ class WithdrawalRequest(models.Model):
 
             update_fields_list = ['status', 'processed_date', 'admin_notes', 'processed_by', 'payment_reference']
             if payment_slip_file: # Only add 'payment_slip' to update_fields if a new file is being saved
-                 update_fields_list.append('payment_slip')
+                update_fields_list.append('payment_slip')
 
             try:
                 with transaction.atomic():
@@ -916,8 +916,8 @@ class Ticket(models.Model):
                         self.creator_profile = None
                         logger.info(f"User {self.user.pk} is_creator=True but creator_profile is None for ticket {getattr(self, 'id', 'new')}.")
                 except Creator.DoesNotExist: # Explicitly catch DoesNotExist
-                     self.creator_profile = None
-                     logger.warning(f"Creator profile not found for user {self.user.pk} on ticket {getattr(self, 'id', 'new')}.")
+                    self.creator_profile = None
+                    logger.warning(f"Creator profile not found for user {self.user.pk} on ticket {getattr(self, 'id', 'new')}.")
                 except Exception as e: # Catch other potential errors
                     self.creator_profile = None
                     logger.warning(f"Could not link creator_profile for user {self.user.pk} on ticket {getattr(self, 'id', 'new')}: {e}")
@@ -993,3 +993,82 @@ class UserLibraryItem(models.Model):
 
     def __str__(self):
         return f"'{self.audiobook.title}' in {self.user.username}'s library"
+
+# --- NEW MODEL FOR OFFLINE DOWNLOADS ---
+class UserDownloadedAudiobook(models.Model):
+    """
+    Tracks audiobooks downloaded by users for offline listening.
+    """
+    download_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='downloaded_audiobooks',
+        verbose_name=_("User")
+    )
+    audiobook = models.ForeignKey(
+        Audiobook,
+        on_delete=models.CASCADE,
+        related_name='user_downloads',
+        verbose_name=_("Audiobook")
+    )
+    download_date = models.DateTimeField(
+        default=timezone.now,
+        verbose_name=_("Download Date")
+    )
+    expiry_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Optional: When the download access expires (e.g., for subscription-based downloads)."),
+        verbose_name=_("Expiry Date")
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text=_("Is this download currently active and usable offline? Set to False if expired or revoked."),
+        verbose_name=_("Is Active")
+    )
+    last_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Timestamp when the client app last verified the download's validity with the server."),
+        verbose_name=_("Last Verified At")
+    )
+    # client_device_id = models.CharField(max_length=255, blank=True, null=True, help_text="Identifier for the client device where the audiobook is downloaded.") # Optional: If you need to track downloads per device.
+
+    class Meta:
+        db_table = 'USER_DOWNLOADED_AUDIOBOOKS'
+        ordering = ['-download_date']
+        unique_together = ('user', 'audiobook') # Ensures a user has only one download record per audiobook.
+                                               # If you want to allow multiple downloads of the same book (e.g. on different devices, and track them separately)
+                                               # you might remove this or add client_device_id to the unique_together constraint.
+        verbose_name = _("User Downloaded Audiobook")
+        verbose_name_plural = _("User Downloaded Audiobooks")
+
+    def __str__(self):
+        return f"{self.user.username} downloaded '{self.audiobook.title}' on {self.download_date.strftime('%Y-%m-%d')}"
+
+    @property
+    def is_expired(self):
+        """Checks if the download has expired based on its expiry_date."""
+        if self.expiry_date and self.expiry_date < timezone.now():
+            return True
+        return False
+
+    def deactivate_if_expired(self):
+        """
+        Deactivates the download if it's past its expiry date and currently active.
+        Returns True if deactivated, False otherwise.
+        """
+        if self.is_expired and self.is_active:
+            self.is_active = False
+            self.save(update_fields=['is_active'])
+            logger.info(f"Deactivated expired download (ID: {self.download_id}) for user {self.user.username} - audiobook '{self.audiobook.title}'.")
+            return True
+        return False
+
+    def refresh_verification(self):
+        """Updates the last_verified_at timestamp."""
+        self.last_verified_at = timezone.now()
+        self.save(update_fields=['last_verified_at'])
+        logger.info(f"Refreshed verification for download (ID: {self.download_id}) for user {self.user.username} - audiobook '{self.audiobook.title}'.")
+

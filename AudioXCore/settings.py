@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import logging
 import logging.config
 from django.core.exceptions import ImproperlyConfigured
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy # Make sure reverse_lazy is imported
 from decimal import Decimal
 
 # Basic logging setup (configured further below)
@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
 
-    'AudioXApp',
+    'AudioXApp', # Your app
 
     'django.contrib.humanize',
     'mathfilters',
@@ -57,6 +57,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+
+    'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -241,7 +244,7 @@ SITE_ID = 1
 
 ACCOUNT_LOGIN_METHODS = ('email',)
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_EMAIL_VERIFICATION = 'none' # Set to 'mandatory' or 'optional' for production
 ACCOUNT_SIGNUP_FIELDS = ("full_name", "username")
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_LOGIN_ON_GET = True
@@ -264,12 +267,27 @@ SOCIALACCOUNT_PROVIDERS = {
             'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
             'key': ''
         },
-        'VERIFIED_EMAIL': True,
+        'VERIFIED_EMAIL': True, # Ensure only verified Google accounts can sign up
     }
 }
 
+# --- Django REST Framework Configuration ---
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated', # Default to authenticated for APIs
+    ],
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    # 'PAGE_SIZE': 10,
+}
+# --- END Django REST Framework Configuration ---
+
+
 # --- Logging Configuration (dictConfig) ---
-LOGGING_CONFIG = None
+LOGGING_CONFIG = None # Set to None to disable Django's default logging config
 logging.config.dictConfig({
     'version': 1,
     'disable_existing_loggers': False,
@@ -284,26 +302,33 @@ logging.config.dictConfig({
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
+            'level': 'DEBUG' if DEBUG else 'INFO', # More verbose in DEBUG
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
+        # You can add file handlers here for production if needed
+        # 'file': {
+        #     'level': 'INFO',
+        #     'class': 'logging.FileHandler',
+        #     'filename': BASE_DIR / 'logs/django.log',
+        #     'formatter': 'verbose',
+        # },
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console'], # Add 'file' here if using file logging
             'propagate': True,
-            'level': 'INFO',
+            'level': 'INFO', # Default Django logging level
         },
-        'django.request': {
+        'django.request': { # Specific logger for request handling
             'handlers': ['console'],
-            'level': 'WARNING',
+            'level': 'WARNING', # Log only warnings and errors for requests
             'propagate': False,
         },
-        'AudioXApp': {
+        'AudioXApp': { # Your application's logger
             'handlers': ['console'],
             'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
+            'propagate': False, # Don't propagate to root logger if handled here
         },
         'allauth': {
             'handlers': ['console'],
@@ -314,34 +339,57 @@ logging.config.dictConfig({
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
-        }
+        },
+        'rest_framework': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Add other specific app loggers here if needed
     },
-    'root': {
+    'root': { # Catch-all root logger
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': 'INFO', # Root logger level
     }
 })
 
 # --- Custom Settings ---
 PROFILE_COMPLETION_EXEMPT_URLS = [
     reverse_lazy('AudioXApp:complete_profile'),
-    reverse_lazy('account_logout'),
+    reverse_lazy('account_logout'), # Ensure this matches your allauth logout URL name if different
+    reverse_lazy('AudioXApp:my_downloads'), # <<< --- ADDED THIS LINE TO EXEMPT MY_DOWNLOADS
 ]
-ADMIN_URL_PATH = os.getenv('DJANGO_ADMIN_URL', 'admin/')
+ADMIN_URL_PATH = os.getenv('DJANGO_ADMIN_URL', 'admin/') # Default Django admin path
 if not ADMIN_URL_PATH.endswith('/'):
     ADMIN_URL_PATH += '/'
-PROFILE_COMPLETION_EXEMPT_URLS.append(reverse_lazy('admin:index'))
+# try:
+# PROFILE_COMPLETION_EXEMPT_URLS.append(reverse_lazy('admin:index'))
+# except Exception:
+# logger.warning("Could not add admin:index to PROFILE_COMPLETION_EXEMPT_URLS. Ensure admin path is handled if needed.")
+
 
 # Creator Application Settings
 MAX_CREATOR_APPLICATION_ATTEMPTS = int(os.getenv('MAX_CREATOR_APPLICATION_ATTEMPTS', 3))
 WITHDRAWAL_REQUEST_COOLDOWN_DAYS = int(os.getenv('WITHDRAWAL_REQUEST_COOLDOWN_DAYS', 15))
+MIN_CREATOR_WITHDRAWAL_AMOUNT = Decimal(os.getenv('MIN_CREATOR_WITHDRAWAL_AMOUNT', '50.00'))
+
+# Download Feature Settings (Optional)
+DOWNLOAD_DEFAULT_EXPIRY_DAYS = int(os.getenv('DOWNLOAD_DEFAULT_EXPIRY_DAYS', 30)) # For non-subscribed users or general downloads
+DOWNLOAD_PREMIUM_EXPIRY_DAYS = int(os.getenv('DOWNLOAD_PREMIUM_EXPIRY_DAYS', 30)) # For premium subscribers, can be same or different
+# --- END Custom Settings ---
 
 # --- Google Gemini AI Configuration ---
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 if not GEMINI_API_KEY and not DEBUG:
-    # In production, you might want to raise an error or log a critical warning
-    # if the AI service is essential and the key is missing.
     logger.critical("CRITICAL (PRODUCTION): GEMINI_API_KEY is not set in .env. AI features will fail.")
 elif not GEMINI_API_KEY and DEBUG:
     logger.warning("Warning (DEBUG): GEMINI_API_KEY is not set in .env. AI features will be unavailable.")
+
+# --- DeepSeek AI Configuration ---
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+
+if not DEEPSEEK_API_KEY and not DEBUG:
+    logger.critical("CRITICAL (PRODUCTION): DEEPSEEK_API_KEY is not set in .env. AI summary features will fail.")
+elif not DEEPSEEK_API_KEY and DEBUG:
+    logger.warning("Warning (DEBUG): DEEPSEEK_API_KEY is not set in .env. AI summary features will be unavailable.")

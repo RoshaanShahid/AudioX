@@ -1,4 +1,4 @@
-{% extends "homepage.html" %}
+{% extends "Homepage.html" %}
 {% load static %}
 {% load humanize %}
 {% load mathfilters %}
@@ -8,6 +8,18 @@
 {% block extra_head %}
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sindhi:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    .marquee-container {
+        width: 100%;
+        overflow: hidden;
+    }
+    .marquee-content {
+        display: flex;
+        align-items: center; /* Vertically align items */
+        /* animation will be applied by JS if content overflows */
+    }
+    /* Keyframes will be injected by JS if needed */
+</style>
 {% endblock %}
 
 {% block content %}
@@ -40,9 +52,9 @@
                 <div class="marquee-container">
                     {# Added justify-center to center the items when not overflowing #}
                     <div class="marquee-content flex items-center whitespace-nowrap space-x-8 justify-center">
-                        {# Roman Sindhi Genres - Reduced to Lok Adab and Shayari, duplicates removed #}
-                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Lok-Adab" class="text-lg md:text-xl font-bold text-white flex-shrink-0 px-2 text-center">Lok Adab</a>
-                        <a href="{% url 'AudioXApp:sindhi_page' %}?genre=Shayari" class="text-lg md:text-xl font-bold text-white flex-shrink-0 px-2 text-center">Shayari</a>
+                        {# Updated Sindhi Genre Links #}
+                        <a href="{% url 'AudioXApp:sindhi_genre_lok_adab' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0 px-2 text-center hover:text-yellow-300 transition-colors">لوڪ ادب</a>
+                        <a href="{% url 'AudioXApp:sindhi_genre_shayari' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0 px-2 text-center hover:text-yellow-300 transition-colors">شاعري</a>
                     </div>
                 </div>
             </div>
@@ -51,8 +63,8 @@
 
     {# --- Main Content Area for Audiobooks --- #}
     <div class="container mx-auto px-4 py-12">
-        <h1 class="text-4xl font-bold text-center text-[#091e65] mb-12 tracking-tight text-center">
-            Sindhi Audio Kitaboon
+        <h1 class="text-4xl font-bold text-center text-[#091e65] mb-12 tracking-tight text-center font-['Noto Sans Sindhi']">
+            سنڌي آڊيو ڪتاب
         </h1>
 
         {% if error_message and not audiobooks_list and not creator_audiobooks %}
@@ -105,8 +117,8 @@
         {# --- Creator Audiobooks Section --- #}
         {% if creator_audiobooks %}
             <div class="mb-16">
-                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300 text-center">
-                    Asaanje Takhleeqkaran Joon
+                <h2 class="text-2xl sm:text-3xl font-semibold text-gray-700 mb-8 pb-3 border-b border-gray-300 text-center font-['Noto Sans Sindhi']">
+                    اسانجي تخليقڪارن پاران
                 </h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
                     {% for creator_book in creator_audiobooks %}
@@ -114,7 +126,7 @@
                             <div class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out group-hover:shadow-2xl hover:-translate-y-1 h-full flex flex-col">
                                 <div class="relative h-72 w-full">
                                     {% if creator_book.cover_image %}
-                                    <img src="{{ creator_book.cover_image }}"
+                                    <img src="{{ creator_book.cover_image.url }}" {# Use .url for ImageField #}
                                          alt="{{ creator_book.title }} Cover"
                                          class="w-full h-full object-cover"
                                          loading="lazy"
@@ -152,17 +164,17 @@
                                                  {% if rating is not None %}
                                                      {% with full_stars=rating|floatformat:0|add:"0" decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
                                                      {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                                          {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-                                                          {% if decimal_part_int >= 5 %}
-                                                              <i class="fas fa-star-half-alt text-yellow-400"></i>
-                                                              {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
-                                                                   {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                              {% endwith %}
-                                                          {% else %}
-                                                              {% with empty_stars=5|sub:full_stars %}
-                                                                   {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
-                                                              {% endwith %}
-                                                          {% endif %}
+                                                         {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+                                                         {% if decimal_part_int >= 5 %} {# Adjusted for half star logic #}
+                                                             <i class="fas fa-star-half-alt text-yellow-400"></i>
+                                                             {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
+                                                                 {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                             {% endwith %}
+                                                         {% else %}
+                                                             {% with empty_stars=5|sub:full_stars %}
+                                                                 {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300"></i>{% endfor %}
+                                                             {% endwith %}
+                                                         {% endif %}
                                                      {% endwith %}{# end decimal_part_int #}
                                                      {% endwith %}{# end full_stars & decimal_part_str #}
                                                      <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
@@ -205,15 +217,11 @@
         const marqueeContainer = document.querySelector('.marquee-container');
         const marqueeContent = document.querySelector('.marquee-content');
         if (marqueeContainer && marqueeContent) {
-            // Calculate animation duration based on content width
-            // Note: Removing duplicates means the seamless loop effect will be lost
-            let actualContentWidth = marqueeContent.scrollWidth; // Use full width as no duplicates
-            let animationDuration = actualContentWidth / 50; // Adjust 50 for speed
+            let actualContentWidth = marqueeContent.scrollWidth; 
+            let animationDuration = actualContentWidth / 50; 
 
             if (actualContentWidth > 0 && animationDuration > 0) {
-                 // Check if content overflows before applying animation
                 if (marqueeContent.scrollWidth > marqueeContainer.clientWidth) {
-                    // Define the keyframes dynamically if they don't exist or need update
                     let ruleExists = false;
                     const styleSheets = document.styleSheets;
                     for (let i = 0; i < styleSheets.length; i++) {
@@ -221,7 +229,6 @@
                             const rules = styleSheets[i].cssRules;
                             for (let j = 0; j < rules.length; j++) {
                                 if (rules[j].name === 'marquee_scroll_left') {
-                                    // Remove old rule if it exists
                                     styleSheets[i].deleteRule(j);
                                     break;
                                 }
@@ -231,11 +238,11 @@
                         }
                     }
 
-                    const styleSheet = document.styleSheets[0]; // Assuming the first stylesheet
+                    const styleSheet = document.styleSheets[0]; 
                     if (styleSheet) {
                         const keyframes = `@keyframes marquee_scroll_left {
                             from { transform: translateX(0%); }
-                            to { transform: translateX(-${actualContentWidth}px); } /* Animate based on actual width */
+                            to { transform: translateX(-${actualContentWidth}px); } 
                         }`;
                         try {
                             styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
@@ -245,74 +252,64 @@
                     }
 
                     marqueeContent.style.animation = `marquee_scroll_left ${animationDuration}s linear infinite`;
-                    marqueeContent.style.justifyContent = 'flex-start'; // Reset justify-content when animating
+                    marqueeContent.style.justifyContent = 'flex-start'; 
                 } else {
-                     // If content does not overflow, remove animation and ensure centering
-                     marqueeContent.style.animation = 'none';
-                     marqueeContent.style.justifyContent = 'center'; // Ensure centering is applied
+                    marqueeContent.style.animation = 'none';
+                    marqueeContent.style.justifyContent = 'center'; 
                 }
             } else {
-                // If content width or duration is zero/negative, ensure no animation and center
                 marqueeContent.style.animation = 'none';
                 marqueeContent.style.justifyContent = 'center';
             }
         }
     });
 
-     // Also handle resize events to adjust animation or centering
      window.addEventListener('resize', () => {
-         const marqueeContainer = document.querySelector('.marquee-container');
-         const marqueeContent = document.querySelector('.marquee-content');
-         if (marqueeContainer && marqueeContent) {
-              // Recalculate and apply logic similar to load event
-              let actualContentWidth = marqueeContent.scrollWidth;
-              let animationDuration = actualContentWidth / 50;
+        const marqueeContainer = document.querySelector('.marquee-container');
+        const marqueeContent = document.querySelector('.marquee-content');
+        if (marqueeContainer && marqueeContent) {
+            let actualContentWidth = marqueeContent.scrollWidth;
+            let animationDuration = actualContentWidth / 50;
 
-              if (actualContentWidth > 0 && animationDuration > 0) {
-                   if (marqueeContent.scrollWidth > marqueeContainer.clientWidth) {
-                        // Update keyframes if necessary (though animating by px is more stable on resize)
-                         const styleSheets = document.styleSheets;
-                         for (let i = 0; i < styleSheets.length; i++) {
-                             try {
-                                 const rules = styleSheets[i].cssRules;
-                                 for (let j = 0; j < rules.length; j++) {
-                                     if (rules[j].name === 'marquee_scroll_left') {
-                                         // Remove old rule
-                                         styleSheets[i].deleteRule(j);
-                                         break;
-                                     }
-                                 }
-                             } catch (e) {
-                                  console.warn("Could not access stylesheet rules during resize:", e);
-                             }
-                         }
-                         // Insert new rule based on current width
-                         const styleSheet = document.styleSheets[0];
-                         if (styleSheet) {
-                             const keyframes = `@keyframes marquee_scroll_left {
-                                 from { transform: translateX(0%); }
-                                 to { transform: translateX(-${actualContentWidth}px); }
-                             }`;
-                             try {
-                                 styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
-                             } catch (e) {
-                                  console.error("Failed to insert keyframe rule during resize:", e);
-                             }
-                         }
-
-
-                        marqueeContent.style.animation = `marquee_scroll_left ${animationDuration}s linear infinite`;
-                        marqueeContent.style.justifyContent = 'flex-start'; // Reset justify-content when animating
-                   } else {
-                        marqueeContent.style.animation = 'none';
-                        marqueeContent.style.justifyContent = 'center';
-                   }
-              } else {
-                   // If content width or duration is zero/negative, ensure no animation and center
-                   marqueeContent.style.animation = 'none';
-                   marqueeContent.style.justifyContent = 'center';
-              }
-         }
-     });
+            if (actualContentWidth > 0 && animationDuration > 0) {
+                if (marqueeContent.scrollWidth > marqueeContainer.clientWidth) {
+                    const styleSheets = document.styleSheets;
+                    for (let i = 0; i < styleSheets.length; i++) {
+                        try {
+                            const rules = styleSheets[i].cssRules;
+                            for (let j = 0; j < rules.length; j++) {
+                                if (rules[j].name === 'marquee_scroll_left') {
+                                    styleSheets[i].deleteRule(j);
+                                    break;
+                                }
+                            }
+                        } catch (e) {
+                             console.warn("Could not access stylesheet rules during resize:", e);
+                        }
+                    }
+                    const styleSheet = document.styleSheets[0];
+                    if (styleSheet) {
+                        const keyframes = `@keyframes marquee_scroll_left {
+                            from { transform: translateX(0%); }
+                            to { transform: translateX(-${actualContentWidth}px); }
+                        }`;
+                        try {
+                            styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
+                        } catch (e) {
+                             console.error("Failed to insert keyframe rule during resize:", e);
+                        }
+                    }
+                    marqueeContent.style.animation = `marquee_scroll_left ${animationDuration}s linear infinite`;
+                    marqueeContent.style.justifyContent = 'flex-start'; 
+                } else {
+                    marqueeContent.style.animation = 'none';
+                    marqueeContent.style.justifyContent = 'center';
+                }
+            } else {
+                marqueeContent.style.animation = 'none';
+                marqueeContent.style.justifyContent = 'center';
+            }
+        }
+    });
 </script>
 {% endblock %}
