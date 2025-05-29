@@ -8,7 +8,16 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    .modal-content-item dt {
+        font-weight: 600;
+        color: #4A5568; /* text-slate-600 */
+    }
+    .modal-content-item dd {
+        color: #1E293B; /* text-slate-800 */
+        word-break: break-all; 
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -39,13 +48,13 @@
             <form method="GET" action="{% url 'AudioXApp:admin_manage_withdrawal_requests' %}" class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6 items-end">
                 <div>
                     <label for="q" class="block text-sm font-semibold text-slate-700 mb-1">Search Requests</label>
-                    <input type="text" name="q" id="q" value="{{ search_query|default:'' }}" placeholder="Creator, Req ID, Amount..."
+                    <input type="text" name="q" id="q" value="{{ search_query|default:'' }}" placeholder="Creator CID/Email, Req ID, Amount"
                            class="w-full px-1 py-2 text-base border-0 border-b-2 border-slate-300 focus:border-[#091e65] focus:ring-0 bg-transparent placeholder-slate-400 transition-colors duration-150">
                 </div>
                 <div>
                     <label for="status" class="block text-sm font-semibold text-slate-700 mb-1">Filter by Status</label>
                     <select name="status" id="status" class="w-full px-1 py-2 text-base border-0 border-b-2 border-slate-300 focus:border-[#091e65] focus:ring-0 bg-transparent transition-colors duration-150">
-                        <option value="all" {% if current_status_filter == 'ALL' %}selected{% endif %}>All Statuses</option>
+                        <option value="all" {% if current_status_filter|lower == 'all' %}selected{% endif %}>All Statuses</option>
                         {% for value, display_name in status_choices %}
                         <option value="{{ value }}" {% if current_status_filter == value %}selected{% endif %}>{{ display_name }}</option>
                         {% endfor %}
@@ -91,31 +100,38 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ req.request_date|date:"M d, Y, P" }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                             {% if req.withdrawal_account %}
-                            {{ req.withdrawal_account.get_account_type_display }} - {{ req.withdrawal_account.account_title }}
+                            {{ req.withdrawal_account.get_account_type_display }} - {{ req.withdrawal_account.account_title|truncatechars:20 }}
                             <div class="text-xs">(...{{ req.withdrawal_account.account_identifier|slice:"-4:" }})</div>
+                            <button type="button" class="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline focus:outline-none"
+                                    data-acc-type="{{ req.withdrawal_account.get_account_type_display|escapejs }}"
+                                    data-acc-title="{{ req.withdrawal_account.account_title|escapejs }}"
+                                    data-acc-identifier="{{ req.withdrawal_account.account_identifier|escapejs }}"
+                                    data-acc-bank="{{ req.withdrawal_account.bank_name|default:""|escapejs }}"
+                                    data-acc-primary="{{ req.withdrawal_account.is_primary|yesno:"Yes,No"|escapejs }}"
+                                    onclick="openAccountDetailsModal(this)">
+                                <i class="fas fa-eye mr-1"></i>View Details
+                            </button>
                             {% else %}
                             <span class="text-xs italic">Account Deleted</span>
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <span class="flex items-center
-                                {% if req.status == 'PENDING' %} text-[#091e65]
-                                {% elif req.status == 'PROCESSING' %} text-[#091e65]
-                                {% elif req.status == 'APPROVED' %} text-[#091e65]
-                                {% elif req.status == 'REJECTED' %} text-red-600
-                                {% elif req.status == 'COMPLETED' %} text-[#091e65]
-                                {% elif req.status == 'FAILED' %} text-red-600
-                                {% elif req.status == 'CANCELLED' %} text-slate-500
-                                {% else %} text-slate-600 {% endif %}">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold
+                                {% if req.status == 'PENDING' %} bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200
+                                {% elif req.status == 'PROCESSING' %} bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200
+                                {% elif req.status == 'COMPLETED' %} bg-green-100 text-green-700 ring-1 ring-inset ring-green-200
+                                {% elif req.status == 'REJECTED' %} bg-red-100 text-red-700 ring-1 ring-inset ring-red-200
+                                {% elif req.status == 'FAILED' %} bg-orange-100 text-orange-700 ring-1 ring-inset ring-orange-200
+                                {% elif req.status == 'CANCELLED' %} bg-slate-200 text-slate-700 ring-1 ring-inset ring-slate-300 
+                                {% else %} bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200 {% endif %}">
                                 <i class="fas 
                                 {% if req.status == 'PENDING' %} fa-hourglass-half
                                 {% elif req.status == 'PROCESSING' %} fa-sync-alt {% if req.status == 'PROCESSING' %} fa-spin {% endif %}
-                                {% elif req.status == 'APPROVED' %} fa-check-circle
-                                {% elif req.status == 'REJECTED' %} fa-times-circle
                                 {% elif req.status == 'COMPLETED' %} fa-check-double
+                                {% elif req.status == 'REJECTED' %} fa-times-circle
                                 {% elif req.status == 'FAILED' %} fa-exclamation-circle
                                 {% elif req.status == 'CANCELLED' %} fa-ban
-                                {% else %} fa-question-circle {% endif %} mr-1.5"></i>
+                                {% else %} fa-question-circle {% endif %} mr-1 text-xs"></i>
                                 {{ req.get_status_display }}
                             </span>
                         </td>
@@ -131,18 +147,40 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-xs font-medium space-y-1.5">
                             {% if req.status == 'PENDING' %}
-                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-[#091e65] text-[#091e65] hover:bg-[#091e65] hover:text-white" onclick="openActionModal('{{ req.id }}', 'mark_processing', '{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}', '{{ req.amount|floatformat:2 }}')">Mark Processing</button>
-                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white" onclick="openActionModal('{{ req.id }}', 'reject', '{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}', '{{ req.amount|floatformat:2 }}')">Reject</button>
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-[#091e65] text-[#091e65] hover:bg-[#091e65] hover:text-white" 
+                                    data-req-id="{{ req.id }}"
+                                    data-action="mark_processing"
+                                    data-creator-name="{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}"
+                                    data-amount="{{ req.amount|floatformat:2 }}"
+                                    onclick="openActionModal(this)">Mark Processing</button>
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white" 
+                                    data-req-id="{{ req.id }}"
+                                    data-action="reject"
+                                    data-creator-name="{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}"
+                                    data-amount="{{ req.amount|floatformat:2 }}"
+                                    onclick="openActionModal(this)">Reject</button>
                             {% elif req.status == 'PROCESSING' %}
-                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-[#091e65] text-[#091e65] hover:bg-[#091e65] hover:text-white" onclick="openActionModal('{{ req.id }}', 'approve_and_complete', '{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}', '{{ req.amount|floatformat:2 }}')">Approve & Complete</button>
-                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white" onclick="openActionModal('{{ req.id }}', 'reject', '{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}', '{{ req.amount|floatformat:2 }}')">Reject</button>
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-[#091e65] text-[#091e65] hover:bg-[#091e65] hover:text-white" 
+                                    data-req-id="{{ req.id }}"
+                                    data-action="approve_and_complete"
+                                    data-creator-name="{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}"
+                                    data-amount="{{ req.amount|floatformat:2 }}"
+                                    onclick="openActionModal(this)">Approve & Complete</button>
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border-2 border-red-600 text-red-600 hover:bg-red-600 hover:text-white" 
+                                    data-req-id="{{ req.id }}"
+                                    data-action="reject"
+                                    data-creator-name="{{ req.creator.creator_name|default:req.creator.user.username|escapejs }}"
+                                    data-amount="{{ req.amount|floatformat:2 }}"
+                                    onclick="openActionModal(this)">Reject</button>
                             {% endif %}
 
                             {% if req.payment_slip %}
                             <a href="{{ req.payment_slip.url }}" target="_blank" class="block w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border border-slate-400 text-slate-600 hover:bg-slate-100" title="View Payment Slip">View Slip</a>
                             {% endif %}
                             {% if req.admin_notes %}
-                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border border-slate-400 text-slate-600 hover:bg-slate-100" onclick="openNotesModal('{{ req.admin_notes|escapejs }}')">View Notes</button>
+                            <button type="button" class="w-full text-center px-3 py-1.5 rounded-md transition-colors duration-150 border border-slate-400 text-slate-600 hover:bg-slate-100" 
+                                    data-notes="{{ req.admin_notes|escapejs }}"
+                                    onclick="openNotesModal(this.dataset.notes)">View Notes</button>
                             {% endif %}
                         </td>
                     </tr>
@@ -158,13 +196,13 @@
         </div>
         <h3 class="mt-6 text-xl font-semibold text-[#091e65]">No Withdrawal Requests Found</h3>
         <p class="mt-2 text-sm text-slate-600">
-            {% if search_query or current_status_filter != 'ALL' %}
+            {% if search_query or current_status_filter|lower != 'all' %}
             Try adjusting your search or filter criteria.
             {% else %}
             There are currently no withdrawal requests to display.
             {% endif %}
         </p>
-        {% if search_query or current_status_filter != 'ALL' %}
+        {% if search_query or current_status_filter|lower != 'all' %}
         <div class="mt-8">
             <a href="{% url 'AudioXApp:admin_manage_withdrawal_requests' %}" class="inline-flex items-center rounded-md bg-[#091e65] hover:bg-[#071857] px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#071857]">
                 <i class="fas fa-sync-alt mr-2"></i> Clear Filters
@@ -175,7 +213,8 @@
     {% endif %}
 </div>
 
-<div id="actionModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out">
+{# Action Modal (existing) #}
+<div id="actionModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out print:hidden">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-lg m-4 transform scale-95 transition-transform duration-300 ease-in-out">
         <form id="actionModalForm" method="POST" action="{% url 'AudioXApp:admin_manage_withdrawal_requests' %}" enctype="multipart/form-data">
             {% csrf_token %}
@@ -213,7 +252,8 @@
     </div>
 </div>
 
-<div id="notesDisplayModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out">
+{# Notes Display Modal (existing) #}
+<div id="notesDisplayModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out print:hidden">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md m-4 transform scale-95 transition-transform duration-300 ease-in-out">
         <div class="px-6 py-4 border-b border-slate-200">
             <h3 class="text-lg font-semibold text-[#091e65]">Admin Notes</h3>
@@ -222,6 +262,30 @@
             </div>
         <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end rounded-b-lg">
             <button type="button" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md shadow-sm transition-colors" onclick="closeModal('notesDisplayModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+{# Account Details Modal (existing) #}
+<div id="accountDetailsModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out print:hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md m-4 transform scale-95 transition-transform duration-300 ease-in-out">
+        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-[#091e65]">Withdrawal Account Details</h3>
+            <button type="button" class="text-slate-400 hover:text-slate-600" onclick="closeModal('accountDetailsModal')">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-3">
+            <dl class="space-y-2 text-sm">
+                <div class="modal-content-item"><dt>Account Type:</dt> <dd id="modalAccType"></dd></div>
+                <div class="modal-content-item"><dt>Account Title:</dt> <dd id="modalAccTitle"></dd></div>
+                <div class="modal-content-item"><dt>Account Identifier:</dt> <dd id="modalAccIdentifier" class="font-mono"></dd></div>
+                <div class="modal-content-item hidden" id="modalBankNameContainer"><dt>Bank Name:</dt> <dd id="modalBankName"></dd></div>
+                <div class="modal-content-item"><dt>Is Primary:</dt> <dd id="modalAccPrimary"></dd></div>
+            </dl>
+        </div>
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end rounded-b-lg">
+            <button type="button" class="px-4 py-2 text-sm font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md shadow-sm transition-colors" onclick="closeModal('accountDetailsModal')">Close</button>
         </div>
     </div>
 </div>
@@ -242,12 +306,9 @@
                 modalContent.classList.remove('scale-95');
                 modalContent.classList.add('scale-100');
             }
-            const focusable = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            if (focusable) focusable.focus();
         }
     }
 
-    // Function to close a modal
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
@@ -265,16 +326,14 @@
         }
     }
 
-    // Close modal on Escape key press
     document.addEventListener('keydown', function(event) {
         if (event.key === "Escape") {
-            const openModals = document.querySelectorAll('#actionModal.visible, #notesDisplayModal.visible');
+            const openModals = document.querySelectorAll('.fixed.z-\\[1000\\].visible');
             openModals.forEach(modal => closeModal(modal.id));
         }
     });
 
-    // Close modal on backdrop click
-    document.querySelectorAll('#actionModal, #notesDisplayModal').forEach(modalEl => {
+    document.querySelectorAll('#actionModal, #notesDisplayModal, #accountDetailsModal').forEach(modalEl => {
         modalEl.addEventListener('click', function(event) {
             if (event.target === modalEl) {
                 closeModal(modalEl.id);
@@ -282,8 +341,13 @@
         });
     });
 
-    // Function to configure and open the action modal
-    function openActionModal(requestIdPk, action, creatorName, amount) {
+    // Updated to accept button element 'el' and read data-* attributes
+    function openActionModal(el) {
+        const requestIdPk = el.dataset.reqId;
+        const action = el.dataset.action;
+        const creatorName = el.dataset.creatorName;
+        const amount = el.dataset.amount;
+
         document.getElementById('modal_request_id').value = requestIdPk;
         document.getElementById('modal_action').value = action;
 
@@ -301,7 +365,6 @@
         const paymentSlipUploadContainer = document.getElementById('paymentSlipUploadContainer');
         const paymentSlipInput = document.getElementById('modal_payment_slip_file_input');
 
-        // Reset fields and visibility
         notesTextareaContainer.classList.add('hidden');
         notesTextareaInput.name = ""; 
         notesTextareaInput.value = "";
@@ -312,13 +375,12 @@
         completionReferenceInput.value = "";
 
         paymentSlipUploadContainer.classList.add('hidden');
-        paymentSlipInput.value = null; 
+        if(paymentSlipInput) paymentSlipInput.value = null; 
 
         let titleText = '';
         let promptText = `Please confirm the action for withdrawal request by <strong class="text-[#091e65]">${creatorName}</strong> (Amount: <strong class="text-[#091e65]">PKR ${amount}</strong>).`;
         let confirmButtonText = 'Confirm';
         
-        // Reset confirm button classes, keeping base style
         confirmButton.className = 'px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm transition-colors'; 
 
         if (action === 'mark_processing') {
@@ -361,12 +423,38 @@
         openModal('actionModal');
     }
 
-    // Function to open the notes display modal
+    // Updated to accept notes string directly
     function openNotesModal(notes) {
         const notesModalBody = document.getElementById('notesModalBody');
         const escapedNotes = notes.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        notesModalBody.innerHTML = `<div class="prose prose-sm sm:prose-base max-w-none">${escapedNotes.replace(/\n/g, '<br>')}</div>`; 
+        notesModalBody.innerHTML = `<div class="prose prose-sm sm:prose-base max-w-none whitespace-pre-wrap">${escapedNotes}</div>`; 
         openModal('notesDisplayModal');
+    }
+
+    // Updated to accept button element 'el' and read data-* attributes
+    function openAccountDetailsModal(el) {
+        const type = el.dataset.accType;
+        const title = el.dataset.accTitle;
+        const identifier = el.dataset.accIdentifier;
+        const bankName = el.dataset.accBank;
+        const isPrimary = el.dataset.accPrimary;
+
+        document.getElementById('modalAccType').textContent = type || 'N/A';
+        document.getElementById('modalAccTitle').textContent = title || 'N/A';
+        document.getElementById('modalAccIdentifier').textContent = identifier || 'N/A';
+        
+        const bankNameContainer = document.getElementById('modalBankNameContainer');
+        const bankNameEl = document.getElementById('modalBankName');
+        if (bankName && bankName.trim() !== '') {
+            bankNameEl.textContent = bankName;
+            bankNameContainer.classList.remove('hidden');
+        } else {
+            bankNameContainer.classList.add('hidden');
+            bankNameEl.textContent = '';
+        }
+        document.getElementById('modalAccPrimary').textContent = isPrimary || 'N/A';
+        
+        openModal('accountDetailsModal');
     }
 </script>
 {% endblock %}

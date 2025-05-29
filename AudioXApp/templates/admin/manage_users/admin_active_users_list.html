@@ -33,7 +33,7 @@
             <form method="GET" action="{% url 'AudioXApp:admin_active_users_list' %}" class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 items-end">
                 <div class="md:col-span-2">
                     <label for="q" class="block text-sm font-medium text-gray-700 mb-1">Search Active Users</label>
-                    <input type="text" name="q" id="q" value="{{ search_query|default:'' }}" placeholder="Email, Username, Name, Phone..."
+                    <input type="text" name="q" id="q" value="{{ search_query|default:'' }}" placeholder="Search by Email or Phone Number"
                            class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm text-gray-900 placeholder-gray-400">
                 </div>
                 <div class="md:col-span-1 flex justify-start md:justify-end">

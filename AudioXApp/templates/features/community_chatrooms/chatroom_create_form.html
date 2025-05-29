@@ -1,0 +1,288 @@
+{% extends "features/community_chatrooms/community_chatrooms_base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block page_title %}Create New Chat Room - AudioX Community{% endblock page_title %}
+
+{% block chat_content %}
+<div class="w-full bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-[calc(100vh-8rem)] selection:bg-red-500 selection:text-white">
+
+    {# Section 1: Full-Width Hero Header #}
+    <div class="bg-[#091e65] text-white">
+        <div class="max-w-5xl mx-auto px-6 py-16 sm:py-20 md:py-24 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 sm:h-20 sm:w-20 mx-auto mb-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6H6a6 6 0 006 6z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 12.75h.008v.008H12v-.008zM12 9.75h.008v.008H12v-.008zM12 6.75h.008v.008H12V6.75zM7.5 12.75h.008v.008H7.5v-.008zm0-3h.008v.008H7.5v-.008zm0-3h.008v.008H7.5V6.75zm9 6h.008v.008h-.008v-.008zm0-3h.008v.008h-.008v-.008zm0-3h.008v.008h-.008V6.75z" />
+            </svg>
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
+                Launch Your Chat Universe
+            </h1>
+            <p class="mt-6 text-lg sm:text-xl opacity-80 leading-relaxed max-w-3xl mx-auto">
+                Bring your ideas to life. Design a unique space for connection, shared passions, and engaging audio conversations.
+            </p>
+        </div>
+    </div>
+
+    {# Main Content Area - Wide with internal padding #}
+    <div class="w-full px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 py-10 sm:py-12 md:py-16">
+        
+        {# Display Django Messages #}
+        {% if messages %}
+        <div class="max-w-3xl mx-auto mb-10 sm:mb-12 space-y-3">
+            {% for message in messages %}
+            <div class="p-4 rounded-xl text-sm font-medium shadow-lg border
+                {% if message.tags == 'success' %}bg-[#091e65]/10 border-[#091e65]/30 text-[#091e65]
+                {% elif message.tags == 'error' %}bg-red-500/10 border-red-500/30 text-red-700
+                {% else %}bg-[#091e65]/10 border-[#091e65]/30 text-[#091e65]{% endif %}" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Form Wrapper - Wide, but not full edge-to-edge for form elements #}
+        <div class="max-w-4xl mx-auto bg-white p-6 sm:p-8 md:p-12 rounded-2xl shadow-2xl border border-gray-200">
+            <form method="POST" action="{% url 'AudioXApp:chatroom_create' %}" class="space-y-10" enctype="multipart/form-data">
+                {% csrf_token %}
+                <h2 class="text-3xl font-bold text-[#091e65] mb-10 text-center -mt-2 sm:-mt-0">Room Setup</h2>
+
+                <div>
+                    <label for="name" class="block text-sm font-semibold text-[#091e65] mb-2 after:content-['*'] after:ml-0.5 after:text-red-500">
+                        Room Name
+                    </label>
+                    <input type="text" name="name" id="name" required maxlength="100"
+                           value="{{ form_values.name|default:'' }}"
+                           class="w-full px-5 py-4 rounded-xl border-2 bg-slate-50 text-[#091e65] placeholder-gray-500/80 focus:outline-none transition-all duration-200 ease-in-out shadow-sm
+                                  {% if form_errors.name %}border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-500/40
+                                  {% else %}border-gray-300 hover:border-gray-400 focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/40{% endif %}"
+                           placeholder="e.g., The Storyteller's Tavern">
+                    {% if form_errors.name %}
+                        <p class="text-red-600 text-xs mt-2 font-medium">{{ form_errors.name }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="description" class="block text-sm font-semibold text-[#091e65] mb-2 after:content-['*'] after:ml-0.5 after:text-red-500">
+                        Description
+                    </label>
+                    <textarea name="description" id="description" rows="5" required maxlength="500"
+                              class="w-full px-5 py-4 rounded-xl border-2 bg-slate-50 text-[#091e65] placeholder-gray-500/80 focus:outline-none transition-all duration-200 ease-in-out shadow-sm resize-y
+                                     {% if form_errors.description %}border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-500/40
+                                     {% else %}border-gray-300 hover:border-gray-400 focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/40{% endif %}"
+                              placeholder="What will your community discuss? Share the vision for your room...">{{ form_values.description|default:'' }}</textarea>
+                    {% if form_errors.description %}
+                        <p class="text-red-600 text-xs mt-2 font-medium">{{ form_errors.description }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <label for="language" class="block text-sm font-semibold text-[#091e65] mb-2 after:content-['*'] after:ml-0.5 after:text-red-500">
+                            Room Language
+                        </label>
+                        <select name="language" id="language" required
+                                class="w-full px-5 py-4 rounded-xl border-2 bg-slate-50 text-[#091e65] focus:outline-none transition-all duration-200 ease-in-out shadow-sm appearance-none pr-12 bg-no-repeat bg-right-4
+                                       {% if form_errors.language %}border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-500/40
+                                       {% else %}border-gray-300 hover:border-gray-400 focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/40{% endif %}"
+                                style="background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 20 20\' fill=\'%23091e65\'%3E%3Cpath fill-rule=\'evenodd\' d=\'M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z\' clip-rule=\'evenodd\' /%3E%3C/svg%3E');">
+                            <option value="" {% if not form_values.language %}selected{% endif %} disabled class="text-gray-500 bg-white">Choose language...</option>
+                            <option value="EN" {% if form_values.language == "EN" %}selected{% endif %} class="text-[#091e65] bg-white">English</option>
+                            <option value="UR" {% if form_values.language == "UR" %}selected{% endif %} class="text-[#091e65] bg-white">Urdu</option>
+                            <option value="PA" {% if form_values.language == "PA" %}selected{% endif %} class="text-[#091e65] bg-white">Punjabi</option>
+                            <option value="SI" {% if form_values.language == "SI" %}selected{% endif %} class="text-[#091e65] bg-white">Sindhi</option>
+                        </select>
+                        {% if form_errors.language %}
+                            <p class="text-red-600 text-xs mt-2 font-medium">{{ form_errors.language }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="cover_image_trigger" class="block text-sm font-semibold text-[#091e65] mb-2">
+                            Cover Image <span class="text-xs text-[#091e65] opacity-70 ml-1 normal-case">(Optional)</span>
+                        </label>
+                        <label for="cover_image_input" class="flex flex-col items-center justify-center w-full h-full min-h-[140px] px-6 py-4 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#091e65]/70 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors group">
+                            <svg class="w-10 h-10 text-gray-400 group-hover:text-[#091e65]/80 transition-colors mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z M12 12.75V3m0 9.75L9 10.5m3 2.25L15 10.5"></path></svg>
+                            <p class="text-xs text-center text-gray-500 group-hover:text-[#091e65]/90 transition-colors"><span class="font-medium">Click to upload</span> or drag & drop</p>
+                            <p id="file-chosen-name" class="mt-1 text-xs text-gray-400 group-hover:text-[#091e65]/70 transition-colors truncate max-w-full px-2">No file chosen</p>
+                            <input type="file" name="cover_image" id="cover_image_input" accept="image/*" class="sr-only">
+                        </label>
+                         {% if form_errors.cover_image %}
+                            <p class="text-red-600 text-xs mt-2 font-medium">{{ form_errors.cover_image }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {# Community Guidelines Section (Integrated within form flow) #}
+                <div class="mt-10 pt-10 border-t-2 border-gray-200">
+                    <h3 class="text-xl font-semibold text-[#091e65] mb-2">
+                        Community Guidelines & Your Role
+                    </h3>
+                    <p class="text-sm text-[#091e65] opacity-70 mb-6">
+                        As a room creator, you're instrumental in shaping a positive and engaging environment. Please keep these responsibilities in mind:
+                    </p>
+                    <div class="space-y-5 bg-slate-50 p-6 rounded-lg border border-slate-200 text-sm text-[#091e65]">
+                        {# Creator Responsibilities #}
+                        <div class="flex items-start space-x-3">
+                            <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 002.5 6.754V12.5A5.5 5.5 0 008 17.93V19.5a.5.5 0 001 0v-1.57A5.5 5.5 0 0017.5 12.5V6.754A11.954 11.954 0 0010 1.944zM8.5 11.414l-2.707-2.707a.5.5 0 01.707-.707L8.5 10l3.293-3.293a.5.5 0 01.707.707L9.207 11.414a.5.5 0 01-.707 0z" clip-rule="evenodd"></path></svg>
+                            <div><strong class="font-semibold">Active Moderation:</strong> Regularly monitor discussions to ensure they align with the room's topic and community guidelines. Address any violations promptly and fairly.</div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 002.5 6.754V12.5A5.5 5.5 0 008 17.93V19.5a.5.5 0 001 0v-1.57A5.5 5.5 0 0017.5 12.5V6.754A11.954 11.954 0 0010 1.944zM8.5 11.414l-2.707-2.707a.5.5 0 01.707-.707L8.5 10l3.293-3.293a.5.5 0 01.707.707L9.207 11.414a.5.5 0 01-.707 0z" clip-rule="evenodd"></path></svg>
+                            <div><strong class="font-semibold">Foster Engagement:</strong> Encourage participation, welcome new members, and initiate interesting topics or activities to keep the community lively.</div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 002.5 6.754V12.5A5.5 5.5 0 008 17.93V19.5a.5.5 0 001 0v-1.57A5.5 5.5 0 0017.5 12.5V6.754A11.954 11.954 0 0010 1.944zM8.5 11.414l-2.707-2.707a.5.5 0 01.707-.707L8.5 10l3.293-3.293a.5.5 0 01.707.707L9.207 11.414a.5.5 0 01-.707 0z" clip-rule="evenodd"></path></svg>
+                            <div><strong class="font-semibold">Clear Communication:</strong> Clearly communicate any room-specific rules or expectations to your members. Provide updates if necessary.</div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 002.5 6.754V12.5A5.5 5.5 0 008 17.93V19.5a.5.5 0 001 0v-1.57A5.5 5.5 0 0017.5 12.5V6.754A11.954 11.954 0 0010 1.944zM8.5 11.414l-2.707-2.707a.5.5 0 01.707-.707L8.5 10l3.293-3.293a.5.5 0 01.707.707L9.207 11.414a.5.5 0 01-.707 0z" clip-rule="evenodd"></path></svg>
+                            <div><strong class="font-semibold">Lead by Example:</strong> Set a positive tone for the room through your own interactions and contributions.</div>
+                        </div>
+
+                        {# General Community Guidelines #}
+                        <div class="pt-5 mt-5 border-t border-slate-300">
+                             <p class="text-xs text-[#091e65] opacity-70 mb-4">All members, including creators, are also expected to follow these general community guidelines:</p>
+                            {% for rule in chatroom_rules_list %} {# Assumes chatroom_rules_list is passed from view #}
+                            <div class="flex items-start space-x-3 {% if not forloop.first %}mt-3{% endif %}">
+                                <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 002.5 6.754V12.5A5.5 5.5 0 008 17.93V19.5a.5.5 0 001 0v-1.57A5.5 5.5 0 0017.5 12.5V6.754A11.954 11.954 0 0010 1.944zM8.5 11.414l-2.707-2.707a.5.5 0 01.707-.707L8.5 10l3.293-3.293a.5.5 0 01.707.707L9.207 11.414a.5.5 0 01-.707 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div>
+                                    <strong class="font-semibold">{{ rule.title }}:</strong>
+                                    <span class="opacity-80"> {{ rule.description }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <p class="pt-5 text-xs text-center text-[#091e65] opacity-60 border-t border-slate-300 mt-5">
+                            By creating this room, you agree to foster and uphold these principles for a positive community experience.
+                        </p>
+                    </div>
+                </div>
+                
+                {% if form_errors.general_error %}
+                <div class="p-4 mt-8 bg-red-500/10 border-l-4 border-red-600 text-red-700 rounded-lg font-medium text-sm" role="alert">
+                    <p>{{ form_errors.general_error }}</p>
+                </div>
+                {% endif %}
+
+                <div class="mt-12 pt-10 border-t-2 border-gray-200 flex flex-col sm:flex-row justify-end gap-4">
+                    <a href="{% url 'AudioXApp:chatroom_home' %}" class="w-full sm:w-auto px-8 py-3.5 text-center text-sm font-semibold text-[#091e65] bg-gray-200 hover:bg-gray-300 rounded-xl transition-colors duration-200 ease-in-out">
+                        Cancel
+                    </a>
+                    <button type="submit"
+                            class="w-full sm:w-auto px-8 py-3.5 text-center text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all duration-200 ease-in-out shadow-xl hover:shadow-red-500/50 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-opacity-50">
+                        Launch Chat Room
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock chat_content %}
+
+{% block extra_chat_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // File Input Name Display Logic
+    const fileInput = document.getElementById('cover_image_input');
+    const fileNameDisplay = document.getElementById('file-chosen-name');
+    if (fileInput && fileNameDisplay) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                let name = this.files[0].name;
+                if (name.length > 30) { // Truncate long filenames for display
+                    name = name.substring(0, 27) + '...';
+                }
+                fileNameDisplay.textContent = name;
+                fileNameDisplay.classList.remove('text-gray-400', 'group-hover:text-[#091e65]/70');
+                fileNameDisplay.classList.add('text-[#091e65]', 'font-medium');
+            } else {
+                fileNameDisplay.textContent = 'No file chosen';
+                 fileNameDisplay.classList.remove('text-[#091e65]', 'font-medium');
+                fileNameDisplay.classList.add('text-gray-400', 'group-hover:text-[#091e65]/70');
+            }
+        });
+    }
+
+    // Feedback Popup Logic (Global popup, if used for form submission feedback via JS)
+    const feedbackPopup = document.getElementById('feedbackPopup'); 
+    if (feedbackPopup) { 
+        const popupIconContainer = document.getElementById('popupIconContainer');
+        const popupMessage = document.getElementById('popupMessage');
+        const popupCloseButton = document.getElementById('popupClose');
+        let popupTimeout;
+
+        const icons = { 
+            success: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+            error: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 9A9 9 0 1112 3v-.75m9 3.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>',
+            warning: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>',
+            info: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>'
+        };
+        const bgColors = { 
+            success: 'bg-[#091e65]', 
+            error: 'bg-red-600', 
+            warning: 'bg-red-500', 
+            info: 'bg-[#091e65]'
+        };
+        const closeButtonRingColors = {
+            success: 'focus:ring-offset-[#091e65]',
+            error: 'focus:ring-offset-red-600',
+            warning: 'focus:ring-offset-red-500',
+            info: 'focus:ring-offset-[#091e65]'
+        };
+
+        function showPopup(type, message) {
+            if (!feedbackPopup || !popupMessage || !popupIconContainer || !popupCloseButton) return;
+            if (popupTimeout) clearTimeout(popupTimeout);
+
+            Object.values(bgColors).forEach(cls => feedbackPopup.classList.remove(cls));
+            popupCloseButton.className.split(' ').forEach(cls => {
+                if (cls.startsWith('focus:ring-offset-')) {
+                    popupCloseButton.classList.remove(cls);
+                }
+            });
+            
+            popupMessage.textContent = message;
+            popupIconContainer.innerHTML = icons[type] || icons['info'];
+            const iconSvg = popupIconContainer.querySelector('svg');
+            if(iconSvg) { iconSvg.classList.add('h-6', 'w-6');}
+
+            feedbackPopup.classList.add(bgColors[type] || bgColors['info']);
+            
+            popupCloseButton.classList.add('hover:bg-white/20', 'focus:ring-2', 'focus:ring-white');
+            const specificRingColorClasses = (closeButtonRingColors[type] || closeButtonRingColors['info']).split(' ');
+            specificRingColorClasses.forEach(cls => popupCloseButton.classList.add(cls));
+
+            feedbackPopup.classList.remove('hidden', 'opacity-0', 'translate-y-[-20px]');
+            requestAnimationFrame(() => { 
+                feedbackPopup.classList.add('opacity-100', 'translate-y-0');
+            });
+            popupTimeout = setTimeout(hidePopup, 7000);
+        }
+
+        function hidePopup() {
+            if (!feedbackPopup) return;
+            feedbackPopup.classList.remove('opacity-100', 'translate-y-0');
+            feedbackPopup.classList.add('opacity-0', 'translate-y-[-20px]');
+            setTimeout(() => { feedbackPopup.classList.add('hidden'); }, 300);
+        }
+
+        if (popupCloseButton) popupCloseButton.addEventListener('click', hidePopup);
+
+        const feedbackDataElement = document.getElementById('popup-feedback-script-data');
+        if (feedbackDataElement && feedbackDataElement.textContent) { 
+            try {
+                const feedbackData = JSON.parse(feedbackDataElement.textContent); 
+                if (feedbackData && feedbackData.text && feedbackData.type) {
+                    setTimeout(() => { showPopup(feedbackData.type, feedbackData.text); }, 100);
+                }
+            } catch (e) {
+                console.error("Error parsing feedback data for popup:", e);
+            }
+        }
+    }
+});
+</script>
+{% endblock extra_chat_scripts %}

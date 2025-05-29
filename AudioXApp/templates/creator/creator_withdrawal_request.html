@@ -47,7 +47,6 @@
         </div>
         <p class="text-sm text-slate-500 mt-4 pt-4 border-t border-slate-200">
             Minimum withdrawal: <strong class="font-medium text-slate-600">Rs. {{ min_withdrawal_amount|default:50|floatformat:2|intcomma }}</strong>.
-            Withdrawal requests can be made once every 15 days.
         </p>
     </div>
 
@@ -71,17 +70,14 @@
                         <a href="{% url 'AudioXApp:creator_manage_withdrawal_accounts' %}?next={{ request.path|urlencode }}" class="font-semibold underline hover:text-amber-800 ml-1">Add Payout Method</a>.
                     </div>
                 </div>
-            {% elif not can_request_withdrawal and not has_active_request %}
+            {% elif not can_request_withdrawal %}
                 <div class="p-4 mb-6 text-sm rounded-lg border flex items-start text-red-700 bg-red-50 border-red-300" role="alert">
                     <svg class="flex-shrink-0 inline w-5 h-5 mr-3 mt-0.5 text-red-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
                     </svg>
                     <div>
                         <span class="font-semibold">Withdrawal Not Available:</span>
-                        {{ reason_cant_request }}
-                        {% if next_withdrawal_date and "after" in reason_cant_request|lower %}
-                            Your next request can be made after <strong class="font-semibold">{{ next_withdrawal_date|date:"F d, Y" }}</strong>.
-                        {% endif %}
+                        {{ reason_cant_request|default:"You are currently unable to make a new withdrawal request. Please check your available balance." }}
                     </div>
                 </div>
             {% else %}
@@ -101,6 +97,7 @@
                             <input type="number" name="amount" id="amount" step="0.01" 
                                    min="{{ min_withdrawal_amount|default:50|floatformat:2 }}" 
                                    max="{{ available_balance|default:0|floatformat:2 }}"
+                                   value="{{ form_data.amount|default:'' }}"
                                    class="pl-14 block w-full py-[0.85rem] px-5 text-base font-medium leading-normal text-slate-800 bg-slate-50 border-2 border-slate-300 appearance-none rounded-xl shadow-sm transition-colors duration-150 ease-in-out focus:text-slate-900 focus:bg-white focus:border-[#091e65] focus:outline-none focus:ring-2 focus:ring-[#091e65]/40 placeholder-slate-400"
                                    placeholder="e.g., {{ min_withdrawal_amount|default:50|floatformat:0 }}" required>
                         </div>
@@ -111,23 +108,24 @@
                     <div class="mb-7">
                         <label for="withdrawal_account_id" class="block text-[0.9rem] font-semibold text-slate-700 mb-[0.6rem] transition-all duration-300 ease-in-out">Payout To</label>
                         <div class="relative">
-                             <span class="absolute top-1/2 left-5 transform -translate-y-1/2 text-[#091e65] pointer-events-none opacity-70">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                                    <path fill-rule="evenodd" d="M1 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.25a.75.75 0 0 1-1.5 0V5H2v1.25a.75.75 0 0 1-1.5 0V4Zm18 8.25a.75.75 0 0 1-1.5 0V11H2v1.25a.75.75 0 0 1-1.5 0V10a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.25ZM2 15.25a.75.75 0 0 1-1.5 0V14a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v1.25a.75.75 0 0 1-1.5 0V15H2v.25Z" clip-rule="evenodd" />
-                                </svg>
-                            </span>
-                            <select name="withdrawal_account_id" id="withdrawal_account_id" required
-                                    class="pl-14 block w-full py-[0.85rem] px-5 text-base font-medium leading-normal text-slate-800 bg-slate-50 border-2 border-slate-300 appearance-none rounded-xl shadow-sm transition-colors duration-150 ease-in-out focus:text-slate-900 focus:bg-white focus:border-[#091e65] focus:outline-none focus:ring-2 focus:ring-[#091e65]/40">
-                                <option value="">-- Select Payout Account --</option>
-                                {% for acc in withdrawal_accounts %}
-                                    <option value="{{ acc.account_id }}" {% if acc.is_primary %}selected{% endif %}>
-                                        {{ acc.get_account_type_display }} - {{ acc.account_title }} (...{{ acc.account_identifier|slice:"-4:" }}) {% if acc.is_primary %}(Primary){% endif %}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#091e65]">
-                                <svg class="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                            </div>
+                                <span class="absolute top-1/2 left-5 transform -translate-y-1/2 text-[#091e65] pointer-events-none opacity-70">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                        <path fill-rule="evenodd" d="M1 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.25a.75.75 0 0 1-1.5 0V5H2v1.25a.75.75 0 0 1-1.5 0V4Zm18 8.25a.75.75 0 0 1-1.5 0V11H2v1.25a.75.75 0 0 1-1.5 0V10a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.25ZM2 15.25a.75.75 0 0 1-1.5 0V14a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v1.25a.75.75 0 0 1-1.5 0V15H2v.25Z" clip-rule="evenodd" />
+                                    </svg>
+                                </span>
+                                <select name="withdrawal_account_id" id="withdrawal_account_id" required
+                                        class="pl-14 block w-full py-[0.85rem] px-5 text-base font-medium leading-normal text-slate-800 bg-slate-50 border-2 border-slate-300 appearance-none rounded-xl shadow-sm transition-colors duration-150 ease-in-out focus:text-slate-900 focus:bg-white focus:border-[#091e65] focus:outline-none focus:ring-2 focus:ring-[#091e65]/40">
+                                    <option value="">-- Select Payout Account --</option>
+                                    {% for acc in withdrawal_accounts %}
+                                        <option value="{{ acc.account_id }}" 
+                                                {% if acc.account_id|stringformat:"s" == form_data.withdrawal_account_id|stringformat:"s" %}selected{% elif not form_data.withdrawal_account_id and acc.is_primary %}selected{% endif %}>
+                                            {{ acc.get_account_type_display }} - {{ acc.account_title }} (...{{ acc.account_identifier|slice:"-4:" }}) {% if acc.is_primary %}(Primary){% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#091e65]">
+                                    <svg class="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                </div>
                         </div>
                         <div id="accountError" class="hidden mt-2 p-3 bg-red-100 border border-red-200 border-l-4 border-l-red-500 rounded-md text-red-700 text-sm font-medium"></div>
                     </div>
@@ -166,12 +164,12 @@
                                     <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Account</th>
                                     <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                                     <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Processed On</th>
-                                    <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8 text-xs font-semibold text-slate-500 uppercase tracking-wider"><span class="sr-only">Actions</span></th>
+                                    <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 lg:pr-8 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Details/Attachments</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200 bg-white">
                                 {% for req in past_requests %}
-                                <tr class="withdrawal-request-row" data-request-id="{{ req.request_id }}" data-request-date="{{ req.request_date.isoformat }}" data-status="{{ req.status }}">
+                                <tr class="withdrawal-request-row" data-request-id="{{ req.id }}" data-request-date="{{ req.request_date.isoformat }}" data-status="{{ req.status }}">
                                     <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-slate-700 sm:pl-6 lg:pl-8">{{ req.request_date|date:"M d, Y, P" }}</td>
                                     <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-900 font-medium">{{ req.amount|floatformat:2|intcomma }}</td>
                                     <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-600">
@@ -183,13 +181,11 @@
                                     </td>
                                     <td class="whitespace-nowrap px-3 py-4 text-sm">
                                         <span class="py-1 px-2.5 rounded-full text-xs font-medium inline-flex items-center capitalize border
-                                            {% if req.status == 'pending' %} bg-amber-100 text-amber-800 border-amber-300
-                                            {% elif req.status == 'approved' %} bg-blue-100 text-blue-800 border-blue-300
-                                            {% elif req.status == 'processing' %} bg-indigo-100 text-indigo-800 border-indigo-300
-                                            {% elif req.status == 'completed' %} bg-green-100 text-green-800 border-green-300
-                                            {% elif req.status == 'rejected' %} bg-red-100 text-red-800 border-red-300
-                                            {% elif req.status == 'failed' %} bg-pink-100 text-pink-800 border-pink-300
-                                            {% elif req.status == 'cancelled' %} bg-slate-100 text-slate-600 border-slate-300
+                                            {% if req.status == 'PENDING' %} bg-amber-100 text-amber-800 border-amber-300
+                                            {% elif req.status == 'PROCESSING' %} bg-indigo-100 text-indigo-800 border-indigo-300
+                                            {% elif req.status == 'COMPLETED' %} bg-green-100 text-green-800 border-green-300
+                                            {% elif req.status == 'REJECTED' %} bg-red-100 text-red-800 border-red-300
+                                            {% elif req.status == 'FAILED' %} bg-pink-100 text-pink-800 border-pink-300
                                             {% else %} bg-slate-100 text-slate-800 border-slate-300 {% endif %}">
                                             {{ req.get_status_display }}
                                         </span>
@@ -197,33 +193,33 @@
                                     <td class="whitespace-nowrap px-3 py-4 text-sm text-slate-600">
                                         {% if req.processed_date %}{{ req.processed_date|date:"M d, Y, P" }}{% else %}-{% endif %}
                                     </td>
-                                    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
-                                        <div class="flex items-center justify-end" id="action-cell-{{ req.request_id }}">
-                                            {% if req.status == 'pending' %}
-                                                <span class="countdown-timer mr-2 text-xs text-slate-600 font-medium" id="countdown-{{ req.request_id }}"></span>
-                                                <form method="POST" action="{% url 'AudioXApp:creator_request_withdrawal_list' %}" class="inline-block cancel-form" 
-                                                      data-request-id="{{ req.request_id }}" data-amount="{{ req.amount|floatformat:2|intcomma }}"
-                                                      style="display: none;" 
-                                                      onsubmit="handleCancelSubmit(event, this.dataset.amount, this); return false;">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="action" value="cancel_withdrawal">
-                                                    <input type="hidden" name="request_id" value="{{ req.request_id }}">
-                                                    <button type="submit" class="cancel-button text-xs text-red-600 hover:text-red-700 font-medium rounded-md px-2.5 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 transition-colors duration-150">
-                                                        Cancel
-                                                    </button>
-                                                </form>
-                                            {% elif req.admin_notes %}
-                                            <div class="relative group flex justify-end">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-slate-400 group-hover:text-slate-600 cursor-help">
-                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0ZM8.94 6.94a.75.75 0 1 1-1.06-1.061A6.5 6.5 0 0 1 10 3.5a6.5 6.5 0 0 1 4.95 11.05a.75.75 0 0 1-1.06-1.06A5 5 0 0 0 10 5.051A5.007 5.007 0 0 0 8.94 6.94ZM10 15a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm0-3.75a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75v-.008a.75.75 0 0 0-.75-.75H10Z" clip-rule="evenodd" />
-                                                </svg>
-                                                <span class="absolute bottom-full right-0 transform translate-y-[-0.5rem] mb-2 w-max max-w-[250px] bg-slate-700 text-white text-xs rounded-md py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out pointer-events-none z-20 shadow-lg text-left normal-case font-normal">
-                                                    {{ req.admin_notes|linebreaksbr|escape }}
-                                                    <span class="absolute top-full right-3 transform -translate-x-1/2 border-4 border-transparent border-t-slate-700"></span>
+                                    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-left text-sm font-medium sm:pr-6 lg:pr-8">
+                                        <div class="space-y-1">
+                                            {% if req.payment_slip %}
+                                                <div>
+                                                    <a href="{{ req.payment_slip.url }}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center">
+                                                        <i class="fas fa-receipt mr-1.5"></i> Payment Slip
+                                                    </a>
+                                                </div>
+                                            {% endif %}
+                                            {% if req.payment_reference %}
+                                                <div class="text-xs text-slate-500" title="Payment Reference">
+                                                    Ref: {{ req.payment_reference }}
+                                                </div>
+                                            {% endif %}
+                                            {% if req.admin_notes %}
+                                            <div class="relative group">
+                                                <span class="text-xs text-slate-500 hover:text-slate-700 cursor-help inline-flex items-center">
+                                                    <i class="fas fa-info-circle mr-1.5"></i> Admin Notes
+                                                </span>
+                                                <span class="absolute bottom-full left-0 transform translate-y-[-0.5rem] mb-2 w-max max-w-xs sm:max-w-sm bg-slate-700 text-white text-xs rounded-md py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out pointer-events-none z-20 shadow-lg text-left normal-case font-normal">
+                                                    {{ req.admin_notes|linebreaksbr }}
+                                                    <span class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-700"></span>
                                                 </span>
                                             </div>
-                                            {% else %}
-                                            <span class="text-slate-400 text-xs">-</span>
+                                            {% endif %}
+                                            {% if not req.payment_slip and not req.payment_reference and not req.admin_notes %}
+                                                <span class="text-xs text-slate-400">-</span>
                                             {% endif %}
                                         </div>
                                     </td>
@@ -237,9 +233,9 @@
             {% else %}
             <div class="text-center py-16 px-6">
                 <svg class="mx-auto h-16 w-16 text-slate-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a.75.75 0 0 0 .75-.75V6.038a.75.75 0 0 0-.75-.75S11.25 5.25 11.25 9V18a.75.75 0 0 0 .75.75Zm0 0A8.207 8.207 0 0 0 18.75 12 8.207 8.207 0 0 0 12 5.25 8.207 8.207 0 0 0 5.25 12a8.207 8.207 0 0 0 6.75 6.75Z" />
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a.75.75 0 0 0 .75-.75V6.038a.75.75 0 0 0-.75-.75S11.25 5.25 11.25 9V18a.75.75 0 0 0 .75.75Z" />
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.75.75 0 0 1-.75-.75V9.375a.75.75 0 0 1 .75-.75S9.375 8.25 9.375 12v-.75M15.375 12a.75.75 0 0 0 .75-.75V9.375a.75.75 0 0 0-.75-.75S14.625 8.25 14.625 12v-.75" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a.75.75 0 0 0 .75-.75V6.038a.75.75 0 0 0-.75-.75S11.25 5.25 11.25 9V18a.75.75 0 0 0 .75.75Zm0 0A8.207 8.207 0 0 0 18.75 12 8.207 8.207 0 0 0 12 5.25 8.207 8.207 0 0 0 5.25 12a8.207 8.207 0 0 0 6.75 6.75Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a.75.75 0 0 0 .75-.75V6.038a.75.75 0 0 0-.75-.75S11.25 5.25 11.25 9V18a.75.75 0 0 0 .75.75Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.75.75 0 0 1-.75-.75V9.375a.75.75 0 0 1 .75-.75S9.375 8.25 9.375 12v-.75M15.375 12a.75.75 0 0 0 .75-.75V9.375a.75.75 0 0 0-.75-.75S14.625 8.25 14.625 12v-.75" />
                 </svg>
                 <h3 class="mt-4 text-md font-semibold text-slate-700">No Withdrawal History</h3>
                 <p class="mt-1 text-sm text-slate-500">You haven't made any withdrawal requests yet.</p>
@@ -250,7 +246,7 @@
 
 </div>
 
-<div id="customModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out">
+<div id="customModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 opacity-0 invisible transition-opacity duration-300 ease-in-out print:hidden">
     <div class="modal-content-wrapper bg-white rounded-2xl shadow-2xl w-[90%] max-w-md overflow-hidden transform scale-95">
         <div class="bg-[#091e65] text-white px-6 py-5 flex justify-between items-center border-b border-[#071852]">
             <div class="flex items-center">
@@ -271,8 +267,8 @@
 
 {% block extra_scripts %}
 <script>
-    // Pass Django context variables to JavaScript
-    const DJANGO_HAS_ACTIVE_REQUEST = ("{{ has_active_request|yesno:'true,false'|lower }}" === "true");
+    const DJANGO_HAS_ONGOING_REQUEST = ("{{ has_ongoing_request|yesno:'true,false'|lower }}" === "true"); 
+    const DJANGO_CAN_REQUEST_WITHDRAWAL = ("{{ can_request_withdrawal|yesno:'true,false'|lower }}" === "true");
     const DJANGO_REASON_CANT_REQUEST = "{{ reason_cant_request|escapejs }}";
     const DJANGO_MIN_WITHDRAWAL_AMOUNT = parseFloat('{{ min_withdrawal_amount|default:50|floatformat:"2" }}');
     const DJANGO_AVAILABLE_BALANCE = parseFloat('{{ available_balance|default:0|floatformat:"2" }}');

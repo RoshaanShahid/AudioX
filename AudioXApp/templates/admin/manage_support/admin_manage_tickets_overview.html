@@ -25,6 +25,19 @@
         </div>
     {% endif %}
 
+    {# 1. Graph Section (Moved to Top) #}
+    <div class="mb-8 bg-brand-surface rounded-2xl border border-brand-border shadow-card overflow-hidden bg-gradient-chart-bg">
+        <div class="px-6 py-5 border-b border-brand-border bg-transparent">
+            <h3 class="text-lg font-semibold text-brand-text-primary">Ticket Trends (Last 7 Days)</h3>
+        </div>
+        <div class="p-6">
+            <div class="h-80 md:h-96 rounded-xl p-4"> {# Consider adjusting padding within canvas container if needed #}
+                <canvas id="ticketStatsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {# 2. Summary Boxes (Moved Below Graph) #}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <a href="{% url 'AudioXApp:admin_all_tickets_list' %}" class="group block relative flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth text-brand-text-on-gradient bg-gradient-purple shadow-purple-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-purple-glow hover:shadow-card-lg min-h-[180px]">
             <div class="flex items-center gap-4 mb-4">
@@ -42,7 +55,7 @@
         <a href="{% url 'AudioXApp:admin_open_tickets_list' %}" class="group block relative flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth text-brand-text-on-gradient bg-gradient-warning shadow-warning-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-warning-glow hover:shadow-card-lg min-h-[180px]">
             <div class="flex items-center gap-4 mb-4">
                 <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
-                     <i class="fas fa-folder-open fa-2x"></i>
+                    <i class="fas fa-folder-open fa-2x"></i>
                 </div>
                 <div class="flex-grow">
                     <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Open Tickets</h3>
@@ -66,109 +79,96 @@
         </a>
     </div>
 
-    <div class="mb-8 bg-brand-surface rounded-2xl border border-brand-border shadow-card overflow-hidden bg-gradient-chart-bg">
-        <div class="px-6 py-5 border-b border-brand-border bg-transparent">
-            <h3 class="text-lg font-semibold text-brand-text-primary">Ticket Trends (Last 7 Days)</h3>
-        </div>
-        <div class="p-6">
-            <div class="h-80 md:h-96 rounded-xl p-4">
-                <canvas id="ticketStatsChart"></canvas>
-            </div>
-        </div>
-    </div>
+    {# 3. Recent Tickets Snapshot section has been removed. #}
 
-    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card p-6">
-        <h3 class="text-lg font-semibold text-brand-text-primary mb-4">Recent Tickets Snapshot (Future Feature)</h3>
-        <p class="text-brand-text-secondary">A table listing recent tickets with options to view details will be displayed here. This will link to a dedicated page for viewing and managing individual tickets.</p>
-    </div>
+</div>
+{% endblock %}
 
-    {% endblock %}
-
-    {% block extra_scripts %}
-    {{ block.super }}
-    <script>
-        function parseJsonData(jsonDataString, defaultVal = []) {
-            try {
-                if (jsonDataString && jsonDataString.trim() !== '') {
-                    const decodedString = jsonDataString.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-                    return JSON.parse(decodedString);
-                }
-            } catch (e) {
-                console.error("Failed to parse JSON data for chart:", e, "Data string was:", jsonDataString);
+{% block extra_scripts %}
+{{ block.super }}
+<script>
+    function parseJsonData(jsonDataString, defaultVal = []) {
+        try {
+            if (jsonDataString && jsonDataString.trim() !== '') {
+                const decodedString = jsonDataString.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+                return JSON.parse(decodedString);
             }
-            return defaultVal;
+        } catch (e) {
+            console.error("Failed to parse JSON data for chart:", e, "Data string was:", jsonDataString);
         }
+        return defaultVal;
+    }
 
-        const primaryColor = '#091e65'; 
-        const successColor = '#10B981'; 
-        const warningColor = '#F59E0B'; 
+    const primaryColor = '#091e65'; 
+    const successColor = '#10B981'; 
+    const warningColor = '#F59E0B'; 
 
-        function hexToRgba(hex, alpha = 1) {
-            if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) { hex = '#000000'; }
-            try {
-                const bigint = parseInt(hex.slice(1), 16);
-                const r = (bigint >> 16) & 255;
-                const g = (bigint >> 8) & 255;
-                const b = bigint & 255;
-                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-            } catch (e) { return `rgba(0, 0, 0, ${alpha})`; }
-        }
+    function hexToRgba(hex, alpha = 1) {
+        if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) { hex = '#000000'; }
+        try {
+            const bigint = parseInt(hex.slice(1), 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        } catch (e) { return `rgba(0, 0, 0, ${alpha})`; }
+    }
 
-        const dailyLabels = parseJsonData(`{{ daily_chart_labels_json|safe|default:'[]' }}`);
-        const dailyNewTickets = parseJsonData(`{{ daily_new_tickets_data_json|safe|default:'[]' }}`);
-        const dailyClosedTickets = parseJsonData(`{{ daily_closed_tickets_data_json|safe|default:'[]' }}`);
-        const dailyOpenSnapshot = parseJsonData(`{{ daily_open_tickets_snapshot_json|safe|default:'[]' }}`);
+    const dailyLabels = parseJsonData(`{{ daily_chart_labels_json|safe|default:'[]' }}`);
+    const dailyNewTickets = parseJsonData(`{{ daily_new_tickets_data_json|safe|default:'[]' }}`);
+    const dailyClosedTickets = parseJsonData(`{{ daily_closed_tickets_data_json|safe|default:'[]' }}`);
+    const dailyOpenSnapshot = parseJsonData(`{{ daily_open_tickets_snapshot_json|safe|default:'[]' }}`);
 
-        const ticketStatsData = {
-            labels: dailyLabels,
-            datasets: [
-                {
-                    label: 'New Tickets',
-                    data: dailyNewTickets,
-                    borderColor: primaryColor,
-                    backgroundColor: hexToRgba(primaryColor, 0.1),
-                    fill: true, tension: 0.3, pointBackgroundColor: primaryColor, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2,
-                },
-                {
-                    label: 'Closed Tickets',
-                    data: dailyClosedTickets,
-                    borderColor: successColor,
-                    backgroundColor: hexToRgba(successColor, 0.1),
-                    fill: true, tension: 0.3, pointBackgroundColor: successColor, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2,
-                },
-                {
-                    label: 'Open Tickets (Snapshot)',
-                    data: dailyOpenSnapshot,
-                    borderColor: warningColor,
-                    backgroundColor: hexToRgba(warningColor, 0.1),
-                    fill: true, tension: 0.3, pointBackgroundColor: warningColor, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, hidden: false,
-                }
-            ]
-        };
-
-        const ticketStatsConfig = {
-            type: 'line', data: ticketStatsData,
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false, },
-                plugins: {
-                    legend: { position: 'top', align: 'end', labels: { boxWidth: 12, padding: 20, color: '#4B5563', font: { size: 12, family: 'Inter, sans-serif' }}},
-                    title: { display: false },
-                    tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', titleFont: { size: 14, weight: 'bold', family: 'Inter, sans-serif' }, bodyFont: { size: 12, family: 'Inter, sans-serif' }, padding: 12, cornerRadius: 6, displayColors: true, boxPadding: 4, }
-                },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#e5e7eb', drawBorder: false, }, ticks: { color: '#4B5563', padding: 10, precision: 0, font: { family: 'Inter, sans-serif' }}},
-                    x: { grid: { display: false }, ticks: { color: '#4B5563', padding: 10, maxRotation: 0, minRotation: 0, font: { family: 'Inter, sans-serif' }}}
-                }
+    const ticketStatsData = {
+        labels: dailyLabels,
+        datasets: [
+            {
+                label: 'New Tickets',
+                data: dailyNewTickets,
+                borderColor: primaryColor,
+                backgroundColor: hexToRgba(primaryColor, 0.1),
+                fill: true, tension: 0.3, pointBackgroundColor: primaryColor, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2,
+            },
+            {
+                label: 'Closed Tickets',
+                data: dailyClosedTickets,
+                borderColor: successColor,
+                backgroundColor: hexToRgba(successColor, 0.1),
+                fill: true, tension: 0.3, pointBackgroundColor: successColor, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2,
+            },
+            {
+                label: 'Open Tickets (Snapshot)',
+                data: dailyOpenSnapshot,
+                borderColor: warningColor,
+                backgroundColor: hexToRgba(warningColor, 0.1),
+                fill: true, tension: 0.3, pointBackgroundColor: warningColor, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, hidden: false,
             }
-        };
+        ]
+    };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const ctx = document.getElementById('ticketStatsChart');
-            if (ctx) {
-                if (typeof Chart !== 'undefined') { new Chart(ctx, ticketStatsConfig); } 
-                else { console.error("Chart.js library not loaded."); ctx.parentElement.innerHTML = '<p class="text-center text-brand-text-muted">Error loading chart data.</p>'; }
-            } else { console.error("Canvas element 'ticketStatsChart' not found."); }
-        });
-    </script>
-    {% endblock %}
+    const ticketStatsConfig = {
+        type: 'line', data: ticketStatsData,
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false, },
+            plugins: {
+                legend: { position: 'top', align: 'end', labels: { boxWidth: 12, padding: 20, color: '#4B5563', font: { size: 12, family: 'Inter, sans-serif' }}},
+                title: { display: false },
+                tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', titleFont: { size: 14, weight: 'bold', family: 'Inter, sans-serif' }, bodyFont: { size: 12, family: 'Inter, sans-serif' }, padding: 12, cornerRadius: 6, displayColors: true, boxPadding: 4, }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#e5e7eb', drawBorder: false, }, ticks: { color: '#4B5563', padding: 10, precision: 0, font: { family: 'Inter, sans-serif' }}},
+                x: { grid: { display: false }, ticks: { color: '#4B5563', padding: 10, maxRotation: 0, minRotation: 0, font: { family: 'Inter, sans-serif' }}}
+            }
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('ticketStatsChart');
+        if (ctx) {
+            if (typeof Chart !== 'undefined') { new Chart(ctx, ticketStatsConfig); } 
+            else { console.error("Chart.js library not loaded."); ctx.parentElement.innerHTML = '<p class="text-center text-brand-text-muted">Error loading chart data.</p>'; }
+        } else { console.error("Canvas element 'ticketStatsChart' not found."); }
+    });
+</script>
+{% endblock %}

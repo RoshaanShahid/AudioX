@@ -8,6 +8,15 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .payment-tab-button.active {
+        border-bottom-width: 2px !important; /* Ensure active border is visible */
+    }
+    /* Ensure hidden tabs are truly hidden until activated by JS */
+    .payment-tab-content:not(.active) {
+        display: none;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -19,10 +28,10 @@
             <form method="get" action="{% url 'AudioXApp:admin_user_payment_details' %}" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                     <div class="md:col-span-2">
-                        <label for="q" class="block text-sm font-medium text-gray-700 mb-1">User Email or Username</label>
+                        <label for="q" class="block text-sm font-medium text-gray-700 mb-1">User Email or Phone Number</label>
                         <input type="text" name="q" id="q" value="{{ request.GET.q|default:'' }}"
                                class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm placeholder-gray-400"
-                               placeholder="e.g., user@example.com or johndoe">
+                               placeholder="Search by Email or Phone Number">
                     </div>
                     <div>
                         <button type="submit"
@@ -179,7 +188,7 @@
                     {% endif %}
                 </div>
 
-                <div id="audiobookPurchasesTab" class="payment-tab-content p-6 hidden">
+                <div id="audiobookPurchasesTab" class="payment-tab-content p-6">
                     <h3 class="text-xl font-semibold text-[#091e65] mb-4">Audiobook Purchase Records</h3>
                     {% if audiobook_purchases.object_list %}
                         <div class="overflow-x-auto">
@@ -260,7 +269,7 @@
                     {% endif %}
                 </div>
 
-                <div id="coinPurchasesTab" class="payment-tab-content p-6 hidden">
+                <div id="coinPurchasesTab" class="payment-tab-content p-6">
                     <h3 class="text-xl font-semibold text-[#091e65] mb-4">Coin Purchase Records</h3>
                     {% if coin_purchases.object_list %}
                         <div class="overflow-x-auto">
@@ -357,9 +366,9 @@
             <div class="mt-12 text-center">
                  <div class="inline-flex items-center justify-center p-5 bg-[#091e65] bg-opacity-10 rounded-full mb-6">
                      <i class="fas fa-file-invoice-dollar fa-3x text-[#091e65]"></i>
-                </div>
+                 </div>
                 <h3 class="text-2xl font-semibold text-[#091e65] mb-2">View User Payment Details</h3>
-                <p class="text-gray-600 max-w-md mx-auto">Enter a user's email or username above to search for their payment transaction history across subscriptions, audiobook purchases, and coin purchases.</p>
+                <p class="text-gray-600 max-w-md mx-auto">Enter a user's email or phone number above to search for their payment transaction history across subscriptions, audiobook purchases, and coin purchases.</p>
             </div>
         {% endif %}
     </div>
@@ -375,59 +384,76 @@ document.addEventListener('DOMContentLoaded', function () {
     function setActiveTab(targetId) {
         tabButtons.forEach(button => {
             const buttonTarget = button.getAttribute('data-tab-target');
+            const countSpan = button.querySelector('span'); // Get the count span
+
             if (buttonTarget === targetId) {
                 button.classList.add('active', 'text-[#091e65]', 'border-[#091e65]');
                 button.classList.remove('text-gray-500', 'border-transparent', 'hover:text-gray-700', 'hover:border-gray-300');
+                if(countSpan) countSpan.classList.add('text-[#091e65]', 'bg-gray-200'); // Active tab count style
+                if(countSpan) countSpan.classList.remove('text-gray-700');
             } else {
                 button.classList.remove('active', 'text-[#091e65]', 'border-[#091e65]');
                 button.classList.add('text-gray-500', 'border-transparent', 'hover:text-gray-700', 'hover:border-gray-300');
+                if(countSpan) countSpan.classList.add('text-gray-700', 'bg-gray-200'); // Inactive tab count style
+                if(countSpan) countSpan.classList.remove('text-[#091e65]');
+
             }
         });
 
         tabContents.forEach(content => {
             if (content.id === targetId) {
                 content.classList.remove('hidden');
-                content.classList.add('active'); // Ensure active class is added if needed for other JS or very specific CSS
+                content.classList.add('active');
             } else {
                 content.classList.add('hidden');
                 content.classList.remove('active');
             }
         });
-        
+
+        // Update URL hash without jumping
         if (history.pushState) {
-            history.pushState(null, null, '#' + targetId);
+            // Preserve existing query parameters when changing hash
+            const currentSearch = window.location.search;
+            history.pushState(null, null, currentSearch + '#' + targetId);
         } else {
             window.location.hash = '#' + targetId;
         }
     }
 
     tabButtons.forEach(button => {
-        // Apply base styling to all tab buttons
         button.classList.add(
-            'py-3', 'px-4', 'sm:px-6', 'font-medium', 'text-sm', 
+            'py-3', 'px-4', 'sm:px-6', 'font-medium', 'text-sm',
             'border-b-2', 'focus:outline-none', 'transition-colors', 'duration-150', 'ease-in-out'
         );
-        // Set initial inactive state styling (will be overridden for the active one)
         if (!button.classList.contains('active')) {
              button.classList.add('text-gray-500', 'border-transparent', 'hover:text-gray-700', 'hover:border-gray-300');
+             const countSpan = button.querySelector('span');
+             if(countSpan) countSpan.classList.add('text-gray-700');
+             if(countSpan) countSpan.classList.remove('text-[#091e65]');
+        } else {
+             const countSpan = button.querySelector('span');
+             if(countSpan) countSpan.classList.add('text-[#091e65]');
+             if(countSpan) countSpan.classList.remove('text-gray-700]');
         }
 
 
-        button.addEventListener('click', function () {
+        button.addEventListener('click', function (event) {
+            event.preventDefault(); // Prevent potential page jump if buttons were actual links
             const targetTab = this.getAttribute('data-tab-target');
             setActiveTab(targetTab);
         });
     });
 
-    let initialTab = 'subscriptionsTab'; 
+    // Check for hash on page load and activate the corresponding tab
+    let initialTab = 'subscriptionsTab'; // Default tab
     if (window.location.hash) {
         const hashTarget = window.location.hash.substring(1);
         const targetElement = document.getElementById(hashTarget);
-        if (targetElement && targetElement.classList.contains('payment-tab-content')) {
+        if (targetElement && Array.from(tabButtons).some(btn => btn.getAttribute('data-tab-target') === hashTarget)) {
             initialTab = hashTarget;
         }
     }
-    setActiveTab(initialTab); // This will also apply active styles to the button
+    setActiveTab(initialTab);
 });
 </script>
 {% endblock %}

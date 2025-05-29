@@ -49,8 +49,7 @@
     <div class="bg-white p-6 rounded-xl shadow-xl">
         <form method="get" action="{% url 'AudioXApp:admin_creator_application_history' %}" id="search-form" class="space-y-4">
             <div>
-                <label for="search-input" class="block text-sm font-semibold text-slate-700 mb-1">Search by Creator Identifier</label>
-                <p class="text-xs text-slate-500 mb-2">Enter Creator's CID, Email, or Username to retrieve their application history.</p>
+                <label for="search-input" class="block text-sm font-semibold text-slate-700 mb-1">Search Creator Application History</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
                         <i class="fas fa-search"></i>
@@ -60,7 +59,7 @@
                         name="q" 
                         id="search-input"
                         value="{{ search_query|default:'' }}" 
-                        placeholder="e.g., CID123, user@example.com, username" 
+                        placeholder="Search using cid OR email address." 
                         class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/60 focus:border-[#091e65] focus:outline-none placeholder-slate-400 text-slate-800 text-sm transition duration-150 ease-in-out shadow-sm"
                     >
                 </div>

@@ -1,0 +1,231 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}
+    User Activity Log {% if target_user_info %}- {{ target_user_info.username }}{% endif %} - Admin (AudioX)
+{% endblock %}
+
+{% block header_title %}
+    User Activity Log
+    {% if target_user_info %}
+        <span class="text-gray-500 text-xl font-normal ml-2">/</span> <span class="text-red-500">{{ target_user_info.username }}</span>
+    {% endif %}
+{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+    .timeline-item .timeline-icon-container {
+        min-width: 40px; /* Ensure icon container has a fixed width */
+        min-height: 40px;
+    }
+    .timeline-line {
+        width: 2px;
+        background-color: #e5e7eb; /* gray-200 */
+        position: absolute;
+        top: 40px; /* Start below icon */
+        bottom: 0;
+        left: 19px; /* Center of icon (40px/2 - 1px line width) */
+    }
+    .timeline-item:last-child .timeline-line {
+        display: none; /* No line after the last item */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    {# Search Form Card #}
+    <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card p-6">
+        <form method="GET" action="{% url 'AudioXApp:admin_user_activity_dashboard' %}" class="space-y-4">
+            <div>
+                <label for="search_query_user_activity" class="block text-sm font-medium text-brand-text-secondary mb-1">Search User</label>
+                <div class="flex rounded-lg shadow-sm">
+                    <input type="text" name="q" id="search_query_user_activity"
+                           class="flex-1 block w-full min-w-0 rounded-none rounded-l-lg border-brand-border focus:ring-red-500 focus:border-red-500 sm:text-sm p-3 bg-brand-bg text-brand-text-primary placeholder-brand-text-muted"
+                           placeholder="Search by Email or Phone Number" value="{{ search_query_display|default:'' }}">
+                    <button type="submit"
+                            class="inline-flex items-center px-4 py-2 border border-l-0 border-red-600 rounded-r-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-red-500 focus:ring-offset-0 transition-colors">
+                        <i class="fas fa-search mr-2"></i>Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if messages %}
+        <div class="space-y-3">
+            {% for message in messages %}
+                <div class="p-4 rounded-2xl border
+                    {% if message.tags == 'success' %} bg-brand-success-light text-brand-success-dark border-brand-success
+                    {% elif message.tags == 'error' %} bg-brand-danger-light text-brand-danger-dark border-brand-danger
+                    {% elif message.tags == 'warning' %} bg-brand-warning-light text-brand-warning-dark border-brand-warning
+                    {% else %} bg-brand-info-light text-brand-info-dark border-brand-info {% endif %}"
+                    role="alert">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if target_user_info %}
+        {# Searched User Information Card #}
+        <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card p-6">
+            <div class="flex items-center">
+                {% if target_user_info.profile_pic %}
+                    <img src="{{ target_user_info.profile_pic.url }}" alt="{{ target_user_info.username }}" class="w-12 h-12 rounded-full mr-4 object-cover">
+                {% else %}
+                    <span class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xl font-bold mr-4">
+                        {{ target_user_info.username|slice:":1"|upper }}
+                    </span>
+                {% endif %}
+                <div>
+                    <h2 class="text-lg font-semibold text-brand-text-primary">
+                        Showing Activity For: {{ target_user_info.full_name|default:target_user_info.username }}
+                        <a href="{% url 'AudioXApp:admin_view_user_detail' target_user_info.user_id %}"
+                           class="ml-2 text-xs text-red-500 hover:text-red-700 hover:underline"
+                           title="View Full User Detail">
+                           (View Profile <i class="fas fa-external-link-alt fa-xs"></i>)
+                        </a>
+                    </h2>
+                    <p class="text-sm text-brand-text-secondary">
+                        Username: {{ target_user_info.username }} | Email: {{ target_user_info.email }} | User ID: {{ target_user_info.user_id }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {# Activity Timeline Card #}
+        <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card overflow-hidden">
+            <div class="px-6 py-4 border-b border-brand-border">
+                <h3 class="text-lg font-semibold text-brand-text-primary">Activity Timeline ({{ activities.paginator.count|default:0 }} entries)</h3>
+            </div>
+
+            {% if activities and activities.object_list %}
+                <div class="p-6 space-y-6">
+                    {% for activity in activities %}
+                    <div class="flex timeline-item relative">
+                        <div class="timeline-line"></div>
+                        <div class="flex-shrink-0 mr-4 timeline-icon-container">
+                            <span class="w-10 h-10 rounded-full flex items-center justify-center ring-4 ring-opacity-20
+                                {% if activity.type == 'Account' %} bg-blue-100 text-blue-600 ring-blue-500
+                                {% elif activity.type == 'Creator' or activity.type == 'Creator Profile' or activity.type == 'Creator Application' %} bg-purple-100 text-purple-600 ring-purple-500
+                                {% elif activity.type == 'Audiobook Purchase' or activity.type == 'Library' or activity.type == 'Listening' or activity.type == 'Review' %} bg-green-100 text-green-600 ring-green-500
+                                {% elif activity.type == 'Wallet' or activity.type == 'Subscription' %} bg-yellow-100 text-yellow-600 ring-yellow-500
+                                {% elif activity.type == 'Withdrawal Account' or activity.type == 'Withdrawal Request' or activity.type == 'Withdrawal Update' %} bg-indigo-100 text-indigo-600 ring-indigo-500
+                                {% elif activity.type == 'Support Ticket' or activity.type == 'Support Message' or activity.type == 'Support Update' %} bg-teal-100 text-teal-600 ring-teal-500
+                                {% else %} bg-gray-100 text-gray-600 ring-gray-500 {% endif %}">
+                                <i class="{{ activity.icon|default:'fas fa-history' }} text-lg"></i>
+                            </span>
+                        </div>
+                        <div class="flex-grow pb-5 {% if not forloop.last %}border-b border-brand-border/60{% endif %}">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full
+                                    {% if activity.type == 'Account' %} bg-blue-100 text-blue-800
+                                    {% elif activity.type == 'Creator' or activity.type == 'Creator Profile' or activity.type == 'Creator Application' %} bg-purple-100 text-purple-800
+                                    {% elif activity.type == 'Audiobook Purchase' or activity.type == 'Library' or activity.type == 'Listening' or activity.type == 'Review' %} bg-green-100 text-green-800
+                                    {% elif activity.type == 'Wallet' or activity.type == 'Subscription' %} bg-yellow-100 text-yellow-800
+                                    {% elif activity.type == 'Withdrawal Account' or activity.type == 'Withdrawal Request' or activity.type == 'Withdrawal Update' %} bg-indigo-100 text-indigo-800
+                                    {% elif activity.type == 'Support Ticket' or activity.type == 'Support Message' or activity.type == 'Support Update' %} bg-teal-100 text-teal-800
+                                    {% else %} bg-gray-100 text-gray-800 {% endif %}">
+                                    {{ activity.type }}
+                                </span>
+                                <time class="text-xs text-brand-text-secondary font-medium whitespace-nowrap" datetime="{{ activity.timestamp|date:'Y-m-d\TH:i:sO' }}">
+                                    {{ activity.timestamp|naturaltime }} <span class="hidden sm:inline">({{ activity.timestamp|date:"N j, Y, P" }})</span>
+                                </time>
+                            </div>
+                            <p class="text-sm text-brand-text-primary leading-relaxed">{{ activity.details|safe }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if activities.has_other_pages %}
+                <div class="px-6 py-4 border-t border-brand-border bg-brand-bg">
+                    {# Ensure pagination preserves the search query 'q' #}
+                    <nav class="flex items-center justify-between" aria-label="Pagination">
+                        <div class="text-sm text-brand-text-secondary">
+                            Showing page <span class="font-semibold">{{ activities.number }}</span> of <span class="font-semibold">{{ activities.paginator.num_pages }}</span>
+                        </div>
+                        <div class="flex space-x-1">
+                            {% if activities.has_previous %}
+                                <a href="?q={{ search_query_display|urlencode }}&page={{ activities.previous_page_number }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium text-brand-text-secondary hover:bg-brand-border focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            {% else %}
+                                <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium text-brand-text-muted bg-brand-surface cursor-not-allowed">
+                                    <i class="fas fa-chevron-left"></i>
+                                </span>
+                            {% endif %}
+
+                            {% for i in activities.paginator.page_range %}
+                                {% if activities.number == i %}
+                                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-semibold text-white bg-red-600 shadow-sm cursor-default">{{ i }}</span>
+                                {% elif i > activities.number|add:'-3' and i < activities.number|add:'3' %}
+                                    <a href="?q={{ search_query_display|urlencode }}&page={{ i }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium text-brand-text-secondary hover:bg-brand-border focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1">{{ i }}</a>
+                                {% elif i == activities.number|add:'-3' or i == activities.number|add:'3' %}
+                                     <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium text-brand-text-secondary">...</span>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if activities.has_next %}
+                                <a href="?q={{ search_query_display|urlencode }}&page={{ activities.next_page_number }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium text-brand-text-secondary hover:bg-brand-border focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            {% else %}
+                                <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium text-brand-text-muted bg-brand-surface cursor-not-allowed">
+                                    <i class="fas fa-chevron-right"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+                    </nav>
+                </div>
+                {% endif %}
+
+            {% elif search_query_display and not target_user_info and not messages %}
+                {# This case might be covered by Django messages already, but as a fallback: #}
+                <div class="p-10 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4 text-yellow-500">
+                        <i class="fas fa-user-times fa-2x"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-brand-text-primary mb-1">User Not Found</h3>
+                    <p class="text-sm text-brand-text-secondary">No user found matching your search criteria "{{ search_query_display }}".</p>
+                </div>
+            {% elif not search_query_display and not target_user_info %}
+                 <div class="p-10 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4 text-blue-500">
+                        <i class="fas fa-search fa-2x"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-brand-text-primary mb-1">Search for a User</h3>
+                    <p class="text-sm text-brand-text-secondary">Enter a username, email, or User ID above to view their activity log.</p>
+                </div>
+            {% endif %}
+        </div>
+    {% elif search_query_display %}
+        {# Fallback if target_user_info is None but a search was attempted (already handled by messages generally) #}
+         <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card p-10 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4 text-yellow-500">
+                <i class="fas fa-user-times fa-2x"></i>
+            </div>
+            <h3 class="text-lg font-medium text-brand-text-primary mb-1">Search Results</h3>
+            <p class="text-sm text-brand-text-secondary">Please check the messages above for details on your search for "{{ search_query_display }}".</p>
+        </div>
+    {% else %}
+        {# Initial state before any search and no direct user_id link #}
+        <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card p-10 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4 text-blue-500">
+                <i class="fas fa-search fa-2x"></i>
+            </div>
+            <h3 class="text-lg font-medium text-brand-text-primary mb-1">Search for User Activity</h3>
+            <p class="text-sm text-brand-text-secondary">Use the search bar above to find a user and view their activity log.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+{# No specific JS needed for this page beyond base, unless you add dynamic elements #}
+{% endblock %}

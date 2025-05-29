@@ -1,6 +1,7 @@
 # AudioXApp/forms.py
 from django import forms
 import os # For file extension checking
+from .models import Admin # Import the Admin model
 
 # Values for LANGUAGE_CHOICES should match the keys in EDGE_TTS_VOICES_BY_LANGUAGE
 # in creator_tts_views.py (e.g., 'English', 'Urdu')
@@ -85,11 +86,11 @@ class DocumentUploadForm(forms.Form): # Using your existing form name
         if not valid_content_type_for_ext and file.content_type == 'application/octet-stream' and ext in allowed_extensions:
             pass # Allow, but log a warning perhaps in the view if processing fails
         elif not valid_content_type_for_ext:
-             raise forms.ValidationError(
-                f"Unsupported file content type: '{file.content_type}' for a '{ext}' file. "
-                "Please upload a valid PDF, DOC, or DOCX file."
-            )
-            
+                raise forms.ValidationError(
+                    f"Unsupported file content type: '{file.content_type}' for a '{ext}' file. "
+                    "Please upload a valid PDF, DOC, or DOCX file."
+                )
+                
         return file
 
     def clean(self):
@@ -104,5 +105,74 @@ class DocumentUploadForm(forms.Form): # Using your existing form name
         
         return cleaned_data
 
-# You can add any other forms your application uses below this line.
-# For example, if you had a CreatorProfileForm, it would go here.
+# --- Admin Management Form ---
+class AdminManagementForm(forms.ModelForm):
+    """
+    Form for managing Admin users, including their roles and active status.
+    """
+    roles = forms.MultipleChoiceField(
+        choices=Admin.RoleChoices.choices,
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+        help_text="Select one or more roles for the admin."
+    )
+
+    class Meta:
+        model = Admin
+        fields = ['username', 'email', 'roles', 'is_active']
+        help_texts = {
+            'is_active': 'Unselect this to deactivate the admin account. They will not be able to log in.',
+            'username': 'Admin username (cannot be changed after creation for simplicity here, but can be displayed as readonly).',
+            'email': 'Admin email (cannot be changed after creation for simplicity here, but can be displayed as readonly).'
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make username and email readonly if instance exists (editing)
+        if self.instance and self.instance.pk:
+            self.fields['username'].widget.attrs['readonly'] = True
+            self.fields['email'].widget.attrs['readonly'] = True
+            # Populate initial roles from the comma-separated string in the model
+            if self.instance.roles:
+                self.initial['roles'] = self.instance.get_roles_list()
+        else: # For new admin creation (if this form is used for that)
+            self.fields['password'] = forms.CharField(widget=forms.PasswordInput, required=True)
+            self.fields['confirm_password'] = forms.CharField(widget=forms.PasswordInput, required=True, label="Confirm Password")
+            # Reorder fields to put password fields after email for new admin
+            new_order = ['username', 'email', 'password', 'confirm_password', 'roles', 'is_active']
+            self.order_fields(new_order)
+
+
+    def clean_roles(self):
+        roles = self.cleaned_data.get('roles')
+        if not roles:
+            raise forms.ValidationError("At least one role must be selected.")
+        # Ensure 'full_access' is not mixed with other roles if it's meant to be exclusive (optional logic)
+        # For now, we allow mixing.
+        return roles
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # If creating a new admin, check password confirmation
+        if not (self.instance and self.instance.pk): # Only for new admins
+            password = cleaned_data.get("password")
+            confirm_password = cleaned_data.get("confirm_password")
+            if password and confirm_password and password != confirm_password:
+                self.add_error('confirm_password', "Passwords do not match.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        admin = super().save(commit=False)
+        # Convert list of roles from form back to comma-separated string for the model
+        selected_roles = self.cleaned_data.get('roles')
+        if selected_roles:
+            admin.roles = ",".join(selected_roles)
+        
+        # Handle password for new admin
+        if not (self.instance and self.instance.pk) and 'password' in self.cleaned_data:
+            admin.set_password(self.cleaned_data['password'])
+
+        if commit:
+            admin.save()
+        return admin
+

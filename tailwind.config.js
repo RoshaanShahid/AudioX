@@ -9,6 +9,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // == Colors for Community Chatroom (ensure these are present) ==
+        'audiox-blue': '#091e65',
+        'audiox-red': '#E53E3E',
+        'audiox-red-dark': '#C53030',
+        'audiox-gray': {
+          DEFAULT: '#6B7280', // slate-500 or gray-500
+          light: '#F3F4F6',   // slate-100 or gray-100
+          medium: '#D1D5DB',  // slate-300 or gray-300
+          dark: '#374151'     // slate-700 or gray-700
+        },
+        // == End of Colors for Community Chatroom ==
+
         // == Defined for the Ultra-Elegant Light UI ==
         'theme-primary': '#091e65',
         'theme-primary-hover': '#071852',

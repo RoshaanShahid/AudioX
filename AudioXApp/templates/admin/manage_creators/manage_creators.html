@@ -52,7 +52,8 @@
         <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ total_creator_count|default:"0"|intcomma }}</div>
     </a>
 
-    <a href="#" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-teal shadow-teal-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-teal-glow hover:shadow-card-lg cursor-pointer"> {# TODO: Add URL for creator uploads/audiobooks management if available #}
+    {# UPDATED LINK for Creator Uploads #}
+    <a href="{% url 'AudioXApp:admin_creator_uploads' %}" class="group creator-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-teal shadow-teal-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-teal-glow hover:shadow-card-lg cursor-pointer">
         <div class="flex items-center gap-4 mb-4">
             <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
                 <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>

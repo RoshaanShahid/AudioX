@@ -9,6 +9,7 @@
 <div class="bg-white shadow-md rounded-lg p-6">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-semibold text-gray-800">Administrator Accounts</h2>
+        {# The URL for adding a new admin might need its own view and form handling if AdminManagementForm is to be used for creation #}
         <a href="{% url 'AudioXApp:adminsignup' %}" class="bg-theme-primary hover:bg-theme-primary-hover text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center">
             <i class="fas fa-plus mr-2"></i> Add New Admin
         </a>
@@ -62,7 +63,6 @@
                                 <div class="text-sm text-gray-700">{{ admin_account.email }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                {# *** THIS IS THE CORRECTED LINE *** #}
                                 {% for role_display_name in admin_account.get_display_roles_list %}
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 mr-1 mb-1">
                                         {{ role_display_name }}
@@ -86,11 +86,13 @@
                                 {{ admin_account.last_login|date:"Y-m-d H:i"|default:"Never" }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                {# Add links for edit/details later #}
-                                <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                                {% if admin_account.adminid != admin_user.adminid %} {# Prevent self-deactivation/deletion #}
-                                    {# Add activate/deactivate or delete links later #}
-                                    <a href="#" class="text-red-600 hover:text-red-900">Deactivate</a>
+                                <a href="{% url 'AudioXApp:admin_edit_user' admin_id=admin_account.adminid %}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                                
+                                {# Prevent self-deactivation/deletion actions directly on list if admin_user is the one logged in #}
+                                {# Deactivation is now handled within the Edit form #}
+                                {% if admin_account.adminid != admin_user.adminid %}
+                                    {# Placeholder for direct deactivate/activate if needed later, currently handled in edit form #}
+                                    {# <a href="#" class="text-red-600 hover:text-red-900">Deactivate</a> #}
                                 {% endif %}
                             </td>
                         </tr>

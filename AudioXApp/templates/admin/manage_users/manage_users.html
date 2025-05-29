@@ -65,7 +65,7 @@
         </div>
         <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ active_user_count|default:"0"|intcomma }}</div>
     </a>
-    
+
     <a href="{% url 'AudioXApp:admin_new_users_list' %}" class="group user-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-info shadow-info-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-info-glow hover:shadow-card-lg cursor-pointer">
         <div class="flex items-center gap-4 mb-4">
             <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
@@ -104,7 +104,7 @@
         </div>
         <div class="text-right text-5xl font-extrabold text-brand-text-primary mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ users_with_balance_count|default:"0"|intcomma }}</div>
     </a>
-    
+
     <a href="{% url 'AudioXApp:admin_banned_users_platform_list' %}" class="group user-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-danger shadow-danger-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-danger-glow hover:shadow-card-lg cursor-pointer">
         <div class="flex items-center gap-4 mb-4">
             <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
@@ -118,7 +118,8 @@
         <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ banned_user_count|default:"0"|intcomma }}</div>
     </a>
 
-    <a href="#" {# {% url 'AudioXApp:admin_user_activity_logs' %} #} class="group user-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-gray shadow-gray-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-gray-glow hover:shadow-card-lg cursor-pointer">
+    {# *** UPDATED USER ACTIVITY BOX LINK *** #}
+    <a href="{% url 'AudioXApp:admin_user_activity_dashboard' %}" class="group user-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-gray shadow-gray-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-gray-glow hover:shadow-card-lg cursor-pointer">
         <div class="flex items-center gap-4 mb-4">
             <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
                 <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
@@ -130,8 +131,8 @@
         </div>
         <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]"><i class="fas fa-history"></i></div>
     </a>
-    
-    <a href="{% url 'AudioXApp:admin_user_payment_details' %} "   class="group user-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-pink shadow-pink-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-pink-glow hover:shadow-card-lg cursor-pointer">
+
+    <a href="{% url 'AudioXApp:admin_user_payment_details' %}" class="group user-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-pink shadow-pink-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-pink-glow hover:shadow-card-lg cursor-pointer">
         <div class="flex items-center gap-4 mb-4">
             <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
                 <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -170,7 +171,7 @@
     const dailyLabelsJsonString = `{{ daily_chart_labels_json|safe|default:'["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]' }}`;
     const registrationsJsonString = `{{ daily_registrations_data_json|safe|default:'[12, 19, 3, 5, 2, 3, 7]' }}`;
     const activeUsersJsonString = `{{ daily_active_users_data_json|safe|default:'[30, 25, 35, 20, 40, 33, 45]' }}`;
-    
+
     const dailyLabels = parseJsonData(dailyLabelsJsonString);
     const dailyRegistrations = parseJsonData(registrationsJsonString);
     const dailyActive = parseJsonData(activeUsersJsonString);
@@ -182,9 +183,9 @@
             const colorPath = colorName.split('-'); // e.g., 'brand-primary-dark'
             let colorValue = colors;
             try {
-                colorPath.forEach(part => { 
+                colorPath.forEach(part => {
                     if (colorValue && typeof colorValue === 'object' && part in colorValue) {
-                        colorValue = colorValue[part]; 
+                        colorValue = colorValue[part];
                     } else {
                         throw new Error('Color path not found');
                     }
@@ -193,19 +194,19 @@
             } catch (e) { /* console.warn(`Tailwind color '${colorName}' not fully resolved, using fallback.`); */ }
         }
         const fallbacks = {
-            'brand-primary-dark': '#4f46e5', 
-            'brand-primary': '#6366f1',      
+            'brand-primary-dark': '#4f46e5',
+            'brand-primary': '#6366f1',
             'brand-secondary-dark': '#059669',
-            'brand-secondary': '#10b981',    
+            'brand-secondary': '#10b981',
             'brand-text-secondary': '#4b5563',
-            'brand-border': '#e8edf5',       
+            'brand-border': '#e8edf5',
         };
         if (fallbacks[colorName]) { return fallbacks[colorName]; }
         return fallbackColor;
     }
 
     function hexToRgba(hex, alpha = 1) {
-        if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) { hex = '#000000'; } 
+        if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) { hex = '#000000'; }
         try {
             const bigint = parseInt(hex.slice(1), 16);
             const r = (bigint >> 16) & 255;
@@ -213,7 +214,7 @@
             const b = bigint & 255;
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         } catch (e) {
-            return `rgba(0, 0, 0, ${alpha})`; 
+            return `rgba(0, 0, 0, ${alpha})`;
         }
     }
 
@@ -226,7 +227,7 @@
                 borderColor: getTailwindColor('brand-primary-dark'),
                 backgroundColor: hexToRgba(getTailwindColor('brand-primary'), 0.1),
                 fill: true,
-                tension: 0.3, 
+                tension: 0.3,
                 pointBackgroundColor: getTailwindColor('brand-primary'),
                 pointRadius: 4,
                 pointHoverRadius: 6,
@@ -243,7 +244,7 @@
                 pointRadius: 4,
                 pointHoverRadius: 6,
                 borderWidth: 2,
-                hidden: false 
+                hidden: false
             }
         ]
     };
@@ -255,8 +256,8 @@
             responsive: true,
             maintainAspectRatio: false,
             interaction: {
-                mode: 'index', 
-                intersect: false, 
+                mode: 'index',
+                intersect: false,
             },
             plugins: {
                 legend: {
@@ -270,7 +271,7 @@
                     }
                 },
                 title: {
-                    display: false 
+                    display: false
                 },
                 tooltip: {
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -278,7 +279,7 @@
                     bodyFont: { size: 12, family: 'Inter, sans-serif' },
                     padding: 12,
                     cornerRadius: 6,
-                    displayColors: true, 
+                    displayColors: true,
                     boxPadding: 4,
                     callbacks: {
                         label: function(context) {
@@ -294,24 +295,24 @@
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: getTailwindColor('brand-border', '#e5e7eb'), 
-                        drawBorder: false, 
+                        color: getTailwindColor('brand-border', '#e5e7eb'),
+                        drawBorder: false,
                     },
                     ticks: {
                         color: getTailwindColor('brand-text-secondary'),
                         padding: 10,
-                        precision: 0, 
+                        precision: 0,
                         font: { family: 'Inter, sans-serif' }
                     }
                 },
                 x: {
                     grid: {
-                        display: false 
+                        display: false
                     },
                     ticks: {
                         color: getTailwindColor('brand-text-secondary'),
                         padding: 10,
-                        maxRotation: 0, 
+                        maxRotation: 0,
                         minRotation: 0,
                         font: { family: 'Inter, sans-serif' }
                     }

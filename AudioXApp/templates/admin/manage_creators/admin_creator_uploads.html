@@ -1,0 +1,248 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+{% load tz %}
+
+{% block title %}{{ filter_title|default:"Creator Uploads & Earnings" }} - Admin (AudioX){% endblock %}
+
+{% block header_title %}
+    <h1 class="text-2xl md:text-3xl font-bold text-[#091e65]">
+        {{ filter_title|default:"Creator Uploads & Earnings" }}
+    </h1>
+{% endblock %}
+
+{% block extra_head %}
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto p-4 sm:p-8 lg:p-10 space-y-10"> {# Increased base padding and spacing #}
+
+    {# Django Messages #}
+    {% if messages %}
+        <div class="space-y-4">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg shadow-lg flex items-start {% comment %} Increased shadow slightly {% endcomment %}
+                    {% if message.tags == 'success' %} bg-[#091e65]/5 border-l-4 border-[#091e65] text-[#091e65]
+                    {% elif message.tags == 'error' %} bg-red-500/5 border-l-4 border-red-500 text-red-700
+                    {% elif message.tags == 'warning' %} bg-yellow-500/5 border-l-4 border-yellow-500 text-yellow-700 
+                    {% else %} bg-[#091e65]/5 border-l-4 border-[#091e65]/80 text-[#091e65]/80
+                    {% endif %}"
+                    role="alert">
+                    <div class="flex-shrink-0 mr-3 pt-0.5">
+                        <i class="fas 
+                        {% if message.tags == 'success' %} fa-check-circle text-[#091e65]
+                        {% elif message.tags == 'error' %} fa-times-circle text-red-600 
+                        {% elif message.tags == 'warning' %} fa-exclamation-triangle text-yellow-600
+                        {% else %} fa-info-circle text-[#091e65]/80
+                        {% endif %} text-xl"></i>
+                    </div>
+                    <div class="flex-1 text-sm font-medium">
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Search Form Section #}
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-xl border border-[#091e65]/10"> {# Increased shadow, rounded-xl #}
+        <form method="get" action="{% url 'AudioXApp:admin_creator_uploads' %}" id="search-form" class="space-y-6">
+            <div>
+                <label for="search-input" class="block text-base font-semibold text-[#091e65] mb-2">Search Creator</label> {# Slightly larger label #}
+                <p class="text-sm text-[#091e65]/70 mb-3">Enter Creator's exact CID or Email to view their uploads and earnings.</p> {# Larger text, more margin #}
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-[#091e65]/60"> {# Increased padding for icon #}
+                        <i class="fas fa-search text-lg"></i> {# Larger icon #}
+                    </div>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        id="search-input"
+                        value="{{ search_query|default:'' }}" 
+                        placeholder="Creator CID or Email Address" 
+                        class="w-full pl-12 pr-4 py-3.5 border border-[#091e65]/40 rounded-lg focus:ring-2 focus:ring-[#091e65]/60 focus:border-[#091e65] focus:outline-none placeholder-[#091e65]/50 text-[#091e65] text-base transition duration-150 ease-in-out shadow-sm hover:border-[#091e65]/60" {# Larger padding, rounded-lg, text-base, hover style #}
+                        required
+                    >
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:justify-end sm:items-center gap-4 pt-3"> {# Increased gap and padding-top #}
+                {% if search_query %}
+                <a href="{% url 'AudioXApp:admin_creator_uploads' %}" class="w-full sm:w-auto order-2 sm:order-1 flex items-center justify-center px-5 py-3 border border-[#091e65]/40 rounded-lg text-sm font-medium text-[#091e65] hover:bg-[#091e65]/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#091e65]/50" title="Clear Search"> {# Increased padding, rounded-lg #}
+                    <i class="fas fa-times mr-2"></i>Clear Search
+                </a>
+                {% endif %}
+                <button 
+                    type="submit" 
+                    class="w-full sm:w-auto order-1 sm:order-2 flex items-center justify-center px-8 py-3 text-white bg-[#091e65] hover:bg-[#071852] rounded-lg text-sm font-semibold transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65]/70 shadow-lg hover:shadow-xl" {# Increased padding, rounded-lg, enhanced shadow #}
+                    title="Search Uploads"
+                >
+                    <i class="fas fa-book-reader mr-2"></i>View Uploads
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# Content Area: Display if creator is found #}
+    {% if search_query and found_creator %}
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-xl mt-10 border border-[#091e65]/10"> {# Increased shadow, rounded-xl #}
+            <div class="pb-6 mb-6 border-b border-[#091e65]/20"> {# Increased padding/margin #}
+                <h2 class="text-2xl font-semibold text-[#091e65]">{{ found_creator.creator_name }}'s Audiobooks</h2> {# More direct title #}
+                <p class="text-base text-[#091e65]/70 mt-1.5">CID: {{ found_creator.cid }} | Email: {{ found_creator.user.email }}</p> {# Slightly larger text #}
+            </div>
+
+            {% if audiobooks_page.object_list %}
+                <div class="space-y-10"> {# Increased spacing between audiobook cards #}
+                    {% for audiobook in audiobooks_page.object_list %}
+                    <article class="bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out overflow-hidden border border-[#091e65]/20 p-6 group hover:-translate-y-1.5 transform"> {# Increased shadow, padding, translate #}
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-5"> {# Increased gap #}
+                            <div class="md:col-span-2 flex justify-center md:justify-start items-start">
+                                {% if audiobook.cover_image %}
+                                    <img src="{{ audiobook.cover_image.url }}" alt="{{ audiobook.title }} cover" class="w-40 h-auto md:w-full md:h-auto object-cover rounded-lg shadow-lg border border-[#091e65]/10"> {# Larger default width, rounded-lg, more shadow #}
+                                {% else %}
+                                    <div class="w-40 h-56 md:w-full md:h-60 bg-[#091e65]/5 flex items-center justify-center rounded-lg text-[#091e65]/30 border border-[#091e65]/10"> {# Larger default, rounded-lg #}
+                                        <i class="fas fa-book fa-4x"></i> {# Larger icon #}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="md:col-span-6">
+                                <h3 class="text-xl font-bold text-[#071852] group-hover:text-[#091e65] group-hover:underline mb-1"> {# Larger title, margin #}
+                                    <a href="{% url 'AudioXApp:audiobook_detail' audiobook.slug %}" target="_blank" title="View {{audiobook.title}} details in new tab">{{ audiobook.title }}</a>
+                                </h3>
+                                <div class="text-sm text-[#091e65]/75 space-y-1.5"> {# Grouped sub-info, increased text size slightly #}
+                                    <p>By: <span class="font-semibold text-[#091e65]">{{ audiobook.author|default:"N/A" }}</span></p>
+                                    <p>Narrated by: <span class="font-semibold text-[#091e65]">{{ audiobook.narrator|default:"N/A" }}</span></p>
+                                    <p>Language: <span class="font-semibold text-[#091e65]">{{ audiobook.language|default:"N/A" }}</span></p>
+                                    <p>Genre: <span class="font-semibold text-[#091e65]">{{ audiobook.genre|default:"N/A" }}</span></p>
+                                    <p>Status: <span class="font-bold py-1 px-2 rounded-md text-xs tracking-wide
+                                        {% if audiobook.status == 'PUBLISHED' %} bg-[#091e65]/10 text-[#091e65]
+                                        {% elif audiobook.status == 'REJECTED' or audiobook.status == 'PAUSED_BY_ADMIN' %} bg-red-500/10 text-red-600
+                                        {% else %} bg-[#091e65]/5 text-[#091e65]/80 {% endif %}">{{ audiobook.get_status_display }}</span>
+                                    </p>
+                                    <p>Price: {% if audiobook.is_paid %}<span class="font-semibold text-[#091e65]">PKR {{ audiobook.price|floatformat:2|intcomma }}</span>{% else %}<span class="font-semibold text-[#091e65]">Free</span>{% endif %}</p>
+                                    <p>Uploaded: <span class="font-semibold text-[#091e65]">{{ audiobook.created_at|date:"M d, Y, P" }}</span></p>
+                                </div>
+                            </div>
+                            <div class="md:col-span-4 space-y-2.5 md:text-right border-t-2 md:border-t-0 md:border-l-2 border-dashed border-[#091e65]/10 pt-5 md:pt-0 md:pl-6"> {# Bolder separator, increased padding/spacing #}
+                                <p class="text-sm text-[#091e65]/80">Total Views: <span class="font-bold text-lg text-[#091e65]">{{ audiobook.total_views|intcomma }}</span></p>
+                                <p class="text-sm text-[#091e65]/80">Gross Revenue: <span class="font-semibold text-base text-[#091e65]/90">PKR {{ audiobook.total_revenue_generated|floatformat:2|intcomma }}</span></p>
+                                <p class="text-sm text-[#091e65]/80">Platform Fee: <span class="font-semibold text-base text-red-600">PKR {{ audiobook.platform_commission_from_book|floatformat:2|intcomma }}</span></p>
+                                <p class="text-sm text-[#091e65]/80">Net Earnings: <span class="font-bold text-lg text-[#091e65]">PKR {{ audiobook.creator_specific_earnings|floatformat:2|intcomma }}</span></p>
+                            </div>
+                        </div>
+
+                        {# Chapters Section #}
+                        {% if audiobook.chapters.all %}
+                        <div class="mt-6 pt-5 border-t-2 border-dashed border-[#091e65]/10"> {# Bolder separator, increased margin/padding #}
+                            <h4 class="text-lg font-semibold text-[#091e65] mb-3">Chapters ({{ audiobook.chapters.count }})</h4> {# Larger heading #}
+                            <div class="overflow-x-auto max-h-72 rounded-lg border border-[#091e65]/20 bg-white shadow-sm"> {# Increased max-height, rounded-lg #}
+                                <table class="min-w-full">
+                                    <thead class="bg-[#091e65]/10 sticky top-0 shadow-sm"> {# Darker header, added shadow #}
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">#</th> {# Increased padding, bolder font #}
+                                            <th class="px-4 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Title</th>
+                                            <th class="px-4 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">Audio</th>
+                                            <th class="px-4 py-3 text-left text-xs font-bold text-[#091e65] uppercase tracking-wider">TTS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-[#091e65]/10">
+                                    {% for chapter in audiobook.chapters.all %}
+                                        <tr class="hover:bg-[#091e65]/5 transition-colors duration-150">
+                                            <td class="px-4 py-3 text-sm text-[#091e65]/70 whitespace-nowrap">{{ chapter.chapter_order }}</td> {# Increased padding, text-sm #}
+                                            <td class="px-4 py-3 text-sm text-[#091e65] font-medium whitespace-nowrap">{{ chapter.chapter_name }}</td>
+                                            <td class="px-4 py-3 text-sm whitespace-nowrap">
+                                                {% if chapter.audio_file %}
+                                                    <a href="{{ chapter.audio_file.url }}" target="_blank" class="text-[#091e65] hover:text-[#071852] hover:underline" title="Play/Download Chapter Audio">
+                                                        <i class="fas fa-play-circle mr-1.5"></i> Listen
+                                                    </a>
+                                                {% else %}
+                                                    <span class="text-[#091e65]/40 italic">No file</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-4 py-3 text-sm whitespace-nowrap">
+                                                {% if chapter.is_tts_generated %}
+                                                    <span class="text-[#091e65]/90" title="{{ chapter.get_tts_voice_id_display|default:chapter.tts_voice_id }}">TTS <i class="fas fa-robot text-[#091e65]/70 ml-1"></i></span>
+                                                {% else %}
+                                                    <span class="text-[#091e65]/40">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="mt-6 pt-5 border-t-2 border-dashed border-[#091e65]/10 text-sm text-[#091e65]/60 italic">No chapters uploaded for this audiobook.</p>
+                        {% endif %}
+                    </article>
+                    {% endfor %}
+
+                    {# Pagination for Audiobooks #}
+                    {% if audiobooks_page.has_other_pages %}
+                    <nav class="mt-12 flex items-center justify-between border-t-2 border-[#091e65]/20 pt-8"> {# Bolder separator, increased margin/padding #}
+                        <div class="hidden sm:block">
+                            <p class="text-base text-[#091e65]/80"> {# Larger text #}
+                                Page <span class="font-bold text-[#091e65]">{{ audiobooks_page.number }}</span>
+                                of <span class="font-bold text-[#091e65]">{{ audiobooks_page.paginator.num_pages }}</span>.
+                                (<span class="font-bold text-[#091e65]">{{ audiobooks_page.paginator.count }}</span> total audiobooks)
+                            </p>
+                        </div>
+                        <div class="flex-1 flex justify-between sm:justify-end space-x-3"> {# Increased spacing #}
+                            {% if audiobooks_page.has_previous %}
+                                <a href="?q={{ search_query|urlencode }}&page={{ audiobooks_page.previous_page_number }}" class="relative inline-flex items-center px-5 py-2.5 border border-[#091e65]/40 text-sm font-medium rounded-lg text-[#091e65] bg-white hover:bg-[#091e65]/10 transition-colors shadow-sm hover:shadow-md"> {# Increased padding, rounded-lg, shadow #}
+                                    <i class="fas fa-chevron-left mr-2"></i> Previous
+                                </a>
+                            {% else %}
+                                <span class="relative inline-flex items-center px-5 py-2.5 border border-[#091e65]/20 text-sm font-medium rounded-lg text-[#091e65]/40 bg-[#091e65]/5 cursor-not-allowed shadow-sm">
+                                    <i class="fas fa-chevron-left mr-2"></i> Previous
+                                </span>
+                            {% endif %}
+                            {% if audiobooks_page.has_next %}
+                                <a href="?q={{ search_query|urlencode }}&page={{ audiobooks_page.next_page_number }}" class="relative inline-flex items-center px-5 py-2.5 border border-[#091e65]/40 text-sm font-medium rounded-lg text-[#091e65] bg-white hover:bg-[#091e65]/10 transition-colors shadow-sm hover:shadow-md">
+                                    Next <i class="fas fa-chevron-right ml-2"></i>
+                                </a>
+                            {% else %}
+                                <span class="relative inline-flex items-center px-5 py-2.5 border border-[#091e65]/20 text-sm font-medium rounded-lg text-[#091e65]/40 bg-[#091e65]/5 cursor-not-allowed shadow-sm">
+                                   Next <i class="fas fa-chevron-right ml-2"></i>
+                                </span>
+                            {% endif %}
+                        </div>
+                    </nav>
+                    {% endif %}
+                </div>
+            {% elif search_query %} 
+                <div class="text-center py-16 px-6">
+                    <i class="fas fa-book-open fa-5x text-[#091e65]/20 mb-6"></i> {# Larger icon #}
+                    <p class="text-xl font-semibold text-[#091e65] mb-2">No Audiobooks Found</p>
+                    <p class="text-base text-[#091e65]/70">{{ found_creator.creator_name }} hasn't uploaded any audiobooks, or none match current filters.</p>
+                </div>
+            {% endif %}
+        </div>
+    {% elif search_query and not found_creator %}
+         <div class="text-center py-24 px-6 bg-white rounded-xl border border-[#091e65]/10 shadow-xl"> {# Increased padding, rounded-xl #}
+            <i class="fas fa-user-slash fa-6x text-red-500/30 mb-8"></i> {# Larger icon #}
+            <p class="text-3xl font-semibold text-[#091e65] mb-3">Creator Not Found</p>
+            <p class="text-lg text-[#091e65]/70">No creator matched your search for "<strong class="text-[#091e65]">{{ search_query }}</strong>".</p>
+            <p class="text-base text-[#091e65]/60 mt-1">Please check the CID or Email and try again.</p>
+        </div>
+    {% else %} 
+        <div class="text-center py-28 px-6 bg-white rounded-xl border-2 border-dashed border-[#091e65]/20 shadow-xl"> {# Increased padding, rounded-xl #}
+            <i class="fas fa-search-dollar fa-7x text-[#091e65]/20 mb-10"></i> {# Larger icon #}
+            <p class="text-3xl font-bold text-[#091e65] mb-4">View Creator Uploads & Earnings</p> {# Bolder title #}
+            <p class="text-lg text-[#091e65]/75 max-w-lg mx-auto">Enter a Creator's exact CID or Email in the search bar above to retrieve their audiobook details, chapter information, and financial summaries.</p> {# Larger text #}
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // const searchInput = document.getElementById('search-input');
+    // if (searchInput && ! "{{ search_query|escapejs }}") { 
+    //     searchInput.focus(); // Auto-focus if no search query is present
+    // }
+});
+</script>
+{% endblock %}

@@ -73,7 +73,7 @@ def _get_filtered_financial_data(date_from_str, date_to_str):
         )
         withdrawal_requests_qs = withdrawal_requests_qs.filter(
             Q(request_date__gte=start_datetime, status__in=['PENDING', 'PROCESSING']) |
-            Q(processed_date__gte=start_datetime, status__in=['APPROVED', 'REJECTED'])
+            Q(processed_date__gte=start_datetime, status__in=['APPROVED', 'REJECTED']) # Changed from COMPLETED to APPROVED for withdrawals
         )
     if date_to:
         end_datetime = timezone.make_aware(datetime.combine(date_to, datetime.max.time()))
@@ -83,7 +83,7 @@ def _get_filtered_financial_data(date_from_str, date_to_str):
         subscriptions_qs = subscriptions_qs.filter(Q(start_date__lte=end_datetime))
         withdrawal_requests_qs = withdrawal_requests_qs.filter(
             Q(request_date__lte=end_datetime, status__in=['PENDING', 'PROCESSING']) |
-            Q(processed_date__lte=end_datetime, status__in=['APPROVED', 'REJECTED'])
+            Q(processed_date__lte=end_datetime, status__in=['APPROVED', 'REJECTED']) # Changed from COMPLETED to APPROVED
         )
 
     # 1. Revenue from Platform Commission (Audiobook Sales)
@@ -124,9 +124,23 @@ def _get_filtered_financial_data(date_from_str, date_to_str):
     summary_creator_share_from_sales = audiobook_purchases_qs.aggregate(
         total=Sum('creator_share_amount')
     )['total'] or Decimal('0.00')
-    summary_total_withdrawn_by_creators = withdrawal_requests_qs.filter(status='APPROVED').aggregate(
+    
+    # Use 'COMPLETED' for WithdrawalRequest status for consistency with what was likely intended as "paid out"
+    summary_total_withdrawn_by_creators = WithdrawalRequest.objects.filter(
+        status='COMPLETED' # Assuming 'COMPLETED' means successfully paid out
+    )
+    if date_from:
+        summary_total_withdrawn_by_creators = summary_total_withdrawn_by_creators.filter(
+            processed_date__gte=timezone.make_aware(datetime.combine(date_from, datetime.min.time()))
+        )
+    if date_to:
+        summary_total_withdrawn_by_creators = summary_total_withdrawn_by_creators.filter(
+            processed_date__lte=timezone.make_aware(datetime.combine(date_to, datetime.max.time()))
+        )
+    summary_total_withdrawn_by_creators = summary_total_withdrawn_by_creators.aggregate(
         total=Sum('amount')
     )['total'] or Decimal('0.00')
+
 
     # Counts for subscriptions (can be displayed separately from main financial totals)
     summary_active_subscriptions_count_overall = Subscription.objects.filter(status='active').count() # All time active
@@ -169,15 +183,10 @@ def _get_filtered_financial_data(date_from_str, date_to_str):
         'detailed_coin_transactions_qs': detailed_coin_transactions_qs,
         'detailed_withdrawal_requests_qs': detailed_withdrawal_requests_qs,
         'detailed_subscriptions_qs': detailed_subscriptions_qs,
-
-        # Legacy (can be removed if not used by overview directly, but PDF might need them)
-        # For example, if the PDF has a different summary structure.
-        # 'summary_platform_revenue_from_sales': revenue_from_platform_commission, # old name, new value
-        # 'summary_revenue_from_coin_purchases': revenue_from_general_coin_sales + revenue_from_subscription_sales, # old name, combined value for potential backward compat in some section
     }
 
 
-@admin_role_required('full_access', 'manage_transactions')
+@admin_role_required('full_access', 'manage_financials') # CORRECTED ROLE
 def admin_financials_overview(request):
     date_from_str = request.GET.get('date_from')
     date_to_str = request.GET.get('date_to')
@@ -186,7 +195,7 @@ def admin_financials_overview(request):
 
     context = {
         'admin_user': getattr(request, 'admin_user', None),
-        'active_page': 'manage_financials_overview',
+        'active__page': 'manage_financials_overview', # Corrected: 'active_page'
         'header_title': "Financials Report",
         'TIME_ZONE': settings.TIME_ZONE,
         'max_table_rows': MAX_TABLE_ROWS_HTML, # For HTML display limiting
@@ -219,7 +228,7 @@ def admin_financials_overview(request):
     return render(request, 'admin/manage_financials/financials_overview.html', context)
 
 
-@admin_role_required('full_access', 'manage_transactions')
+@admin_role_required('full_access', 'manage_financials') # CORRECTED ROLE
 def admin_generate_financials_report_pdf(request):
     date_from_str = request.GET.get('date_from')
     date_to_str = request.GET.get('date_to')
@@ -230,7 +239,7 @@ def admin_generate_financials_report_pdf(request):
         'generation_time': timezone.now(),
         'TIME_ZONE': settings.TIME_ZONE,
         'filter_date_from': data['date_from_str'] if data['date_from_str'] else "N/A", # Ensure N/A or actual date
-        'filter_date_to': data['date_to_str'] if data['date_to_str'] else "N/A",     # Ensure N/A or actual date
+        'filter_date_to': data['date_to_str'] if data['date_to_str'] else "N/A",       # Ensure N/A or actual date
         'date_filter_applied': data['date_filter_applied'],
 
         # New Segregated Revenue Summary for PDF

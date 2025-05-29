@@ -1,0 +1,119 @@
+{% extends "features/community_chatrooms/community_chatrooms_base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block page_title %}My Chat Room Invitations - AudioX Community{% endblock page_title %}
+
+{% block chat_content %}
+<div class="w-full bg-white min-h-[calc(100vh-8rem)]"> {# Assuming base provides header/footer of approx 8rem total #}
+    <div class="container mx-auto max-w-4xl py-12 md:py-16 px-4 sm:px-6 lg:px-8">
+
+        {# Page Header Section - Similar to home, but distinct icon #}
+        <div class="mb-12 md:mb-16 text-center">
+            <div class="inline-flex items-center justify-center bg-gradient-to-br from-red-500 to-red-700 text-white p-4 rounded-full mb-6 shadow-lg">
+                {# Invitation Icon #}
+                <svg class="w-12 h-12 sm:w-14 sm:h-14" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.981l7.5-4.039a2.25 2.25 0 012.134 0l7.5 4.039a2.25 2.25 0 011.183 1.98V19.5z" />
+                </svg>
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-[#091e65] mb-3 tracking-tight">
+                Your Chat Room Invitations
+            </h1>
+            <p class="text-lg sm:text-xl text-[#091e65] opacity-70 max-w-2xl mx-auto">
+                Manage your pending chat room invites and join new communities.
+            </p>
+        </div>
+
+        {# Display Django Messages - Restyled #}
+        {% if messages %}
+        <div class="mb-8 space-y-3">
+            {% for message in messages %}
+            <div class="p-4 rounded-lg text-sm font-medium shadow-md border
+                {% if message.tags == 'success' %}bg-[#091e65]/10 border-[#091e65]/30 text-[#091e65]
+                {% elif message.tags == 'error' %}bg-red-500/10 border-red-500/30 text-red-700
+                {% elif message.tags == 'info' %}bg-[#091e65]/10 border-[#091e65]/30 text-[#091e65]
+                {% else %}bg-yellow-500/10 border-yellow-500/30 text-yellow-700{% endif %}" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if pending_invitations %}
+            <div class="space-y-8">
+                {% for invitation in pending_invitations %}
+                <div class="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col md:flex-row group relative border border-gray-200 hover:border-red-500/40 transform hover:-translate-y-1.5 overflow-hidden">
+                    {# Room Cover Image #}
+                    <div class="md:w-1/3 lg:w-1/4 flex-shrink-0 bg-gray-50">
+                        {% if invitation.room.cover_image %}
+                            <img src="{{ invitation.room.cover_image.url }}" alt="{{ invitation.room.name }} cover" class="w-full h-48 md:h-full object-cover rounded-t-2xl md:rounded-l-2xl md:rounded-t-none">
+                        {% else %}
+                            <img src="{% static 'img/community_chatroom/chatroom-cover-default.png' %}" alt="Default cover for {{ invitation.room.name }}" class="w-full h-48 md:h-full object-cover rounded-t-2xl md:rounded-l-2xl md:rounded-t-none">
+                        {% endif %}
+                    </div>
+
+                    {# Invitation Details #}
+                    <div class="flex-grow p-5 md:p-6 flex flex-col justify-between">
+                        <div>
+                            <h2 class="text-xl lg:text-2xl font-bold text-[#091e65] group-hover:text-red-600 mb-1.5 transition-colors duration-200 truncate" title="{{ invitation.room.name }}">{{ invitation.room.name }}</h2>
+                            {% if invitation.room.description %}
+                                <p class="text-sm text-[#091e65] opacity-75 line-clamp-2 mb-3 leading-relaxed min-h-[2.8rem]">{{ invitation.room.description }}</p>
+                            {% else %}
+                                <p class="text-sm text-[#091e65] opacity-50 italic line-clamp-2 mb-3 leading-relaxed min-h-[2.8rem]">No description provided for this room.</p>
+                            {% endif %}
+                            
+                            <div class="text-xs text-[#091e65] opacity-60 space-y-1 mb-4 border-t border-gray-100 pt-3 mt-3">
+                                <p>Invited by: <strong class="font-medium text-[#091e65] opacity-90">{{ invitation.invited_by.full_name|default:invitation.invited_by.username }}</strong></p>
+                                <p>Date: <span class="font-medium">{{ invitation.created_at|date:"M d, Y, P" }}</span></p>
+                                {% if invitation.room.language %}
+                                    <p>Language: <span class="font-medium text-[#091e65] opacity-90">{{ invitation.room.get_language_display }}</span></p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-3 pt-3 mt-auto">
+                            <form method="POST" action="{% url 'AudioXApp:chatroom_invitation_respond' invitation_id=invitation.invitation_id %}" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="accept">
+                                <button type="submit"
+                                        class="px-6 py-2.5 text-sm font-semibold text-white bg-[#091e65] hover:bg-[#071852] rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-opacity-50 focus:ring-offset-2 shadow hover:shadow-md">
+                                    Accept
+                                </button>
+                            </form>
+                            <form method="POST" action="{% url 'AudioXApp:chatroom_invitation_respond' invitation_id=invitation.invitation_id %}" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="decline">
+                                <button type="submit"
+                                        class="px-6 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-opacity-50 focus:ring-offset-2 shadow hover:shadow-md">
+                                    Decline
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            {# No Pending Invitations - Restyled #}
+            <div class="text-center py-16 md:py-24">
+                <div class="inline-flex items-center justify-center bg-red-100 text-red-600 p-6 rounded-full mb-8 shadow-lg transform transition-all duration-500 hover:scale-105">
+                    {# Empty Mailbox Icon #}
+                    <svg class="w-24 h-24 md:w-28 md:h-28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125V6.375c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v.001c0 .621.504 1.125 1.125 1.125z" />
+                    </svg>
+                </div>
+                <h3 class="text-3xl sm:text-4xl font-bold text-[#091e65] mb-4">No Pending Invitations</h3>
+                <p class="text-lg text-[#091e65] opacity-75 max-w-md mx-auto mb-8">
+                    You're all caught up! Check back later for new invitations.
+                </p>
+                <a href="{% url 'AudioXApp:chatroom_home' %}" class="inline-flex items-center justify-center gap-x-2 px-7 py-3 text-base font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-600/50">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.125 1.125 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h7.5" />
+                    </svg>
+                    Explore Chat Rooms
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock chat_content %}

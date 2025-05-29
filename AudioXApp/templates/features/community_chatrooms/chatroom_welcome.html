@@ -1,0 +1,65 @@
+{% extends "features/community_chatrooms/community_chatrooms_base.html" %}
+{% load static %}
+
+{% block page_title %}Welcome to AudioX Chat!{% endblock page_title %}
+
+{% block chat_content %}
+<div class="flex flex-col flex-grow items-center justify-center w-full bg-white p-4 sm:p-6 md:p-12 text-center min-h-[calc(100vh-16rem)]">
+
+    {# Logo Section #}
+    <img src="{% static 'img/audiox-favicon.png' %}"
+         alt="AudioX Community Chat Logo"
+         class="w-20 h-20 md:w-28 md:h-28 mx-auto mb-6 md:mb-8 rounded-full shadow-2xl border-4 border-audiox-red animate-fade-in-down">
+         {# Logo with a more prominent shadow and border. #}
+
+    {# Welcome Heading Section #}
+    <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-audiox-blue mb-4 md:mb-5 animate-fade-in-down delay-100 max-w-2xl mx-auto">
+        {# Main heading in 'audiox-blue', centered, with max-width for readability. #}
+        Welcome to AudioX Chat!
+    </h1>
+
+    {# Introductory Paragraph Section #}
+    <p class="text-md sm:text-lg text-slate-600 mb-8 md:mb-12 animate-fade-in-up delay-200 max-w-2xl mx-auto">
+        {# Introductory paragraph with a readable dark gray, centered, with max-width. #}
+        Your gateway to connecting with fellow audiobook lovers. Discover, discuss, and dive into the world of audio narratives.
+    </p>
+
+    {# Key Features Section - More integrated, using border for separation #}
+    <div class="w-full max-w-3xl mx-auto pt-8 md:pt-10 mb-8 md:mb-12 animate-fade-in-up delay-300 border-t-2 border-audiox-red/20">
+        <h2 class="text-2xl sm:text-3xl font-bold text-audiox-red text-center mb-6 md:mb-8">
+            {# Subheading in 'audiox-red'. #}
+            Discover & Engage
+        </h2>
+        <ul class="space-y-4 text-slate-700 text-left text-sm sm:text-base md:text-lg">
+            {# List items aligned to the left for better readability in a list format. #}
+            <li class="flex items-start">
+                <svg class="w-6 h-6 text-audiox-blue mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10l2 2 4-4"></path></svg>
+                <span><strong class="font-semibold text-audiox-blue">Dynamic Rooms:</strong> Join existing chatrooms or create your own dedicated spaces for specific genres, authors, or audiobook series.</span>
+            </li>
+            <li class="flex items-start">
+                <svg class="w-6 h-6 text-audiox-blue mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                <span><strong class="font-semibold text-audiox-blue">Live Conversations:</strong> Engage in real-time discussions, share instant reactions, and connect with the community as you listen.</span>
+            </li>
+            <li class="flex items-start">
+                <svg class="w-6 h-6 text-audiox-blue mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                <span><strong class="font-semibold text-audiox-blue">Community Curated:</strong> Discover new audiobooks and creators through recommendations and shared favorites from fellow enthusiasts.</span>
+            </li>
+        </ul>
+    </div>
+
+    {# Action Buttons Container - Centered with controlled width for the button group #}
+    <div class="w-full max-w-md mx-auto animate-fade-in-up delay-[400ms]">
+        {# Animations and delay utilities from Tailwind config. #}
+        <div class="space-y-4 sm:space-y-0 sm:flex sm:flex-col sm:gap-y-4 md:flex-row md:gap-x-5 md:gap-y-0">
+            
+            <a href="{% url 'AudioXApp:chatroom_home' %}"
+               class="block w-full px-7 py-3.5 text-md sm:text-lg font-semibold text-white bg-audiox-red hover:bg-audiox-red-dark rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 ease-in-out focus:outline-none focus:ring-4 focus:ring-red-500/50">
+                {# Primary button: 'audiox-red' background, 'white' text. Slightly larger padding and hover effect. #}
+                Explore Chatrooms
+            </a>
+        </div>
+    </div>
+</div>
+
+{# Ensure 'animate-fade-in-down', 'animate-fade-in-up', and delay utilities are configured in tailwind.config.js #}
+{% endblock chat_content %}

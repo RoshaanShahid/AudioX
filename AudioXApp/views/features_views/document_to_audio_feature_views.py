@@ -14,7 +14,7 @@ from typing import Optional # Changed from Union, or just use Optional
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 
-from ..forms import DocumentUploadForm
+from ...forms import DocumentUploadForm
 
 load_dotenv()
 
@@ -232,4 +232,4 @@ def generate_audio_from_document(request):
         form = DocumentUploadForm()
         print("DEBUG VIEW: GET request for generate_audiobook page.")
 
-    return render(request, 'generate_audiobook/generate_audiobook.html', {'form': form})
+    return render(request, 'features/document_to_audio/document_to_audio_feature.html', {'form': form})
