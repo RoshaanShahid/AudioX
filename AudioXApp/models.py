@@ -5,10 +5,12 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from urllib.parse import quote
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from django.contrib.auth.hashers import make_password, check_password # check_password was not used but good to have
 from django.utils.text import slugify
 from decimal import Decimal, InvalidOperation # Added InvalidOperation
+from django.urls import reverse
 import os
 import uuid
 from django.conf import settings # Ensure settings is imported
@@ -79,12 +81,22 @@ class UserManager(BaseUserManager):
     """Custom manager for the User model."""
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError('The Email field must be set')
+            raise ValueError(_('The Email field must be set'))
         email = self.normalize_email(email)
-        if not extra_fields.get('username'): # Added check for username
-            raise ValueError('The Username field must be set')
-        if not extra_fields.get('full_name'): # Added check for full_name
-            raise ValueError('The Full Name field must be set')
+
+        if not extra_fields.get('username'):
+            raise ValueError(_('The Username field must be set'))
+        if not extra_fields.get('full_name'): # full_name is critical
+            raise ValueError(_('The Full Name field must be set'))
+
+        # For new users (both normal and social initial creation before adapter customization):
+        # phone_number will be passed by normal signup, or None for social.
+        # bio will be None.
+        extra_fields.setdefault('phone_number', None)
+        extra_fields.setdefault('bio', None)
+        # The 'requires_extra_details_post_social_signup' field will default to False here.
+        # It's set to True in the SocialAccountAdapter for new social users.
+
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -93,18 +105,20 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True) # Superusers should be active by default
+        extra_fields.setdefault('is_active', True)
 
         if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
+            raise ValueError(_('Superuser must have is_staff=True.'))
         if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+            raise ValueError(_('Superuser must have is_superuser=True.'))
 
         extra_fields.setdefault('username', email.split('@')[0] + '_super')
-        extra_fields.setdefault('full_name', 'Super User')
-        extra_fields.setdefault('phone_number', extra_fields.get('phone_number', '00000000000')) 
-        extra_fields.setdefault('bio', extra_fields.get('bio', 'Default bio for superuser')) 
-        extra_fields.setdefault('is_banned_by_admin', False)
+        extra_fields.setdefault('full_name', 'Super User Admin') # Ensure full_name is provided
+
+        # Superusers typically don't go through the social signup completion flow
+        extra_fields.setdefault('requires_extra_details_post_social_signup', False)
+        extra_fields.setdefault('phone_number', None) # Or a dummy number if you prefer for superusers
+        extra_fields.setdefault('bio', 'Default administrator bio.') # Optional for superuser
 
         return self.create_user(email, password, **extra_fields)
 
@@ -112,11 +126,26 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """Custom User model."""
     user_id = models.BigAutoField(primary_key=True)
-    full_name = models.CharField(max_length=255)
-    username = models.CharField(max_length=255, unique=True)
+    full_name = models.CharField(
+        max_length=255,
+        blank=False, # Must be provided by normal signup or Google
+        null=False
+    )
+    username = models.CharField(max_length=255, unique=True) # Assuming username is also always set
     email = models.EmailField(unique=True)
-    phone_number = models.CharField(max_length=20, blank=False, null=False, default='') 
-    bio = models.TextField(blank=False, null=False, default='') 
+
+    phone_number = models.CharField(
+        max_length=20,
+        blank=True,  # Allows forms to be submitted with it empty (though your signup form requires it)
+        null=True,   # Allows DB to store NULL (for new Google signups before completion)
+        default=None
+    )
+    bio = models.TextField( # Bio is optional for everyone
+        blank=True,
+        null=True,
+        default=None
+    )
+
     profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
 
     SUBSCRIPTION_CHOICES = [
@@ -126,11 +155,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     subscription_type = models.CharField(max_length=2, choices=SUBSCRIPTION_CHOICES, default='FR')
     coins = models.IntegerField(default=0)
 
-    is_active = models.BooleanField(default=True, help_text=_("Designates whether this user should be treated as active. Unselect this instead of deleting accounts."))
+    is_active = models.BooleanField(
+        default=True,
+        help_text=_("Designates whether this user should be treated as active. Unselect this instead of deleting accounts.")
+    )
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
-    is_2fa_enabled = models.BooleanField(default=False, verbose_name="2FA Enabled")
+    is_2fa_enabled = models.BooleanField(default=False, verbose_name=_("2FA Enabled"))
 
     is_banned_by_admin = models.BooleanField(
         default=False,
@@ -145,33 +177,39 @@ class User(AbstractBaseUser, PermissionsMixin):
         help_text=_("Timestamp when the user was banned from the platform.")
     )
     platform_banned_by = models.ForeignKey(
-        'Admin', 
+        'Admin', # Ensure your Admin model is defined
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='platform_banned_users',
         help_text=_("Admin who banned this user from the platform.")
     )
 
+    requires_extra_details_post_social_signup = models.BooleanField(
+        default=False,
+        help_text=_("True if user signed up via social media and needs to provide phone number and confirm/edit full name.")
+    )
+
+    # ManyToManyFields - ensure related models are defined or correctly imported
     purchased_audiobooks = models.ManyToManyField(
-        'Audiobook',
-        through='AudiobookPurchase',
+        'Audiobook', # Forward reference to Audiobook model
+        through='AudiobookPurchase', # Intermediate model
         related_name='purchased_by_users'
     )
     library_audiobooks = models.ManyToManyField(
-        'Audiobook',
-        through='UserLibraryItem', 
+        'Audiobook', # Forward reference to Audiobook model
+        through='UserLibraryItem', # Intermediate model
         related_name='saved_in_libraries',
         blank=True
     )
 
-
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'full_name'] 
+    # `full_name` is essential, `username` too. `phone_number` is handled conditionally.
+    REQUIRED_FIELDS = ['username', 'full_name']
 
     objects = UserManager()
 
     class Meta:
-        db_table = 'USERS' 
+        db_table = 'USERS'
 
     def __str__(self):
         return self.email
@@ -179,37 +217,37 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_creator(self):
         try:
-            if hasattr(self, 'creator_profile'): 
+            if hasattr(self, 'creator_profile'): # creator_profile is the related_name from Creator model
                 profile = self.creator_profile
                 return profile.verification_status == 'approved' and not getattr(profile, 'is_banned', False)
             return False
-        except Creator.DoesNotExist: 
+        except Exception: # Catch generic exception if Creator model or related_name isn't perfectly set up yet
+            # logger.warning(f"Could not determine is_creator status for user {self.pk}", exc_info=True)
             return False
-        except AttributeError: 
-            return False
-
 
     def has_purchased_audiobook(self, audiobook):
+        # Ensure AudiobookPurchase model is defined and related correctly
         return AudiobookPurchase.objects.filter(user=self, audiobook=audiobook, status='COMPLETED').exists()
 
     def is_in_library(self, audiobook):
+        # Ensure UserLibraryItem model is defined and related correctly
         return self.library_audiobooks.filter(pk=audiobook.pk).exists()
 
 
-class AdminManager(BaseUserManager): 
+class AdminManager(BaseUserManager):
     """Custom manager for the Admin model."""
     def create_admin(self, email, username, password, roles, **extra_fields):
         if not email: raise ValueError('Admin must have an email address')
         if not username: raise ValueError('Admin must have a username')
         if not password: raise ValueError('Admin must have a password')
-        if not roles: raise ValueError('Admin must have at least one role') 
+        if not roles: raise ValueError('Admin must have at least one role')
         email = self.normalize_email(email)
         admin = self.model(email=email, username=username, roles=roles, **extra_fields)
-        admin.set_password(password) 
+        admin.set_password(password)
         admin.save(using=self._db)
         return admin
 
-class Admin(models.Model): 
+class Admin(models.Model):
     """Custom Admin model (not using Django's auth system)."""
     class RoleChoices(models.TextChoices):
         FULL_ACCESS = 'full_access', _('Full Access (Grants all permissions)')
@@ -223,14 +261,14 @@ class Admin(models.Model):
     adminid = models.AutoField(primary_key=True)
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=255, unique=True)
-    password = models.CharField(max_length=128) 
-    roles = models.CharField(max_length=512, help_text="Comma-separated list of roles") 
+    password = models.CharField(max_length=128)
+    roles = models.CharField(max_length=512, help_text="Comma-separated list of roles")
     is_active = models.BooleanField(default=True)
     last_login = models.DateTimeField(blank=True, null=True)
 
     objects = AdminManager()
 
-    USERNAME_FIELD = 'email' 
+    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'roles']
 
     def __str__(self):
@@ -261,7 +299,7 @@ class Admin(models.Model):
         display_names = []
         for role_code in role_codes:
             display_name = current_role_choices_dict.get(role_code, role_code.replace('_', ' ').title())
-            display_names.append(str(display_name)) 
+            display_names.append(str(display_name))
         return display_names
 
     def has_role(self, role_value):
@@ -270,13 +308,13 @@ class Admin(models.Model):
     @property
     def is_anonymous(self): return False
     @property
-    def is_authenticated(self): return True 
+    def is_authenticated(self): return True
     def has_perm(self, perm, obj=None):
         if not self.is_active: return False
-        return 'full_access' in self.get_roles_list() 
+        return 'full_access' in self.get_roles_list()
     def has_module_perms(self, app_label):
         if not self.is_active: return False
-        return 'full_access' in self.get_roles_list() 
+        return 'full_access' in self.get_roles_list()
 
     class Meta:
         db_table = 'ADMINS'
@@ -291,17 +329,17 @@ class Admin(models.Model):
 # ... (All previous models - Creator, Audiobook, Chapter, Review, Subscription, etc. - should be here)
 class CoinTransaction(models.Model):
     TRANSACTION_TYPES = (('purchase', 'Purchase'), ('reward', 'Reward'), ('spent', 'Spent'), ('refund', 'Refund'), ('gift_sent', 'Gift Sent'), ('gift_received', 'Gift Received'), ('withdrawal', 'Withdrawal'), ('withdrawal_fee', 'Withdrawal Fee'))
-    STATUS_CHOICES = (('completed', 'Completed'), ('pending', 'Pending'), ('failed', 'Failed'), ('processing', 'Processing'), ('rejected', 'Rejected')) 
+    STATUS_CHOICES = (('completed', 'Completed'), ('pending', 'Pending'), ('failed', 'Failed'), ('processing', 'Processing'), ('rejected', 'Rejected'))
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='coin_transactions')
-    transaction_type = models.CharField(max_length=15, choices=TRANSACTION_TYPES) 
+    transaction_type = models.CharField(max_length=15, choices=TRANSACTION_TYPES)
     amount = models.IntegerField()
     transaction_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    pack_name = models.CharField(max_length=255, blank=True, null=True) 
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) 
+    pack_name = models.CharField(max_length=255, blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gifts_sent')
     recipient = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='gifts_received')
-    description = models.TextField(blank=True, null=True) 
+    description = models.TextField(blank=True, null=True)
     class Meta:
         db_table = 'COIN_TRANSACTIONS'; ordering = ['-transaction_date']
     def __str__(self):
@@ -327,7 +365,7 @@ class AudiobookPurchase(models.Model):
     def __str__(self):
         return f"Purchase of '{self.audiobook.title}' by {self.user.username} on {self.purchase_date.strftime('%Y-%m-%d')}"
     def save(self, *args, **kwargs):
-        if self.amount_paid is not None: 
+        if self.amount_paid is not None:
             self.platform_fee_amount = (self.amount_paid * self.platform_fee_percentage) / Decimal('100.00')
             self.creator_share_amount = self.amount_paid - self.platform_fee_amount
         super().save(*args, **kwargs)
@@ -352,7 +390,7 @@ class CreatorEarning(models.Model):
         title = self.audiobook_title_at_transaction if self.audiobook_title_at_transaction else (self.audiobook.title if self.audiobook else 'Platform Earning')
         return f"Earning of PKR {self.amount_earned} for {self.creator.creator_name} from '{title}' ({self.get_earning_type_display()}) on {self.transaction_date.strftime('%Y-%m-%d')}"
     def save(self, *args, **kwargs):
-        if not self.audiobook_title_at_transaction and self.audiobook: 
+        if not self.audiobook_title_at_transaction and self.audiobook:
             self.audiobook_title_at_transaction = self.audiobook.title
         super().save(*args, **kwargs)
 
@@ -364,10 +402,10 @@ class Creator(models.Model):
     creator_name = models.CharField(max_length=100, blank=False, null=False, help_text="Public display name for the creator")
     creator_unique_name = models.CharField(max_length=50, unique=True, blank=False, null=False, validators=[unique_name_validator], help_text="Unique handle (@yourname) for URLs and mentions")
     creator_profile_pic = models.ImageField(upload_to=creator_profile_pic_path, blank=True, null=True, help_text="Optional: Specific profile picture for the creator page.")
-    total_earning = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Total gross earnings from sales before platform fees.") 
-    available_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Net earnings available for withdrawal after platform fees.") 
-    cnic_front = models.ImageField(upload_to=creator_cnic_path, blank=False, null=True, help_text="Front side of CNIC") 
-    cnic_back = models.ImageField(upload_to=creator_cnic_path, blank=False, null=True, help_text="Back side of CNIC") 
+    total_earning = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Total gross earnings from sales before platform fees.")
+    available_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Net earnings available for withdrawal after platform fees.")
+    cnic_front = models.ImageField(upload_to=creator_cnic_path, blank=False, null=True, help_text="Front side of CNIC")
+    cnic_back = models.ImageField(upload_to=creator_cnic_path, blank=False, null=True, help_text="Back side of CNIC")
     verification_status = models.CharField(max_length=10, choices=VERIFICATION_STATUS_CHOICES, default='pending')
     terms_accepted_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when creator terms were accepted during the last application")
     is_banned = models.BooleanField(default=False, db_index=True, help_text="Is this creator currently banned?")
@@ -385,7 +423,7 @@ class Creator(models.Model):
     admin_notes = models.TextField(blank=True, null=True, help_text="Internal notes for admins regarding this creator.")
     last_name_change_date = models.DateTimeField(null=True, blank=True, help_text="Timestamp of the last display name change.")
     last_unique_name_change_date = models.DateTimeField(null=True, blank=True, help_text="Timestamp of the last unique name (@handle) change.")
-    last_withdrawal_request_date = models.DateTimeField(null=True, blank=True, help_text="Timestamp of the last non-cancelled withdrawal request.") 
+    last_withdrawal_request_date = models.DateTimeField(null=True, blank=True, help_text="Timestamp of the last non-cancelled withdrawal request.")
     profile_pic_updated_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp of the last profile picture update.")
 
     class Meta:
@@ -407,7 +445,7 @@ class Creator(models.Model):
             return None
         return self.withdrawal_accounts.filter(is_primary=True).first()
 
-    def get_attempts_this_month(self): 
+    def get_attempts_this_month(self):
         if not self.last_application_date: return 0
         now = timezone.now()
         if (self.last_application_date.year == now.year and self.last_application_date.month == now.month):
@@ -415,27 +453,27 @@ class Creator(models.Model):
         else:
             return 0
 
-    def can_reapply(self): 
+    def can_reapply(self):
         if self.is_banned or self.verification_status in ['approved', 'pending']: return False
         if self.verification_status == 'rejected':
             attempts_this_month = self.get_attempts_this_month()
             return attempts_this_month < getattr(settings, 'MAX_CREATOR_APPLICATION_ATTEMPTS', 3)
-        return True 
+        return True
 
     def can_request_withdrawal(self):
         min_withdrawal_amount_setting = getattr(settings, 'MIN_CREATOR_WITHDRAWAL_AMOUNT', '50.00')
         try:
             min_withdrawal_amount = Decimal(min_withdrawal_amount_setting)
-        except InvalidOperation: 
+        except InvalidOperation:
             logger.error(f"Invalid MIN_CREATOR_WITHDRAWAL_AMOUNT setting: '{min_withdrawal_amount_setting}'. Defaulting to Decimal('50.00').")
             min_withdrawal_amount = Decimal('50.00')
 
         if self.available_balance < min_withdrawal_amount:
             return False, f"Your available balance (PKR {self.available_balance:,.2f}) is below the minimum withdrawal amount of PKR {min_withdrawal_amount:,.2f}."
-        
+
         return True, ""
 
-    def get_status_for_active_page(self): 
+    def get_status_for_active_page(self):
         if self.is_banned:
             return 'banned'
         elif self.verification_status == 'approved':
@@ -444,7 +482,7 @@ class Creator(models.Model):
             return 'pending'
         elif self.verification_status == 'rejected':
             return 'rejected'
-        return 'all' 
+        return 'all'
 
 
 class CreatorApplicationLog(models.Model):
@@ -488,19 +526,19 @@ class WithdrawalAccount(models.Model):
         identifier_display = self.account_identifier[-4:] if len(self.account_identifier) >= 4 else self.account_identifier
         primary_marker = " (Primary)" if self.is_primary else ""
         return f"{self.creator.creator_name} - {self.get_account_type_display()}: ...{identifier_display}{primary_marker}"
-    def clean(self): 
+    def clean(self):
         super().clean()
         if self.account_type == 'bank':
             if not self.bank_name: raise ValidationError({'bank_name': _("Bank name is required for bank accounts.")})
             try: self.iban_validator(self.account_identifier)
             except ValidationError as e: raise ValidationError({'account_identifier': e.messages})
         elif self.account_type in ['jazzcash', 'easypaisa', 'nayapay', 'upaisa']:
-            self.bank_name = None 
+            self.bank_name = None
             try: self.mobile_account_validator(self.account_identifier)
             except ValidationError as e: raise ValidationError({'account_identifier': e.messages})
-        else: 
+        else:
             self.bank_name = None
-    def save(self, *args, **kwargs): 
+    def save(self, *args, **kwargs):
         self.full_clean()
         if self.is_primary:
             WithdrawalAccount.objects.filter(creator=self.creator, is_primary=True).exclude(pk=self.pk).update(is_primary=False)
@@ -544,11 +582,11 @@ class WithdrawalRequest(models.Model):
             full_note = f"{timestamp_note} {notes}".strip()
             self.admin_notes = f"{full_note}\n{self.admin_notes}" if self.admin_notes else full_note
             try:
-                self.save(update_fields=['status', 'admin_notes', 'processed_by']) 
+                self.save(update_fields=['status', 'admin_notes', 'processed_by'])
                 logger.info(f"Withdrawal request {self.display_request_id} for {self.creator.creator_name} marked as PROCESSING by admin {admin_user.username}.")
             except Exception as e:
                 logger.error(f"Error marking request {self.display_request_id} as PROCESSING: {e}", exc_info=True)
-                raise 
+                raise
         else:
             logger.warning(f"Attempt to mark non-PENDING request {self.display_request_id} as PROCESSING. Current status: {self.status}")
             raise ValueError(f"Request must be 'Pending' to be marked as 'Processing'. Current status: {self.get_status_display()}")
@@ -569,8 +607,10 @@ class WithdrawalRequest(models.Model):
             self.admin_notes = f"{full_note}\n{self.admin_notes}" if self.admin_notes else full_note
 
             update_fields_list = ['status', 'processed_date', 'admin_notes', 'processed_by', 'payment_reference']
-            if payment_slip_file:
+            # === RESOLVED CONFLICT 1 HERE (Took incoming change with comment) ===
+            if payment_slip_file: # Only add 'payment_slip' to update_fields if a new file is being saved
                 update_fields_list.append('payment_slip')
+            # === END OF RESOLVED CONFLICT 1 ===
 
             try:
                 with transaction.atomic():
@@ -589,7 +629,7 @@ class WithdrawalRequest(models.Model):
     def reject_by_admin(self, admin_user, reason="No reason provided."):
         if self.status in ['PENDING', 'PROCESSING']:
             original_amount = self.amount
-            status_before_change = self.get_status_display() 
+            status_before_change = self.get_status_display()
 
             self.status = 'REJECTED'
             self.processed_by = admin_user
@@ -611,7 +651,7 @@ class WithdrawalRequest(models.Model):
             raise ValueError(f"Request cannot be rejected. Current status: {self.get_status_display()}.")
 
     def fail_payment_by_admin(self, admin_user, reason="Payment processing failed."):
-        if self.status == 'PROCESSING': 
+        if self.status == 'PROCESSING':
             original_amount = self.amount
             self.status = 'FAILED'
             self.processed_by = admin_user
@@ -670,12 +710,12 @@ class Audiobook(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug or (kwargs.get('update_fields') and 'title' in kwargs['update_fields'] and 'slug' not in kwargs['update_fields']):
             base_slug = slugify(self.title) or "audiobook"; slug = base_slug; counter = 1
-            pk_to_exclude = self.pk if self.pk is not None else uuid.uuid4() 
+            pk_to_exclude = self.pk if self.pk is not None else uuid.uuid4()
             while Audiobook.objects.filter(slug=slug).exclude(pk=pk_to_exclude).exists(): slug = f"{base_slug}-{counter}"; counter += 1
             self.slug = slug
-        if not self.is_paid: self.price = Decimal('0.00') 
-        if self.creator: self.is_creator_book = True; self.source = 'creator' 
-        elif self.source != 'creator': self.is_creator_book = False 
+        if not self.is_paid: self.price = Decimal('0.00')
+        if self.creator: self.is_creator_book = True; self.source = 'creator'
+        elif self.source != 'creator': self.is_creator_book = False
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -703,7 +743,7 @@ class Audiobook(models.Model):
     def update_sales_analytics(self, amount_paid):
         if self.status == 'PUBLISHED' and self.is_creator_book:
             Audiobook.objects.filter(pk=self.pk).update(total_sales=F('total_sales') + 1, total_revenue_generated=F('total_revenue_generated') + Decimal(amount_paid))
-            self.refresh_from_db(fields=['total_sales', 'total_revenue_generated']) 
+            self.refresh_from_db(fields=['total_sales', 'total_revenue_generated'])
         else: logger.warning(f"Sale not recorded for analytics for '{self.title}'. Status: {self.status}, Is Creator Book: {self.is_creator_book}")
 
     @property
@@ -729,38 +769,87 @@ class Chapter(models.Model):
     chapter_name = models.CharField(max_length=255)
     chapter_order = models.PositiveIntegerField(help_text="Order of the chapter within the audiobook (e.g., 1, 2, 3).")
     audio_file = models.FileField(upload_to="chapters_audio/", blank=True, null=True, help_text="Audio file for the chapter.")
+    
+    # NEW FIELD for storing duration in seconds
+    duration_seconds = models.FloatField(null=True, blank=True, help_text="Duration of the chapter in seconds.")
+    
+    # Migration 0009 fields
+    external_audio_url = models.URLField(max_length=1024, blank=True, null=True, help_text="URL for externally hosted audio (e.g., LibriVox, Archive.org). audio_file will be ignored if this is set.")
+    
+    # Migration 0010 fields (duration and size were likely meant for the chapter, if not the Audiobook model already had 'duration')
+    # If 'duration' here was meant for the chapter, 'duration_seconds' replaces its intent more clearly.
+    # 'size_bytes' can remain if you intend to store chapter file sizes.
+    size_bytes = models.PositiveBigIntegerField(null=True, blank=True, help_text="Size of the audio file in bytes.")
+
     text_content = models.TextField(blank=True, null=True, help_text="Text content for this chapter (e.g., for TTS generation or display).")
     is_tts_generated = models.BooleanField(default=False, help_text="True if this chapter's audio was generated using Text-to-Speech.")
     tts_voice_id = models.CharField(max_length=50, choices=TTS_VOICE_CHOICES, default=None, blank=True, null=True, help_text="Voice used if audio was generated by TTS.")
     is_preview_eligible = models.BooleanField(default=False, help_text="Can this chapter be previewed by premium users if the book is paid but not purchased?")
     created_at = models.DateTimeField(default=timezone.now, editable=False, help_text="Timestamp when the chapter was added.")
     updated_at = models.DateTimeField(auto_now=True, help_text="Timestamp when the chapter was last updated.")
+    
     class Meta:
-        db_table = "CHAPTERS"; ordering = ['audiobook', 'chapter_order']; unique_together = (('audiobook', 'chapter_order'))
+        db_table = "CHAPTERS"
+        ordering = ['audiobook', 'chapter_order']
+        unique_together = (('audiobook', 'chapter_order'),)
+
     def __str__(self):
-        tts_info = "";
+        tts_info = ""
         if self.is_tts_generated and self.tts_voice_id:
             try:
                 display_name = self.get_tts_voice_id_display() if hasattr(self, 'get_tts_voice_id_display') else self.tts_voice_id
                 if display_name and str(display_name).lower() != 'none': tts_info = f" (TTS: {display_name})"
-                elif self.tts_voice_id: tts_info = f" (TTS: {self.tts_voice_id})" 
+                elif self.tts_voice_id: tts_info = f" (TTS: {self.tts_voice_id})"
             except Exception:
                 if self.tts_voice_id: tts_info = f" (TTS: {self.tts_voice_id} - Error displaying name)"
         return f"{self.chapter_order}: {self.chapter_name}{tts_info} ({self.audiobook.title})"
 
     def save(self, *args, **kwargs):
-        if self.chapter_order == 1: self.is_preview_eligible = True
-        if not self.is_tts_generated: self.tts_voice_id = None
+        if self.chapter_order == 1:
+            self.is_preview_eligible = True
+        if not self.is_tts_generated:
+            self.tts_voice_id = None
         super().save(*args, **kwargs)
 
     @property
     def duration_display(self):
+        if self.duration_seconds is not None:
+            try:
+                seconds = int(self.duration_seconds)
+                if seconds < 0: return "--:--"
+                minutes = seconds // 60
+                secs = seconds % 60
+                return f"{minutes}:{secs:02d}"
+            except (ValueError, TypeError):
+                return "--:--"
         return "--:--"
+
+    def get_streaming_url(self):
+        """
+        Returns the appropriate URL for streaming this chapter's audio.
+        Prioritizes external_audio_url if available, otherwise uses local audio_file.
+        """
+        if self.external_audio_url:
+            # For external URLs, we'll proxy them through our stream_audio view
+            return reverse('AudioXApp:stream_audio') + f'?url={quote(self.external_audio_url)}'
+        elif self.audio_file and hasattr(self.audio_file, 'url'):
+            try:
+                # For local files, also proxy to ensure consistent handling and potential auth
+                # Use the relative path for the 'url' parameter to stream_audio
+                if default_storage.exists(self.audio_file.name):
+                     # Assuming MEDIA_URL is correctly configured (e.g., '/media/')
+                    relative_url = self.audio_file.url 
+                    return reverse('AudioXApp:stream_audio') + f'?url={quote(relative_url)}'
+                else:
+                    logger.warning(f"Local audio file missing for chapter {self.pk}: {self.audio_file.name}")
+            except Exception as e:
+                logger.error(f"Error getting streaming URL for local chapter {self.pk}: {e}")
+        return None
 
 class Review(models.Model):
     review_id = models.AutoField(primary_key=True)
     audiobook = models.ForeignKey(Audiobook, on_delete=models.CASCADE, related_name='reviews')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews') 
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
     rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Rating from 1 to 5 stars.")
     comment = models.TextField(blank=True, null=True, help_text="User's review comment (optional).")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -842,16 +931,16 @@ class Ticket(models.Model):
         db_table = "SUPPORT_TICKETS"; ordering = ['-created_at']; verbose_name = _("Support Ticket"); verbose_name_plural = _("Support Tickets")
     def __str__(self): return f"{self.ticket_display_id} - {self.subject} ({self.user.username})"
     def save(self, *args, **kwargs):
-        if not self.ticket_display_id: 
+        if not self.ticket_display_id:
             last_ticket = Ticket.objects.all().order_by('ticket_display_id').last()
             if last_ticket and last_ticket.ticket_display_id.startswith('AXT-'):
                 try:
                     last_num = int(last_ticket.ticket_display_id.split('-')[1])
                     new_id_num = last_num + 1
                 except (IndexError, ValueError):
-                    new_id_num = 1001 
+                    new_id_num = 1001
             else:
-                new_id_num = 1001 
+                new_id_num = 1001
             self.ticket_display_id = f"AXT-{new_id_num}"
 
         if self.user and hasattr(self.user, 'is_creator') and self.user.is_creator:
@@ -859,29 +948,31 @@ class Ticket(models.Model):
                 try:
                     if hasattr(self.user, 'creator_profile') and self.user.creator_profile:
                         self.creator_profile = self.user.creator_profile
-                    else: 
+                    else:
                         self.creator_profile = None
                         logger.info(f"User {self.user.pk} is_creator=True but creator_profile is None for ticket {getattr(self, 'id', 'new')}.")
-                except Creator.DoesNotExist: 
+                # === RESOLVED CONFLICT 2 HERE (Took incoming change with comments) ===
+                except Creator.DoesNotExist: # Explicitly catch DoesNotExist
                     self.creator_profile = None
                     logger.warning(f"Creator profile not found for user {self.user.pk} on ticket {getattr(self, 'id', 'new')}.")
-                except Exception as e: 
+                except Exception as e: # Catch other potential errors
+                # === END OF RESOLVED CONFLICT 2 ===
                     self.creator_profile = None
                     logger.warning(f"Could not link creator_profile for user {self.user.pk} on ticket {getattr(self, 'id', 'new')}: {e}")
-            elif self.category and not self.category.is_creator_specific: 
+            elif self.category and not self.category.is_creator_specific:
                 self.creator_profile = None
-        else: 
+        else:
             self.creator_profile = None
         super().save(*args, **kwargs)
 
 class TicketMessage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='messages', verbose_name=_("Ticket"))
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_messages', verbose_name=_("User")) 
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_messages', verbose_name=_("User"))
     message = models.TextField(verbose_name=_("Message"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created At"))
     is_admin_reply = models.BooleanField(default=False, verbose_name=_("Is Admin Reply"), help_text=_("True if this message is from an admin/support agent."))
-    
+
     class Meta:
         db_table = "SUPPORT_TICKET_MESSAGES"; ordering = ['created_at']
         verbose_name = _("Support Ticket Message"); verbose_name_plural = _("Support Ticket Messages")
@@ -898,12 +989,12 @@ class ListeningHistory(models.Model):
     audiobook = models.ForeignKey(Audiobook, on_delete=models.CASCADE, related_name='listening_sessions')
     current_chapter = models.ForeignKey(Chapter, on_delete=models.SET_NULL, null=True, blank=True, related_name='listening_markers')
     progress_seconds = models.PositiveIntegerField(default=0, help_text="Timestamp in seconds where the user left off within the audiobook or current chapter.")
-    last_listened_at = models.DateTimeField(auto_now=True) 
+    last_listened_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'LISTENING_HISTORY'
-        unique_together = ('user', 'audiobook') 
-        ordering = ['-last_listened_at'] 
+        unique_together = ('user', 'audiobook')
+        ordering = ['-last_listened_at']
         verbose_name = "Listening History"
         verbose_name_plural = "Listening Histories"
 
@@ -925,17 +1016,16 @@ class UserLibraryItem(models.Model):
 
     class Meta:
         db_table = 'USER_LIBRARY_ITEMS'
-        unique_together = ('user', 'audiobook') 
-        ordering = ['-added_at'] 
+        unique_together = ('user', 'audiobook')
+        ordering = ['-added_at']
         verbose_name = "User Library Item"
         verbose_name_plural = "User Library Items"
 
     def __str__(self):
         return f"'{self.audiobook.title}' in {self.user.username}'s library"
-# --- END: Existing models for context ---
 
-
-# --- Community Chatroom Models ---
+# === RESOLVED CONFLICT 3 HERE (Combined HEAD and Incoming changes) ===
+# --- Community Chatroom Models (from your HEAD changes) ---
 
 class ChatRoom(models.Model):
     # MODIFIED: Added RoomStatusChoices
@@ -957,35 +1047,35 @@ class ChatRoom(models.Model):
         help_text=_("Name of the chat room.")
     )
     description = models.TextField(
-        blank=False, 
-        null=False,  
+        blank=False,
+        null=False,
         help_text=_("Description for the chat room.")
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='owned_chatrooms',
         help_text=_("The user who created and owns the room.")
     )
     cover_image = models.ImageField(
         upload_to=chatroom_cover_image_path,
-        blank=True,  
-        null=True,   
+        blank=True,
+        null=True,
         help_text=_("Optional cover image for the room.")
     )
     language = models.CharField(
         max_length=2,
         choices=LANGUAGE_CHOICES,
-        default='EN', 
-        blank=False, 
-        null=False,  
+        default='EN',
+        blank=False,
+        null=False,
         help_text=_("Primary language of the chat room.")
     )
     # MODIFIED: Added status field
     status = models.CharField(
-        max_length=15, 
+        max_length=15,
         choices=RoomStatusChoices.choices,
         default=RoomStatusChoices.ACTIVE,
         db_index=True,
@@ -1018,34 +1108,34 @@ class ChatRoomMember(models.Model):
     class RoleChoices(models.TextChoices):
         MEMBER = 'member', _('Member')
         ADMIN = 'admin', _('Admin')
-    
+
     class StatusChoices(models.TextChoices):
         ACTIVE = 'active', _('Active')
         LEFT = 'left', _('Left Voluntarily')
-        ROOM_DISMISSED = 'room_dismissed', _('Room Dismissed') 
+        ROOM_DISMISSED = 'room_dismissed', _('Room Dismissed')
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='room_memberships')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='chat_room_memberships')
     role = models.CharField(max_length=10, choices=RoleChoices.choices, default=RoleChoices.MEMBER)
     joined_at = models.DateTimeField(auto_now_add=True)
-    
+
     status = models.CharField(
-        max_length=20, 
-        choices=StatusChoices.choices, 
-        default=StatusChoices.ACTIVE, 
+        max_length=20,
+        choices=StatusChoices.choices,
+        default=StatusChoices.ACTIVE,
         db_index=True,
         help_text=_("Current status of the member in the room.")
     )
     left_at = models.DateTimeField(
-        null=True, 
-        blank=True, 
+        null=True,
+        blank=True,
         help_text=_("Timestamp when the user left or was removed from the room.")
     )
 
     class Meta:
         db_table = "CHAT_ROOM_MEMBERS"
-        unique_together = ('room', 'user') 
+        unique_together = ('room', 'user')
         ordering = ['room', 'joined_at']
         verbose_name = _("Chat Room Member")
         verbose_name_plural = _("Chat Room Members")
@@ -1060,16 +1150,16 @@ class ChatMessage(models.Model):
         AUDIOBOOK_RECOMMENDATION = 'audiobook_recommendation', _('Audiobook Recommendation')
         USER_JOINED = 'user_joined', _('User Joined Notification')
         USER_LEFT = 'user_left', _('User Left Notification')
-        ROOM_CREATED = 'room_created', _('Room Created Notification') 
-        ROOM_RENAMED = 'room_renamed', _('Room Renamed Notification') 
+        ROOM_CREATED = 'room_created', _('Room Created Notification')
+        ROOM_RENAMED = 'room_renamed', _('Room Renamed Notification')
         ROOM_CLOSED = 'room_closed', _('Room Closed Notification') # New system message type
 
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL, 
-        null=True, 
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         related_name='chat_messages',
         help_text=_("User who sent the message. Null for system messages.")
@@ -1077,8 +1167,8 @@ class ChatMessage(models.Model):
     message_type = models.CharField(max_length=30, choices=MessageTypeChoices.choices, default=MessageTypeChoices.TEXT)
     content = models.TextField(help_text=_("Content of the message. For recommendations, this might be an optional comment or the system message text.")) # Updated help_text
     recommended_audiobook = models.ForeignKey(
-        'Audiobook', 
-        on_delete=models.SET_NULL, 
+        'Audiobook',
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='chat_recommendations',
@@ -1088,7 +1178,7 @@ class ChatMessage(models.Model):
 
     class Meta:
         db_table = "CHAT_MESSAGES"
-        ordering = ['timestamp'] 
+        ordering = ['timestamp']
         verbose_name = _("Chat Message")
         verbose_name_plural = _("Chat Messages")
 
@@ -1102,19 +1192,19 @@ class ChatRoomInvitation(models.Model):
         PENDING = 'pending', _('Pending')
         ACCEPTED = 'accepted', _('Accepted')
         DECLINED = 'declined', _('Declined')
-        EXPIRED = 'expired', _('Expired') 
+        EXPIRED = 'expired', _('Expired')
 
     invitation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='invitations')
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE, 
+        on_delete=models.CASCADE,
         related_name='sent_chat_invitations',
         help_text=_("User who sent the invitation.")
     )
     invited_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE, 
+        on_delete=models.CASCADE,
         related_name='received_chat_invitations',
         help_text=_("User who is invited to the room.")
     )
@@ -1144,3 +1234,83 @@ class ChatRoomInvitation(models.Model):
         invited_user_display = self.invited_user.username if self.invited_user else "N/A"
         inviter_display = self.invited_by.username if self.invited_by else "N/A"
         return f"Invitation for {invited_user_display} to room '{self.room.name}' by {inviter_display} ({self.get_status_display()})"
+
+# --- NEW MODEL FOR OFFLINE DOWNLOADS (from friend's incoming changes) ---
+class UserDownloadedAudiobook(models.Model):
+    """
+    Tracks audiobooks downloaded by users for offline listening.
+    """
+    download_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='downloaded_audiobooks',
+        verbose_name=_("User")
+    )
+    audiobook = models.ForeignKey(
+        Audiobook,
+        on_delete=models.CASCADE,
+        related_name='user_downloads',
+        verbose_name=_("Audiobook")
+    )
+    download_date = models.DateTimeField(
+        default=timezone.now,
+        verbose_name=_("Download Date")
+    )
+    expiry_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Optional: When the download access expires (e.g., for subscription-based downloads)."),
+        verbose_name=_("Expiry Date")
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text=_("Is this download currently active and usable offline? Set to False if expired or revoked."),
+        verbose_name=_("Is Active")
+    )
+    last_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Timestamp when the client app last verified the download's validity with the server."),
+        verbose_name=_("Last Verified At")
+    )
+    # client_device_id = models.CharField(max_length=255, blank=True, null=True, help_text="Identifier for the client device where the audiobook is downloaded.") # Optional: If you need to track downloads per device.
+
+    class Meta:
+        db_table = 'USER_DOWNLOADED_AUDIOBOOKS'
+        ordering = ['-download_date']
+        unique_together = ('user', 'audiobook') # Ensures a user has only one download record per audiobook.
+                                                # If you want to allow multiple downloads of the same book (e.g. on different devices, and track them separately)
+                                                # you might remove this or add client_device_id to the unique_together constraint.
+        verbose_name = _("User Downloaded Audiobook")
+        verbose_name_plural = _("User Downloaded Audiobooks")
+
+    def __str__(self):
+        return f"{self.user.username} downloaded '{self.audiobook.title}' on {self.download_date.strftime('%Y-%m-%d')}"
+
+    @property
+    def is_expired(self):
+        """Checks if the download has expired based on its expiry_date."""
+        if self.expiry_date and self.expiry_date < timezone.now():
+            return True
+        return False
+
+    def deactivate_if_expired(self):
+        """
+        Deactivates the download if it's past its expiry date and currently active.
+        Returns True if deactivated, False otherwise.
+        """
+        if self.is_expired and self.is_active:
+            self.is_active = False
+            self.save(update_fields=['is_active'])
+            logger.info(f"Deactivated expired download (ID: {self.download_id}) for user {self.user.username} - audiobook '{self.audiobook.title}'.")
+            return True
+        return False
+
+    def refresh_verification(self):
+        """Updates the last_verified_at timestamp."""
+        self.last_verified_at = timezone.now()
+        self.save(update_fields=['last_verified_at'])
+        logger.info(f"Refreshed verification for download (ID: {self.download_id}) for user {self.user.username} - audiobook '{self.audiobook.title}'.")
+
+# === END OF RESOLVED CONFLICT 3 ===

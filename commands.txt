@@ -4,6 +4,7 @@ npm run build:css
 npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch
 python manage.py dumpdata AudioXApp.TicketCategory --output AudioXApp/fixtures/audiox_ticket_categories.json --indent 2
 python manage.py loaddata audiox_ticket_categories.json
+python manage.py makemigrations --merge
 
 [ DO $$ DECLARE
     r RECORD;

@@ -1,327 +1,230 @@
-   {% extends "user/myprofile.html" %} {# Or your common user section base template #}
-   {% load static %}
-   {% load humanize %}
+{% extends "Homepage.html" %} 
+{% load static %}
+{% load humanize %}
 
-   {% block title %}{{ page_title|default:"My Library" }} - AudioX{% endblock %}
+{% block title %}{{ page_title|default:"My Library" }} - AudioX{% endblock %}
 
-   {% block content %}
-   <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-       <div class="flex justify-between items-center mb-8">
-           <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{{ page_title|default:"My Library" }}</h1>
-           {# Optional: Add a button to sort or filter library items #}
-       </div>
+{% block head_extra %}
+    {{ block.super }}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# Custom CSS removed, rely on Tailwind for styling and JS for dynamic states #}
+{% endblock %}
 
-       {% if error_message %}
-           <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
-               <strong class="font-bold">Error:</strong>
-               <span class="block sm:inline">{{ error_message }}</span>
-           </div>
-       {% endif %}
+{% block content %}
+<div class="bg-white min-h-screen font-sans antialiased text-[#09065] selection:bg-red-100 selection:text-red-700">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+        <header class="mb-10 md:mb-12 pb-8 border-b-2 border-[#09065]/10">
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#09065] tracking-tight text-center sm:text-left">
+                {{ page_title|default:"My Library" }}
+            </h1>
+            {# Optional: Add a button to sort or filter library items here if needed #}
+        </header>
 
-       {% if saved_audiobooks %}
-           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-               {% for audiobook_item in saved_audiobooks %} {# Assuming you pass 'saved_audiobooks' which are Audiobook instances #}
-               <div class="bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden flex flex-col transform transition-all duration-300 ease-in-out hover:scale-105 group relative">
-                   <a href="{% url 'AudioXApp:audiobook_detail' audiobook_item.slug %}" class="block">
-                       {% if audiobook_item.cover_image %}
-                           <img src="{{ audiobook_item.cover_image.url }}" alt="{{ audiobook_item.title }} Cover" class="w-full h-64 object-cover">
-                       {% else %}
-                           <div class="w-full h-64 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                               <svg class="w-16 h-16 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3.5a1.5 1.5 0 011.5 1.5v0.5a1.5 1.5 0 01-3 0V5A1.5 1.5 0 0110 3.5zM5.5 7A1.5 1.5 0 004 8.5v3A1.5 1.5 0 005.5 13h9a1.5 1.5 0 001.5-1.5v-3A1.5 1.5 0 0014.5 7h-9zM5 8.5a.5.5 0 01.5-.5h9a.5.5 0 01.5.5v3a.5.5 0 01-.5.5h-9a.5.5 0 01-.5-.5v-3z"></path></svg>
-                           </div>
-                       {% endif %}
+        {% if error_message %}
+            <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-md mb-8" role="alert">
+                <div class="flex">
+                    <div class="py-1"><svg class="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM11 14a1 1 0 1 0-2 0 1 1 0 0 0 2 0zm0-7a1 1 0 0 0-1-1H9a1 1 0 0 0 0 2v3a1 1 0 0 0 1 1h1a1 1 0 1 0 0-2V7z"/></svg></div>
+                    <div>
+                        <p class="font-bold">Error</p>
+                        <p class="text-sm">{{ error_message }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if saved_audiobooks %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8" id="library-grid-container">
+                {% for audiobook_item in saved_audiobooks %}
+                <div class="library-item-card bg-white rounded-xl shadow-lg hover:shadow-2xl shadow-[#09065]/[0.06] hover:shadow-[#09065]/10 border border-[#09065]/10 flex flex-col group transition-all duration-300 ease-in-out transform hover:-translate-y-1" data-audiobook-card-id="{{ audiobook_item.audiobook_id }}">
+                    <a href="{% url 'AudioXApp:audiobook_detail' audiobook_item.slug %}" class="block aspect-[3/4] overflow-hidden rounded-t-xl">
+                        {% if audiobook_item.cover_image %}
+                            <img src="{{ audiobook_item.cover_image.url }}" alt="{{ audiobook_item.title }} Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out">
+                        {% else %}
+                            <div class="w-full h-full bg-[#09065]/5 flex items-center justify-center p-4">
+                                <img src="https://placehold.co/300x400/09065/FFFFFF?text={{ audiobook_item.title|slice:':15'|urlencode|default:'No%20Cover' }}&font=sans"
+                                     alt="{{ audiobook_item.title }} - No Cover Available"
+                                     class="w-auto h-auto max-w-full max-h-full object-contain opacity-70">
+                            </div>
+                        {% endif %}
+                    </a>
+                    <div class="p-5 flex-grow flex flex-col">
+                        <h2 class="text-lg font-bold text-[#09065] mb-1 line-clamp-2 group-hover:text-red-600 transition-colors duration-150" title="{{ audiobook_item.title }}">
+                            <a href="{% url 'AudioXApp:audiobook_detail' audiobook_item.slug %}">
+                                {{ audiobook_item.title }}
+                            </a>
+                        </h2>
+                        {% if audiobook_item.author %}
+                            <p class="text-sm text-[#09065]/70 mb-3 line-clamp-1">By: {{ audiobook_item.author }}</p>
+                        {% endif %}
+                        
+                        <div class="mt-auto pt-3">
+                            <button 
+                                onclick="toggleLibraryStatus(this, '{{ audiobook_item.audiobook_id }}')"
+                                data-audiobook-id="{{ audiobook_item.audiobook_id }}"
+                                class="remove-from-library-btn w-full flex items-center justify-center space-x-2 text-center bg-red-100 hover:bg-red-600 text-red-700 hover:text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-200 ease-in-out text-sm focus:outline-none focus:ring-2 focus:ring-red-500/70 focus:ring-offset-2">
+                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.58.194-2.357.366A3.001 3.001 0 00.5 7.5v1.5a3 3 0 003 3V16.5a3 3 0 003 3h8a3 3 0 003-3v-4.5a3 3 0 003-3V7.5a3.001 3.001 0 00-3.143-2.941A48.643 48.643 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.532.045 2.205.123A3.501 3.501 0 0014.5 3.5V3.25a.75.75 0 00-.75-.75h-2.5a.75.75 0 00-.75.75V3.5c.943.001 1.657.02 2.205.123zM16.5 7.5v1.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 014.5 9V7.5a1.5 1.5 0 011.5-1.5h9a1.5 1.5 0 011.5 1.5z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Remove</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-16" id="empty-library-message">
+                <svg class="mx-auto h-20 w-20 text-[#09065]/20 mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 9h6M9 12h6M9 15h6" />
+                </svg>
+                <h3 class="mt-4 text-2xl font-semibold text-[#09065] mb-3">Your Library is Looking a Bit Empty</h3>
+                <p class="mt-1 text-base text-[#09065]/70 mb-8 max-w-md mx-auto">Start adding your favorite audiobooks to build your personal collection and access them here anytime.</p>
+                <div class="mt-6">
+                   <a href="{% url 'AudioXApp:home' %}" 
+                      class="inline-flex items-center px-8 py-3.5 border border-transparent shadow-md text-base font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500/70 transition-all duration-150 ease-in-out transform hover:scale-105">
+                      <svg class="w-5 h-5 mr-2.5 -ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                      Browse Audiobooks
                    </a>
-                   <div class="p-4 flex-grow flex flex-col">
-                       <h2 class="text-md font-semibold text-gray-900 dark:text-white mb-1 truncate group-hover:whitespace-normal group-hover:overflow-visible" title="{{ audiobook_item.title }}">
-                           <a href="{% url 'AudioXApp:audiobook_detail' audiobook_item.slug %}" class="hover:text-blue-600 dark:hover:text-blue-400">
-                               {{ audiobook_item.title }}
-                           </a>
-                       </h2>
-                       {% if audiobook_item.author %}
-                           <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">By: {{ audiobook_item.author }}</p>
-                       {% endif %}
-                       
-                       {# Optional: Add a remove button #}
-                       <div class="mt-auto pt-2">
-                           <button 
-                               onclick="toggleLibraryStatus(this, '{{ audiobook_item.audiobook_id }}')"
-                               data-audiobook-id="{{ audiobook_item.audiobook_id }}"
-                               class="remove-from-library-btn w-full text-center bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white font-medium py-1.5 px-3 rounded-md transition-colors duration-200 text-xs">
-                               <i class="fas fa-trash-alt mr-1"></i> Remove
-                           </button>
-                       </div>
-                   </div>
-               </div>
-               {% endfor %}
+                </div>
            </div>
-       {% else %}
-           <div class="text-center py-12">
-               <svg class="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 9h6M9 12h6" />
-               </svg>
-               <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">Your Library is Empty</h3>
-               <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start adding your favorite audiobooks to build your personal library.</p>
-               <div class="mt-6">
-                 <a href="{% url 'AudioXApp:home' %}" 
-                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                   Browse Audiobooks
-                 </a>
-               </div>
-             </div>
-       {% endif %}
-   </div>
+        {% endif %}
+    </div>
+</div>
 
-   <script>
-   function getCSRFTokenForLibrary() {
-       const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
-       if (csrfInput) return csrfInput.value;
-       // Fallback if pageContext is available globally and has csrfToken
-       if (typeof pageContext !== 'undefined' && pageContext.csrfToken) return pageContext.csrfToken;
-       console.error("CSRF token not found for library action.");
-       return null;
-   }
+<script>
+    // Store the Django-generated URL in a JavaScript variable when the page loads
+    const BROWSE_AUDIOBOOKS_URL = "{% url 'AudioXApp:home' %}";
 
-   async function toggleLibraryStatus(buttonElement, audiobookId) {
-       const csrfToken = getCSRFTokenForLibrary();
-       if (!csrfToken) {
-           Swal.fire('Error', 'Could not perform action. Security token missing.', 'error');
-           return;
-       }
+    function getCSRFTokenForLibrary() {
+        // Attempt to find CSRF token from the standard Django input field first
+        let csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (csrfInput && csrfInput.value) {
+            return csrfInput.value;
+        }
+        // Fallback to meta tag if the input isn't present on this specific page
+        let metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.getAttribute('content')) {
+            return metaTag.getAttribute('content');
+        }
+        console.error('CSRF token could not be retrieved. Ensure {% csrf_token %} is in a form or a meta tag is present.');
+        return null;
+    }
 
-       const formData = new FormData();
-       formData.append('audiobook_id', audiobookId);
+    async function toggleLibraryStatus(buttonElement, audiobookId) {
+        const csrfToken = getCSRFTokenForLibrary();
+        if (!csrfToken) {
+            const message = 'Error: Could not perform action. Security token missing. Please refresh the page.';
+            // Simple alert if Swal is not available on this page
+            alert(message);
+            console.error('CSRF token missing for toggleLibraryStatus action.');
+            return;
+        }
 
-       try {
-           const response = await fetch("{% url 'AudioXApp:toggle_library_item' %}", {
-               method: 'POST',
-               body: formData,
-               headers: {
-                   'X-CSRFToken': csrfToken
-               }
-           });
-           const data = await response.json();
+        const payload = { audiobook_id: String(audiobookId) };
+        const originalButtonHTML = buttonElement.innerHTML; // Store full HTML to preserve icon + text
 
-           if (data.status === 'success') {
-               Swal.fire({
-                   toast: true,
-                   position: 'top-end',
-                   icon: data.action === 'added' ? 'success' : 'info',
-                   title: data.message,
-                   showConfirmButton: false,
-                   timer: 2500,
-                   timerProgressBar: true
-               });
+        // Indicate loading state on the button
+        buttonElement.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-currentColor" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing...`;
+        buttonElement.disabled = true;
 
-               if (data.action === 'removed') {
-                   // Remove the item from the page if on My Library page
-                   const libraryItemCard = buttonElement.closest('.group.relative'); // Adjust selector if card structure changes
-                   if (libraryItemCard) {
-                       libraryItemCard.style.transition = 'opacity 0.5s ease';
-                       libraryItemCard.style.opacity = '0';
-                       setTimeout(() => {
-                           libraryItemCard.remove();
-                           // Check if library is now empty
-                           const remainingItems = document.querySelectorAll('.group.relative');
-                           if (remainingItems.length === 0) {
-                               const libraryContainer = document.querySelector('.container.mx-auto'); // Adjust selector
-                               if (libraryContainer) {
-                                   libraryContainer.innerHTML = `
-                                       <div class="text-center py-12">
-                                           <svg class="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 9h6M9 12h6" />
-                                           </svg>
-                                           <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">Your Library is Empty</h3>
-                                           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start adding your favorite audiobooks to build your personal library.</p>
-                                           <div class="mt-6">
-                                             <a href="{% url 'AudioXApp:home' %}" 
-                                                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                               Browse Audiobooks
-                                             </a>
-                                           </div>
-                                         </div>`;
-                               }
-                           }
-                       }, 500);
-                   }
-               }
-               // If on audiobook_detail page, you'd update the button text/icon there
-           } else {
-               Swal.fire('Error', data.message || 'Could not update library status.', 'error');
-           }
-       } catch (error) {
-           console.error('Error toggling library item:', error);
-           Swal.fire('Error', 'An unexpected error occurred.', 'error');
-       }
-   }
-   </script>
-   {% endblock %}
-   ```
-   * This template iterates through `saved_audiobooks` (or `library_items` if you pass the full queryset).
-   * It includes a "Remove" button for each item, which calls `toggleLibraryStatus` (this function will effectively remove it since it's already in the library).
-   * The JavaScript function `toggleLibraryStatus` handles the AJAX call and removes the item from the DOM on success.
+        try {
+            const response = await fetch("{% url 'AudioXApp:toggle_library_item' %}", {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            
+            let data;
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await response.json();
+            } else {
+                const errorText = await response.text();
+                console.error('Non-JSON response from server:', response.status, errorText);
+                throw new Error(`Server error (Status: ${response.status}). Please try again.`);
+            }
 
-**5. Update `audiobook_detail.html` (Frontend JavaScript for "Add to Library" button)**
+            if (data.status === 'success') {
+                // Use a simple, non-library dependent notification for broader compatibility
+                const notification = document.createElement('div');
+                notification.style.position = 'fixed';
+                notification.style.top = '20px';
+                notification.style.right = '20px';
+                notification.style.padding = '12px 20px';
+                notification.style.borderRadius = '8px';
+                notification.style.color = 'white';
+                notification.style.zIndex = '10000';
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s ease';
+                
+                if (data.action === 'removed') {
+                    notification.style.backgroundColor = '#09065'; // Dark theme color
+                    notification.textContent = data.message || 'Removed from library.';
+                } else { // 'added' or other success
+                    notification.style.backgroundColor = 'red'; // Red for "added" (as per theme)
+                    notification.textContent = data.message || 'Added to library.';
+                }
+                document.body.appendChild(notification);
+                void notification.offsetWidth; // Trigger reflow for transition
+                notification.style.opacity = '1';
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                }, 2800);
 
-   You need to modify the "Add to Library" button in `audiobook_detail.html` and add JavaScript to handle its click event.
 
-   **In `AudioXApp/templates/audiobook_detail.html`:**
+                if (data.action === 'removed') {
+                    const libraryItemCard = buttonElement.closest('.library-item-card');
+                    if (libraryItemCard) {
+                        libraryItemCard.style.transition = 'opacity 0.4s ease, transform 0.4s ease, max-height 0.5s ease, margin 0.4s ease, padding 0.4s ease';
+                        libraryItemCard.style.opacity = '0';
+                        libraryItemCard.style.transform = 'scale(0.95)';
+                        libraryItemCard.style.maxHeight = '0px';
+                        libraryItemCard.style.setProperty('padding', '0', 'important');
+                        libraryItemCard.style.setProperty('margin-bottom', '0', 'important');
+                        libraryItemCard.style.overflow = 'hidden';
 
-   Locate your "Add to Library" button. It might look something like this:
-   ```html
-   <button class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
-       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg> {# Icon for Add to Library (bookmark) #}
-       <span>Add to Library</span>
-   </button>
-   ```
 
-   **Modify it to:**
-   ```html
-   <button id="toggle-library-btn"
-           onclick="handleToggleLibrary(this)"
-           data-audiobook-id="{{ audiobook.audiobook_id }}"
-           data-is-in-library="{{ request.user.is_in_library|yesno:'true,false' }}" {# Check initial state #}
-           class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 transition text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]">
-       <svg id="library-btn-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-           {# Path will be updated by JS #}
-           <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-       </svg>
-       <span id="library-btn-text">Add to Library</span>
-   </button>
-   ```
-
-   **Add the following JavaScript to your `<script>` block in `audiobook_detail.html` (preferably inside the `DOMContentLoaded` listener or at the end):**
-
-   ```javascript
-   // ... (your existing player and review JS) ...
-
-   // --- My Library Feature ---
-   const toggleLibraryBtn = document.getElementById('toggle-library-btn');
-   const libraryBtnText = document.getElementById('library-btn-text');
-   const libraryBtnIcon = document.getElementById('library-btn-icon'); // Assuming your SVG has an ID or you select it differently
-
-   // SVG paths for filled (in library) and outline (not in library) bookmark icons
-   const iconPathInLibrary = "M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"; // Solid bookmark
-   const iconPathNotInLibrary = "M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"; // Outline (Font Awesome uses far fa-bookmark for outline, fas fa-bookmark for solid)
-                                                                                    // For custom SVG, you might need different paths or use Font Awesome classes.
-                                                                                    // Let's use Font Awesome classes for simplicity if available, else use path.
-
-   function updateLibraryButtonState(isInLibrary) {
-       if (!toggleLibraryBtn || !libraryBtnText || !libraryBtnIcon) return;
-
-       if (isInLibrary) {
-           libraryBtnText.textContent = 'In Library';
-           toggleLibraryBtn.classList.add('bg-indigo-100', 'text-indigo-700', 'border-indigo-300');
-           toggleLibraryBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
-           // Assuming Font Awesome:
-           libraryBtnIcon.innerHTML = '<i class="fas fa-bookmark"></i>'; // Solid bookmark
-       } else {
-           libraryBtnText.textContent = 'Add to Library';
-           toggleLibraryBtn.classList.remove('bg-indigo-100', 'text-indigo-700', 'border-indigo-300');
-           toggleLibraryBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
-           // Assuming Font Awesome:
-           libraryBtnIcon.innerHTML = '<i class="far fa-bookmark"></i>'; // Outline bookmark
-       }
-       toggleLibraryBtn.dataset.isInLibrary = isInLibrary.toString();
-   }
-
-   async function handleToggleLibrary(buttonElement) {
-       if (!pageContext.isAuthenticated) {
-           Swal.fire({
-               title: 'Please Log In',
-               text: 'You need to be logged in to add audiobooks to your library.',
-               icon: 'info',
-               showCancelButton: true,
-               confirmButtonText: 'Log In',
-               confirmButtonColor: THEME_COLOR,
-               cancelButtonText: 'Later'
-           }).then((result) => {
-               if (result.isConfirmed) {
-                   window.location.href = "{% url 'AudioXApp:login' %}?next=" + window.location.pathname + window.location.search;
-               }
-           });
-           return;
-       }
-
-       const audiobookId = buttonElement.dataset.audiobookId;
-       const csrfToken = pageContext.csrfToken; // From your existing pageContext
-
-       if (!audiobookId || !csrfToken) {
-           Swal.fire('Error', 'Could not perform action. Missing data.', 'error');
-           return;
-       }
-
-       const formData = new FormData();
-       formData.append('audiobook_id', audiobookId);
-
-       // Optimistic UI update (optional, but good for UX)
-       // const currentIsInLibrary = buttonElement.dataset.isInLibrary === 'true';
-       // updateLibraryButtonState(!currentIsInLibrary); 
-
-       try {
-           const response = await fetch("{% url 'AudioXApp:toggle_library_item' %}", {
-               method: 'POST',
-               body: formData,
-               headers: {
-                   'X-CSRFToken': csrfToken
-               }
-           });
-           const data = await response.json();
-
-           if (data.status === 'success') {
-               updateLibraryButtonState(data.is_in_library); // Update based on actual server response
-               Swal.fire({
-                   toast: true,
-                   position: 'top-end',
-                   icon: data.action === 'added' ? 'success' : 'info',
-                   title: data.message,
-                   showConfirmButton: false,
-                   timer: 2000,
-                   timerProgressBar: true
-               });
-           } else {
-               // Revert optimistic update if failed
-               // updateLibraryButtonState(currentIsInLibrary); 
-               Swal.fire('Error', data.message || 'Could not update library status.', 'error');
-           }
-       } catch (error) {
-           console.error('Error toggling library item:', error);
-           // Revert optimistic update if failed
-           // updateLibraryButtonState(currentIsInLibrary);
-           Swal.fire('Error', 'An unexpected error occurred.', 'error');
-       }
-   }
-
-   // Initialize button state on page load
-   document.addEventListener('DOMContentLoaded', () => {
-       // ... your existing DOMContentLoaded initializations ...
-       if (toggleLibraryBtn) {
-           const initialIsInLibrary = toggleLibraryBtn.dataset.isInLibrary === 'true';
-           updateLibraryButtonState(initialIsInLibrary);
-       }
-   });
-   ```
-   **Explanation of JavaScript changes:**
-   * The "Add to Library" button now has an `id="toggle-library-btn"`, an `onclick` handler, and `data-` attributes to store the `audiobook_id` and the initial `is_in_library` state (passed from the Django template using `request.user.is_in_library`).
-   * `updateLibraryButtonState`: This function changes the button's text, icon (using Font Awesome classes as an example, adjust if you use raw SVG paths), and styling based on whether the item is in the library.
-   * `handleToggleLibrary`: This function is called on button click.
-        * It checks if the user is authenticated.
-        * It makes an AJAX POST request to the `toggle_library_item` view.
-        * On success, it calls `updateLibraryButtonState` with the new status from the server and shows a success toast.
-   * The `DOMContentLoaded` listener now also initializes the library button's state.
-
-**Phase 3: Navigation**
-
-6.  **Add a Link to "My Library" Page:**
-    You'll want to add a link to the `my_library_page` in your user's profile dropdown or main navigation. For example, in your base template or user profile template:
-    ```html
-    {% if user.is_authenticated %}
-        <li>
-            <a href="{% url 'AudioXApp:my_library_page' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Library</a>
-        </li>
-        <li>
-            <a href="{% url 'AudioXApp:listening_history_page' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Listening History</a>
-        </li>
-    {% endif %}
-    
+                        setTimeout(() => {
+                            libraryItemCard.remove();
+                            const libraryGridContainer = document.getElementById('library-grid-container');
+                            const emptyLibraryMessage = document.getElementById('empty-library-message');
+                            if (libraryGridContainer && libraryGridContainer.children.length === 0 && emptyLibraryMessage) {
+                                if (libraryGridContainer.parentNode) { 
+                                    libraryGridContainer.classList.add('hidden'); // Hide grid instead of removing
+                                }
+                                emptyLibraryMessage.classList.remove('hidden');
+                                // Ensure the link in empty message is correct
+                                const browseLink = emptyLibraryMessage.querySelector('a');
+                                if (browseLink) browseLink.href = BROWSE_AUDIOBOOKS_URL;
+                            }
+                        }, 500); // Match animation duration
+                    }
+                } else { // Item was added (though this page is for showing saved items, so removal is primary action)
+                    // Restore button text if item was re-added (unlikely from "Remove" button)
+                    buttonElement.innerHTML = originalButtonHTML; // Or update to "Remove" state
+                    buttonElement.disabled = false;
+                }
+            } else {
+                buttonElement.innerHTML = originalButtonHTML;
+                buttonElement.disabled = false;
+                alert('Error: ' + (data.message || 'Could not update library status.'));
+            }
+        } catch (error) {
+            console.error('Error toggling library item:', error);
+            buttonElement.innerHTML = originalButtonHTML;
+            buttonElement.disabled = false;
+            alert('Request Failed: ' + (error.message || 'An unexpected error occurred.'));
+        }
+    }
+</script>
+{% endblock %}

@@ -1,85 +1,116 @@
 {% extends "user/myprofile.html" %} {# OR your relevant base template for user sections #}
 {% load static %}
+{% load humanize %} {# Keep if used for date formatting or other humanization #}
 
 {% block title %}{{ page_title|default:"Listening History" }} - AudioX{% endblock %}
 
+{% block head_extra %}
+    {{ block.super }}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-8">{{ page_title|default:"My Listening History" }}</h1>
+<div class="bg-white min-h-screen font-sans antialiased text-[#09065] selection:bg-red-100 selection:text-red-700">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+        <header class="mb-10 md:mb-12 pb-8 border-b-2 border-[#09065]/10">
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#09065] tracking-tight text-center sm:text-left">
+                {{ page_title|default:"My Listening History" }}
+            </h1>
+        </header>
 
-    {% if history_items %}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {% for item in history_items %}
-            <div class="bg-white dark:bg-gray-800 shadow-xl rounded-lg overflow-hidden flex flex-col transform transition-all duration-300 ease-in-out hover:scale-105">
-                <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}" class="block">
-                    {% if item.audiobook.cover_image %}
-                        <img src="{{ item.audiobook.cover_image.url }}" alt="{{ item.audiobook.title }} Cover" class="w-full h-56 object-cover">
-                    {% else %}
-                        <div class="w-full h-56 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                            <svg class="w-16 h-16 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 3.5a1.5 1.5 0 011.5 1.5v0.5a1.5 1.5 0 01-3 0V5A1.5 1.5 0 0110 3.5zM5.5 7A1.5 1.5 0 004 8.5v3A1.5 1.5 0 005.5 13h9a1.5 1.5 0 001.5-1.5v-3A1.5 1.5 0 0014.5 7h-9zM5 8.5a.5.5 0 01.5-.5h9a.5.5 0 01.5.5v3a.5.5 0 01-.5.5h-9a.5.5 0 01-.5-.5v-3z"></path></svg>
-                        </div>
-                    {% endif %}
-                </a>
-                <div class="p-4 flex-grow flex flex-col">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate" title="{{ item.audiobook.title }}">
-                        <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}" class="hover:text-blue-600 dark:hover:text-blue-400">
-                            {{ item.audiobook.title }}
-                        </a>
-                    </h2>
-                    {% if item.audiobook.author %}
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">By: {{ item.audiobook.author }}</p>
-                    {% endif %}
-                    <p class="text-xs text-gray-500 dark:text-gray-500 mb-3">Last listened: {{ item.last_listened_at|date:"M d, Y, P" }}</p>
-
-                    {% if item.audiobook.duration_in_seconds > 0 %}
-                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-1 relative">
-                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ item.progress_percentage }}%"></div>
-                    </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-500 mb-2">
-                        {{ item.progress_percentage }}% complete
-                        {% if item.current_chapter %}
-                            (Chapter: <span class="truncate" title="{{item.current_chapter.chapter_name}}">{{ item.current_chapter.chapter_name|truncatechars:20 }}</span>)
-                        {% endif %}
-                    </p>
-                    {% else %}
-                    <p class="text-xs text-gray-500 dark:text-gray-500 mb-2">
-                        Progress: {{ item.progress_seconds }}s
-                        {% if item.current_chapter %}
-                            (Chapter: {{ item.current_chapter.chapter_name|truncatechars:20 }})
-                        {% endif %}
-                    </p>
-                    {% endif %}
-
-                    <div class="mt-auto pt-2"> {# Pushes button to the bottom if content above is short #}
-                        <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}"
-                           class="w-full block text-center bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 text-sm">
-                            {% if item.progress_seconds > 0 and item.progress_percentage < 100 %}
-                                Continue Listening
-                            {% elif item.progress_percentage >= 100 %}
-                                Listen Again
-                            {% else %}
-                                Start Listening
-                            {% endif %}
-                        </a>
+        {% if error_message %}
+            <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-md mb-8" role="alert">
+                <div class="flex">
+                    <div class="py-1"><svg class="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM11 14a1 1 0 1 0-2 0 1 1 0 0 0 2 0zm0-7a1 1 0 0 0-1-1H9a1 1 0 0 0 0 2v3a1 1 0 0 0 1 1h1a1 1 0 1 0 0-2V7z"/></svg></div>
+                    <div>
+                        <p class="font-bold">Error</p>
+                        <p class="text-sm">{{ error_message }}</p>
                     </div>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center py-12">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-            </svg>
-            <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">No Listening History Yet</h3>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Start listening to audiobooks to see your history here.</p>
-            <div class="mt-6">
-              <a href="{% url 'AudioXApp:home' %}" {# Corrected URL name #}
-                 class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Browse Audiobooks
-              </a>
+        {% endif %}
+
+        {% if history_items %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
+                {% for item in history_items %}
+                {# Line 61 (approximate, depends on exact template structure above this loop) is the div below #}
+                <div class="history-item-card bg-white rounded-xl border border-[#09065]/10 flex flex-col group 
+                            shadow-[#09065]/5 shadow-lg 
+                            hover:shadow-[#09065]/10 hover:shadow-xl 
+                            transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+                    <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}" class="block aspect-[3/4] overflow-hidden rounded-t-xl">
+                        {% if item.audiobook.cover_image %}
+                            <img src="{{ item.audiobook.cover_image.url }}" alt="{{ item.audiobook.title }} Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out">
+                        {% else %}
+                            <div class="w-full h-full bg-[#09065]/5 flex items-center justify-center p-4">
+                                <img src="https://placehold.co/300x400/09065/FFFFFF?text={{ item.audiobook.title|slice:':15'|urlencode|default:'No%20Cover' }}&font=sans"
+                                     alt="{{ item.audiobook.title }} - No Cover Available"
+                                     class="w-auto h-auto max-w-full max-h-full object-contain opacity-70">
+                            </div>
+                        {% endif %}
+                    </a>
+                    <div class="p-5 flex-grow flex flex-col">
+                        <h2 class="text-lg font-bold text-[#09065] mb-1 line-clamp-2 group-hover:text-red-600 transition-colors duration-150" title="{{ item.audiobook.title }}">
+                            <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}">
+                                {{ item.audiobook.title }}
+                            </a>
+                        </h2>
+                        {% if item.audiobook.author %}
+                            <p class="text-sm text-[#09065]/70 mb-1 line-clamp-1">By: {{ item.audiobook.author }}</p>
+                        {% endif %}
+                        <p class="text-xs text-[#09065]/60 mb-3">Last listened: {{ item.last_listened_at|date:"M d, Y, P" }}</p>
+
+                        {% if item.audiobook.duration_in_seconds > 0 %}
+                        <div class="w-full bg-[#09065]/10 rounded-full h-2 mb-1 relative">
+                            <div class="bg-red-600 h-2 rounded-full" style="width: {{ item.progress_percentage }}%"></div>
+                        </div>
+                        <p class="text-xs text-[#09065]/70 mb-3">
+                            {{ item.progress_percentage }}% complete
+                            {% if item.current_chapter %}
+                                (Chapter: <span class="truncate font-medium" title="{{item.current_chapter.chapter_name}}">{{ item.current_chapter.chapter_name|truncatechars:20 }}</span>)
+                            {% endif %}
+                        </p>
+                        {% else %}
+                        <p class="text-xs text-[#09065]/70 mb-3">
+                            Progress: {{ item.progress_seconds }}s listened
+                            {% if item.current_chapter %}
+                                (Chapter: {{ item.current_chapter.chapter_name|truncatechars:20 }})
+                            {% endif %}
+                        </p>
+                        {% endif %}
+
+                        <div class="mt-auto pt-3">
+                            <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}"
+                               class="w-full block text-center bg-[#09065] hover:bg-[#09065]/90 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#09065]/70">
+                                {% if item.progress_seconds > 0 and item.progress_percentage < 100 %}
+                                    Continue Listening
+                                {% elif item.progress_percentage >= 100 %}
+                                    Listen Again
+                                {% else %}
+                                    Start Listening
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-          </div>
-    {% endif %}
+        {% else %}
+            <div class="text-center py-16">
+                <svg class="mx-auto h-20 w-20 text-[#09065]/20 mb-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25V12m0 0L9 15m3-3L15 15m-3-3V6.75m0 0v-3.75c0-.621.504-1.125 1.125-1.125H15M9 3.75c0 .621-.504 1.125-1.125 1.125H6.75M3 12c0-4.142 3.358-7.5 7.5-7.5S18 7.858 18 12a7.5 7.5 0 01-2.086 5.053" />
+                </svg>
+                <h3 class="mt-4 text-2xl font-semibold text-[#09065] mb-3">No Listening History Yet</h3>
+                <p class="mt-1 text-base text-[#09065]/70 mb-8 max-w-md mx-auto">Your recently played audiobooks and your progress will appear here.</p>
+                <div class="mt-6">
+                   <a href="{% url 'AudioXApp:home' %}" 
+                      class="inline-flex items-center px-8 py-3.5 border border-transparent shadow-md text-base font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500/70 transition-all duration-150 ease-in-out transform hover:scale-105">
+                      <svg class="w-5 h-5 mr-2.5 -ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                      Browse Audiobooks
+                   </a>
+                </div>
+           </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

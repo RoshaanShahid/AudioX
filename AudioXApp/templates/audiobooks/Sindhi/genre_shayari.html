@@ -1,0 +1,76 @@
+{% extends "Homepage.html" %}
+{% load static %}
+{% load i18n %} {# For potential translation of "Creator Uploads" etc. #}
+
+{% block title %}{{ display_name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">{{ display_name }}</h1>
+
+    {% if creator_audiobooks or audiobooks_list %}
+        
+        {# Section for Creator Uploaded Audiobooks #}
+        {% if creator_audiobooks %}
+            <h2 class="text-2xl font-semibold text-gray-700 mt-8 mb-4">{% trans "From Our Creators" %}</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {% for book in creator_audiobooks %}
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
+                        <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" class="block">
+                            {% if book.cover_image %}
+                                <img src="{{ book.cover_image.url }}" alt="{{ book.title }} cover" class="w-full h-64 object-cover">
+                            {% else %}
+                                <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                                    <span class="text-gray-500">{% trans "No Cover" %}</span>
+                                </div>
+                            {% endif %}
+                            <div class="p-4">
+                                <h3 class="text-lg font-semibold text-gray-800 truncate" title="{{ book.title }}">{{ book.title }}</h3>
+                                <p class="text-sm text-gray-600 truncate" title="{{ book.author }}">{% trans "By:" %} {{ book.author|default:"N/A" }}</p>
+                                {% if book.average_rating %}
+                                    <p class="text-sm text-yellow-500">{% trans "Rating:" %} {{ book.average_rating|floatformat:1 }}/5.0</p>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {# Section for External Audiobooks (if any for this genre/language) #}
+        {% if audiobooks_list %}
+            <h2 class="text-2xl font-semibold text-gray-700 mt-12 mb-4">{% trans "From Public Archives" %}</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {% for book_dict in audiobooks_list %}
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105">
+                        <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book_dict.slug %}" class="block">
+                            {% if book_dict.cover_image %}
+                                <img src="{{ book_dict.cover_image }}" alt="{{ book_dict.title }} cover" class="w-full h-64 object-cover">
+                            {% else %}
+                                 <div class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                                    <span class="text-gray-500">{% trans "No Cover" %}</span>
+                                </div>
+                            {% endif %}
+                            <div class="p-4">
+                                <h3 class="text-lg font-semibold text-gray-800 truncate" title="{{ book_dict.title }}">{{ book_dict.title }}</h3>
+                                <p class="text-sm text-gray-600 truncate" title="{{ book_dict.author }}">{% trans "By:" %} {{ book_dict.author|default:"N/A" }}</p>
+                                {% if book_dict.average_rating %}
+                                    <p class="text-sm text-yellow-500">{% trans "Rating:" %} {{ book_dict.average_rating|floatformat:1 }}/5.0</p>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+    {% else %}
+        <div class="text-center py-10">
+            <p class="text-xl text-gray-600">
+                {% blocktrans %}No audiobooks found in "{{ display_name }}" at the moment.{% endblocktrans %}
+            </p>
+            <p class="text-gray-500 mt-2">{% trans "Please check back later or explore other genres and languages." %}</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

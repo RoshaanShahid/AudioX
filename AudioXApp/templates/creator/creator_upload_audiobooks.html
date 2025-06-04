@@ -5,7 +5,7 @@
 {% block title %}Create New Audiobook - AudioX Creator Platform{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
     /* General styling for input type toggle buttons */
@@ -124,6 +124,9 @@
         margin-top: 0.5rem;
         font-size: 0.75rem; /* text-xs */
         color: #64748b; /* slate-500 */
+    }
+    #genre_other_input_container.hidden {
+        display: none;
     }
 
 </style>
@@ -261,7 +264,7 @@
                                            class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-slate-50 cursor-not-allowed"
                                            placeholder="Select language first" value="{{ submitted_values.genre|default_if_none:'' }}" disabled>
                                     {% if form_errors.genre %}<p class="text-red-500 text-sm mt-1" id="genre_error_message_placeholder">{{ form_errors.genre }}</p>{% endif %}
-                                    <p class="text-xs text-slate-500 mt-1" id="genre_helper_text_placeholder">Please select a language to see genre options.</p>
+                                     <p class="text-xs text-slate-500 mt-1" id="genre_helper_text_placeholder">Please select a language to see genre options.</p>
                                 </div>
                             </div>
                             <div>
@@ -403,7 +406,7 @@
                                                     <i class="fas fa-check-circle mr-1.5"></i>Use This Document Audio
                                                 </button>
                                             </div>
-                                             {% if chapter_data.errors.document_tts_general %}<p class="text-red-500 text-sm mt-1">{{ chapter_data.errors.document_tts_general }}</p>{% endif %}
+                                            {% if chapter_data.errors.document_tts_general %}<p class="text-red-500 text-sm mt-1">{{ chapter_data.errors.document_tts_general }}</p>{% endif %}
                                         </div>
 
 
@@ -611,7 +614,8 @@
     <script id="edge-tts-voices-data" type="application/json">{{ EDGE_TTS_VOICES_BY_LANGUAGE_JSON|safe }}</script>
     <script id="current-audiobook-language-data" type="text/plain">{{ submitted_values.language|default:"" }}</script>
     <script id="language-genre-mapping-data" type="application/json">
-        {{ LANGUAGE_GENRE_MAPPING_JSON|safe }}
+   
+    {{ LANGUAGE_GENRE_MAPPING_JSON|safe }}
     </script>
 
 

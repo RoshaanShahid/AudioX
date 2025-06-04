@@ -239,29 +239,25 @@ document.addEventListener('DOMContentLoaded', function () {
     const narratorGenderSelect = document.getElementById("{{ form.narrator_gender.id_for_label }}"); // Use Django form field ID
     const narratorGenderRequiredAsterisk = document.getElementById('narratorGenderRequiredAsterisk');
 
-
-    // Narrator display names configuration - Keys updated to match form values
     const narratorDisplayNames = {
-        'English': { // Key is now 'English'
+        'English': { 
             male: "Male (Engaging, Clear)",
             female: "Female (Expressive, Warm)"
         },
-        'Urdu': { // Key is now 'Urdu'
+        'Urdu': { 
             male: "Male (Asad - Standard)",
             female: "Female (Uzma - Standard)"
         }
-        // Add other languages here if they have gender-specific display names.
-        // e.g., 'Punjabi': { male: "Male (Punjabi)", female: "Female (Punjabi)"}
     };
 
-    let currentAudioBlob = null;
-    let currentAudioUrl = null;
+    let currentAudioBlob = null; 
+    let currentAudioUrl = null;  
 
     function clearAllErrorMessages() {
         if (fileErrorDiv) fileErrorDiv.textContent = '';
         if (langErrorDiv) langErrorDiv.textContent = '';
         if (genderErrorDiv) genderErrorDiv.textContent = '';
-        if (nonFieldErrorDiv) nonFieldErrorDiv.innerHTML = ''; // Might contain <p> tags
+        if (nonFieldErrorDiv) nonFieldErrorDiv.innerHTML = '';
 
         if (generalErrorMessageDiv) {
             generalErrorMessageDiv.classList.add('hidden');
@@ -278,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function () {
         else if (fieldKey === '__all__' && nonFieldErrorDiv) {
             nonFieldErrorDiv.innerHTML = errors.map(err => `<p>${err.message || err}</p>`).join('');
         }
-        else { // Fallback to general error display for unmapped fields
+        else { 
             if (generalErrorTextContentSpan) {
                 generalErrorTextContentSpan.textContent = (generalErrorTextContentSpan.textContent ? generalErrorTextContentSpan.textContent + '; ' : '') + `${fieldKey}: ${errorContent}`;
             }
@@ -289,45 +285,42 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-
     function updateNarratorGenderOptions() {
-        const selectedLang = languageSelect.value; // This will be 'English', 'Urdu', etc.
-        const genderOptionsConfig = narratorDisplayNames[selectedLang]; // Use updated keys
+        const selectedLang = languageSelect.value; 
+        const genderOptionsConfig = narratorDisplayNames[selectedLang]; 
 
-        // Iterate over the options in the select element
         for (let i = 0; i < narratorGenderSelect.options.length; i++) {
             const option = narratorGenderSelect.options[i];
-            if (option.value === "") continue; // Skip the placeholder
+            if (option.value === "") continue; 
 
             if (genderOptionsConfig && genderOptionsConfig[option.value]) {
                 option.textContent = genderOptionsConfig[option.value];
-            } else { // Fallback if no specific display name for this language/gender combination
-                option.textContent = option.value.charAt(0).toUpperCase() + option.value.slice(1); // e.g., "Male", "Female"
+            } else { 
+                option.textContent = option.value.charAt(0).toUpperCase() + option.value.slice(1); 
             }
         }
     }
 
     function toggleNarratorGenderField() {
-        const selectedLang = languageSelect.value; // Will be 'English', 'Urdu', etc.
-        // Languages that require gender selection (must match keys in EDGE_TTS_VOICES_BY_LANGUAGE that have gender differentiation)
-        const languagesRequiringGender = ['English', 'Urdu']; // Adjust as per your TTS setup
+        const selectedLang = languageSelect.value; 
+        const languagesRequiringGender = ['English', 'Urdu']; 
 
         if (languagesRequiringGender.includes(selectedLang)) {
             narratorGenderContainer.classList.remove('hidden');
-            narratorGenderSelect.required = true; // Make it HTML5 required
+            narratorGenderSelect.required = true; 
             if (narratorGenderRequiredAsterisk) narratorGenderRequiredAsterisk.classList.remove('hidden');
             updateNarratorGenderOptions();
         } else {
             narratorGenderContainer.classList.add('hidden');
             narratorGenderSelect.required = false;
-            narratorGenderSelect.value = ''; // Reset selection if field is hidden
+            narratorGenderSelect.value = ''; 
             if (narratorGenderRequiredAsterisk) narratorGenderRequiredAsterisk.classList.add('hidden');
         }
     }
 
     if (languageSelect && narratorGenderContainer && narratorGenderSelect) {
         languageSelect.addEventListener('change', toggleNarratorGenderField);
-        toggleNarratorGenderField(); // Call on page load to set initial state
+        toggleNarratorGenderField(); 
     }
 
     async function processDocumentForAudio(event) {
@@ -338,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function () {
         generatedAudioSection.classList.add('hidden');
         downloadButtonSection.classList.add('hidden');
         if(audioPlayer) audioPlayer.classList.add('hidden');
-        if (currentAudioUrl) { URL.revokeObjectURL(currentAudioUrl); }
+        if (currentAudioUrl && currentAudioUrl.startsWith('blob:')) { URL.revokeObjectURL(currentAudioUrl); }
         if(audioPlayer) audioPlayer.src = '';
         currentAudioBlob = null; currentAudioUrl = null;
         
@@ -359,70 +352,72 @@ document.addEventListener('DOMContentLoaded', function () {
                 method: form.method, body: formData, headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
             });
 
-            if (response.ok) { // View returned audio blob directly
-                const audioBlob = await response.blob();
-                if (audioBlob.type.startsWith('audio/')) {
-                    currentAudioBlob = audioBlob; currentAudioUrl = URL.createObjectURL(currentAudioBlob);
-                    if(audioPlayer) {
-                        audioPlayer.src = currentAudioUrl;
-                        audioPlayer.classList.remove('hidden');
-                    }
-                    generatedAudioSection.classList.remove('hidden');
-                    downloadButtonSection.classList.remove('hidden');
-                    
-                    if(audioPlayer && audioDurationElement) {
-                        audioPlayer.onloadedmetadata = () => {
-                            const duration = audioPlayer.duration;
-                            audioDurationElement.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
-                            if (isFinite(duration)) {
-                                const minutes = Math.floor(duration / 60);
-                                const seconds = Math.floor(duration % 60).toString().padStart(2, '0');
-                                audioDurationElement.innerHTML = `${durationIconSvg} ${minutes} min ${seconds} sec`;
-                                audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-green-50 text-green-700 border-green-200';
-                            } else {
-                                audioDurationElement.innerHTML = `${durationIconSvg} Duration N/A`;
-                                audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-yellow-50 text-yellow-700 border-yellow-200';
-                            }
-                        };
-                        audioPlayer.onerror = () => {
-                            audioDurationElement.innerHTML = `${durationIconSvg} Error loading audio`;
-                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-red-50 text-red-700 border-red-200';
-                        }
-                    }
+            const data = await response.json(); // Always expect JSON now
 
+            if (response.ok && data.status === 'success') {
+                currentAudioUrl = data.audio_url; // Store the server URL
+                if(audioPlayer) {
+                    audioPlayer.src = currentAudioUrl;
+                    audioPlayer.classList.remove('hidden');
+                }
+                generatedAudioSection.classList.remove('hidden');
+                downloadButtonSection.classList.remove('hidden');
+                
+                if(audioPlayer && audioDurationElement) {
+                    audioPlayer.onloadedmetadata = () => {
+                        const duration = audioPlayer.duration;
+                        audioDurationElement.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+                        if (isFinite(duration)) {
+                            const minutes = Math.floor(duration / 60);
+                            const seconds = Math.floor(duration % 60).toString().padStart(2, '0');
+                            audioDurationElement.innerHTML = `${durationIconSvg} ${minutes} min ${seconds} sec`;
+                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-green-50 text-green-700 border-green-200';
+                        } else {
+                            audioDurationElement.innerHTML = `${durationIconSvg} Duration N/A`;
+                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-yellow-50 text-yellow-700 border-yellow-200';
+                        }
+                    };
+                    audioPlayer.onerror = () => {
+                        audioDurationElement.innerHTML = `${durationIconSvg} Error loading audio`;
+                        audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-red-50 text-red-700 border-red-200';
+                    }
+                }
+
+                let defaultFilename = "generated_audio";
+                if (data.filename) { 
+                    defaultFilename = data.filename.substring(0, data.filename.lastIndexOf('.'));
+                } else { 
                     const fileInputField = document.getElementById("{{ form.document_file.id_for_label }}");
-                    let uploadedFileName = "generated_audio_output"; // Default filename
                     if (fileInputField && fileInputField.files && fileInputField.files[0]) {
                         const completeFileName = fileInputField.files[0].name;
                         const lastDotIndex = completeFileName.lastIndexOf('.');
                         if (lastDotIndex > 0) {
-                            uploadedFileName = completeFileName.substring(0, lastDotIndex).replace(/[\s_]+/g, '_').replace(/[^\w-]/g, '');
+                            defaultFilename = completeFileName.substring(0, lastDotIndex).replace(/[\s_]+/g, '_').replace(/[^\w-]/g, '');
                         } else {
-                            uploadedFileName = completeFileName.replace(/[\s_]+/g, '_').replace(/[^\w-]/g, '');
+                            defaultFilename = completeFileName.replace(/[\s_]+/g, '_').replace(/[^\w-]/g, '');
                         }
                     }
-                    if (chapterNameInput) chapterNameInput.value = uploadedFileName || "audio_output";
-
-                } else { // Response was ok, but not an audio blob (e.g. wrong content type)
-                    const errorText = await response.text();
-                    if(generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = 'Server Error: Received unexpected content type: ' + audioBlob.type + ". Details: " + (errorText || "No details.");
-                    if(generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
                 }
-            } else { // Response not ok (e.g., 400 for form errors, 500 for server error)
-                const errorData = await response.json(); // Expecting JSON error response from the view
-                clearAllErrorMessages(); // Clear previous errors before displaying new ones
+                if (chapterNameInput) chapterNameInput.value = defaultFilename;
 
-                if (errorData.errors) { // Django form validation errors
-                    for (const field in errorData.errors) {
-                        displayFieldError(field, errorData.errors[field]);
+            } else { 
+                clearAllErrorMessages();
+                let backendErrorMsg = data.message || `Error (Status: ${response.status}). Please check the form and try again.`;
+                if (data.errors) { 
+                    for (const field in data.errors) {
+                        displayFieldError(field, data.errors[field]);
                     }
+                    // Only show general if no specific field errors were shown from data.errors, or if it's a non_field_error
+                    if (!Object.keys(data.errors).some(k => k !== '__all__') || data.errors['__all__']) {
+                         if (generalErrorTextContentSpan && !data.errors['__all__']) generalErrorTextContentSpan.textContent = backendErrorMsg; // Avoid duplicating __all__
+                         if (generalErrorMessageDiv && !data.errors['__all__']) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
+                    }
+                } else {
+                    if (generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = backendErrorMsg;
+                    if (generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
                 }
-                // Display general message if available, or a default one
-                const generalMsg = errorData.message || `Error (Status: ${response.status}). Please check the form and try again.`;
-                if (generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = generalMsg;
-                if (generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
-
             }
+
         } catch (error) {
             console.error('Network or Fetch error:', error);
             clearAllErrorMessages();
@@ -443,18 +438,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (downloadButton) {
         downloadButton.addEventListener('click', () => {
-            if (currentAudioUrl && currentAudioBlob) {
+            if (currentAudioUrl) { 
                 const link = document.createElement('a');
-                link.href = currentAudioUrl;
+                link.href = currentAudioUrl; 
+
                 let chapterName = chapterNameInput.value.trim().replace(/[\s]+/g, '_').replace(/[^\w-]/g, '');
                 if (!chapterName) chapterName = "generated_audio_output";
                 
-                let extension = '.mp3'; // Default
-                if (currentAudioBlob.type === 'audio/mpeg') { extension = '.mp3'; }
-                else if (currentAudioBlob.type === 'audio/wav') { extension = '.wav'; }
-                else if (currentAudioBlob.type === 'audio/ogg') { extension = '.ogg'; }
-                // Add more types if your TTS can produce them
-
+                let extension = '.mp3'; 
+                // Try to infer extension from the URL if currentAudioBlob is not set (it won't be from server URL)
+                if (currentAudioUrl.includes('.')) {
+                    const urlExt = currentAudioUrl.substring(currentAudioUrl.lastIndexOf('.'));
+                    if (['.mp3', '.wav', '.ogg', '.m4a'].includes(urlExt.toLowerCase())) { // Check against common extensions
+                        extension = urlExt;
+                    }
+                }
                 link.download = `${chapterName}${extension}`;
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
             } else {

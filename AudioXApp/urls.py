@@ -1,9 +1,12 @@
 # AudioXApp/urls.py
-from django.urls import path, include # Ensure include is imported if not already
+from django.urls import path, include
 from .views import (
     content_views,
     library_views,
-    history_views
+    history_views,
+    download_views,
+    summary_views,
+    clip_views #  <--- ADDED THIS IMPORT
 )
 # Import the admin view modules
 from .views.admin_views import (
@@ -36,9 +39,8 @@ from .views.user_views import (
 )
 # Import views for static/legal pages and features
 from .views.legal_views import static_pages_views
-# Updated import for features_views
 from .views.features_views import (
-    community_chatrooms_feature_views, # This is our alias for chat views
+    community_chatrooms_feature_views,
     document_to_audio_feature_views
 )
 
@@ -60,7 +62,23 @@ urlpatterns = [
     path('punjabi/', content_views.punjabi_page, name='punjabi_page'),
     path('sindhi/', content_views.sindhi_page, name='sindhi_page'),
 
-    # Genre pages
+    # --- LANGUAGE-SPECIFIC GENRE URLS ---
+    # Urdu Genres
+    path('urdu/genre/novel-afsana/', content_views.urdu_genre_novel_afsana, name='urdu_genre_novel_afsana'),
+    path('urdu/genre/shayari/', content_views.urdu_genre_shayari, name='urdu_genre_shayari'),
+    path('urdu/genre/tareekh/', content_views.urdu_genre_tareekh, name='urdu_genre_tareekh'),
+    path('urdu/genre/safarnama/', content_views.urdu_genre_safarnama, name='urdu_genre_safarnama'),
+    path('urdu/genre/mazah/', content_views.urdu_genre_mazah, name='urdu_genre_mazah'),
+    path('urdu/genre/bachon-ka-adab/', content_views.urdu_genre_bachon_ka_adab, name='urdu_genre_bachon_ka_adab'),
+    path('urdu/genre/mazhabi-adab/', content_views.urdu_genre_mazhabi_adab, name='urdu_genre_mazhabi_adab'),
+    # Punjabi Genres
+    path('punjabi/genre/qissa-lok/', content_views.punjabi_genre_qissalok, name='punjabi_genre_qissalok'),
+    path('punjabi/genre/geet/', content_views.punjabi_genre_geet, name='punjabi_genre_geet'),
+    # Sindhi Genres
+    path('sindhi/genre/lok-adab/', content_views.sindhi_genre_lok_adab, name='sindhi_genre_lok_adab'),
+    path('sindhi/genre/shayari/', content_views.sindhi_genre_shayari, name='sindhi_genre_shayari'),
+
+    # General English Genre pages
     path('genre/fiction/', content_views.genre_fiction, name='genre_fiction'),
     path('genre/mystery/', content_views.genre_mystery, name='genre_mystery'),
     path('genre/thriller/', content_views.genre_thriller, name='genre_thriller'),
@@ -75,6 +93,10 @@ urlpatterns = [
     path('creator/generate-audio-from-document/', creator_tts_views.generate_document_tts_preview_audio, name='creator_generate_audio_from_document'),
     path('trending/', content_views.trending_audiobooks_view, name='trending_audiobooks'),
     path('generate-audio/', document_to_audio_feature_views.generate_audio_from_document, name='general_generate_audio_from_document' ),
+    path('audiobook/<int:audiobook_id>/get-ai-summary/', summary_views.get_ai_summary, name='get_ai_summary'),
+
+    # --- Clip Generation URL --- # <--- NEW SECTION
+    path('api/clip/generate/', clip_views.generate_audio_clip, name='generate_audio_clip'), # <--- ADDED THIS URL
 
     # --- Legal, Company, and Contact Pages ---
     path('ourteam/', static_pages_views.ourteam_view, name='ourteam'),
@@ -117,7 +139,7 @@ urlpatterns = [
 
     # --- User Account Activity Views ---
     path('billing-history/', account_activity_views.billing_history, name='billing_history'),
-    path('my-downloads/', account_activity_views.my_downloads, name='my_downloads'),
+    path('my-downloads/', download_views.my_downloads_page, name='my_downloads'),
     path('my-account-library/', account_activity_views.my_library, name='my_account_library'),
 
     path('my-listening-history/', history_views.listening_history_page, name='listening_history_page'),
@@ -151,7 +173,6 @@ urlpatterns = [
     path('api/creator/generate-document-tts-preview/', creator_tts_views.generate_document_tts_preview_audio, name='generate_document_tts_preview_audio'),
 
     # --- Admin Area Views ---
-    # ... (all your admin URLs remain unchanged) ...
     path('admin/welcome/', admin_auth_views.admin_welcome_view, name='admin_welcome'),
     path('admin/register/', admin_auth_views.adminsignup, name='adminsignup'),
     path('admin/login/', admin_auth_views.adminlogin, name='adminlogin'),
@@ -206,10 +227,10 @@ urlpatterns = [
     path('features/community-chatrooms/invitations/', community_chatrooms_feature_views.ChatInvitationsListView.as_view(), name='chat_invitations'),
     path('features/community-chatrooms/invitations/<uuid:invitation_id>/respond/', community_chatrooms_feature_views.RespondToChatInvitationView.as_view(), name='chatroom_invitation_respond'),
 
-    # --- Updated URLs for Other Chat Features ---
-    path('features/community-chatrooms/my-rooms/', community_chatrooms_feature_views.MyChatRoomsView.as_view(), name='my_chatrooms'), 
-    path('features/community-chatrooms/joined-rooms/', community_chatrooms_feature_views.JoinedChatRoomsView.as_view(), name='joined_chatrooms'), 
-    path('features/community-chatrooms/past-rooms/', community_chatrooms_feature_views.PastChatRoomsView.as_view(), name='past_chatrooms'), # MODIFIED
+    # --- Other Chat Feature URLs ---
+    path('features/community-chatrooms/my-rooms/', community_chatrooms_feature_views.MyChatRoomsView.as_view(), name='my_chatrooms'),
+    path('features/community-chatrooms/joined-rooms/', community_chatrooms_feature_views.JoinedChatRoomsView.as_view(), name='joined_chatrooms'),
+    path('features/community-chatrooms/past-rooms/', community_chatrooms_feature_views.PastChatRoomsView.as_view(), name='past_chatrooms'),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

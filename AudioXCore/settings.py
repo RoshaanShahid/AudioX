@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import logging
 import logging.config
 from django.core.exceptions import ImproperlyConfigured
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy # Make sure reverse_lazy is imported
 from decimal import Decimal
 
 # Basic logging setup (configured further below)
@@ -50,7 +50,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
 
-    'AudioXApp', # Your application
+    # --- RESOLVED CONFLICT 1 HERE ---
+    'AudioXApp', # Your application 
+    # --- END RESOLVED CONFLICT 1 ---
 
     'django.contrib.humanize',
     'mathfilters',
@@ -59,6 +61,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+
+    'rest_framework', # Added by friend
+    'rest_framework.authtoken', # Added by friend (likely with rest_framework)
 ]
 
 MIDDLEWARE = [
@@ -200,7 +205,11 @@ except OSError as e:
 # --- Channel Layers Configuration ---
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels.layers.InMemoryChannelLayer', # Suitable for development
+        # For production, consider 'channels_redis.core.RedisChannelLayer'
+        # 'CONFIG': {
+        #     "hosts": [(os.getenv('REDIS_HOST', '127.0.0.1'), os.getenv('REDIS_PORT', 6379))],
+        # },
     },
 }
 
@@ -250,23 +259,26 @@ AUTHENTICATION_BACKENDS = [
 ]
 SITE_ID = 1
 
-# Allauth settings (addressing deprecation warnings)
-ACCOUNT_AUTHENTICATION_METHOD = 'email' # Keep if you prefer email login
+# --- RESOLVED CONFLICT 2 HERE ---
+ACCOUNT_AUTHENTICATION_METHOD = 'email' 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_REQUIRED = False # Set to False if email is primary identifier
-ACCOUNT_EMAIL_VERIFICATION = os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'none')
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True # This is still a valid setting
-ACCOUNT_SESSION_REMEMBER = True
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-SOCIALACCOUNT_LOGIN_ON_GET = True
-ACCOUNT_LOGOUT_ON_GET = True # Already present, good for simple logout links
+ACCOUNT_USERNAME_REQUIRED = False # From HEAD: Set to False if email is primary identifier
+ACCOUNT_EMAIL_VERIFICATION = os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'none') # From HEAD (configurable)
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True # From HEAD: This is still a valid setting
+ACCOUNT_SESSION_REMEMBER = True # From HEAD
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True # From HEAD
+ACCOUNT_SIGNUP_FIELDS = ("full_name", "username") # From friend
+SOCIALACCOUNT_AUTO_SIGNUP = True # From friend
+# --- END RESOLVED CONFLICT 2 ---
+SOCIALACCOUNT_LOGIN_ON_GET = True 
+ACCOUNT_LOGOUT_ON_GET = True 
 
 ACCOUNT_ADAPTER = 'AudioXApp.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'AudioXApp.adapters.CustomSocialAccountAdapter'
 
 LOGIN_REDIRECT_URL = reverse_lazy('AudioXApp:home')
-LOGOUT_REDIRECT_URL = reverse_lazy('AudioXApp:home') # This is where user goes after logout
+LOGOUT_REDIRECT_URL = reverse_lazy('AudioXApp:home') 
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -277,17 +289,35 @@ SOCIALACCOUNT_PROVIDERS = {
         'AUTH_PARAMS': {
             'access_type': 'online',
         },
-        'APP': { # For new versions of allauth, this structure might be slightly different
+        'APP': { 
             'client_id': os.getenv('GOOGLE_CLIENT_ID'),
             'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
-            'key': '' # Typically not needed if client_id and secret are set
+            'key': '' 
         },
-        'VERIFIED_EMAIL': True, # Usually default, good to be explicit
+        # --- RESOLVED PART OF CONFLICT 3 (VERIFIED_EMAIL comment) ---
+        'VERIFIED_EMAIL': True, # Usually default, good to be explicit (using HEAD's comment)
+        # --- END RESOLVED PART OF CONFLICT 3 ---
     }
 }
 
-# --- Logging Configuration ---
-LOGGING_CONFIG = None # Prevent Django's default logging config
+# --- RESOLVED CONFLICT 3 (REST_FRAMEWORK block) ---
+# --- Django REST Framework Configuration (from friend's changes) ---
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated', # Default to authenticated for APIs
+    ],
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    # 'PAGE_SIZE': 10,
+}
+# --- END Django REST Framework Configuration ---
+# --- END RESOLVED CONFLICT 3 ---
+
+# --- Logging Configuration (dictConfig) ---
+LOGGING_CONFIG = None 
 logging.config.dictConfig({
     'version': 1,
     'disable_existing_loggers': False,
@@ -302,30 +332,38 @@ logging.config.dictConfig({
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG' if DEBUG else 'INFO',
+            'level': 'DEBUG' if DEBUG else 'INFO', 
             'class': 'logging.StreamHandler',
             'formatter': 'verbose'
         },
+        # 'file': {
+        #     'level': 'INFO',
+        #     'class': 'logging.FileHandler',
+        #     'filename': BASE_DIR / 'logs/django.log',
+        #     'formatter': 'verbose',
+        # },
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console'], 
             'propagate': True,
-            'level': 'INFO',
+            'level': 'INFO', 
         },
-        'django.request': {
+        'django.request': { 
             'handlers': ['console'],
-            'level': 'WARNING', # Changed from ERROR to WARNING to see more request issues
+            # --- RESOLVED CONFLICT 4 HERE ---
+            'level': 'WARNING', # Changed from ERROR to WARNING to see more request issues (using HEAD's comment)
+            # --- END RESOLVED CONFLICT 4 ---
             'propagate': False,
         },
-        'AudioXApp': {
+        'AudioXApp': { 
             'handlers': ['console'],
             'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
+            'propagate': False, 
         },
         'allauth': {
             'handlers': ['console'],
-            'level': 'INFO', # Set to DEBUG for more allauth verbosity if needed
+            'level': 'INFO', 
             'propagate': False,
         },
         'stripe': {
@@ -333,33 +371,66 @@ logging.config.dictConfig({
             'level': 'INFO',
             'propagate': False,
         },
-        'channels': {
+        # --- RESOLVED CONFLICT 5 HERE ---
+        'channels': { # From HEAD
             'handlers': ['console'],
             'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
-        }
+        },
+        'rest_framework': { # From friend
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Add other specific app loggers here if needed (comment from friend)
+        # --- END RESOLVED CONFLICT 5 ---
     },
-    'root': {
+    'root': { 
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': 'INFO', 
     }
 })
 
 # --- Custom Application Settings (AudioXApp specific) ---
 PROFILE_COMPLETION_EXEMPT_URLS = [
     reverse_lazy('AudioXApp:complete_profile'),
-    reverse_lazy('account_logout'),
+    reverse_lazy('account_logout'), 
+    reverse_lazy('AudioXApp:my_downloads'), 
 ]
-ADMIN_URL_PATH = os.getenv('DJANGO_ADMIN_URL', 'admin/')
+ADMIN_URL_PATH = os.getenv('DJANGO_ADMIN_URL', 'admin/') 
 if not ADMIN_URL_PATH.endswith('/'):
     ADMIN_URL_PATH += '/'
+# --- RESOLVED CONFLICT 6 HERE ---
+# try: # Commented block from friend
+# PROFILE_COMPLETION_EXEMPT_URLS.append(reverse_lazy('admin:index'))
+# except Exception:
+# logger.warning("Could not add admin:index to PROFILE_COMPLETION_EXEMPT_URLS. Ensure admin path is handled if needed.")
+# --- END RESOLVED CONFLICT 6 ---
 
 MAX_CREATOR_APPLICATION_ATTEMPTS = int(os.getenv('MAX_CREATOR_APPLICATION_ATTEMPTS', 3))
 MIN_CREATOR_WITHDRAWAL_AMOUNT = Decimal(os.getenv('MIN_CREATOR_WITHDRAWAL_AMOUNT', '50.00'))
 WITHDRAWAL_REQUEST_COOLDOWN_DAYS = int(os.getenv('WITHDRAWAL_REQUEST_COOLDOWN_DAYS', 15))
+# MIN_CREATOR_WITHDRAWAL_AMOUNT = Decimal(os.getenv('MIN_CREATOR_WITHDRAWAL_AMOUNT', '50.00')) # This line is duplicated, removing one
+
+# Download Feature Settings (Optional)
+DOWNLOAD_DEFAULT_EXPIRY_DAYS = int(os.getenv('DOWNLOAD_DEFAULT_EXPIRY_DAYS', 30)) 
+DOWNLOAD_PREMIUM_EXPIRY_DAYS = int(os.getenv('DOWNLOAD_PREMIUM_EXPIRY_DAYS', 30)) 
+# --- END Custom Settings ---
 
 # --- Google Gemini AI Configuration ---
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
-if not GEMINI_API_KEY:
-    logger.warning("GEMINI_API_KEY is not set in .env. AI features will be unavailable or fail.")
+# --- RESOLVED CONFLICT 7 HERE ---
+if not GEMINI_API_KEY and not DEBUG: # More robust warning from friend
+    logger.critical("CRITICAL (PRODUCTION): GEMINI_API_KEY is not set in .env. AI features will fail.")
+elif not GEMINI_API_KEY and DEBUG:
+    logger.warning("Warning (DEBUG): GEMINI_API_KEY is not set in .env. AI features will be unavailable.")
+
+# --- DeepSeek AI Configuration (from friend) ---
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+
+if not DEEPSEEK_API_KEY and not DEBUG:
+    logger.critical("CRITICAL (PRODUCTION): DEEPSEEK_API_KEY is not set in .env. AI summary features will fail.")
+elif not DEEPSEEK_API_KEY and DEBUG:
+    logger.warning("Warning (DEBUG): DEEPSEEK_API_KEY is not set in .env. AI summary features will be unavailable.")
+# --- END RESOLVED CONFLICT 7 ---

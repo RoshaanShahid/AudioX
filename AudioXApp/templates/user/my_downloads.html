@@ -1,0 +1,198 @@
+{% extends 'Homepage.html' %}
+{% load static %}
+{% load humanize %} 
+{% comment %} mathfilters might not be needed here unless you display complex calc directly in template {% endcomment %}
+
+{% block title %}My Downloads - AudioX{% endblock %}
+
+{% block head_extra %}
+    {{ block.super }}
+    {# Minimal styles, primarily for dynamic states if absolutely needed #}
+    <style>
+        .modal-active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+        }
+        .modal-inactive {
+            display: none;
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        /* Styling for the custom scrollbar in chapter lists */
+        .chapters-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chapters-list::-webkit-scrollbar-track {
+            background: #f1f5f9; /* Tailwind gray-100 */
+            border-radius: 10px;
+        }
+        .chapters-list::-webkit-scrollbar-thumb {
+            background: #94a3b8; /* Tailwind slate-400 */
+            border-radius: 10px;
+        }
+        .chapters-list::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* Tailwind slate-500 */
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-slate-50 min-h-[calc(100vh-theme(space.16)-theme(space.32))] font-sans antialiased text-slate-800">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-8 md:mb-10">
+            <h1 class="text-3xl sm:text-4xl font-bold text-[#091e65] mb-4 sm:mb-0">My Offline Library</h1>
+            <div class="flex items-center space-x-3">
+                <div class="relative w-full sm:w-64">
+                    <input type="text" id="search-downloads-input" placeholder="Search in downloads..." class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none placeholder-slate-400 text-slate-800 text-sm shadow-sm transition duration-150 ease-in-out bg-white focus:bg-white">
+                    <div class="absolute left-0 top-0 bottom-0 flex items-center pl-3 text-slate-400 pointer-events-none">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                    </div>
+                </div>
+                <button id="clear-all-downloads-btn" class="flex-shrink-0 text-sm text-red-600 hover:text-red-700 bg-red-100 hover:bg-red-200 px-4 py-2.5 rounded-lg font-medium transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 shadow-sm hover:shadow">
+                    <svg class="w-4 h-4 inline -ml-1 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12.56 0c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                    Clear All
+                </button>
+            </div>
+        </div>
+
+        <div id="downloaded-audiobooks-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            </div>
+
+        <div id="no-downloads-message" class="text-slate-500 text-center py-20 hidden">
+            <svg class="mx-auto h-16 w-16 text-slate-400 mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            <h3 class="text-xl font-semibold text-slate-700 mb-2">No Downloads Yet</h3>
+            <p class="text-slate-500 mb-6 max-w-md mx-auto">Audiobooks and chapters you download for offline listening will appear here. Start exploring and build your offline library!</p>
+            <a href="{% url 'AudioXApp:home' %}" class="inline-flex items-center bg-[#091e65] text-white px-6 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-colors shadow-md hover:shadow-lg">
+                <svg class="w-5 h-5 mr-2 -ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                Browse Audiobooks
+            </a>
+        </div>
+    </div>
+</div>
+
+<div id="offline-player-bar" class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.07)] p-3 sm:p-4 z-[60] transform translate-y-full transition-transform duration-300 ease-in-out">
+    <audio id="offlineAudioPlayer" class="hidden" preload="metadata"></audio>
+    <div class="max-w-screen-xl mx-auto flex items-center gap-3 sm:gap-4">
+        <div class="flex items-center space-x-3 flex-shrink-0 min-w-0 w-1/3 sm:w-1/4 md:w-1/5 lg:max-w-xs">
+            <img id="offline-player-cover-image" src="https://placehold.co/64x64/e2e8f0/94a3b8?text=AudioX&font=sans" alt="Now Playing" class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover shadow-sm border border-slate-200">
+            <div class="overflow-hidden">
+                <p id="offline-player-episode-title" class="text-sm font-semibold text-slate-800 truncate" title="Select an episode">Select an episode</p>
+                <p id="offline-player-audiobook-title" class="text-xs text-slate-500 truncate mt-0.5">Audiobook Title</p>
+            </div>
+        </div>
+
+        <div class="flex-grow flex flex-col items-center space-y-1.5 min-w-0">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button id="offline-player-prev-button" title="Previous Episode" class="p-2 text-slate-500 hover:text-[#091e65] disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1">
+                    <svg class="h-5 w-5 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M8.447 13.947A1 1 0 017 13.242V6.758a1 1 0 011.447-.895l5 3.242a1 1 0 010 1.789l-5 3.242zM3 5a1 1 0 011-1h1a1 1 0 110 2H4a1 1 0 01-1-1z" /></svg>
+                </button>
+                <button id="offline-player-play-pause-button" title="Play/Pause" class="p-3 bg-[#091e65] text-white rounded-full shadow-lg hover:bg-opacity-90 transition transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-white">
+                    <svg id="offline-player-play-icon" class="h-6 w-6 sm:h-7 sm:w-7" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.596 4.237a1.5 1.5 0 012.808 0l5.665 9.914A1.5 1.5 0 0114.565 17H5.435a1.5 1.5 0 01-1.504-2.849l5.665-9.914z" clip-rule="evenodd" transform="rotate(90 10 10)" /></svg>
+                    <svg id="offline-player-pause-icon" class="h-6 w-6 sm:h-7 sm:w-7 hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5.75 4.75a.75.75 0 00-1.5 0v10.5a.75.75 0 001.5 0V4.75zM15.75 4.75a.75.75 0 00-1.5 0v10.5a.75.75 0 001.5 0V4.75z" /></svg>
+                </button>
+                <button id="offline-player-next-button" title="Next Episode" class="p-2 text-slate-500 hover:text-[#091e65] disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1">
+                    <svg class="h-5 w-5 sm:h-6 sm:w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M11.553 6.053A1 1 0 0113 6.758v6.484a1 1 0 01-1.447.895l-5-3.242a1 1 0 010-1.789l5-3.242zM17 5a1 1 0 00-1-1h-1a1 1 0 100 2h1a1 1 0 001-1z" /></svg>
+                </button>
+            </div>
+            <div class="w-full flex items-center space-x-2 sm:space-x-3 px-1">
+                <span id="offline-player-current-time" class="text-xs text-slate-500 font-mono w-10 text-right tabular-nums">0:00</span>
+                <input type="range" id="offline-player-seek-bar" value="0" max="100" step="0.1" class="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#091e65] focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[#091e65]">
+                <span id="offline-player-duration" class="text-xs text-slate-500 font-mono w-10 text-left tabular-nums">0:00</span>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
+            <button id="offline-player-speed-button" title="Playback Speed" class="p-1.5 text-slate-600 hover:text-[#091e65] hover:bg-indigo-50 rounded-full transition text-xs font-semibold w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center border border-slate-300 hover:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-[#091e65] tabular-nums">1x</button>
+            <button id="offline-player-close-button" title="Close Player" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition focus:outline-none focus:ring-1 focus:ring-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="delete-confirm-modal" class="modal-inactive fixed inset-0 bg-slate-900/70 backdrop-blur-sm items-center justify-center p-4 z-[70] transition-opacity duration-300 ease-out">
+    <div class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-md transform transition-all duration-300 ease-out">
+        <div class="flex justify-between items-start mb-4">
+            <h3 id="delete-modal-title" class="text-xl font-semibold text-[#091e65]">Confirm Deletion</h3>
+            <button id="delete-modal-close-icon" class="text-slate-400 hover:text-slate-600 p-1 -mr-2 -mt-2 rounded-full hover:bg-slate-100 transition-colors">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <p id="delete-modal-message" class="text-slate-600 mb-6 text-sm leading-relaxed">Are you sure you want to delete this item? This action cannot be undone.</p>
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+            <button id="delete-modal-cancel-btn" class="w-full sm:w-auto px-5 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400">Cancel</button>
+            <button id="delete-modal-confirm-btn" class="w-full sm:w-auto px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">Delete</button>
+        </div>
+    </div>
+</div>
+
+<div id="share-modal" class="modal-inactive fixed inset-0 bg-slate-900/70 backdrop-blur-sm items-center justify-center p-4 z-[70] transition-opacity duration-300 ease-out">
+    <div class="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-lg transform transition-all duration-300 ease-out">
+        <div class="flex justify-between items-center mb-5">
+            <h3 id="share-modal-title" class="text-xl font-semibold text-[#091e65]">Share Chapter</h3>
+            <button id="share-modal-close-icon" class="text-slate-400 hover:text-slate-600 p-1 -mr-2 -mt-1 rounded-full hover:bg-slate-100 transition-colors">
+                 <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <p class="text-sm text-slate-600 mb-3">Share this direct link to the chapter:</p>
+        <div class="flex space-x-2 mb-4">
+            <input type="text" id="share-modal-link-input" readonly class="flex-grow px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm bg-slate-50 text-slate-700 focus:ring-1 focus:ring-[#091e65] focus:border-[#091e65]">
+            <button id="share-modal-copy-btn" class="px-4 py-2 bg-[#091e65] text-white text-sm font-medium rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1 transition-colors flex items-center">
+                <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>
+                Copy
+            </button>
+        </div>
+        <p id="share-modal-feedback" class="text-xs text-green-600 h-4"></p>
+         <div class="mt-6 border-t border-slate-200 pt-5">
+            <p class="text-sm text-slate-600 mb-3">Or share via:</p>
+            <div class="flex space-x-3" id="share-modal-social-buttons">
+                {/* Social share buttons will be added by JS */}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascript_extra %}
+    {{ block.super }}
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (window.OfflineManager && typeof window.OfflineManager.initDB === 'function') {
+            try {
+                await window.OfflineManager.initDB();
+                if (typeof window.OfflineManager.populateDownloadsPage === 'function') {
+                    await window.OfflineManager.populateDownloadsPage();
+                } else {
+                    console.error("OfflineManager.populateDownloadsPage is not a function.");
+                    document.getElementById('no-downloads-message')?.classList.remove('hidden');
+                }
+                if (typeof window.OfflineManager.initOfflinePlayer === 'function') {
+                    window.OfflineManager.initOfflinePlayer();
+                } else {
+                    console.error("OfflineManager.initOfflinePlayer is not a function.");
+                }
+                 if (typeof window.OfflineManager.initDownloadsPageModals === 'function') { // New function to init modals
+                    window.OfflineManager.initDownloadsPageModals();
+                } else {
+                    console.error("OfflineManager.initDownloadsPageModals is not a function.");
+                }
+            } catch (error) {
+                console.error("Error initializing downloads page:", error);
+                const listEl = document.getElementById('downloaded-audiobooks-list');
+                if (listEl) listEl.innerHTML = `<p class="text-red-500 text-center py-10">Error: Could not load offline downloads. ${error.message}</p>`;
+                document.getElementById('no-downloads-message')?.classList.add('hidden'); // Hide default msg, show error instead
+            }
+        } else {
+            console.error("OfflineManager not available or initDB is not a function.");
+            const listEl = document.getElementById('downloaded-audiobooks-list');
+            if (listEl) listEl.innerHTML = '<p class="text-red-500 text-center py-10">Error: Offline functionality could not be initialized.</p>';
+            document.getElementById('no-downloads-message')?.classList.remove('hidden');
+        }
+    });
+    </script>
+{% endblock %}

@@ -117,9 +117,9 @@
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <p class="text-md font-semibold text-white truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
-                                    {% if subscription_type == 'FR' %}
+                                    {% if user.subscription_type == 'FR' %}
                                         <p class="text-xs text-yellow-300">Free Plan</p>
-                                    {% elif subscription_type == 'PR' %}
+                                    {% elif user.subscription_type == 'PR' %}
                                         <p class="text-xs font-medium text-emerald-300 flex items-center">
                                             <i class="fas fa-star text-xs mr-1 text-yellow-300"></i> Premium Plan
                                         </p>
@@ -128,7 +128,7 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            {% if subscription_type == 'FR' %}
+                            {% if user.subscription_type == 'FR' %}
                                 <a href="{% url 'AudioXApp:subscribe' %}" class="block w-full mt-4 py-1.5 px-3 text-center bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-[#091e65] transition duration-150 ease-in-out shadow-sm hover:shadow-md">
                                     <i class="fas fa-arrow-up mr-1"></i> Upgrade to Premium
                                 </a>
@@ -138,13 +138,13 @@
                             <a href="{% url 'AudioXApp:myprofile' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
                                 <i class="fas fa-user-circle w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> My Profile
                             </a>
-                            {% if subscription_type == 'PR' %}
+                            {% if user.subscription_type == 'PR' %}
                                 <a href="{% url 'AudioXApp:managesubscription' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
                                     <i class="fas fa-cog w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> Manage Subscription
                                 </a>
                             {% endif %}
 
-                            <a href="{% url 'AudioXApp:billing_history' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
+                            <a href="{% url 'AudioXApp:listening_history_page' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
                                 <i class="fas fa-history w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> History
                             </a>
 
@@ -155,7 +155,7 @@
                                 <i class="fas fa-wallet w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> My Wallet
                             </a>
                             <a href="{% url 'AudioXApp:billing_history' %}" class="flex items-center px-5 py-2.5 text-sm text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out group focus:outline-none focus:bg-blue-100 focus:text-[#091e65]" role="menuitem" tabindex="-1">
-                                <i class="fas fa-history w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> Billing History
+                                <i class="fas fa-file-invoice-dollar w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> Billing History
                             </a>
                                 <a href="{% url 'AudioXApp:my_library_page' %}" class="flex items-center px-5 py-2.5 text-sm font-medium rounded-md text-gray-700 hover:bg-blue-100 hover:text-[#091e65] transition duration-150 ease-in-out focus:outline-none focus:bg-blue-100 focus:text-[#091e65]">
                                 <i class="fas fa-bookmark w-5 mr-3 text-lg text-gray-500 group-hover:text-[#091e65] transition-colors"></i> My Library
@@ -229,12 +229,12 @@
                             <div class="flex items-center justify-between">
                                 <p class="text-md font-semibold text-white truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
                                 <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium shadow-sm whitespace-nowrap
-                                {% if subscription_type == 'FR' %} bg-yellow-500/10 text-yellow-300 ring-1 ring-inset ring-yellow-500/20
-                                {% elif subscription_type == 'PR' %} bg-gradient-to-r from-green-500/10 via-emerald-600/10 to-teal-600/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/30
+                                {% if user.subscription_type == 'FR' %} bg-yellow-500/10 text-yellow-300 ring-1 ring-inset ring-yellow-500/20
+                                {% elif user.subscription_type == 'PR' %} bg-gradient-to-r from-green-500/10 via-emerald-600/10 to-teal-600/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/30
                                 {% else %} bg-gray-500/10 text-gray-400 ring-1 ring-inset ring-gray-500/20 {% endif %}">
-                                    {% if subscription_type == 'FR' %}
+                                    {% if user.subscription_type == 'FR' %}
                                         <i class="fas fa-user mr-1 opacity-70 text-xs"></i> Free
-                                    {% elif subscription_type == 'PR' %}
+                                    {% elif user.subscription_type == 'PR' %}
                                         <i class="fas fa-star mr-1 text-yellow-400 text-xs"></i> Premium
                                     {% else %}
                                         No Plan
@@ -315,7 +315,7 @@
             <nav class="flex-grow px-4 pb-4 space-y-1">
                 <p class="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-indigo-200 tracking-wider">Navigation</p>
                 {% if user.is_authenticated %}
-                    <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                    <a href="{% url 'AudioXApp:trending_audiobooks' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
                         <i class="fas fa-fire mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Trending Audiobooks
                     </a>
                     <a href="{% url 'AudioXApp:my_library_page' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
@@ -328,7 +328,7 @@
                     <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
                         <i class="fas fa-home mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Home
                     </a>
-                    <a href="/browse" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                    <a href="{% url 'AudioXApp:trending_audiobooks' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
                         <i class="fas fa-fire mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Trending Audiobooks
                     </a>
                 {% endif %}
@@ -418,7 +418,7 @@
                         <div>
                             <h3 class="font-semibold text-white mb-3 text-sm uppercase tracking-wider">General</h3>
                             <ul class="space-y-2">
-                                <li><a href="/browse" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Browse</a></li>
+                                <li><a href="{% url 'AudioXApp:trending_audiobooks' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Browse</a></li>
                                 {% if user.is_authenticated %}
                                     {% if is_banned %}
                                         <li><span class="text-sm text-red-300 cursor-not-allowed opacity-70">Creator Portal</span></li>
@@ -510,6 +510,22 @@
             },
             buttonsStyling: false,
         });
+
+        // Define showCustomAlert globally using SwalStyled
+        window.showCustomAlert = function(title, message, icon = 'info', confirmButtonText = 'OK', customHtml = null) {
+            SwalStyled.fire({
+                title: title,
+                html: customHtml || `<p>${message}</p>`, // Use customHtml if provided, else message
+                icon: icon,
+                confirmButtonText: confirmButtonText,
+                customClass: { // Can add more specific classes here if needed for this modal type
+                    title: 'text-xl sm:text-2xl font-bold text-[#091e65] pt-6 px-6 pb-2 text-center', // Center title for alerts
+                    htmlContainer: 'text-base text-gray-700 text-center px-6 pb-6 leading-relaxed', // Center text
+                    icon: 'mt-6 mx-auto mb-4', // Adjust icon margin
+                }
+            });
+        };
+
 
         // Slide-out Menu Functionality
         const menuToggle = document.getElementById('menu-toggle');
@@ -884,12 +900,12 @@
                                     '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
 
                 const popupHtml = `<div class="space-y-4">
-                                            <p class="text-gray-700"><i class="fas fa-info-circle mr-1.5 text-[#091e65]"></i>Your previous application requires attention for the following reason:</p>
-                                            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md shadow-sm" role="alert">
-                                                <p class="font-medium">${reason}</p>
-                                            </div>
-                                            <p class="text-sm text-gray-600">${attemptsText}</p>
-                                        </div>`;
+                                        <p class="text-gray-700"><i class="fas fa-info-circle mr-1.5 text-[#091e65]"></i>Your previous application requires attention for the following reason:</p>
+                                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md shadow-sm" role="alert">
+                                            <p class="font-medium">${reason}</p>
+                                        </div>
+                                        <p class="text-sm text-gray-600">${attemptsText}</p>
+                                    </div>`;
 
                 SwalStyled.fire({
                     title: 'Application Status',
@@ -917,12 +933,12 @@
 
                 const reason = djangoContext.banReason || 'No specific reason provided by the administrator.';
                 const banPopupHtml = `<div class="space-y-4">
-                                            <p class="text-gray-700"><i class="fas fa-exclamation-triangle mr-1.5 text-red-600"></i> Your Creator Profile is currently blocked for the following reason:</p>
-                                            <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 rounded-md shadow-sm" role="alert">
-                                                <p class="font-medium">${reason}</p>
-                                            </div>
-                                            <p class="text-sm text-gray-600">If you believe this is an error or wish to appeal this decision, please contact our support team.</p>
-                                        </div>`;
+                                        <p class="text-gray-700"><i class="fas fa-exclamation-triangle mr-1.5 text-red-600"></i> Your Creator Profile is currently blocked for the following reason:</p>
+                                        <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 rounded-md shadow-sm" role="alert">
+                                            <p class="font-medium">${reason}</p>
+                                        </div>
+                                        <p class="text-sm text-gray-600">If you believe this is an error or wish to appeal this decision, please contact our support team.</p>
+                                    </div>`;
                 SwalStyled.fire({
                     title: 'Creator Profile Blocked',
                     html: banPopupHtml,
@@ -967,11 +983,11 @@
 
         if (djangoContext && djangoContext.showWelcomePopup) {
             const welcomeHtml = `<div class="text-center">
-                                            <div class="text-6xl mb-4 text-teal-500 animate-bounce">🎉</div>
-                                            <h2 class="text-2xl font-bold text-[#091e65] mb-3">Welcome Aboard!</h2>
-                                            <p class="text-gray-700 mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p>
-                                            <p class="text-gray-700 px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p>
-                                        </div>`;
+                                        <div class="text-6xl mb-4 text-teal-500 animate-bounce">🎉</div>
+                                        <h2 class="text-2xl font-bold text-[#091e65] mb-3">Welcome Aboard!</h2>
+                                        <p class="text-gray-700 mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p>
+                                        <p class="text-gray-700 px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p>
+                                    </div>`;
             SwalStyled.fire({
                 html: welcomeHtml,
                 showConfirmButton: true,
@@ -1025,6 +1041,7 @@
 
     function redirectToLanguage() {
         const selector = document.getElementById('language-selector');
+        if (!selector) return; // Added safety check
         const selectedLang = selector.value;
 
         if (selectedLang === 'English') {
@@ -1057,5 +1074,67 @@
     });
     </script>
 
-    {% block javascript_extra %}{% endblock %} </body>
+    {% block javascript_extra %}
+    {{ block.super }}
+
+    <script src="{% static 'js/offline_manager.js' %}" defer></script>
+
+    {# Service Worker Registration #}
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register("/service_worker.js", { scope: '/' })
+                    .then(registration => {
+                        console.log('Service Worker: Registered successfully with scope: ', registration.scope);
+
+                        // Optional: Listen for new worker waiting to activate
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            if (newWorker) {
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        // New update available
+                                        console.log('Service Worker: New version available and installed. Ready to activate.');
+                                        // You could prompt the user to refresh here if desired using a toast/modal
+                                        // Example: showUpdateAvailablePrompt(registration);
+                                    }
+                                });
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Service Worker: Registration failed: ', error);
+                    });
+            });
+
+            // Optional: Controller change listener - useful if a new SW takes over.
+            let refreshing;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                console.log('Service Worker: Controller has changed. Reloading page for new version.');
+                window.location.reload();
+                refreshing = true;
+            });
+        } else {
+            console.warn('Service Worker: Not supported by this browser.');
+        }
+
+        // Optional: Function to show an update prompt (you'd need to implement the UI for this)
+        // function showUpdateAvailablePrompt(registration) {
+        //     const userConfirmation = confirm("A new version of the app is available. Refresh to update?");
+        //     if (userConfirmation) {
+        //         if (registration.waiting) {
+        //             registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        //         }
+        //     }
+        // }
+    </script>
+
+
+
+{% endblock %}
+
+{% block javascript %}
+    {% endblock javascript %}
+</body>
 </html>

@@ -3,118 +3,131 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_protect # Kept as per original
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.db.models import Prefetch
+# from django.db.models import Prefetch # Not used in this snippet
 
+# If utils.py is in the same directory (AudioXApp/views/utils.py):
+from .utils import _get_full_context
+# If utils.py is one level up (AudioXApp/utils.py) and views is AudioXApp/views/:
+# from ..utils import _get_full_context
 
-from ..models import User, Audiobook, Chapter, ListeningHistory, Creator 
+from ..models import User, Audiobook, Chapter, ListeningHistory 
 
 import logging
+import json
+
 logger = logging.getLogger(__name__)
 
 @login_required
-@require_POST # Ensures this view only accepts POST requests
-@csrf_protect   # Ensures CSRF token is present and valid for POST
+@require_POST
+@csrf_protect # Kept as per original
 def update_listening_progress(request):
-    """
-    Handles AJAX requests to update the listening progress for a user and an audiobook.
-    Expects 'audiobook_id' and 'progress_seconds' in POST data.
-    'chapter_id' is optional.
-    """
+    # ... (Your existing update_listening_progress code remains unchanged) ...
     try:
-        audiobook_id = request.POST.get('audiobook_id')
-        # Convert progress_seconds to float first for flexibility, then to int
-        progress_seconds_str = request.POST.get('progress_seconds', '0')
-        progress_seconds = int(float(progress_seconds_str))
-        
-        chapter_id = request.POST.get('chapter_id', None)
+        if request.content_type == 'application/json':
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON received for progress update by user: {request.user.username if request.user.is_authenticated else 'Anonymous'}")
+                return JsonResponse({'status': 'error', 'message': 'Invalid JSON format.'}, status=400)
+            
+            audiobook_id = data.get('audiobook_id')
+            progress_seconds_str = str(data.get('progress_seconds', '0')) 
+            chapter_id_str = data.get('chapter_id') 
+            if chapter_id_str is not None: 
+                chapter_id_str = str(chapter_id_str)
+        else: 
+            logger.warning(f"Progress update received with unexpected content type: {request.content_type} by user: {request.user.username if request.user.is_authenticated else 'Anonymous'}")
+            return JsonResponse({'status': 'error', 'message': 'Unsupported content type. Expected application/json.'}, status=415)
 
-        if not audiobook_id:
-            logger.warning(f"Update progress attempt with no audiobook_id by user: {request.user.user_id}")
+        if not audiobook_id: 
+            logger.warning(f"Update progress attempt with no or invalid audiobook_id ('{audiobook_id}') by user: {request.user.username if request.user.is_authenticated else 'Anonymous'}")
             return JsonResponse({'status': 'error', 'message': 'Audiobook ID is required.'}, status=400)
 
-        # Use get_object_or_404 for cleaner handling of non-existent objects
-        audiobook = get_object_or_404(Audiobook, audiobook_id=audiobook_id)
+        try:
+            progress_seconds = int(float(progress_seconds_str))
+            if progress_seconds < 0:
+                progress_seconds = 0
+        except ValueError:
+            logger.warning(f"Invalid progress_seconds format: '{progress_seconds_str}' by user {request.user.username if request.user.is_authenticated else 'Anonymous'}")
+            return JsonResponse({'status': 'error', 'message': 'Invalid progress format.'}, status=400)
+
+        audiobook = get_object_or_404(Audiobook, audiobook_id=str(audiobook_id)) 
         
         current_chapter_obj = None
-        if chapter_id and chapter_id != 'null' and chapter_id != 'undefined': # Check for JS null/undefined strings
+        if chapter_id_str and chapter_id_str not in ['null', 'undefined', '']:
             try:
-                # Ensure chapter belongs to the audiobook for integrity
-                current_chapter_obj = get_object_or_404(Chapter, chapter_id=chapter_id, audiobook=audiobook)
+                if chapter_id_str.startswith('ext-'):
+                    logger.info(f"Received external chapter_id '{chapter_id_str}' for progress update. Current_chapter will not be set in DB. User: {request.user.username}")
+                else:
+                    current_chapter_obj = Chapter.objects.get(chapter_id=chapter_id_str, audiobook=audiobook)
             except Chapter.DoesNotExist:
-                logger.warning(f"Invalid chapter_id '{chapter_id}' provided for audiobook '{audiobook_id}' by user {request.user.user_id}")
-                # Depending on strictness, you might choose to not fail the entire update
-                # For now, we'll allow progress update without a valid chapter if chapter_id was problematic
-                pass 
-            except ValueError: # If chapter_id is not a valid integer
-                logger.warning(f"Invalid format for chapter_id '{chapter_id}' for audiobook '{audiobook_id}' by user {request.user.user_id}")
-                pass
+                logger.warning(f"Chapter_id '{chapter_id_str}' not found or does not belong to audiobook '{audiobook_id}' for user {request.user.username if request.user.is_authenticated else 'Anonymous'}.")
+            except ValueError:
+                logger.warning(f"Invalid chapter_id format for DB lookup: '{chapter_id_str}' by user {request.user.username if request.user.is_authenticated else 'Anonymous'}")
 
-
-        # update_or_create is efficient for this use case
         history_entry, created = ListeningHistory.objects.update_or_create(
             user=request.user,
             audiobook=audiobook,
             defaults={
                 'progress_seconds': progress_seconds,
-                'current_chapter': current_chapter_obj,
-                'last_listened_at': timezone.now() # This will be set by auto_now=True on the model field as well
+                'current_chapter': current_chapter_obj, 
+                'last_listened_at': timezone.now()
             }
         )
         
         action = "created" if created else "updated"
-        logger.info(f"Listening progress {action} for user {request.user.username} on audiobook '{audiobook.title}'. Progress: {progress_seconds}s, Chapter: {current_chapter_obj.chapter_name if current_chapter_obj else 'N/A'}")
+        chapter_name_log = current_chapter_obj.chapter_name if current_chapter_obj else (chapter_id_str if chapter_id_str else 'N/A')
+        logger.info(f"Listening progress {action} for user {request.user.username} on audiobook '{audiobook.title}'. Progress: {progress_seconds}s, Chapter: {chapter_name_log}")
         return JsonResponse({'status': 'success', 'message': f'Progress {action}.'})
 
     except Audiobook.DoesNotExist:
-        logger.error(f"Audiobook not found during progress update. ID: {audiobook_id}, User: {request.user.username}")
+        logger.error(f"Audiobook not found during progress update. ID: {audiobook_id if 'audiobook_id' in locals() else 'Not Parsed'}, User: {request.user.username if request.user.is_authenticated else 'Anonymous'}")
         return JsonResponse({'status': 'error', 'message': 'Audiobook not found.'}, status=404)
-    except ValueError as ve: # Handles issues with converting progress_seconds
-        logger.error(f"Invalid progress format during update. User: {request.user.username}, Progress: '{progress_seconds_str}'. Error: {ve}")
-        return JsonResponse({'status': 'error', 'message': 'Invalid progress format.'}, status=400)
     except Exception as e:
-        logger.error(f"Unexpected error in update_listening_progress for user {request.user.username}: {str(e)}", exc_info=True)
+        logger.error(f"Unexpected error in update_listening_progress for user {request.user.username if request.user.is_authenticated else 'Anonymous'}: {str(e)}", exc_info=True)
         return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred while updating progress.'}, status=500)
 
 
 @login_required
-@ensure_csrf_cookie # Good practice for pages that might contain forms or JS making POSTs, though not strictly needed if this page is read-only.
 def listening_history_page(request):
     """
     Displays the listening history for the logged-in user.
     """
     try:
-        # Eager load related Audiobook and Chapter data to reduce DB queries in the template
-        # Also prefetch creator information if you display it on the history card
         history_items = ListeningHistory.objects.filter(user=request.user).select_related(
-            'audiobook',          # Direct foreign key
-            'current_chapter',    # Direct foreign key
-            'audiobook__creator', # Nested foreign key (Audiobook -> Creator)
-            'audiobook__creator__user' # Further nesting if you need User details of Creator
-        ).order_by('-last_listened_at') # Already default ordering in model, but explicit here is fine
+            'audiobook',
+            'audiobook__creator', 
+            'current_chapter'
+        ).order_by('-last_listened_at')
 
-        # Example of prefetching only specific fields from related models for optimization:
-        # history_items = ListeningHistory.objects.filter(user=request.user).prefetch_related(
-        #     Prefetch('audiobook', queryset=Audiobook.objects.only('audiobook_id', 'title', 'slug', 'cover_image', 'author', 'duration')),
-        #     Prefetch('current_chapter', queryset=Chapter.objects.only('chapter_id', 'chapter_name')),
-        #     Prefetch('audiobook__creator', queryset=Creator.objects.only('creator_name')) 
-        # ).order_by('-last_listened_at')
-
-
-        context = {
+        # --- MODIFICATION START ---
+        page_specific_context = {
             'history_items': history_items,
             'page_title': 'My Listening History',
-            'meta_description': 'View your audiobook listening history and resume where you left off.' # For SEO
+            'meta_description': 'View your audiobook listening history and resume where you left off.'
         }
-        return render(request, 'user/listening_history.html', context)
+
+        common_context = _get_full_context(request)
+        final_context = {**common_context, **page_specific_context}
+        # --- MODIFICATION END ---
+
+        return render(request, 'user/listening_history.html', final_context) # Use final_context
+
     except Exception as e:
-        logger.error(f"Error rendering listening_history_page for user {request.user.username}: {str(e)}", exc_info=True)
-        context = {
+        logger.error(f"Error rendering listening_history_page for user {request.user.username if request.user.is_authenticated else 'Anonymous'}: {str(e)}", exc_info=True)
+        
+        # --- MODIFICATION START (for error case too) ---
+        page_specific_context_error = {
             'history_items': [],
             'page_title': 'My Listening History',
-            'error_message': 'Could not load your listening history at this time. Please try again later.'
+            'error_message': 'Could not load your listening history at this time. Please try again later.',
+            'meta_description': 'View your audiobook listening history.' # Added meta_description
         }
-        return render(request, 'user/listening_history.html', context, status=500)
-
+        common_context_error = _get_full_context(request) # Still provide common context
+        final_context_error = {**common_context_error, **page_specific_context_error}
+        # --- MODIFICATION END ---
+        
+        return render(request, 'user/listening_history.html', final_context_error, status=500)
