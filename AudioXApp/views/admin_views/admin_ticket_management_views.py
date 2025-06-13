@@ -1,7 +1,6 @@
 # AudioXApp/views/admin_views/admin_ticket_management_views.py
 
 from django.shortcuts import render, redirect, get_object_or_404
-# from django.contrib.auth.decorators import login_required # Not used directly here for admin views
 from django.db.models import Count, Q 
 from django.utils import timezone
 from datetime import timedelta
@@ -12,24 +11,17 @@ import logging
 
 from ...models import Ticket, Admin, TicketCategory, TicketMessage, User 
 from ..utils import _get_full_context
-from ..decorators import admin_role_required # Import the correct decorator
+from ..decorators import admin_role_required
 
 logger = logging.getLogger(__name__)
 
-# The old admin_required decorator is no longer needed here if all views use admin_role_required
-# def admin_required(view_func):
-#     def _wrapped_view(request, *args, **kwargs):
-#         if not request.session.get('admin_id'):
-#             return redirect('AudioXApp:adminlogin')
-#         return view_func(request, *args, **kwargs)
-#     return _wrapped_view
+# --- Admin Support Tickets Overview ---
 
-@admin_role_required('manage_support') # MODIFIED: Use admin_role_required
+@admin_role_required('manage_support')
 def admin_manage_tickets_overview_view(request):
-    # _get_full_context will now likely get admin_user from request.admin_user (set by the decorator)
     context = _get_full_context(request) 
     context['page_title'] = "Manage Support Tickets"
-    context['active_page'] = "manage_support_overview" # This will make the "Support" tab active
+    context['active_page'] = "manage_support_overview"
 
     total_tickets_count = Ticket.objects.count()
     open_statuses = [Ticket.StatusChoices.OPEN, Ticket.StatusChoices.PROCESSING, Ticket.StatusChoices.AWAITING_USER, Ticket.StatusChoices.REOPENED]
@@ -54,30 +46,25 @@ def admin_manage_tickets_overview_view(request):
         daily_labels.append(current_date.strftime("%a, %b %d"))
         daily_new_tickets_data.append(Ticket.objects.filter(created_at__date=current_date).count())
         daily_closed_tickets_data.append(Ticket.objects.filter(Q(status__in=closed_statuses) & (Q(resolved_at__date=current_date) | Q(closed_at__date=current_date))).count())
-        # For open snapshot, ensure we consider tickets that were open on that day.
-        # This might need a more complex query: created before/on current_date AND (closed after current_date OR still not closed)
-        # Simplified version:
         daily_open_tickets_snapshot_data.append(
             Ticket.objects.filter(created_at__date__lte=current_date)
                           .exclude(Q(status__in=closed_statuses) & Q(updated_at__date__lt=current_date))
                           .count()
         )
 
-
     context['daily_chart_labels_json'] = json.dumps(daily_labels)
     context['daily_new_tickets_data_json'] = json.dumps(daily_new_tickets_data)
     context['daily_closed_tickets_data_json'] = json.dumps(daily_closed_tickets_data)
     context['daily_open_tickets_snapshot_json'] = json.dumps(daily_open_tickets_snapshot_data)
 
-    # Ensure the template path is correct. The URL name suggests this is the overview page.
     return render(request, 'admin/manage_support/admin_manage_tickets_overview.html', context)
 
-@admin_role_required('manage_support') # MODIFIED: Use admin_role_required
+# --- All Tickets List View ---
+
+@admin_role_required('manage_support')
 def admin_all_tickets_list_view(request):
     context = _get_full_context(request)
     context['page_title'] = "All Support Tickets"
-    # Set active_page to ensure "Support" tab is highlighted.
-    # The specific value depends on how you want to differentiate, but it must start with "manage_support"
     context['active_page'] = "manage_support_all_tickets" 
     context['list_title'] = "All Tickets"
 
@@ -97,7 +84,7 @@ def admin_all_tickets_list_view(request):
             Q(ticket_display_id__icontains=search_query) |
             Q(user__username__icontains=search_query) |
             Q(user__email__icontains=search_query) |
-            Q(subject__icontains=search_query) # Added subject to search
+            Q(subject__icontains=search_query)
         )
 
     context['categories'] = TicketCategory.objects.all()
@@ -115,7 +102,9 @@ def admin_all_tickets_list_view(request):
     
     return render(request, 'admin/manage_support/admin_ticket_list_template.html', context)
 
-@admin_role_required('manage_support') # MODIFIED: Use admin_role_required
+# --- Open Tickets List View ---
+
+@admin_role_required('manage_support')
 def admin_open_tickets_list_view(request):
     context = _get_full_context(request)
     context['page_title'] = "Open Support Tickets"
@@ -160,7 +149,9 @@ def admin_open_tickets_list_view(request):
     
     return render(request, 'admin/manage_support/admin_ticket_list_template.html', context)
 
-@admin_role_required('manage_support') # MODIFIED: Use admin_role_required
+# --- Closed Tickets List View ---
+
+@admin_role_required('manage_support')
 def admin_closed_tickets_list_view(request):
     context = _get_full_context(request)
     context['page_title'] = "Closed & Resolved Tickets"
@@ -205,23 +196,23 @@ def admin_closed_tickets_list_view(request):
     
     return render(request, 'admin/manage_support/admin_ticket_list_template.html', context)
 
-@admin_role_required('manage_support') # MODIFIED: Use admin_role_required
+# --- Ticket Detail View ---
+
+@admin_role_required('manage_support')
 def admin_ticket_detail_view(request, ticket_uuid):
-    context = _get_full_context(request) # This should now populate admin_user correctly
+    context = _get_full_context(request)
     ticket = get_object_or_404(Ticket.objects.select_related('user', 'category', 'creator_profile__user')
-                                       .prefetch_related('messages__user'), id=ticket_uuid)
+                                            .prefetch_related('messages__user'), id=ticket_uuid)
 
     context['page_title'] = f"Ticket {ticket.ticket_display_id} - {ticket.subject[:50]}"
-    context['active_page'] = "manage_support_detail" # Ensures "Support" tab stays active
+    context['active_page'] = "manage_support_detail"
     context['ticket'] = ticket
     context['ticket_statuses'] = Ticket.StatusChoices.choices
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        # Use admin_user from context if available, which _get_full_context should provide
         admin_user_obj = context.get('admin_user') 
         admin_user_identifier = admin_user_obj.username if admin_user_obj else "System"
-
 
         if action == 'add_reply':
             message_content = request.POST.get('message_content')
@@ -230,11 +221,10 @@ def admin_ticket_detail_view(request, ticket_uuid):
             else:
                 TicketMessage.objects.create(
                     ticket=ticket,
-                    user=None, # Reply is from admin, not a regular platform user
+                    user=None,
                     message=message_content,
                     is_admin_reply=True
                 )
-                # Update ticket status if it was awaiting user or just opened
                 if ticket.status == Ticket.StatusChoices.AWAITING_USER or ticket.status == Ticket.StatusChoices.OPEN:
                     ticket.status = Ticket.StatusChoices.PROCESSING
                 
@@ -246,10 +236,8 @@ def admin_ticket_detail_view(request, ticket_uuid):
 
         elif action == 'update_status':
             new_status = request.POST.get('new_status')
-            # admin_notes = request.POST.get('admin_notes', '') # Not used in provided code
 
             if new_status and new_status in Ticket.StatusChoices.values:
-                # old_status = ticket.status # Not used
                 ticket.status = new_status
                 ticket.assigned_admin_identifier = admin_user_identifier
 
@@ -264,5 +252,5 @@ def admin_ticket_detail_view(request, ticket_uuid):
             else:
                 messages.error(request, "Invalid status selected.")
             return redirect('AudioXApp:admin_ticket_detail', ticket_uuid=ticket.id)
-        
+    
     return render(request, 'admin/manage_support/admin_ticket_detail.html', context)

@@ -14,10 +14,10 @@ from django.utils import timezone
 
 from AudioXApp.models import ChatRoom, ChatRoomMember, User, Audiobook, ChatRoomInvitation, ChatMessage
 
-
 import logging
 logger = logging.getLogger(__name__)
 
+# --- Chatroom Feature Views ---
 
 class ChatroomWelcomeView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
@@ -33,7 +33,6 @@ class ChatroomWelcomeView(LoginRequiredMixin, View):
             'on_chat_invitations_page': False
         }
         return render(request, self.template_name, context)
-
 
 class CommunityChatroomHomeView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
@@ -62,7 +61,6 @@ class CommunityChatroomHomeView(LoginRequiredMixin, View):
             'popup_feedback': home_popup_feedback,
         }
         return render(request, self.template_name, context)
-
 
 class CreateChatRoomView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
@@ -113,11 +111,7 @@ class CreateChatRoomView(LoginRequiredMixin, View):
             ChatRoomMember.objects.update_or_create(
                 room=chat_room, 
                 user=request.user, 
-                defaults={
-                    'role': ChatRoomMember.RoleChoices.ADMIN, 
-                    'status': ChatRoomMember.StatusChoices.ACTIVE,
-                    'left_at': None
-                }
+                defaults={'role': ChatRoomMember.RoleChoices.ADMIN, 'status': ChatRoomMember.StatusChoices.ACTIVE, 'left_at': None}
             )
             
             request.session['creation_feedback'] = {'type': 'success', 'text': f"Chat room '{chat_room.name}' created successfully!"}
@@ -128,7 +122,6 @@ class CreateChatRoomView(LoginRequiredMixin, View):
             messages.error(request, "An unexpected error occurred while creating the chat room.")
             context = {'form_values': form_values, 'form_errors': {'general_error': 'Server error.'}, 'language_choices': ChatRoom.LANGUAGE_CHOICES}
             return render(request, self.template_name, context)
-
 
 class ChatRoomDetailView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
@@ -146,13 +139,9 @@ class ChatRoomDetailView(LoginRequiredMixin, View):
         if not membership or membership.status != ChatRoomMember.StatusChoices.ACTIVE:
             if chat_room.owner == request.user:
                 if not membership:
-                     membership, _ = ChatRoomMember.objects.update_or_create(
+                    membership, _ = ChatRoomMember.objects.update_or_create(
                         room=chat_room, user=request.user,
-                        defaults={
-                            'role': ChatRoomMember.RoleChoices.ADMIN, 
-                            'status': ChatRoomMember.StatusChoices.ACTIVE, 
-                            'left_at': None
-                        }
+                        defaults={'role': ChatRoomMember.RoleChoices.ADMIN, 'status': ChatRoomMember.StatusChoices.ACTIVE, 'left_at': None}
                     )
                 elif membership.status != ChatRoomMember.StatusChoices.ACTIVE:
                     membership.status = ChatRoomMember.StatusChoices.ACTIVE
@@ -160,13 +149,12 @@ class ChatRoomDetailView(LoginRequiredMixin, View):
                     membership.left_at = None
                     membership.save(update_fields=['status', 'role', 'left_at'])
             elif chat_room.status == ChatRoom.RoomStatusChoices.CLOSED:
-                 request.session['room_action_feedback'] = {'type': 'info', 'text': f"The chat room '{chat_room.name}' is closed."}
-                 return redirect(reverse('AudioXApp:chatroom_home'))
+                request.session['room_action_feedback'] = {'type': 'info', 'text': f"The chat room '{chat_room.name}' is closed."}
+                return redirect(reverse('AudioXApp:chatroom_home'))
             else: 
                 request.session['room_action_feedback'] = {'type': 'error', 'text': f"You are not an active member of '{chat_room.name}'. You might need an invitation to join or rejoin."}
                 return redirect(reverse('AudioXApp:chatroom_home'))
         
-        # Determine if the current user can invite others to this room
         can_invite_users = False
         if chat_room.is_open_for_interaction and membership and membership.status == ChatRoomMember.StatusChoices.ACTIVE:
             if chat_room.owner == request.user or membership.role == ChatRoomMember.RoleChoices.ADMIN:
@@ -180,14 +168,13 @@ class ChatRoomDetailView(LoginRequiredMixin, View):
             'chat_room': chat_room,
             'chat_log_entries': messages_qs,
             'members': active_members, 
-            'current_user_membership': membership, # This will be the active membership object
-            'can_invite_users': can_invite_users,  # New boolean flag
+            'current_user_membership': membership,
+            'can_invite_users': can_invite_users,
             'free_audiobooks': free_audiobooks,
             'on_chatroom_detail_page': True,
             'popup_feedback': popup_feedback, 
         }
         return render(request, self.template_name, context)
-
 
 class LeaveChatRoomView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
@@ -210,7 +197,7 @@ class LeaveChatRoomView(LoginRequiredMixin, View):
             ChatRoomMember.objects.filter(
                 room=chat_room, 
                 status=ChatRoomMember.StatusChoices.ACTIVE
-            ).update( # This includes the owner and other members
+            ).update(
                 status=ChatRoomMember.StatusChoices.ROOM_DISMISSED, 
                 left_at=now
             )
@@ -226,12 +213,12 @@ class LeaveChatRoomView(LoginRequiredMixin, View):
         try:
             membership = ChatRoomMember.objects.get(room=chat_room, user=request.user)
             if chat_room.status == ChatRoom.RoomStatusChoices.CLOSED:
-                 request.session['room_action_feedback'] = {'type': 'info', 'text': f"The chat room '{chat_room.name}' is closed. You are no longer an active member."}
-                 if membership.status == ChatRoomMember.StatusChoices.ACTIVE:
+                request.session['room_action_feedback'] = {'type': 'info', 'text': f"The chat room '{chat_room.name}' is closed. You are no longer an active member."}
+                if membership.status == ChatRoomMember.StatusChoices.ACTIVE:
                     membership.status = ChatRoomMember.StatusChoices.ROOM_DISMISSED
                     membership.left_at = now
                     membership.save(update_fields=['status', 'left_at'])
-                 return redirect(redirect_url_home)
+                return redirect(redirect_url_home)
 
             if membership.status == ChatRoomMember.StatusChoices.ACTIVE:
                 membership.status = ChatRoomMember.StatusChoices.LEFT
@@ -239,7 +226,7 @@ class LeaveChatRoomView(LoginRequiredMixin, View):
                 membership.save(update_fields=['status', 'left_at'])
                 request.session['room_action_feedback'] = {'type': 'success', 'text': f"You have left the room: {chat_room.name}."}
             elif membership.status == ChatRoomMember.StatusChoices.LEFT:
-                 request.session['room_action_feedback'] = {'type': 'info', 'text': f"You have already left the room: {chat_room.name}."}
+                request.session['room_action_feedback'] = {'type': 'info', 'text': f"You have already left the room: {chat_room.name}."}
             else: 
                 request.session['room_action_feedback'] = {'type': 'info', 'text': f"Your status in '{chat_room.name}' is '{membership.get_status_display()}'."}
             return redirect(redirect_url_home)
@@ -251,7 +238,6 @@ class LeaveChatRoomView(LoginRequiredMixin, View):
             request.session['room_action_feedback'] = {'type': 'error', 'text': "Could not leave the room due to an error."}
             return redirect(reverse('AudioXApp:chatroom_detail', kwargs={'room_id': room_id}))
 
-
 class InviteUserToChatRoomView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
     def post(self, request, room_id):
@@ -260,7 +246,7 @@ class InviteUserToChatRoomView(LoginRequiredMixin, View):
         redirect_url = reverse('AudioXApp:chatroom_detail', kwargs={'room_id': room_id})
         feedback_for_session = None
 
-        if not chat_room.is_open_for_interaction: # Check using the property
+        if not chat_room.is_open_for_interaction:
             feedback_for_session = {'type': 'error', 'text': f"Cannot invite users to a closed room ('{chat_room.name}')."}
             request.session['invitation_feedback'] = feedback_for_session
             return redirect(redirect_url)
@@ -290,7 +276,7 @@ class InviteUserToChatRoomView(LoginRequiredMixin, View):
                             ChatRoomInvitation.objects.create(room=chat_room, invited_by=request.user, invited_user=target_user)
                             feedback_for_session = {'type': 'success', 'text': f"Invitation sent to {target_user.full_name} ({invited_email})."}
                         except IntegrityError: 
-                             feedback_for_session = {'type': 'warning', 'text': f"Pending invitation already exists for '{target_user.full_name}'."} 
+                            feedback_for_session = {'type': 'warning', 'text': f"Pending invitation already exists for '{target_user.full_name}'."} 
                         except Exception as e:
                             logger.error(f"Error creating invitation for {invited_email} to room {room_id}: {e}", exc_info=True)
                             feedback_for_session = {'type': 'error', 'text': "Could not send invitation due to a server error."}
@@ -301,7 +287,6 @@ class InviteUserToChatRoomView(LoginRequiredMixin, View):
             request.session['invitation_feedback'] = feedback_for_session
             
         return redirect(redirect_url)
-
 
 class ChatInvitationsListView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
@@ -320,7 +305,6 @@ class ChatInvitationsListView(LoginRequiredMixin, View):
             'on_explore_chatrooms_page': False 
         }
         return render(request, self.template_name, context)
-
 
 class RespondToChatInvitationView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
@@ -346,11 +330,7 @@ class RespondToChatInvitationView(LoginRequiredMixin, View):
                     ChatRoomMember.objects.update_or_create(
                         room=chat_room, 
                         user=request.user, 
-                        defaults={
-                            'role': ChatRoomMember.RoleChoices.MEMBER, 
-                            'status': ChatRoomMember.StatusChoices.ACTIVE,
-                            'left_at': None 
-                        }
+                        defaults={'role': ChatRoomMember.RoleChoices.MEMBER, 'status': ChatRoomMember.StatusChoices.ACTIVE, 'left_at': None}
                     )
                     invitation.status = ChatRoomInvitation.StatusChoices.ACCEPTED
                     invitation.save(update_fields=['status', 'updated_at'])
@@ -377,7 +357,6 @@ class RespondToChatInvitationView(LoginRequiredMixin, View):
 
         return redirect(redirect_page)
 
-
 class MyChatRoomsView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
     template_name = 'features/community_chatrooms/my_chatrooms.html' 
@@ -385,7 +364,7 @@ class MyChatRoomsView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         my_rooms = ChatRoom.objects.filter(owner=request.user).annotate(
             num_members=Count('room_memberships__user', filter=Q(room_memberships__status=ChatRoomMember.StatusChoices.ACTIVE), distinct=True)
-        ).select_related('owner').order_by('-status', '-created_at') # Show active ones first
+        ).select_related('owner').order_by('-status', '-created_at')
         
         popup_feedback = request.session.pop('my_rooms_feedback', None)
 
@@ -397,13 +376,11 @@ class MyChatRoomsView(LoginRequiredMixin, View):
         }
         return render(request, self.template_name, context)
 
-
 class JoinedChatRoomsView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
     template_name = 'features/community_chatrooms/joined_chatrooms.html'
 
     def get(self, request, *args, **kwargs):
-        # Get active memberships in active rooms that the user does not own
         joined_memberships = ChatRoomMember.objects.filter(
             user=request.user,
             status=ChatRoomMember.StatusChoices.ACTIVE, 
@@ -415,7 +392,7 @@ class JoinedChatRoomsView(LoginRequiredMixin, View):
         joined_chat_rooms_with_data = []
         for membership in joined_memberships:
             room = membership.room
-            room.num_members = room.room_memberships.filter(status=ChatRoomMember.StatusChoices.ACTIVE).count() # Active members for this room
+            room.num_members = room.room_memberships.filter(status=ChatRoomMember.StatusChoices.ACTIVE).count()
             joined_chat_rooms_with_data.append(room)
             
         popup_feedback = request.session.pop('joined_rooms_feedback', None)
@@ -427,7 +404,6 @@ class JoinedChatRoomsView(LoginRequiredMixin, View):
             'on_explore_chatrooms_page': False
         }
         return render(request, self.template_name, context)
-
 
 class PastChatRoomsView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
@@ -441,7 +417,7 @@ class PastChatRoomsView(LoginRequiredMixin, View):
 
         past_rooms_data = []
         for membership in past_memberships:
-            room = membership.room # This can be None if room was deleted and on_delete=SET_NULL for room FK
+            room = membership.room
             if room: 
                 room.num_members = room.room_memberships.filter(status=ChatRoomMember.StatusChoices.ACTIVE).count()
                 past_rooms_data.append({
@@ -449,15 +425,6 @@ class PastChatRoomsView(LoginRequiredMixin, View):
                     'left_at': membership.left_at,
                     'status_when_left': membership.get_status_display() 
                 })
-            # If room is None (meaning it was deleted), we might still want to show some info if ChatRoomMember.room was SET_NULL
-            # However, with on_delete=models.CASCADE for ChatRoomMember.room (as it is now), this 'else' block is unlikely to be hit.
-            # If on_delete was SET_NULL, you could add:
-            # else:
-            #     past_rooms_data.append({
-            #         'room_name': "Deleted Room", # Or store room name on membership record at time of leaving
-            #         'left_at': membership.left_at,
-            #         'status_when_left': membership.get_status_display()
-            #     })
 
         history_tracking_implemented = True 
         popup_feedback = request.session.pop('past_rooms_feedback', None)

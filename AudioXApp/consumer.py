@@ -3,17 +3,17 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
-
 from .models import ChatRoom, ChatMessage, User, ChatRoomMember, Audiobook
 from django.utils import timezone
-
 import logging
-logger = logging.getLogger(__name__) # Standard logger for the app
+
+logger = logging.getLogger(__name__)
+
+# --- Chat Consumer ---
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.user = self.scope.get('user')
-
         if not self.user or not self.user.is_authenticated:
             logger.info(f"Unauthenticated WebSocket attempt. Closing connection.")
             await self.close()
@@ -86,7 +86,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 )
             except Exception as e:
                 logger.error(f"ChatConsumer.disconnect: Error removing channel from group {self.room_group_name} for user {username}: {e}", exc_info=True)
-    
+
     async def receive(self, text_data):
         if not self.user or not self.user.is_authenticated:
             logger.warning("ChatConsumer.receive: Ignoring message from unauthenticated scope.")
@@ -223,8 +223,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 message_type=message_type_enum,
                 recommended_audiobook=audiobook_instance
             )
-            # Consider removing this info log if too verbose for normal operation
-            # logger.info(f"ChatConsumer.save_chat_message: Message saved (ID: {message.message_id}) for user {user_identifier} in room {room_identifier}.")
             return message
         except Exception as e:
             logger.error(f"ChatConsumer.save_chat_message: Failed to save message for user {user_identifier} in room {room_identifier}: {e}", exc_info=True)

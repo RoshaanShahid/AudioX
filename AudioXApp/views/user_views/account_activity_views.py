@@ -1,31 +1,26 @@
 # AudioXApp/views/user_views/account_activity_views.py
 
-import datetime # For strptime
+import datetime
 import logging
-
-from django.shortcuts import render, redirect # redirect might be used if a page is under construction
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
 from django.utils import timezone
-from django.conf import settings # For settings.USE_TZ
+from django.conf import settings
 from django.urls import reverse
-
-
-from ...models import User, CoinTransaction, Audiobook, Chapter, AudiobookPurchase # Relative import
-from ..utils import _get_full_context # Relative import
+from ...models import User, CoinTransaction, Audiobook, Chapter, AudiobookPurchase
+from ..utils import _get_full_context
 
 logger = logging.getLogger(__name__)
 
-# --- Billing and Library Views ---
+# --- Billing History View ---
 
 @login_required
 def billing_history(request):
-    """Renders the user's billing history page, combining various transaction types."""
     user = request.user
     billing_items_list = []
 
-    # Date filtering logic from GET parameters
     start_date_str = request.GET.get('start_date')
     end_date_str = request.GET.get('end_date')
     start_date = None
@@ -70,13 +65,7 @@ def billing_history(request):
             'status_class': 'bg-green-100 text-green-700'
         })
 
-    subscription_pack_names_lower = [
-        name.lower() for name in [
-            'Monthly Premium Subscription', 'Annual Premium Subscription',
-            'Monthly Premium Renewal', 'Annual Premium Renewal'
-        ]
-    ]
-
+    subscription_pack_names_lower = [name.lower() for name in ['Monthly Premium Subscription', 'Annual Premium Subscription', 'Monthly Premium Renewal', 'Annual Premium Renewal']]
     all_coin_transactions_qs = CoinTransaction.objects.filter(user=user).select_related('sender', 'recipient')
     if start_date: all_coin_transactions_qs = all_coin_transactions_qs.filter(transaction_date__gte=start_date)
     if end_date: all_coin_transactions_qs = all_coin_transactions_qs.filter(transaction_date__lte=end_date)
@@ -131,39 +120,29 @@ def billing_history(request):
         })
 
     billing_items_list.sort(key=lambda x: x['date'], reverse=True)
-
     context = _get_full_context(request)
     context['billing_items'] = billing_items_list
     context['start_date_str'] = start_date_str
     context['end_date_str'] = end_date_str
-
     return render(request, 'user/billing_history.html', context)
 
+# --- Downloads Page View ---
 
 @login_required
 def my_downloads(request):
-    """Renders the user's downloads page."""
-    print(f"--- [VIEW] Reached my_downloads view for user: {request.user}, Authenticated: {request.user.is_authenticated} ---")
     context = _get_full_context(request)
-    # The actual list of downloads will be populated by client-side JavaScript
-    # (offlineLibrary.js) by reading from IndexedDB.
-    # This Django view just needs to render the container template.
-    # messages.info(request, "Your offline downloads are listed below.") # Optional message
     return render(request, 'user/my_downloads.html', context)
 
+# --- Library View (Purchased Books) ---
 
 @login_required
 def my_library(request):
-    """Renders the user's library page showing purchased audiobooks."""
     context = _get_full_context(request)
-    
     purchased_audiobooks_qs = Audiobook.objects.filter(
         audiobook_sales__user=request.user, 
         audiobook_sales__status='COMPLETED'
     ).distinct().prefetch_related(
         Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order'))
     ).order_by('-audiobook_sales__purchase_date')
-
     context['library_audiobooks'] = purchased_audiobooks_qs
     return render(request, 'user/my_library.html', context)
-

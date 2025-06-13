@@ -11,17 +11,18 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 
-from ...models import Admin # Relative import from parent directory models
-from ..decorators import admin_login_required # Relative import from parent directory views.decorators
+from ...models import Admin
+from ..decorators import admin_login_required
 
-
-# --- Admin Authentication Views ---
+# --- Admin Welcome View ---
 
 def admin_welcome_view(request):
     """Renders the admin welcome page or redirects to dashboard if logged in."""
     if request.session.get('is_admin') and request.session.get('admin_id'):
         return redirect('AudioXApp:admindashboard')
     return render(request, 'admin/admin_welcome.html')
+
+# --- Admin Signup View ---
 
 def adminsignup(request):
     """Handles admin signup."""
@@ -64,7 +65,7 @@ def adminsignup(request):
 
         try:
             roles_string = ','.join(roles_list)
-            admin = Admin.objects.create_admin(
+            Admin.objects.create_admin(
                 email=email,
                 username=username,
                 password=password,
@@ -87,6 +88,7 @@ def adminsignup(request):
         context = {'role_choices': Admin.RoleChoices.choices}
         return render(request, 'admin/admin_register.html', context)
 
+# --- Admin Login View ---
 
 def adminlogin(request):
     """Handles admin login."""
@@ -119,18 +121,14 @@ def adminlogin(request):
                 request.session['admin_id'] = admin.adminid
                 request.session['admin_username'] = admin.username
                 request.session['is_admin'] = True
-
                 try:
                     admin_roles_list = admin.get_roles_list()
                 except AttributeError:
                     admin_roles_list = []
-
                 request.session['admin_roles'] = admin_roles_list
                 request.session.set_expiry(settings.SESSION_COOKIE_AGE)
-
                 admin.last_login = timezone.now()
                 admin.save(update_fields=['last_login'])
-
                 return JsonResponse({'status': 'success', 'redirect_url': reverse('AudioXApp:admindashboard')})
             else:
                 return JsonResponse({'status': 'error', 'message': 'This admin account is inactive.'}, status=403)
@@ -142,6 +140,7 @@ def adminlogin(request):
 
     return render(request, 'admin/admin_login.html')
 
+# --- Admin Logout View ---
 
 @admin_login_required
 @require_POST

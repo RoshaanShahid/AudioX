@@ -1,4 +1,5 @@
 # AudioXApp/urls.py
+
 from django.urls import path, include
 from .views import (
     content_views,
@@ -6,9 +7,8 @@ from .views import (
     history_views,
     download_views,
     summary_views,
-    clip_views #  <--- ADDED THIS IMPORT
+    clip_views
 )
-# Import the admin view modules
 from .views.admin_views import (
     admin_auth_views,
     admin_dashboard_views,
@@ -18,7 +18,6 @@ from .views.admin_views import (
     admin_ticket_management_views,
     admin_management_views
 )
-# Import creator view modules
 from .views.creator_views import (
     dashboard_views as creator_dashboard_views,
     profile_views as creator_profile_views,
@@ -27,7 +26,6 @@ from .views.creator_views import (
     creator_tts_views,
     admin_actions_views as creator_admin_actions_views
 )
-# Import user and auth view modules
 from .views.user_views import (
     authentication_views,
     profile_views as user_profile_views,
@@ -37,13 +35,11 @@ from .views.user_views import (
     account_activity_views,
     contactsupport_views
 )
-# Import views for static/legal pages and features
 from .views.legal_views import static_pages_views
 from .views.features_views import (
     community_chatrooms_feature_views,
     document_to_audio_feature_views
 )
-
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -51,7 +47,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 app_name = 'AudioXApp'
 
 urlpatterns = [
-    # --- Content Views ---
+    # Content Views
     path('', content_views.home, name='home'),
     path('search/', content_views.search_results_view, name='search_results'),
     path("stream_audio/", content_views.stream_audio, name="stream_audio"),
@@ -62,8 +58,7 @@ urlpatterns = [
     path('punjabi/', content_views.punjabi_page, name='punjabi_page'),
     path('sindhi/', content_views.sindhi_page, name='sindhi_page'),
 
-    # --- LANGUAGE-SPECIFIC GENRE URLS ---
-    # Urdu Genres
+    # Language-Specific Genre URLs
     path('urdu/genre/novel-afsana/', content_views.urdu_genre_novel_afsana, name='urdu_genre_novel_afsana'),
     path('urdu/genre/shayari/', content_views.urdu_genre_shayari, name='urdu_genre_shayari'),
     path('urdu/genre/tareekh/', content_views.urdu_genre_tareekh, name='urdu_genre_tareekh'),
@@ -71,14 +66,10 @@ urlpatterns = [
     path('urdu/genre/mazah/', content_views.urdu_genre_mazah, name='urdu_genre_mazah'),
     path('urdu/genre/bachon-ka-adab/', content_views.urdu_genre_bachon_ka_adab, name='urdu_genre_bachon_ka_adab'),
     path('urdu/genre/mazhabi-adab/', content_views.urdu_genre_mazhabi_adab, name='urdu_genre_mazhabi_adab'),
-    # Punjabi Genres
     path('punjabi/genre/qissa-lok/', content_views.punjabi_genre_qissalok, name='punjabi_genre_qissalok'),
     path('punjabi/genre/geet/', content_views.punjabi_genre_geet, name='punjabi_genre_geet'),
-    # Sindhi Genres
     path('sindhi/genre/lok-adab/', content_views.sindhi_genre_lok_adab, name='sindhi_genre_lok_adab'),
     path('sindhi/genre/shayari/', content_views.sindhi_genre_shayari, name='sindhi_genre_shayari'),
-
-    # General English Genre pages
     path('genre/fiction/', content_views.genre_fiction, name='genre_fiction'),
     path('genre/mystery/', content_views.genre_mystery, name='genre_mystery'),
     path('genre/thriller/', content_views.genre_thriller, name='genre_thriller'),
@@ -90,15 +81,14 @@ urlpatterns = [
     path('genre/self-help/', content_views.genre_selfhelp, name='genre_selfhelp'),
     path('genre/business/', content_views.genre_business, name='genre_business'),
 
+    # AI and Feature Views
     path('creator/generate-audio-from-document/', creator_tts_views.generate_document_tts_preview_audio, name='creator_generate_audio_from_document'),
     path('trending/', content_views.trending_audiobooks_view, name='trending_audiobooks'),
     path('generate-audio/', document_to_audio_feature_views.generate_audio_from_document, name='general_generate_audio_from_document' ),
     path('audiobook/<int:audiobook_id>/get-ai-summary/', summary_views.get_ai_summary, name='get_ai_summary'),
+    path('api/clip/generate/', clip_views.generate_audio_clip, name='generate_audio_clip'),
 
-    # --- Clip Generation URL --- # <--- NEW SECTION
-    path('api/clip/generate/', clip_views.generate_audio_clip, name='generate_audio_clip'), # <--- ADDED THIS URL
-
-    # --- Legal, Company, and Contact Pages ---
+    # Legal, Company, and Contact Pages
     path('ourteam/', static_pages_views.ourteam_view, name='ourteam'),
     path('paymentpolicy/', static_pages_views.paymentpolicy_view, name='paymentpolicy'),
     path('privacypolicy/', static_pages_views.privacypolicy_view, name='privacypolicy'),
@@ -106,13 +96,13 @@ urlpatterns = [
     path('termsandconditions/', static_pages_views.termsandconditions_view, name='termsandconditions'),
     path('aboutus/', static_pages_views.aboutus_view, name='aboutus'),
 
-    # --- Contact Support & Ticketing URLs ---
+    # Contact Support & Ticketing URLs
     path('contactus/', contactsupport_views.create_ticket_view, name='contact_us'),
     path('support/api/generate-ticket-details/', contactsupport_views.ajax_ai_generate_ticket_details_view, name='ajax_ai_generate_ticket_details'),
     path('support/my-tickets/', contactsupport_views.user_ticket_list_view, name='user_ticket_list'),
     path('support/ticket/<uuid:ticket_uuid>/', contactsupport_views.user_ticket_detail_view, name='user_ticket_detail'),
 
-    # --- Auth Views ---
+    # Auth Views
     path('logout/', authentication_views.logout_view, name='logout'),
     path('signup/', authentication_views.signup, name='signup'),
     path('login/', authentication_views.login, name='login'),
@@ -123,13 +113,13 @@ urlpatterns = [
     path('reset-password/', authentication_views.reset_password_form, name='reset_password'),
     path('reset-password/confirm/', authentication_views.reset_password_confirm, name='reset_password_confirm'),
 
-    # --- User Profile & Settings Views ---
+    # User Profile & Settings Views
     path('myprofile/', user_profile_views.myprofile, name='myprofile'),
     path('update_profile/', user_profile_views.update_profile, name='update_profile'),
     path('change_password/', user_profile_views.change_password, name='change_password'),
     path('complete-profile/', user_profile_views.complete_profile, name='complete_profile'),
 
-    # --- Wallet & Subscription Views ---
+    # Wallet & Subscription Views
     path('subscribe/', subscription_views.subscribe, name='subscribe'),
     path('managesubscription/', subscription_views.managesubscription, name='managesubscription'),
     path('cancel_subscription/', subscription_views.cancel_subscription, name='cancel_subscription'),
@@ -137,22 +127,20 @@ urlpatterns = [
     path('buycoins/', wallet_views.buycoins, name='buycoins'),
     path('gift_coins/', wallet_views.gift_coins, name='gift_coins'),
 
-    # --- User Account Activity Views ---
+    # User Account Activity Views
     path('billing-history/', account_activity_views.billing_history, name='billing_history'),
     path('my-downloads/', download_views.my_downloads_page, name='my_downloads'),
     path('my-account-library/', account_activity_views.my_library, name='my_account_library'),
-
     path('my-listening-history/', history_views.listening_history_page, name='listening_history_page'),
     path('ajax/update-audio-progress/', history_views.update_listening_progress, name='update_listening_progress'),
-
     path('my-library/', library_views.my_library_page, name='my_library_page'),
     path('ajax/toggle-library-item/', library_views.toggle_library_item, name='toggle_library_item'),
 
-    # --- Stripe Payment URLs ---
+    # Stripe Payment URLs
     path('payment/create-checkout-session/', payment_processing_views.create_checkout_session, name='create_checkout_session'),
     path('payment/webhook/stripe/', payment_processing_views.stripe_webhook, name='stripe_webhook'),
 
-    # --- Creator Portal Views ---
+    # Creator Portal Views
     path('creator/welcome/', creator_profile_views.creator_welcome_view, name='creator_welcome'),
     path('creator/dashboard/', creator_dashboard_views.creator_dashboard_view, name='creator_dashboard'),
     path('creator/apply/', creator_profile_views.creator_apply_view, name='creator_apply'),
@@ -164,7 +152,7 @@ urlpatterns = [
     path('creator/manage-upload/<slug:audiobook_slug>/', creator_audiobook_views.creator_manage_upload_detail_view, name='creator_manage_upload_detail'),
     path('creator/my-earnings/', creator_earning_views.creator_my_earnings_view, name='creator_my_earnings'),
 
-    # --- API Endpoints (Creator related) ---
+    # Creator API Endpoints
     path('api/creator/mark-welcome-popup/', creator_profile_views.mark_welcome_popup_shown, name='api_mark_welcome_popup'),
     path('api/creator/mark-rejection-popup/', creator_profile_views.mark_rejection_popup_shown, name='api_mark_rejection_popup'),
     path('api/audiobook/<slug:audiobook_slug>/chapters/', creator_audiobook_views.get_audiobook_chapters_json, name='get_audiobook_chapters'),
@@ -172,7 +160,7 @@ urlpatterns = [
     path('api/creator/generate-tts-preview/', creator_tts_views.generate_tts_preview_audio, name='generate_tts_preview_audio'),
     path('api/creator/generate-document-tts-preview/', creator_tts_views.generate_document_tts_preview_audio, name='generate_document_tts_preview_audio'),
 
-    # --- Admin Area Views ---
+    # Admin Area Views
     path('admin/welcome/', admin_auth_views.admin_welcome_view, name='admin_welcome'),
     path('admin/register/', admin_auth_views.adminsignup, name='adminsignup'),
     path('admin/login/', admin_auth_views.adminlogin, name='adminlogin'),
@@ -215,19 +203,15 @@ urlpatterns = [
     path('admin/admins/manage/', admin_management_views.manage_admins_list_view, name='admin_manage_admins'),
     path('admin/admins/edit/<int:admin_id>/', admin_management_views.edit_admin_view, name='admin_edit_user'),
 
-    # --- Community Chatroom Feature ---
+    # Community Chatroom Feature
     path('features/community-chatrooms/welcome/', community_chatrooms_feature_views.ChatroomWelcomeView.as_view(), name='chatroom_welcome'),
     path('features/community-chatrooms/home/', community_chatrooms_feature_views.CommunityChatroomHomeView.as_view(), name='chatroom_home'),
     path('features/community-chatrooms/create/', community_chatrooms_feature_views.CreateChatRoomView.as_view(), name='chatroom_create'),
     path('features/community-chatrooms/<uuid:room_id>/', community_chatrooms_feature_views.ChatRoomDetailView.as_view(), name='chatroom_detail'),
     path('features/community-chatrooms/<uuid:room_id>/leave/', community_chatrooms_feature_views.LeaveChatRoomView.as_view(), name='chatroom_leave'),
     path('features/community-chatrooms/<uuid:room_id>/invite/', community_chatrooms_feature_views.InviteUserToChatRoomView.as_view(), name='chatroom_invite_user'),
-
-    # --- Chatroom Invitation URLs ---
     path('features/community-chatrooms/invitations/', community_chatrooms_feature_views.ChatInvitationsListView.as_view(), name='chat_invitations'),
     path('features/community-chatrooms/invitations/<uuid:invitation_id>/respond/', community_chatrooms_feature_views.RespondToChatInvitationView.as_view(), name='chatroom_invitation_respond'),
-
-    # --- Other Chat Feature URLs ---
     path('features/community-chatrooms/my-rooms/', community_chatrooms_feature_views.MyChatRoomsView.as_view(), name='my_chatrooms'),
     path('features/community-chatrooms/joined-rooms/', community_chatrooms_feature_views.JoinedChatRoomsView.as_view(), name='joined_chatrooms'),
     path('features/community-chatrooms/past-rooms/', community_chatrooms_feature_views.PastChatRoomsView.as_view(), name='past_chatrooms'),

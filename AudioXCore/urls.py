@@ -1,10 +1,13 @@
 # AudioXCore/urls.py
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.views.generic import TemplateView # Import TemplateView
+from django.views.generic import TemplateView
+
+# --- URL Patterns ---
 
 urlpatterns = [
     # Django's built-in admin site
@@ -16,17 +19,18 @@ urlpatterns = [
     # django-allauth URLs for authentication
     path('accounts/', include('allauth.urls')),
 
-    # --- ADD THIS FOR SERVING SERVICE WORKER FROM ROOT ---
+    # URL for serving the service worker from the root
     path(
         "service_worker.js",
         TemplateView.as_view(
-            template_name="pwafiles/service_worker.js", # Path within your templates directory
+            template_name="pwafiles/service_worker.js",
             content_type="application/javascript",
         ),
-        name="service_worker_js", # Optional name
+        name="service_worker_js",
     ),
-    # --- END SERVICE WORKER URL ---
 ]
+
+# --- Static and Media Files ---
 
 # Serve static files during development
 urlpatterns += staticfiles_urlpatterns()

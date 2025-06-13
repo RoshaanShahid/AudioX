@@ -1,9 +1,13 @@
+# AudioXApp/management/commands/populate_static_audiobooks.py
+
 import os
 import requests
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
-from AudioXApp.models import Audiobook , Chapter
+from django.utils.text import slugify
+from ...models import Audiobook, Chapter
 
+# --- Predefined List of Audiobooks to Download ---
 AUDIOBOOKS = [
     {
         "title": "Selected Ghazals of Ghalib",
@@ -32,28 +36,61 @@ AUDIOBOOKS = [
     }
 ]
 
+# --- Management Command ---
 class Command(BaseCommand):
+    """
+    Downloads a predefined list of audiobooks from archive.org, creates Audiobook
+    and Chapter entries in the database, and saves the audio files locally.
+    
+    Usage:
+        python manage.py populate_static_audiobooks
+    """
     help = 'Download selected audiobooks and save them to the database'
 
     def handle(self, *args, **kwargs):
-        media_root = os.path.join(os.getcwd(), 'media', 'audiobooks')
-        os.makedirs(media_root, exist_ok=True)
+        """The main logic of the command."""
+        self.stdout.write(self.style.NOTICE('Starting to download and save static audiobooks...'))
 
-        for book in AUDIOBOOKS:
-            response = requests.get(book['url'])
-            if response.status_code == 200:
-                file_name = f"{book['title'].replace(' ', '_')}.mp3"
-                file_path = os.path.join(media_root, file_name)
-                with open(file_path, 'wb') as f:
-                    f.write(response.content)
+        for book_data in AUDIOBOOKS:
+            try:
+                # Check if the audiobook already exists to avoid duplicates
+                audiobook, created = Audiobook.objects.get_or_create(
+                    title=book_data['title'],
+                    defaults={
+                        'author': book_data['author'],
+                        'is_creator_book': False,
+                        'source': 'archive',
+                        'status': 'PUBLISHED',
+                        'is_paid': False,
+                        'description': f"A public domain recording of {book_data['title']} by {book_data['author']}."
+                    }
+                )
 
-                with open(file_path, 'rb') as f:
-                    audiobook = Audiobook(
-                        title=book['title'],
-                        author=book['author'],
-                        file_url=f'audiobooks/{file_name}'
+                if created:
+                    self.stdout.write(f"Downloading '{book_data['title']}'...")
+                    response = requests.get(book_data['url'], stream=True)
+                    response.raise_for_status()  # Will raise an HTTPError for bad responses (4xx or 5xx)
+
+                    # Create a single chapter for this audiobook
+                    chapter, chapter_created = Chapter.objects.get_or_create(
+                        audiobook=audiobook,
+                        chapter_order=1,
+                        defaults={'chapter_name': book_data['title']}
                     )
-                    audiobook.save()
-                    self.stdout.write(self.style.SUCCESS(f"Saved: {book['title']}"))
-            else:
-                self.stdout.write(self.style.ERROR(f"Failed to download: {book['title']}"))
+
+                    if chapter_created:
+                        # Save the downloaded audio to the chapter's audio_file field
+                        file_name = f"{slugify(book_data['title'])}.mp3"
+                        chapter.audio_file.save(file_name, ContentFile(response.content), save=True)
+                        self.stdout.write(self.style.SUCCESS(f"Successfully saved and created chapter for: {book_data['title']}"))
+                    else:
+                        self.stdout.write(self.style.WARNING(f"Audiobook '{book_data['title']}' created, but chapter already existed. Skipping file download."))
+                else:
+                    self.stdout.write(self.style.WARNING(f"Audiobook '{book_data['title']}' already exists in the database. Skipping."))
+
+            except requests.exceptions.RequestException as e:
+                self.stderr.write(self.style.ERROR(f"Failed to download '{book_data['title']}': {e}"))
+            except Exception as e:
+                self.stderr.write(self.style.ERROR(f"An unexpected error occurred for '{book_data['title']}': {e}"))
+        
+        self.stdout.write(self.style.SUCCESS('Finished processing all static audiobooks.'))

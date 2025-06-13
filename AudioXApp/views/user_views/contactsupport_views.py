@@ -8,21 +8,18 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.contrib import messages
 from django.utils import timezone
-
 import json
 import logging
-
 from ...models import Ticket, TicketCategory, User, TicketMessage
-# from ...models import Creator # Import Creator if you need to directly query it
-
 try:
     import google.generativeai as genai
 except ImportError:
     genai = None
-
 from ..utils import _get_full_context
 
 logger = logging.getLogger(__name__)
+
+# --- Create Support Ticket ---
 
 @login_required
 def create_ticket_view(request):
@@ -38,7 +35,6 @@ def create_ticket_view(request):
     context['ticket_categories'] = ticket_categories
 
     form_data_to_repopulate = {}
-
     if request.method == 'POST':
         form_data_to_repopulate = request.POST.copy()
         subject = request.POST.get('subject')
@@ -63,17 +59,10 @@ def create_ticket_view(request):
             return render(request, 'user/contactsupport.html', context)
 
         try:
-            new_ticket = Ticket(
-                user=request.user,
-                category=category_instance,
-                subject=subject,
-                description=description
-            )
+            new_ticket = Ticket(user=request.user, category=category_instance, subject=subject, description=description)
             new_ticket.save() 
-
             messages.success(request, _(f"Your support ticket (ID: {new_ticket.ticket_display_id}) has been submitted! We'll get back to you soon."))
             return redirect('AudioXApp:user_ticket_detail', ticket_uuid=new_ticket.id)
-
         except Exception as e:
             logger.error(f"Error creating ticket for user {request.user.email}: {e}", exc_info=True)
             messages.error(request, _("An unexpected error occurred. Please try again later."))
@@ -83,6 +72,7 @@ def create_ticket_view(request):
     context['form_data'] = form_data_to_repopulate
     return render(request, 'user/contactsupport.html', context)
 
+# --- AI Ticket Generation (AJAX) ---
 
 @login_required
 @require_POST
@@ -90,7 +80,6 @@ def ajax_ai_generate_ticket_details_view(request):
     if not genai:
         logger.error("Google Generative AI library (genai) not imported/installed.")
         return JsonResponse({'error': _('AI service is currently unavailable. Please try again later.')}, status=503)
-
     try:
         data = json.loads(request.body)
         user_prompt = data.get('prompt')
@@ -103,15 +92,12 @@ def ajax_ai_generate_ticket_details_view(request):
 
     if not user_prompt:
         return JsonResponse({'error': _('Prompt is missing.')}, status=400)
-
     if not settings.GEMINI_API_KEY:
         logger.error("GEMINI_API_KEY is not configured in settings.")
         return JsonResponse({'error': _('AI service configuration error. Cannot proceed.')}, status=500)
 
     try:
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        
-        # --- MODIFIED Category Filtering for AI Prompt ---
         categories_qs = TicketCategory.objects.all()
         relevant_categories_for_ai = []
         context_info_for_ai = ""
@@ -119,42 +105,33 @@ def ajax_ai_generate_ticket_details_view(request):
         if ticket_context_type == 'creator':
             relevant_categories_for_ai = [cat for cat in categories_qs if cat.is_creator_specific]
             context_info_for_ai = "The user is submitting this ticket in the context of their 'Creator Profile & Activities'."
-        else: # 'user' context (default)
+        else:
             relevant_categories_for_ai = [cat for cat in categories_qs if not cat.is_creator_specific]
             context_info_for_ai = "The user is submitting this ticket in the context of their 'General User Account'."
         
-        # Fallback if filtering results in no categories (e.g., no categories match the criteria)
         if not relevant_categories_for_ai and categories_qs.exists():
             logger.warning(f"No categories found for AI prompt with context '{ticket_context_type}'. Falling back to all categories.")
-            relevant_categories_for_ai = list(categories_qs) # Or a sensible default list
+            relevant_categories_for_ai = list(categories_qs)
         elif not categories_qs.exists():
-             logger.error("No TicketCategory instances found in the database.")
-             return JsonResponse({'error': _('Ticket categories not set up.')}, status=500)
-
+            logger.error("No TicketCategory instances found in the database.")
+            return JsonResponse({'error': _('Ticket categories not set up.')}, status=500)
 
         category_names_for_ai_prompt = [category.name for category in relevant_categories_for_ai]
-        # If, after filtering, no category names are available (should be rare if categories exist and filtering is correct)
         if not category_names_for_ai_prompt:
-            # This case should ideally not be hit if categories exist.
-            # If it is, it means either no categories match the filter or all categories were filtered out.
-            # Provide a very generic list or handle error.
             all_category_names = [cat.name for cat in categories_qs]
             category_list_str = ", ".join(f"'{name}'" for name in all_category_names) if all_category_names else "'General Inquiry'"
             logger.warning(f"No relevant categories for AI prompt context '{ticket_context_type}'. Using full list or default for AI prompt.")
         else:
             category_list_str = ", ".join(f"'{name}'" for name in category_names_for_ai_prompt)
-        # --- END OF MODIFIED Category Filtering ---
 
-        full_prompt = (
-            f"You are an assistant for a support ticketing system for an audiobook platform called 'AudioX'.\n"
-            f"{context_info_for_ai}\n"
-            f"Based on the user's problem description below, please act as a helpful assistant to pre-fill a support ticket. "
-            f"Generate a concise ticket 'subject' (max 70 characters), a detailed 'description' (elaborate on the user's prompt if needed, maintaining a helpful tone), "
-            f"and suggest the most relevant 'category'. The category MUST be chosen EXACTLY from the following list: [{category_list_str}]. Do not invent new categories.\n"
-            f"Ensure your ENTIRE output is ONLY a single, valid JSON object with three keys: \"subject\", \"description\", and \"category\". "
-            f"Do not include any other text, greetings, or explanations outside of this JSON object.\n\n"
-            f"User's problem: \"{user_prompt}\""
-        )
+        full_prompt = (f"You are an assistant for a support ticketing system for an audiobook platform called 'AudioX'.\n"
+                       f"{context_info_for_ai}\n"
+                       f"Based on the user's problem description below, please act as a helpful assistant to pre-fill a support ticket. "
+                       f"Generate a concise ticket 'subject' (max 70 characters), a detailed 'description' (elaborate on the user's prompt if needed, maintaining a helpful tone), "
+                       f"and suggest the most relevant 'category'. The category MUST be chosen EXACTLY from the following list: [{category_list_str}]. Do not invent new categories.\n"
+                       f"Ensure your ENTIRE output is ONLY a single, valid JSON object with three keys: \"subject\", \"description\", and \"category\". "
+                       f"Do not include any other text, greetings, or explanations outside of this JSON object.\n\n"
+                       f"User's problem: \"{user_prompt}\"")
         
         model_name = 'gemini-1.5-flash-latest'
         model = genai.GenerativeModel(model_name)
@@ -164,7 +141,6 @@ def ajax_ai_generate_ticket_details_view(request):
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
         ]
-
         response = model.generate_content(full_prompt, safety_settings=safety_settings)
         ai_response_text = response.text.strip()
 
@@ -179,7 +155,6 @@ def ajax_ai_generate_ticket_details_view(request):
                 raise ValueError("Missing keys in AI JSON response")
             
             suggested_category_name = ai_data.get('category')
-            # Validate against the list of names provided to the AI
             if suggested_category_name not in category_names_for_ai_prompt:
                 logger.warning(f"AI suggested category '{suggested_category_name}' which was NOT in the filtered list for context '{ticket_context_type}'. AI Prompt List: [{category_list_str}] Raw response: {response.text}")
                 found_match_in_relevant_list = False
@@ -190,23 +165,20 @@ def ajax_ai_generate_ticket_details_view(request):
                         break
                 if not found_match_in_relevant_list:
                     ai_data['category_warning'] = f"AI suggested an unsuitable category ('{suggested_category_name}') for the selected context. Please select manually."
-                    ai_data['category'] = "" # Clear category, force user to choose
-
+                    ai_data['category'] = ""
             return JsonResponse(ai_data)
-
         except json.JSONDecodeError as e:
             logger.error(f"Failed to decode AI JSON. Context: {ticket_context_type}. Error: {e}. Raw: {response.text}", exc_info=True)
             return JsonResponse({'error': _('AI response format error.'), 'ai_raw_response': response.text}, status=200)
-        except ValueError as e: # Catches the "Missing keys" error too
-             logger.error(f"ValueError processing AI response. Context: {ticket_context_type}. Error: {e}. Raw: {response.text}", exc_info=True)
-             return JsonResponse({'error': str(e), 'ai_raw_response': response.text}, status=200)
-
+        except ValueError as e:
+            logger.error(f"ValueError processing AI response. Context: {ticket_context_type}. Error: {e}. Raw: {response.text}", exc_info=True)
+            return JsonResponse({'error': str(e), 'ai_raw_response': response.text}, status=200)
     except Exception as e:
         logger.error(f"Error in AI generation. Context: {ticket_context_type}. Prompt: '{user_prompt[:100]}...': {e}", exc_info=True)
         return JsonResponse({'error': _('Unexpected AI error. Please fill manually.')}, status=500)
 
+# --- Ticket List and Detail Views ---
 
-# Keep your user_ticket_list_view and user_ticket_detail_view functions as they were
 @login_required
 def user_ticket_list_view(request):
     context = _get_full_context(request)
@@ -233,12 +205,7 @@ def user_ticket_detail_view(request, ticket_uuid):
             messages.error(request, _("Your reply cannot be empty."))
         else:
             try:
-                TicketMessage.objects.create(
-                    ticket=ticket,
-                    user=request.user,
-                    message=message_content,
-                    is_admin_reply=False
-                )
+                TicketMessage.objects.create(ticket=ticket, user=request.user, message=message_content, is_admin_reply=False)
                 ticket.updated_at = timezone.now()
                 if ticket.status == Ticket.StatusChoices.AWAITING_USER:
                     ticket.status = Ticket.StatusChoices.OPEN 

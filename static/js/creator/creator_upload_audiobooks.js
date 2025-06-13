@@ -17,6 +17,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentLoaderMessageIndex = 0;
     let loaderMessageIntervalId = null;
 
+    // --- CSRF Token definition: Define as a function to ensure it's always fresh ---
+    function getCsrfToken() {
+        const tokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (tokenElement) {
+            return tokenElement.value.trim();
+        }
+        console.error("CSRF token element not found!");
+        return '';
+    }
+
     const form = document.getElementById('audiobookUploadForm');
     const coverImageInput = document.getElementById('cover_image');
     const coverImagePreview = document.getElementById('coverImagePreview');
@@ -133,13 +143,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         if (submittedValues.cover_image_filename) {
-           coverImageNameDisplay.textContent = submittedValues.cover_image_filename;
-           if (!formErrors.cover_image && submittedValues.cover_image_preview_url) {
-               coverImagePreview.src = submittedValues.cover_image_preview_url;
-               coverUploadInitialText.style.display = 'none';
-               coverChangeText.style.display = 'block';
-               coverUploadPlaceholder.classList.add('opacity-0', 'group-hover:opacity-100', 'bg-black/70', 'rounded-xl', 'text-white');
-           }
+            coverImageNameDisplay.textContent = submittedValues.cover_image_filename;
+            if (!formErrors.cover_image && submittedValues.cover_image_preview_url) {
+                coverImagePreview.src = submittedValues.cover_image_preview_url;
+                coverUploadInitialText.style.display = 'none';
+                coverChangeText.style.display = 'block';
+                coverUploadPlaceholder.classList.add('opacity-0', 'group-hover:opacity-100', 'bg-black/70', 'rounded-xl', 'text-white');
+            }
         }
     }
 
@@ -246,12 +256,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 otherInput.required = true;
             } else if (submittedValues.genre) {
                 select.value = submittedValues.genre;
-                 if(select.value === GENRE_OTHER_VALUE) {
+                if(select.value === GENRE_OTHER_VALUE) {
                     otherInputContainer.classList.remove('hidden');
                     otherInput.required = true;
                 }
             } else {
-                 select.value = "";
+                select.value = "";
             }
         } else if (selectedLanguage) {
             const textField = document.createElement('input');
@@ -303,6 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const docTtsVoiceSelect = chapterCardDiv.querySelector('.chapter-doc-tts-voice-select-js');
         const docPreviewBtn = chapterCardDiv.querySelector('.generate-document-tts-preview-btn');
 
+        // Logic for Text-to-Speech (manual text)
         if (currentInputType === 'tts') {
             if (previewBtn && textInput && voiceSelect) {
                 const isLangSelected = currentAudiobookLanguage && currentAudiobookLanguage !== "";
@@ -318,6 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
             previewBtn.disabled = true;
         }
 
+        // Logic for Document-to-Speech
         if (currentInputType === 'document_tts') {
             if (docPreviewBtn && docInput && docTtsVoiceSelect) {
                 const isLangSelected = currentAudiobookLanguage && currentAudiobookLanguage !== "";
@@ -384,11 +396,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (voice.id === selectedTtsVoiceId) {
                     option.selected = true;
                 }
+                option.dataset.gender = voice.gender; // Store gender for validation if needed
                 ttsVoiceSelect.appendChild(option);
             });
 
             if (selectedTtsVoiceId && voicesForLang.some(v => v.id === selectedTtsVoiceId)) {
-                   ttsVoiceSelect.value = selectedTtsVoiceId;
+                ttsVoiceSelect.value = selectedTtsVoiceId;
             } else {
                 ttsVoiceSelect.value = "default";
             }
@@ -445,11 +458,17 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('text_content', text);
         formData.append('tts_voice_id', voiceOptionId);
         formData.append('audiobook_language', currentAudiobookLanguage);
-        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        formData.append('csrfmiddlewaretoken', getCsrfToken()); // Use the getCsrfToken function here
 
         try {
             if (!generateTtsPreviewUrl) throw new Error("TTS Preview URL is not defined.");
-            const response = await fetch(generateTtsPreviewUrl, { method: 'POST', body: formData, headers: {'X-CSRFToken': formData.get('csrfmiddlewaretoken')} });
+            const response = await fetch(generateTtsPreviewUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCsrfToken() // Use the getCsrfToken function here
+                }
+            });
             const data = await response.json();
             if (response.ok && data.status === 'success') {
                 player.src = data.audio_url;
@@ -510,10 +529,13 @@ document.addEventListener('DOMContentLoaded', function() {
             errorMessagesDoc.push('Select a narrator voice.');
             isValid = false;
         }
-        if (currentAudiobookLanguage && ['English', 'Urdu'].includes(currentAudiobookLanguage) && !narratorGender) {
-            errorMessagesDoc.push(`A voice with a clear gender must be selected for ${currentAudiobookLanguage}.`);
-            isValid = false;
+        if (currentAudiobookLanguage && ['English', 'Urdu', 'Punjabi', 'Sindhi'].includes(currentAudiobookLanguage)) {
+             if (!selectedVoiceDetails || !selectedVoiceDetails.gender) {
+                errorMessagesDoc.push(`A voice with a defined gender must be selected for ${currentAudiobookLanguage}.`);
+                isValid = false;
+            }
         }
+
 
         if (docFile) {
             const maxSize = 10 * 1024 * 1024;
@@ -538,16 +560,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData();
         formData.append('document_file', docFile);
+        formData.append('tts_voice_id', voiceOptionId); // This is the actual voice ID
         formData.append('language', currentAudiobookLanguage);
-        formData.append('narrator_gender', narratorGender);
-        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        formData.append('narrator_gender', narratorGender); // Pass gender explicitly if needed by backend API.
+        // Using the global csrfToken variable
+        formData.append('csrfmiddlewaretoken', getCsrfToken());
+
 
         try {
             const urlToFetch = generateDocumentTtsPreviewUrl;
             if (!urlToFetch) {
                 throw new Error("Document TTS Preview URL is not defined.");
             }
-            const response = await fetch(urlToFetch, { method: 'POST', body: formData, headers: {'X-CSRFToken': formData.get('csrfmiddlewaretoken')} });
+            const response = await fetch(urlToFetch, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCsrfToken() // Use the getCsrfToken function here
+                }
+            });
             const data = await response.json(); // Expect JSON response
 
             if (response.ok && data.status === 'success') {
@@ -567,9 +598,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.errors && typeof data.errors === 'object') {
                     const errorKey = Object.keys(data.errors)[0];
                     if (errorKey && data.errors[errorKey] && Array.isArray(data.errors[errorKey]) && data.errors[errorKey].length > 0) {
-                       const firstError = data.errors[errorKey][0];
-                       if (typeof firstError === 'string') { backendErrorMsg = firstError; }
-                       else if (firstError && firstError.message) { backendErrorMsg = firstError.message; }
+                        const firstError = data.errors[errorKey][0];
+                        if (typeof firstError === 'string') { backendErrorMsg = firstError; }
+                        else if (firstError && firstError.message) { backendErrorMsg = firstError.message; }
                     }
                 }
                 messageEl.textContent = `Error: ${backendErrorMsg}`;
@@ -671,7 +702,7 @@ document.addEventListener('DOMContentLoaded', function() {
             documentInput.addEventListener('change', () => updateChapterPreviewButtonState(chapterDiv));
         }
         if (documentFileNameSpan) {
-             documentFileNameSpan.textContent = chapterData.document_filename || 'No document chosen';
+            documentFileNameSpan.textContent = chapterData.document_filename || 'No document chosen';
         }
         if (docTtsVoiceSelect) {
             docTtsVoiceSelect.name = `chapters[${indexForNames}][doc_tts_voice]`;
@@ -685,9 +716,9 @@ document.addEventListener('DOMContentLoaded', function() {
             let initialInputType = chapterData.input_type || 'file';
             if (chapterData.input_type === 'None') initialInputType = 'file';
             if (chapterData.generated_tts_audio_url && (initialInputType === 'tts' || initialInputType === 'generated_tts')) {
-                 initialInputType = 'generated_tts';
+                initialInputType = 'generated_tts';
             } else if (chapterData.generated_document_tts_audio_url && (initialInputType === 'document_tts' || initialInputType === 'generated_document_tts')) {
-                 initialInputType = 'generated_document_tts';
+                initialInputType = 'generated_document_tts';
             }
             inputTypeHidden.value = initialInputType;
         }
@@ -715,22 +746,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     sourcePrefix = "(from Text): ";
                 } catch(e) { console.warn("Error parsing filename from manual TTS URL:", chapterData.generated_tts_audio_url, e); }
             } else if (chapterData.generated_document_tts_audio_url) {
-                 try {
+                   try {
                     voiceForDisplay = chapterData.doc_tts_voice; // This is the ID like ur-PK-UzmaNeural
                     sourcePrefix = `(from Doc: ${originalDocName}): `;
-                    // displayFilename will be built using voice name below
                     const urlParts = chapterData.generated_document_tts_audio_url.split('/');
-                    displayFilename = decodeURIComponent(urlParts.pop() || urlParts.pop() || "Doc_Generated_Audio.mp3"); // Keep this as fallback
+                    displayFilename = decodeURIComponent(urlParts.pop() || urlParts.pop() || "Doc_Generated_Audio.mp3");
                 } catch(e) { console.warn("Error processing document TTS display info:", e); }
             }
 
             if (voiceForDisplay && voiceForDisplay !== 'default') {
                 const voiceDetail = ALL_EDGE_TTS_VOICES_MAP[voiceForDisplay];
                 if (voiceDetail) {
-                    // For doc TTS, prioritize showing original doc name and voice
                     displayFilename = chapterData.generated_document_tts_audio_url ? `${originalDocName} (Voice: ${voiceDetail.name})` : `${displayFilename} (Voice: ${voiceDetail.name})`;
                 } else {
-                     displayFilename = chapterData.generated_document_tts_audio_url ? `${originalDocName} (Voice ID: ${voiceForDisplay})` : `${displayFilename} (Voice ID: ${voiceForDisplay})`;
+                    displayFilename = chapterData.generated_document_tts_audio_url ? `${originalDocName} (Voice ID: ${voiceForDisplay})` : `${displayFilename} (Voice ID: ${voiceForDisplay})`;
                 }
             }
             lockedGeneratedAudioFilenameSpan.textContent = sourcePrefix + displayFilename;
@@ -742,11 +771,12 @@ document.addEventListener('DOMContentLoaded', function() {
             documentTtsControls?.classList.add('hidden');
             lockedGeneratedAudioDisplay?.classList.add('hidden');
 
+            // Reset required attributes
             if (audioInput) audioInput.required = false;
             if (textContentInput) textContentInput.required = false;
-            if (ttsVoiceSelect) ttsVoiceSelect.required = false;
+            if (ttsVoiceSelect) ttsVoiceSelect.required = false; // Required is handled by populateChapterTtsVoices and updateChapterPreviewButtonState
             if (documentInput) documentInput.required = false;
-            if (docTtsVoiceSelect) docTtsVoiceSelect.required = false;
+            if (docTtsVoiceSelect) docTtsVoiceSelect.required = false; // Required is handled by populateChapterTtsVoices and updateChapterPreviewButtonState
 
             if (type === 'file') {
                 fileUploadControls?.classList.remove('hidden');
@@ -756,13 +786,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 ttsGenerationControls?.classList.remove('hidden');
                 lockedGeneratedAudioDisplay?.classList.add('hidden');
                 if (textContentInput) textContentInput.required = true;
-                if (ttsVoiceSelect) ttsVoiceSelect.required = true;
                 if (inputTypeHidden) inputTypeHidden.value = 'tts';
             } else if (type === 'document_tts') {
                 documentTtsControls?.classList.remove('hidden');
                 lockedGeneratedAudioDisplay?.classList.add('hidden');
                 if (documentInput) documentInput.required = true;
-                if (docTtsVoiceSelect) docTtsVoiceSelect.required = true;
                 if (inputTypeHidden) inputTypeHidden.value = 'document_tts';
             } else if (type === 'generated_tts' || type === 'generated_document_tts') {
                 lockedGeneratedAudioDisplay?.classList.remove('hidden');
@@ -825,7 +853,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (e.target.files.length > 0) {
                     const file = e.target.files[0];
-                    if (file.size > 50 * 1024 * 1024) {
+                    if (file.size > 50 * 1024 * 1024) { // Max 50MB
                         Swal.fire({ title: 'Audio File Too Large', html: `Chapter audio file must be under <strong>50MB</strong>. <br/>Selected file is ${(file.size / (1024*1024)).toFixed(2)}MB.`, icon: 'error', iconColor: THEME_COLOR_ERROR, confirmButtonColor: THEME_COLOR_PRIMARY, customClass: { popup: 'rounded-xl shadow-2xl font-sans text-sm', title: 'text-lg font-semibold text-slate-800', htmlContainer: 'text-slate-600 pt-1 leading-normal' }});
                         e.target.value = '';
                         fileNameSpan.textContent = 'Choose audio file... (too large)';
@@ -1169,7 +1197,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const hasExistingCoverPreview = coverImagePreview && coverImagePreview.src && !coverImagePreview.src.includes('placehold.co');
         if (coverImageInput && coverImageInput.files.length === 0 && !hasExistingCoverPreview) {
-             isValid = false; validationMessages.push('Please upload a Cover Image.'); setFirstError(coverImageInput);
+            isValid = false; validationMessages.push('Please upload a Cover Image.'); setFirstError(coverImageInput);
         }
 
         const currentPricingType = pricingTypeFreeRadio.checked ? 'free' : 'paid';
@@ -1203,9 +1231,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (inputType === 'file') {
                     const existingFileNameSpan = card.querySelector('.chapter-filename-js');
                     const hasExistingFile = existingFileNameSpan &&
-                                           existingFileNameSpan.textContent !== 'Choose audio file...' &&
-                                           !existingFileNameSpan.textContent.includes('(too large)') &&
-                                           !existingFileNameSpan.textContent.includes('(invalid type)');
+                                                 existingFileNameSpan.textContent !== 'Choose audio file...' &&
+                                                 !existingFileNameSpan.textContent.includes('(too large)') &&
+                                                 !existingFileNameSpan.textContent.includes('(invalid type)');
 
                     if (audioInput && audioInput.required && audioInput.files.length === 0 && !hasExistingFile) {
                         isValid = false; validationMessages.push(`Please select an audio file for Chapter ${index + 1}.`); setFirstError(audioInput.closest('label'));
@@ -1222,8 +1250,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         isValid = false; validationMessages.push(`TTS is not available for ${currentMainLang} in Chapter ${index + 1}. Please upload an audio file.`);
                         setFirstError(card.querySelector('.input-type-toggle-btn[data-type="file"]'));
                     } else if (!voicesForCurrentLang && currentMainLang) {
-                         isValid = false; validationMessages.push(`TTS configuration error for ${currentMainLang} in Chapter ${index + 1}.`);
-                         setFirstError(languageSelect);
+                           isValid = false; validationMessages.push(`TTS configuration error for ${currentMainLang} in Chapter ${index + 1}.`);
+                           setFirstError(languageSelect);
                     }
                 } else if (inputType === 'document_tts') {
                     const existingDocNameSpan = card.querySelector('.chapter-document-filename-js');
@@ -1233,7 +1261,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         isValid = false; validationMessages.push(`Please select a document (PDF/Word) for Chapter ${index + 1}.`); setFirstError(documentInput.closest('label'));
                     }
                      if (docVoiceSelect && docVoiceSelect.required && (docVoiceSelect.value === 'default' || !docVoiceSelect.value)) {
-                         isValid = false; validationMessages.push(`Please select a narrator voice for the document in Chapter ${index + 1}.`); setFirstError(docVoiceSelect);
+                           isValid = false; validationMessages.push(`Please select a narrator voice for the document in Chapter ${index + 1}.`); setFirstError(docVoiceSelect);
                     }
                 } else if (inputType === 'generated_tts') {
                     if (!generatedTtsUrlInput || !generatedTtsUrlInput.value) {
@@ -1241,7 +1269,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         setFirstError(card.querySelector('.generate-chapter-tts-preview-btn') || card);
                     }
                      if (voiceSelect && (voiceSelect.value === 'default' || !voiceSelect.value)) {
-                         isValid = false; validationMessages.push(`Narrator voice for the confirmed TTS audio is missing for Chapter ${index + 1}.`); setFirstError(voiceSelect);
+                           isValid = false; validationMessages.push(`Narrator voice for the confirmed TTS audio is missing for Chapter ${index + 1}.`); setFirstError(voiceSelect);
                     }
                 } else if (inputType === 'generated_document_tts') {
                     if (!generatedDocUrlInput || !generatedDocUrlInput.value) { // This check is now correct
@@ -1249,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         setFirstError(card.querySelector('.generate-document-tts-preview-btn') || card);
                     }
                      if (docVoiceSelect && (docVoiceSelect.value === 'default' || !docVoiceSelect.value)) {
-                         isValid = false; validationMessages.push(`Narrator voice for the confirmed Document TTS audio is missing for Chapter ${index + 1}.`); setFirstError(docVoiceSelect);
+                           isValid = false; validationMessages.push(`Narrator voice for the confirmed Document TTS audio is missing for Chapter ${index + 1}.`); setFirstError(docVoiceSelect);
                     }
                 }
             });

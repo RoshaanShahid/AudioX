@@ -1,30 +1,27 @@
 # AudioXApp/views/clip_views.py
 
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse, Http404 
+from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
-from django.utils.translation import gettext_lazy as G # Changed alias to avoid potential conflict
-from django.utils.translation import gettext # For immediate translation if needed
+from django.utils.translation import gettext_lazy as G
+from django.utils.translation import gettext
 from django.core.files.storage import default_storage
-from django.core.cache import cache 
-from django.urls import reverse 
-from urllib.parse import quote 
-
+from django.core.cache import cache
+from django.urls import reverse
+from urllib.parse import quote
 import json
 import os
-import uuid 
+import uuid
 import logging
-import requests 
-import re 
-from pydub import AudioSegment 
+import requests
+import re
+from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
-
 from ..models import Chapter, Audiobook, User
 
-# Explicit FFmpeg path configuration
-FFMPEG_INSTALL_ROOT = r"C:\Program Files\ffmpeg-2025-05-29-git-75960ac270-full_build" 
+FFMPEG_INSTALL_ROOT = r"C:\Program Files\ffmpeg-2025-05-29-git-75960ac270-full_build"
 FFMPEG_BIN_PATH = os.path.join(FFMPEG_INSTALL_ROOT, "bin")
 FFMPEG_EXE = os.path.join(FFMPEG_BIN_PATH, "ffmpeg.exe")
 
@@ -44,14 +41,14 @@ if not os.path.exists(TEMP_CLIP_DIR_PATH):
     except OSError as e:
         logger.error(f"Could not create temporary clip directory {TEMP_CLIP_DIR_PATH}: {e}")
 
+# --- Generate Audio Clip View ---
 
 @csrf_exempt
 @require_POST
 def generate_audio_clip(request):
-    data = {} 
+    data = {}
     chapter_id_from_payload = "not_parsed_yet"
-    # Define messages as plain strings first
-    msg_auth_required = gettext('Authentication required.') # Use gettext for immediate translation
+    msg_auth_required = gettext('Authentication required.')
     msg_invalid_json = gettext('Invalid JSON payload.')
     msg_missing_params = gettext('Missing required parameters (chapter_id, start_time_seconds, end_time_seconds).')
     msg_invalid_time_format = gettext('Invalid time format. Start and end times must be numbers.')
@@ -80,11 +77,9 @@ def generate_audio_clip(request):
     msg_clip_start_not_before_end = gettext('Clip start time must be before end time.')
     msg_clip_generated_successfully = gettext('Audio clip generated successfully.')
 
-
     try:
         if not request.user.is_authenticated:
             return JsonResponse({'status': 'error', 'message': msg_auth_required}, status=401)
-
         try:
             data = json.loads(request.body)
             chapter_id_from_payload = data.get('chapter_id')
@@ -97,7 +92,6 @@ def generate_audio_clip(request):
         if not all([chapter_id_from_payload, start_time_seconds is not None, end_time_seconds is not None]):
             logger.warning(f"Missing parameters for clip generation. Received: chapter_id={chapter_id_from_payload}, start={start_time_seconds}, end={end_time_seconds}")
             return JsonResponse({'status': 'error', 'message': msg_missing_params}, status=400)
-
         try:
             start_time_seconds = float(start_time_seconds)
             end_time_seconds = float(end_time_seconds)
@@ -154,7 +148,6 @@ def generate_audio_clip(request):
                     return JsonResponse({'status': 'error', 'message': msg_ext_cache_empty}, status=503)
                 found_cached_book = None
                 for source_key in ["librivox_audiobooks", "archive_genre_audiobooks", "archive_language_audiobooks"]:
-                    # ... (cache search logic as before) ...
                     if source_key == "librivox_audiobooks":
                         item_list = external_data_cache.get(source_key, [])
                         for book_dict in item_list:
@@ -184,12 +177,11 @@ def generate_audio_clip(request):
                 return JsonResponse({'status': 'error', 'message': msg_chapter_not_found_ext}, status=400)
         
         if not audiobook_obj_for_perms or not target_audio_url_for_processing:
-             logger.error(f"Critical error: Failed to resolve audiobook or audio URL. Payload ID: '{chapter_id_from_payload}'.")
-             return JsonResponse({'status': 'error', 'message': msg_internal_resolve_error}, status=500)
+            logger.error(f"Critical error: Failed to resolve audiobook or audio URL. Payload ID: '{chapter_id_from_payload}'.")
+            return JsonResponse({'status': 'error', 'message': msg_internal_resolve_error}, status=500)
         
         audiobook_title_for_clip = audiobook_obj_for_perms.title
-
-        is_accessible = False # Accessibility check
+        is_accessible = False
         if request.user.is_staff: is_accessible = True
         elif audiobook_obj_for_perms.is_paid:
             if request.user.has_purchased_audiobook(audiobook_obj_for_perms): is_accessible = True
@@ -204,7 +196,6 @@ def generate_audio_clip(request):
         actual_audio_file_path_for_pydub = None; temp_downloaded_file_path = None 
         try:
             if target_audio_url_for_processing.startswith('http://') or target_audio_url_for_processing.startswith('https://'):
-                # ... (download logic - UNCHANGED, but ensure JsonResponse messages use plain strings if any error occurs here) ...
                 logger.info(f"Downloading external audio: {target_audio_url_for_processing}")
                 try:
                     with requests.get(target_audio_url_for_processing, stream=True, timeout=60) as r: 
@@ -222,8 +213,8 @@ def generate_audio_clip(request):
                 actual_audio_file_path_for_pydub = target_audio_url_for_processing
                 logger.info(f"Using local audio file: {actual_audio_file_path_for_pydub}")
             if not actual_audio_file_path_for_pydub or not os.path.exists(actual_audio_file_path_for_pydub):
-                 logger.error(f"Pydub source audio path invalid or DNE: {actual_audio_file_path_for_pydub}")
-                 return JsonResponse({'status': 'error', 'message': msg_audio_source_no_access}, status=500)
+                logger.error(f"Pydub source audio path invalid or DNE: {actual_audio_file_path_for_pydub}")
+                return JsonResponse({'status': 'error', 'message': msg_audio_source_no_access}, status=500)
 
             logger.info(f"Pydub: Loading audio from: {actual_audio_file_path_for_pydub}")
             audio = AudioSegment.from_file(actual_audio_file_path_for_pydub)
@@ -231,8 +222,8 @@ def generate_audio_clip(request):
             start_ms = int(start_time_seconds * 1000); end_ms = int(end_time_seconds * 1000)
             actual_audio_duration_ms = len(audio)
             if start_ms >= actual_audio_duration_ms:
-                 logger.warning(f"Clip start time ({start_ms}ms) beyond audio duration ({actual_audio_duration_ms}ms).")
-                 return JsonResponse({'status': 'error', 'message': msg_clip_start_beyond_duration}, status=400)
+                logger.warning(f"Clip start time ({start_ms}ms) beyond audio duration ({actual_audio_duration_ms}ms).")
+                return JsonResponse({'status': 'error', 'message': msg_clip_start_beyond_duration}, status=400)
             end_ms = min(end_ms, actual_audio_duration_ms)
             if start_ms >= end_ms:
                 if start_ms == end_ms: logger.warning(f"Clip start and end times identical ({start_ms}ms).")
@@ -252,12 +243,7 @@ def generate_audio_clip(request):
             if clip_url_path.startswith("//"): clip_url_path = clip_url_path[1:]
             clip_full_url = request.build_absolute_uri(clip_url_path)
 
-            return JsonResponse({
-                'status': 'success', 'message': msg_clip_generated_successfully,
-                'clip_url': clip_full_url, 'filename': clip_filename,
-                'chapter_title': target_chapter_title_for_clip, 
-                'audiobook_title': audiobook_title_for_clip
-            })
+            return JsonResponse({'status': 'success', 'message': msg_clip_generated_successfully, 'clip_url': clip_full_url, 'filename': clip_filename, 'chapter_title': target_chapter_title_for_clip, 'audiobook_title': audiobook_title_for_clip})
         except CouldntDecodeError:
             logger.error(f"Pydub: Could not decode audio file {actual_audio_file_path_for_pydub}.", exc_info=True)
             return JsonResponse({'status': 'error', 'message': msg_pydub_decode_error}, status=500)

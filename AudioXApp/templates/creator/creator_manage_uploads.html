@@ -6,7 +6,7 @@
 {% block title %}Manage Audiobook: {{ audiobook.title|default:"Untitled" }} - Creator Area{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
     /* General styling for input type toggle buttons */
@@ -240,7 +240,7 @@
                                         </option>
                                         {% endfor %}
                                     </select>
-                                    </div>
+                                </div>
                                 {% if form_errors.status_update_status %}
                                     <p class="text-red-500 text-sm mt-1">{{ form_errors.status_update_status }}</p>
                                 {% endif %}
@@ -351,12 +351,13 @@
                         <input type="hidden" name="new_chapter_input_type_hidden" value="{{ submitted_values.new_chapter_input_type_hidden|default:'file' }}" class="new-chapter-input-type-hidden-js">
                         <input type="hidden" name="new_chapter_generated_tts_url" value="{{ submitted_values.new_chapter_generated_tts_url|default:'' }}" class="new-chapter-generated-tts-url-input-js">
                         <input type="hidden" name="new_chapter_generated_document_tts_url" value="{{ submitted_values.new_chapter_generated_document_tts_url|default:'' }}" class="new-chapter-generated-document-tts-url-input-js">
+                        <input type="hidden" name="new_chapter_document_filename" value="{{ submitted_values.new_chapter_document_filename|default:'' }}" class="new-chapter-document-filename-hidden-js"> {# Added to persist filename for doc TTS #}
                         <div class="space-y-4">
                             <div>
                                 <label for="new_chapter_title" class="block text-sm font-medium text-slate-700 mb-1">Chapter Title <span class="text-red-600">*</span></label>
                                 <input type="text" name="new_chapter_title" id="new_chapter_title" required
-                                       value="{{ submitted_values.new_chapter_title|default:'' }}"
-                                       class="block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-1 focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out bg-white">
+                                        value="{{ submitted_values.new_chapter_title|default:'' }}"
+                                        class="block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-1 focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out bg-white">
                                 {% if form_errors.add_chapter_errors.new_chapter_title %}
                                     <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_title }}</p>
                                 {% endif %}
@@ -444,7 +445,7 @@
                                             <option value="{{ submitted_values.new_chapter_doc_tts_voice }}" selected>{{ submitted_values.new_chapter_doc_tts_voice_display_name }}</option>
                                         {% endif %}
                                     </select>
-                                     {% if form_errors.add_chapter_errors.new_chapter_doc_tts_voice %}
+                                   {% if form_errors.add_chapter_errors.new_chapter_doc_tts_voice %}
                                         <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_doc_tts_voice }}</p>
                                     {% endif %}
                                     <p class="text-sm text-orange-600 mt-1 new-chapter-doc-tts-unavailable-message-js hidden">TTS for document language may not be available.</p>
@@ -462,7 +463,7 @@
                                         <i class="fas fa-check-circle mr-1"></i>Use This Document Audio
                                     </button>
                                 </div>
-                                 {% if form_errors.add_chapter_errors.new_chapter_document_tts_general %}
+                                   {% if form_errors.add_chapter_errors.new_chapter_document_tts_general %}
                                     <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_document_tts_general }}</p>
                                 {% endif %}
                             </div>
@@ -484,10 +485,10 @@
                                         {% endif %}
                                     </span>
                                 </div>
-                                 {% if form_errors.add_chapter_errors.new_chapter_generated_tts_url %}
+                                   {% if form_errors.add_chapter_errors.new_chapter_generated_tts_url %}
                                     <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_generated_tts_url }}</p>
                                 {% endif %}
-                                 {% if form_errors.add_chapter_errors.new_chapter_generated_document_tts_url %}
+                                   {% if form_errors.add_chapter_errors.new_chapter_generated_document_tts_url %}
                                     <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_generated_document_tts_url }}</p>
                                 {% endif %}
                             </div>
@@ -508,7 +509,10 @@
                     <div class="space-y-6 max-h-[90vh] overflow-y-auto pr-2 -mr-2 custom-scrollbar">
                         {% for chapter_item in chapters_context_list %}
                         {% with chapter=chapter_item.instance chapter_errors=chapter_item.errors initial_input_type=chapter_item.input_type_for_template existing_audio_url=chapter_item.existing_audio_file_url file_size_display=chapter_item.file_size_display %}
-                        <div class="chapter-card border border-slate-200 p-5 rounded-xl bg-slate-50 shadow-lg relative" data-chapter-id="{{ chapter.chapter_id }}">
+                        <div class="chapter-card border border-slate-200 p-5 rounded-xl bg-slate-50 shadow-lg relative"
+                             data-chapter-id="{{ chapter.chapter_id }}"
+                             data-existing-document-filename="{{ chapter_item.document_filename|default:'' }}" {# Added for JS #}
+                             data-existing-doc-tts-voice-id="{{ chapter_item.doc_tts_voice_id|default:'' }}"> {# Added for JS #}
                             <div class="flex justify-between items-start mb-4">
                                 <div class="flex items-center">
                                     <span class="chapter-number-js flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#091e65]/10 text-[#091e65] rounded-full text-sm font-semibold mr-3.5">{{ chapter.chapter_order }}</span>
@@ -547,6 +551,7 @@
                                     <input type="hidden" name="edit_chapter_input_type_hidden_{{ chapter.chapter_id }}" value="{{ initial_input_type }}" class="edit-chapter-input-type-hidden-js">
                                     <input type="hidden" name="edit_chapter_generated_tts_url_{{ chapter.chapter_id }}" value="{% if chapter.is_tts_generated and existing_audio_url and initial_input_type == 'generated_tts' %}{{ existing_audio_url }}{% endif %}" class="edit-chapter-generated-tts-url-input-js">
                                     <input type="hidden" name="edit_chapter_generated_document_tts_url_{{ chapter.chapter_id }}" value="{% if chapter.is_tts_generated and existing_audio_url and initial_input_type == 'generated_document_tts' %}{{ existing_audio_url }}{% endif %}" class="edit-chapter-generated-document-tts-url-input-js">
+                                    <input type="hidden" name="edit_chapter_source_document_filename_{{ chapter.chapter_id }}" value="{% if initial_input_type == 'generated_document_tts' %}{{ chapter_item.document_filename|default:'' }}{% endif %}" class="edit-chapter-source-document-filename-hidden-js"> {# Added to persist filename for doc TTS #}
                                     <input type="hidden" name="chapter_tts_voice_id_orig_{{ chapter.chapter_id }}" value="{{ chapter.tts_voice_id|default:'' }}">
 
 
@@ -571,7 +576,9 @@
                                     <div class="edit-chapter-file-upload-controls mt-4 {% if initial_input_type == 'tts' or initial_input_type == 'generated_tts' or initial_input_type == 'document_tts' or initial_input_type == 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
                                         <label for="chapter_audio_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">New Audio File <span class="text-slate-400 text-[10px]">(Optional, Max 50MB)</span></label>
                                         <label class="block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg bg-white hover:border-[#091e65]/50 transition duration-150 ease-in-out cursor-pointer group/file shadow-sm">
-                                            <input type="file" name="chapter_audio_{{ chapter.chapter_id }}" id="chapter_audio_edit_{{ chapter.chapter_id }}" accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg, audio/x-m4a, audio/m4a" class="chapter-audio-input-js hidden">
+                                            <input type="file" name="chapter_audio_{{ chapter.chapter_id }}" id="chapter_audio_edit_{{ chapter.chapter_id }}" accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg, audio/x-m4a, audio/m4a"
+                                                   class="chapter-audio-input-js hidden"
+                                                   data-has-existing-file="{% if chapter.audio_file %}true{% else %}false{% endif %}"> {# Added data attribute #}
                                             <div class="flex items-center justify-between text-xs text-slate-500 group-hover/file:text-[#091e65]">
                                                 <span class="chapter-filename-js truncate pr-2">Choose new audio file...</span>
                                                 <i class="fas fa-upload opacity-60"></i>
@@ -585,8 +592,8 @@
                                         <div class="mb-3">
                                             <label for="chapter_text_content_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">Text for TTS <span class="text-red-600">*</span></label>
                                             <textarea name="chapter_text_content_{{ chapter.chapter_id }}" id="chapter_text_content_edit_{{ chapter.chapter_id }}" rows="4"
-                                                      class="chapter-text-content-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-white"
-                                                      placeholder="Enter text for this chapter's audio...">{{ chapter_errors.text.0|default:chapter.text_content|default:'' }}</textarea>
+                                                                class="chapter-text-content-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-white"
+                                                                placeholder="Enter text for this chapter's audio...">{{ chapter_errors.text.0|default:chapter.text_content|default:'' }}</textarea>
                                             {% if chapter_errors.text %}<p class="text-red-500 text-sm mt-1 chapter-text-error-js">{{ chapter_errors.text.0 }}</p>{% endif %}
                                         </div>
                                         <div class="mb-3">
@@ -638,10 +645,10 @@
                                             <div class="relative">
                                                 <select name="chapter_doc_tts_voice_edit_{{ chapter.chapter_id }}" id="chapter_doc_tts_voice_edit_{{ chapter.chapter_id }}" class="chapter-doc-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm bg-white" disabled>
                                                     <option value="" selected>Select Narrator...</option>
-                                                    {% if chapter_item.doc_tts_voice_id %} 
+                                                    {% if chapter_item.doc_tts_voice_id %} {# This ensures previous doc TTS voice is selected #}
                                                         <option value="{{ chapter_item.doc_tts_voice_id }}" selected>{{ chapter_item.tts_voice_display_name|default:chapter_item.doc_tts_voice_id }}</option>
-                                                    {% elif chapter.is_tts_generated and chapter.tts_voice_id and initial_input_type == 'document_tts' %}
-                                                         <option value="{{ chapter.tts_voice_id }}" selected>{{ chapter_item.tts_voice_display_name|default:chapter.tts_voice_id }}</option>
+                                                    {% elif chapter.is_tts_generated and chapter.tts_voice_id and initial_input_type == 'document_tts' %} {# Fallback if doc_tts_voice_id is not specifically set on chapter_item, but it's a document TTS #}
+                                                        <option value="{{ chapter.tts_voice_id }}" selected>{{ chapter_item.tts_voice_display_name|default:chapter.tts_voice_id }}</option>
                                                     {% endif %}
                                                 </select>
                                             </div>
@@ -664,12 +671,18 @@
                                         {% if chapter_errors.document_tts_general %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.document_tts_general.0 }}</p>{% endif %}
                                     </div>
 
-                                    <div class="locked-generated-audio-display mt-4 {% if initial_input_type != 'generated_tts' or not existing_audio_url %}hidden-area{% else %}visible-area{% endif %}">
+                                    <div class="locked-generated-audio-display mt-4 {% if initial_input_type != 'generated_tts' and initial_input_type != 'generated_document_tts' or not existing_audio_url %}hidden-area{% else %}visible-area{% endif %}">
                                         <p class="text-xs font-medium text-slate-700 mb-1">Selected Audio for this Chapter:</p>
                                         <div class="info-box p-3 border rounded-lg text-sm">
-                                               <i class="fas fa-volume-up mr-2 text-blue-600"></i>
+                                                   <i class="fas fa-volume-up mr-2 text-blue-600"></i>
                                             <span class="chapter-generated-tts-filename-js font-medium">
-                                                {% if chapter.is_tts_generated and existing_audio_url %}{{ chapter.audio_file.name|cut:"chapters_audio/"|cut:audiobook.slug|cut:"/" }}{% if chapter_item.tts_voice_display_name %} (Voice: {{ chapter_item.tts_voice_display_name }}){% endif %}{% else %}Generated Audio{% endif %}
+                                                   {% if initial_input_type == 'generated_tts' %}
+                                                       Generated Audio (from Text){% if chapter_item.tts_voice_display_name %} (Voice: {{ chapter_item.tts_voice_display_name }}){% endif %}
+                                                   {% elif initial_input_type == 'generated_document_tts' %}
+                                                       Generated Audio (from Document: {{ chapter_item.document_filename|default:'Unknown Document' }}){% if chapter_item.tts_voice_display_name %} (Voice: {{ chapter_item.tts_voice_display_name }}){% endif %}
+                                                   {% else %}
+                                                       Generated Audio
+                                                   {% endif %}
                                             </span>
                                         </div>
                                         {% if chapter_errors.generated_tts %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.generated_tts.0 }}</p>{% endif %}

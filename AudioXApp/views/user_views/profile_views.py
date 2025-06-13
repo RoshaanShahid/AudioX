@@ -1,9 +1,8 @@
 # AudioXApp/views/user_views/profile_views.py
 
 import json
-import re # For phone number validation
+import re
 import logging
-
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib import messages
@@ -17,31 +16,27 @@ from django.db import transaction, IntegrityError
 from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.urls import reverse
-from django.core.validators import validate_email # Keep if used by other functions or future needs
-
-
-from ...models import User # Relative import
-from ..utils import _get_full_context # Relative import
+from django.core.validators import validate_email
+from ...models import User
+from ..utils import _get_full_context
 
 logger = logging.getLogger(__name__)
 
-# --- Profile Views ---
+# --- User Profile Page ---
 
 @login_required
 def myprofile(request):
-    """Renders the user's profile page."""
     context = _get_full_context(request)
     return render(request, 'user/myprofile.html', context)
+
+# --- Update Profile (AJAX) ---
 
 @login_required
 @require_POST 
 @csrf_protect
 def update_profile(request):
-    """Handles updating user profile information via AJAX."""
     user = request.user
-
     if request.content_type.startswith('multipart/form-data'):
-        # Handle profile picture upload
         if 'profile_pic' in request.FILES:
             if user.profile_pic and hasattr(user.profile_pic, 'name') and user.profile_pic.name: 
                 try:
@@ -49,7 +44,6 @@ def update_profile(request):
                         default_storage.delete(user.profile_pic.name)
                 except Exception as e_del:
                     logger.error(f"Error deleting old profile picture for user {user.username}: {e_del}", exc_info=True)
-            
             user.profile_pic = request.FILES['profile_pic']
             try:
                 user.save(update_fields=['profile_pic'])
@@ -62,7 +56,6 @@ def update_profile(request):
             return JsonResponse({'status': 'error', 'message': 'No profile picture file found in request for multipart upload.'}, status=400)
 
     elif request.content_type == 'application/json':
-        # Handle other profile fields update (text-based data)
         try:
             data = json.loads(request.body)
             fields_to_update = []
@@ -105,7 +98,6 @@ def update_profile(request):
                     except ValidationError:
                         error_messages['email'] = 'Invalid email address format.'
 
-
             if 'phone_number' in data:
                 phone_number = data['phone_number'].strip()
                 if phone_number: 
@@ -118,13 +110,13 @@ def update_profile(request):
                             fields_to_update.append('phone_number')
                 else: 
                     if user.phone_number is not None and user.phone_number != '': 
-                        user.phone_number = None # Store as None if emptied
+                        user.phone_number = None
                         fields_to_update.append('phone_number')
 
-            if 'bio' in data: # Bio is optional
+            if 'bio' in data:
                 bio = data['bio'].strip()
                 if user.bio != bio:
-                    user.bio = bio if bio else None # Store as None if emptied
+                    user.bio = bio if bio else None
                     fields_to_update.append('bio')
 
             if data.get('remove_profile_pic') is True: 
@@ -146,7 +138,6 @@ def update_profile(request):
                         fields_to_update.append('is_2fa_enabled')
                 else:
                     error_messages['is_2fa_enabled'] = 'Invalid value for 2FA status (must be true or false).'
-
 
             if error_messages:
                 general_error_message = "Please correct the errors below."
@@ -176,7 +167,6 @@ def update_profile(request):
                     return JsonResponse({'status': 'error', 'message': 'Error saving profile.'}, status=500)
             else:
                 return JsonResponse({'status': 'success', 'message': 'No changes detected.'})
-
         except json.JSONDecodeError:
             return JsonResponse({'status': 'error', 'message': 'Invalid request data format (expected JSON).'}, status=400)
         except Exception as e_main: 
@@ -185,6 +175,7 @@ def update_profile(request):
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request format (Content-Type).'}, status=415)
 
+# --- Change Password (AJAX) ---
 
 @login_required
 @csrf_protect
@@ -222,35 +213,25 @@ def change_password(request):
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid request method or type.'}, status=400)
 
+# --- Complete Profile (Post-Social-Signup) ---
 
 @login_required
 @csrf_protect
 def complete_profile(request):
     user = request.user
     context = _get_full_context(request)
-
-    next_destination_after_save = request.GET.get('next') or \
-                                   request.session.get('next_url_after_profile_completion') or \
-                                   reverse('AudioXApp:home')
-
-    # Check if this user truly needs to be on this page
+    next_destination_after_save = request.GET.get('next') or request.session.get('next_url_after_profile_completion') or reverse('AudioXApp:home')
     needs_completion_flow_flag = getattr(user, 'requires_extra_details_post_social_signup', False)
     phone_is_missing = (user.phone_number is None or user.phone_number.strip() == '')
-    # Full name is generally provided by Google, but we allow confirmation/edit
-    # A truly "missing" full name would be more critical, but often present for social signups
     full_name_is_effectively_missing = (user.full_name is None or user.full_name.strip() == '')
 
-
     if request.method == 'GET':
-        # Scenario 1: User doesn't have the flag set AND has necessary details -> redirect
         if not needs_completion_flow_flag and not phone_is_missing and not full_name_is_effectively_missing:
             logger.info(f"User {user.username} on complete_profile; flag is False and details exist. Redirecting.")
             request.session.pop('profile_incomplete', None)
             request.session.pop('next_url_after_profile_completion', None)
             messages.info(request, "Your profile is already complete.")
             return redirect(next_destination_after_save)
-        
-        # Scenario 2: User has the flag, but details are somehow filled -> clear flag & redirect
         elif needs_completion_flow_flag and not phone_is_missing and not full_name_is_effectively_missing:
             logger.info(f"User {user.username} on complete_profile; flag is True, but details now exist. Clearing flag & redirecting.")
             user.requires_extra_details_post_social_signup = False
@@ -259,23 +240,16 @@ def complete_profile(request):
             request.session.pop('next_url_after_profile_completion', None)
             messages.success(request, "Your profile details seem complete and have been verified.")
             return redirect(next_destination_after_save)
-        
-        # Otherwise (flag is True and phone/name is missing, or direct access by normal user with missing details but no flag),
-        # they should see the form. The login view handles the "forcing" for flagged users.
 
     if request.method == 'POST':
         if request.content_type == 'application/json':
             try:
                 data = json.loads(request.body)
-                # Default to current user's full_name if not sent, or empty if user.full_name is None
                 full_name_from_form = data.get('full_name', user.full_name or '').strip()
                 phone_number_full = data.get('phone_number', '').strip()
-                # Bio is not part of this specific mandatory completion flow
-
                 errors = {}
                 if not full_name_from_form:
                     errors['full_name'] = 'Full name cannot be empty.'
-                
                 if not phone_number_full:
                     errors['phone_number'] = 'Phone number cannot be empty for profile completion.'
                 elif not (phone_number_full.startswith('+92') and len(phone_number_full) == 13 and phone_number_full[3:].isdigit()):
@@ -286,48 +260,33 @@ def complete_profile(request):
                 if errors:
                     return JsonResponse({'status': 'error', 'message': 'Please correct the errors.', 'errors': errors}, status=400)
 
-                # Update user profile
                 user.full_name = full_name_from_form
                 user.phone_number = phone_number_full
-                user.requires_extra_details_post_social_signup = False # Clear the flag
-
+                user.requires_extra_details_post_social_signup = False
                 fields_to_save = ['full_name', 'phone_number', 'requires_extra_details_post_social_signup']
                 user.save(update_fields=fields_to_save)
-
-                request.session.pop('profile_incomplete', None) # Clear the session flag
-                # next_url_after_profile_completion will be used by next_destination_after_save
-
+                request.session.pop('profile_incomplete', None)
                 logger.info(f"Profile details (phone/name) completed for social signup user {user.username}")
-                messages.success(request, "Your profile has been updated successfully!") # For display on next page
-                return JsonResponse({
-                    'status': 'success',
-                    'message': 'Your profile has been updated successfully!',
-                    'redirect_url': next_destination_after_save
-                })
-
+                messages.success(request, "Your profile has been updated successfully!")
+                return JsonResponse({'status': 'success', 'message': 'Your profile has been updated successfully!', 'redirect_url': next_destination_after_save})
             except json.JSONDecodeError:
                 return JsonResponse({'status': 'error', 'message': 'Invalid JSON data.'}, status=400)
-            except IntegrityError as ie: # Catch potential unique constraint violations more specifically
+            except IntegrityError as ie:
                 logger.error(f"IntegrityError completing profile for {user.username}: {ie}", exc_info=True)
                 error_message = 'A data conflict occurred. This phone number might already be in use.'
-                if 'phone_number' in str(ie).lower(): # Check if it's a phone number constraint
-                     errors['phone_number'] = 'This phone number is already registered.'
+                if 'phone_number' in str(ie).lower():
+                    errors['phone_number'] = 'This phone number is already registered.'
                 return JsonResponse({'status': 'error', 'message': error_message, 'errors': errors or {'general': error_message}}, status=400)
             except Exception as e:
                 logger.error(f"Error completing profile for {user.username}: {e}", exc_info=True)
                 return JsonResponse({'status': 'error', 'message': 'An unexpected error occurred.'}, status=500)
-        else: # Not JSON
+        else:
             return JsonResponse({'status': 'error', 'message': 'Invalid request content type. Expected application/json.'}, status=415)
 
-    # For GET request, prepare context for the 'complete_profile.html' template
-    context['user_full_name_from_social'] = user.full_name or "" # Pre-fill full name (from Google or current)
-    
+    context['user_full_name_from_social'] = user.full_name or ""
     user_phone_number_only = ''
     if user.phone_number and user.phone_number.startswith('+92') and len(user.phone_number) == 13:
         user_phone_number_only = user.phone_number[3:]
-    context['user_phone_number_only'] = user_phone_number_only 
-    
+    context['user_phone_number_only'] = user_phone_number_only
     context['next_destination_on_success'] = next_destination_after_save
-    # Bio is optional and handled by the general update_profile view, not this specific completion step.
-
     return render(request, 'auth/complete_profile.html', context)

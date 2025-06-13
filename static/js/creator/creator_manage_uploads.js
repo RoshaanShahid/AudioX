@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const currentAudiobookLanguageManage = document.getElementById('current-audiobook-language-manage')?.textContent.trim() || '';
     if (!currentAudiobookLanguageManage) {
-        console.warn("Audiobook language could not be determined from the page. TTS functionality might be affected.");
+        // console.warn("Audiobook language could not be determined from the page. TTS functionality might be affected.");
     }
 
     // --- Cover Image Handling ---
@@ -47,14 +47,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (file) {
                 if (file.size > 2 * 1024 * 1024) { // Max 2MB
                     Swal.fire({ title: 'Cover Image Too Large', html: `Cover image must be under <strong>2MB</strong>. <br/>Selected file is ${(file.size / (1024*1024)).toFixed(2)}MB.`, icon: 'error', iconColor: THEME_COLOR_ERROR, confirmButtonColor: THEME_COLOR_PRIMARY, customClass: { popup: 'rounded-xl shadow-2xl font-sans text-sm', title: 'text-lg font-semibold text-slate-800', htmlContainer: 'text-slate-600 pt-1 leading-normal' }});
-                    event.target.value = ''; 
-                    coverPreview.src = originalCoverSrc; 
+                    event.target.value = '';
+                    coverPreview.src = originalCoverSrc;
                     coverNameDisplay.textContent = originalCoverName;
                     return;
                 }
                 if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
                     Swal.fire({ title: 'Invalid File Type', text: 'Please select a JPG, JPEG, or PNG image.', icon: 'error', iconColor: THEME_COLOR_ERROR, confirmButtonColor: THEME_COLOR_PRIMARY, customClass: { popup: 'rounded-xl shadow-2xl font-sans text-sm', title: 'text-lg font-semibold text-slate-800', htmlContainer: 'text-slate-600 pt-1 leading-normal' }});
-                    event.target.value = ''; 
+                    event.target.value = '';
                     coverPreview.src = originalCoverSrc;
                     coverNameDisplay.textContent = originalCoverName;
                     return;
@@ -62,9 +62,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const reader = new FileReader();
                 reader.onload = function(e) { coverPreview.src = e.target.result; }
                 reader.readAsDataURL(file);
-                coverNameDisplay.textContent = file.name; 
-            } else { 
-                coverPreview.src = originalCoverSrc; 
+                coverNameDisplay.textContent = file.name;
+            } else {
+                coverPreview.src = originalCoverSrc;
                 coverNameDisplay.textContent = originalCoverName;
             }
         });
@@ -76,30 +76,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const addChapterIcon = document.getElementById('addChapterIcon');
     const addChapterText = document.getElementById('addChapterText');
 
-    let formErrors = {}; 
+    let formErrors = {};
     let submittedValuesFromDjango = {}; // To store values passed from Django, if any
 
-    const formErrorsDataScript = document.getElementById('django-form-errors-data'); // Corrected ID
+    const formErrorsDataScript = document.getElementById('django-form-errors-data');
     if (formErrorsDataScript && formErrorsDataScript.textContent) {
-        try { 
-            formErrors = JSON.parse(formErrorsDataScript.textContent || '{}'); 
-        } catch(e) { 
-            console.error("Error parsing form errors JSON for manage page:", e); 
+        try {
+            formErrors = JSON.parse(formErrorsDataScript.textContent || '{}');
+        } catch(e) {
+            console.error("Error parsing form errors JSON for manage page:", e);
         }
     }
-    
-    // Attempt to get submitted_values if they are passed for repopulation (e.g., for add chapter form errors)
-    // This assumes your Django view context passes 'submitted_values' to the template
-    // and you have a corresponding json_script tag with id 'django-submitted-values-data'
-    const submittedValuesDataScript = document.getElementById('django-submitted-values-data'); // Ensure this ID matches your template if you use it
+
+    const submittedValuesDataScript = document.getElementById('django-submitted-values-data');
     if (submittedValuesDataScript && submittedValuesDataScript.textContent) {
         try {
             submittedValuesFromDjango = JSON.parse(submittedValuesDataScript.textContent || '{}');
+            // console.log("Submitted values from Django:", submittedValuesFromDjango); // Debugging
         } catch (e) {
             console.error("Error parsing submitted values JSON for manage page:", e);
         }
     }
-    
+
+
     if (addChapterFormContainer && formErrors.add_chapter_active_with_errors) {
         addChapterFormContainer.classList.remove('hidden-area');
         addChapterFormContainer.classList.add('visible-area');
@@ -114,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addChapterFormContainer.classList.toggle('visible-area', isHidden);
             if (addChapterIcon) addChapterIcon.className = isHidden ? 'fas fa-times transition-transform duration-300 ease-in-out' : 'fas fa-plus transition-transform duration-300 ease-in-out';
             if (addChapterText) addChapterText.textContent = isHidden ? 'Cancel Adding' : 'Add New Chapter';
-            if (isHidden) { 
+            if (isHidden) {
                 addChapterFormContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         });
@@ -122,39 +121,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- TTS Voice Population and Preview Button Logic (scoped to a chapter form) ---
     function updateChapterPreviewButtonState(chapterFormElement, isForDocument = false) {
-        const textInput = chapterFormElement.querySelector('.chapter-text-content-input-js, #new_chapter_text_content'); 
-        const voiceSelect = chapterFormElement.querySelector('.chapter-tts-voice-select-js, #new_chapter_tts_voice'); 
-        const previewBtn = chapterFormElement.querySelector('.generate-chapter-tts-preview-btn, .generate-new-chapter-tts-preview-btn'); 
-        
-        const docInput = chapterFormElement.querySelector('.chapter-document-input-js, .new-chapter-document-input-js'); 
-        const docTtsVoiceSelect = chapterFormElement.querySelector('.chapter-doc-tts-voice-select-js, #new_chapter_doc_tts_voice'); 
-        const docPreviewBtn = chapterFormElement.querySelector('.generate-document-tts-preview-btn, .generate-new-chapter-document-tts-preview-btn, .generate-edit-chapter-document-tts-preview-btn'); 
-        
+        const textInput = chapterFormElement.querySelector('.chapter-text-content-input-js, #new_chapter_text_content');
+        const voiceSelect = chapterFormElement.querySelector('.chapter-tts-voice-select-js, #new_chapter_tts_voice');
+        const previewBtn = chapterFormElement.querySelector('.generate-chapter-tts-preview-btn, .generate-new-chapter-tts-preview-btn');
+
+        const docInput = chapterFormElement.querySelector('.chapter-document-input-js, .new-chapter-document-input-js');
+        const docTtsVoiceSelect = chapterFormElement.querySelector('.chapter-doc-tts-voice-select-js, #new_chapter_doc_tts_voice');
+        const docPreviewBtn = chapterFormElement.querySelector('.generate-document-tts-preview-btn, .generate-new-chapter-document-tts-preview-btn, .generate-edit-chapter-document-tts-preview-btn');
+
         const inputTypeHidden = chapterFormElement.querySelector('.chapter-input-type-hidden-js, .new-chapter-input-type-hidden-js, .edit-chapter-input-type-hidden-js');
-        
+
         if (!inputTypeHidden) return;
         const currentInputType = inputTypeHidden.value;
+        // console.log("updateChapterPreviewButtonState:", {currentInputType, isForDocument}); // Debugging
 
-        if (currentInputType === 'tts' && previewBtn && textInput && voiceSelect) { 
+        // Logic for Text-to-Speech (manual text)
+        if (currentInputType === 'tts' && previewBtn && textInput && voiceSelect) {
             const isLangFixedAndValid = currentAudiobookLanguageManage && currentAudiobookLanguageManage !== "";
             const voicesForLang = isLangFixedAndValid ? edgeTtsVoicesByLangManage[currentAudiobookLanguageManage] : null;
             const areVoicesAvailable = voicesForLang && voicesForLang.length > 0;
+            // IMPORTANT: Check if voiceSelect.value is NOT "default" and NOT empty string
             const isVoiceSelected = voiceSelect.value && voiceSelect.value !== 'default' && voiceSelect.value !== "";
             const isTextValid = textInput.value.trim().length >= 10 && textInput.value.trim().length <= 5000;
             previewBtn.disabled = !(isLangFixedAndValid && areVoicesAvailable && isVoiceSelected && isTextValid);
+            // console.log("TTS Button State:", {isLangFixedAndValid, areVoicesAvailable, isVoiceSelected, isTextValid, disabled: previewBtn.disabled}); // Debugging
         } else if (previewBtn) {
-             previewBtn.disabled = true; 
+            previewBtn.disabled = true; // Disable if not in TTS mode
         }
 
-        if (currentInputType === 'document_tts' && docPreviewBtn && docInput && docTtsVoiceSelect) { 
+        // Logic for Document-to-Speech
+        if (currentInputType === 'document_tts' && docPreviewBtn && docInput && docTtsVoiceSelect) {
             const isLangFixedAndValid = currentAudiobookLanguageManage && currentAudiobookLanguageManage !== "";
             const voicesForLang = isLangFixedAndValid ? edgeTtsVoicesByLangManage[currentAudiobookLanguageManage] : null;
             const areVoicesAvailable = voicesForLang && voicesForLang.length > 0;
+            // IMPORTANT: Check if docTtsVoiceSelect.value is NOT "default" and NOT empty string
             const isDocVoiceSelected = docTtsVoiceSelect.value && docTtsVoiceSelect.value !== 'default' && docTtsVoiceSelect.value !== "";
             const isDocFileSelected = docInput.files.length > 0;
             docPreviewBtn.disabled = !(isLangFixedAndValid && areVoicesAvailable && isDocVoiceSelected && isDocFileSelected);
+            // console.log("Doc TTS Button State:", {isLangFixedAndValid, areVoicesAvailable, isDocVoiceSelected, isDocFileSelected, disabled: docPreviewBtn.disabled}); // Debugging
         } else if (docPreviewBtn) {
-            docPreviewBtn.disabled = true; 
+            docPreviewBtn.disabled = true; // Disable if not in Document TTS mode
         }
     }
 
@@ -162,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function populateChapterTtsVoices(chapterFormElement, audiobookLang, selectedTtsVoiceId, isForDocument = false) {
         const voiceSelectClass = isForDocument ? '.chapter-doc-tts-voice-select-js, #new_chapter_doc_tts_voice' : '.chapter-tts-voice-select-js, #new_chapter_tts_voice';
         const unavailableMsgClass = isForDocument ? '.chapter-doc-tts-unavailable-message-js, .new-chapter-doc-tts-unavailable-message-js' : '.chapter-tts-unavailable-message-js, .new-chapter-tts-unavailable-message-js';
-        
+
         const ttsVoiceSelect = chapterFormElement.querySelector(voiceSelectClass);
         const unavailableMsg = chapterFormElement.querySelector(unavailableMsgClass);
 
@@ -171,31 +177,31 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        ttsVoiceSelect.innerHTML = ''; 
+        ttsVoiceSelect.innerHTML = '';
         unavailableMsg.classList.add('hidden');
         ttsVoiceSelect.disabled = true;
 
-        if (!audiobookLang) { 
+        if (!audiobookLang) {
             const defaultOpt = document.createElement('option');
-            defaultOpt.value = ""; 
+            defaultOpt.value = "";
             defaultOpt.textContent = "Audiobook Language Not Set";
             ttsVoiceSelect.appendChild(defaultOpt);
-            console.warn("populateChapterTtsVoices: Audiobook language is missing for this chapter form.");
-            updateChapterPreviewButtonState(chapterFormElement, isForDocument); 
-            return; 
+            // console.warn("populateChapterTtsVoices: Audiobook language is missing for this chapter form.");
+            updateChapterPreviewButtonState(chapterFormElement, isForDocument);
+            return;
         }
 
         const voicesForLang = edgeTtsVoicesByLangManage[audiobookLang];
-        if (!voicesForLang) { 
+        if (!voicesForLang) {
             const errOpt = document.createElement('option');
             errOpt.value = ""; errOpt.textContent = "TTS Error: Lang Config Issue";
             ttsVoiceSelect.appendChild(errOpt);
             console.error(`TTS voices not configured for language: ${audiobookLang}`);
-            updateChapterPreviewButtonState(chapterFormElement, isForDocument); 
+            updateChapterPreviewButtonState(chapterFormElement, isForDocument);
             return;
         }
 
-        if (voicesForLang.length === 0) { 
+        if (voicesForLang.length === 0) {
             const noTtsOpt = document.createElement('option');
             noTtsOpt.value = ""; noTtsOpt.textContent = "TTS Not Available for " + audiobookLang;
             ttsVoiceSelect.appendChild(noTtsOpt);
@@ -208,35 +214,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
             voicesForLang.forEach(voice => {
                 const option = document.createElement('option');
-                option.value = voice.id; 
-                option.textContent = voice.name; 
+                option.value = voice.id;
+                option.textContent = voice.name;
                 if (voice.id === selectedTtsVoiceId) {
                     option.selected = true;
                 }
                 ttsVoiceSelect.appendChild(option);
             });
-            
+
+            // Ensure a voice is actually selected if one was previously (e.g., on error re-render)
+            // or default to "default" if no valid match
             if (selectedTtsVoiceId && voicesForLang.some(v => v.id === selectedTtsVoiceId)) {
-                   ttsVoiceSelect.value = selectedTtsVoiceId;
+                ttsVoiceSelect.value = selectedTtsVoiceId;
             } else {
-                ttsVoiceSelect.value = "default"; 
+                ttsVoiceSelect.value = "default";
             }
         }
-        updateChapterPreviewButtonState(chapterFormElement, isForDocument); 
+        updateChapterPreviewButtonState(chapterFormElement, isForDocument);
     }
 
 
     // --- Helper Function for TTS Preview AJAX Call (Manual Text) ---
     async function generateChapterTtsPreview(params) {
         const {
-            chapterForm, 
+            chapterForm,
             textContentInput, voiceSelect, playerContainer, player, messageEl,
             confirmUseBtn, generateBtn, generatedUrlInputForChapter,
             lockedDisplayForChapter, lockedFilenameSpanForChapter
         } = params;
 
         const text = textContentInput.value.trim();
-        const voiceOptionId = voiceSelect.value; 
+        const voiceOptionId = voiceSelect.value;
         const btnTextEl = generateBtn.querySelector('.btn-text');
         const spinnerEl = generateBtn.querySelector('.spinner');
 
@@ -244,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
         playerContainer.classList.add('hidden');
         player.src = '';
         if (confirmUseBtn) confirmUseBtn.classList.add('hidden');
-        if (generatedUrlInputForChapter) generatedUrlInputForChapter.value = ''; 
+        if (generatedUrlInputForChapter) generatedUrlInputForChapter.value = '';
         if (lockedDisplayForChapter) {
             lockedDisplayForChapter.classList.add('hidden-area');
             lockedDisplayForChapter.classList.remove('visible-area');
@@ -258,10 +266,10 @@ document.addEventListener('DOMContentLoaded', function() {
             messageEl.textContent = (messageEl.textContent ? messageEl.textContent + ' ' : '') + 'Select a narrator voice.';
             isValid = false;
         }
-        
-        if (!isValid) { 
+
+        if (!isValid) {
             messageEl.className = messageEl.className.replace(/text-(green|indigo|blue)-[0-9a-zA-Z]+/g, 'text-red-600');
-            return; 
+            return;
         }
 
         generateBtn.disabled = true;
@@ -272,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formData = new FormData();
         formData.append('text_content', text);
-        formData.append('tts_voice_id', voiceOptionId); 
+        formData.append('tts_voice_id', voiceOptionId);
         formData.append('audiobook_language', currentAudiobookLanguageManage);
         formData.append('csrfmiddlewaretoken', csrfToken);
 
@@ -288,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (confirmUseBtn) {
                     confirmUseBtn.classList.remove('hidden');
                     confirmUseBtn.dataset.generatedUrl = data.audio_url;
-                    confirmUseBtn.dataset.generatedVoiceId = data.voice_id_used; 
+                    confirmUseBtn.dataset.generatedVoiceId = data.voice_id_used;
                     confirmUseBtn.dataset.generatedFilename = data.filename || "Generated_Audio.mp3";
                 }
             } else {
@@ -307,14 +315,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- Helper Function for Document TTS Preview AJAX Call - NEW ---
+    // --- Helper Function for Document TTS Preview AJAX Call ---
     async function generateDocumentTtsPreview(params) {
         const {
             chapterForm,
-            documentInput, docVoiceSelect, 
+            documentInput, docVoiceSelect,
             playerContainer, player, messageEl,
-            confirmUseBtn, generateBtn, generatedDocUrlInput, 
-            lockedDisplay, lockedFilenameSpan 
+            confirmUseBtn, generateBtn, generatedDocUrlInput,
+            lockedDisplay, lockedFilenameSpan
         } = params;
 
         const docFile = documentInput.files[0];
@@ -332,10 +340,10 @@ document.addEventListener('DOMContentLoaded', function() {
             lockedDisplay.classList.remove('visible-area');
         }
 
-
         let isValid = true;
         if (!docFile) { messageEl.textContent = 'Please select a document file.'; isValid = false; }
-        if (voiceOptionId === 'default' || !voiceOptionId) {
+        // FIX: Check if docVoiceSelect.value is actually selected and not "default" or empty
+        if (voiceOptionId === 'default' || !voiceOptionId || (docVoiceSelect.options.length > 0 && docVoiceSelect.selectedIndex === 0 && docVoiceSelect.options[0].value === 'default')) {
             messageEl.textContent = (messageEl.textContent ? messageEl.textContent + ' ' : '') + 'Select a narrator voice.';
             isValid = false;
         }
@@ -347,7 +355,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (docFile.size > maxSize) { messageEl.textContent = 'Document too large (Max 10MB).'; isValid = false;}
             if (!allowedTypes.includes(docFile.type) && !allowedExtensions.includes(fileExtension)) { messageEl.textContent = 'Invalid document type (PDF, DOC, DOCX).'; isValid = false;}
         }
-
 
         if (!isValid) {
             messageEl.className = messageEl.className.replace(/text-(green|indigo|blue)-[0-9a-zA-Z]+/g, 'text-red-600');
@@ -361,9 +368,10 @@ document.addEventListener('DOMContentLoaded', function() {
         messageEl.className = messageEl.className.replace(/text-(red|green)-[0-9a-zA-Z]+/g, 'text-indigo-600');
 
         const formData = new FormData();
-        formData.append('document_file', docFile); 
+        formData.append('document_file', docFile);
         formData.append('tts_voice_id', voiceOptionId);
-        formData.append('audiobook_language', currentAudiobookLanguageManage);
+        // FIX: The view expects 'language' from the form, not 'audiobook_language'
+        formData.append('language', currentAudiobookLanguageManage);
         formData.append('csrfmiddlewaretoken', csrfToken);
 
         try {
@@ -379,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     confirmUseBtn.classList.remove('hidden');
                     confirmUseBtn.dataset.generatedUrl = data.audio_url;
                     confirmUseBtn.dataset.generatedVoiceId = data.voice_id_used;
-                    confirmUseBtn.dataset.generatedFilename = data.filename || "Generated_Audio_from_Doc.mp3"; 
+                    confirmUseBtn.dataset.generatedFilename = data.filename || "Generated_Audio_from_Doc.mp3";
                     confirmUseBtn.dataset.sourceDocumentName = data.source_filename || docFile.name;
                 }
             } else {
@@ -405,53 +413,55 @@ document.addEventListener('DOMContentLoaded', function() {
         const inputTypeHidden = addChapterForm.querySelector('.new-chapter-input-type-hidden-js');
         const fileUploadControls = addChapterForm.querySelector('.new-chapter-file-upload-controls');
         const ttsGenerationControls = addChapterForm.querySelector('.new-chapter-tts-generation-controls');
-        const documentTtsControls = addChapterForm.querySelector('.new-chapter-document-tts-controls'); 
+        const documentTtsControls = addChapterForm.querySelector('.new-chapter-document-tts-controls');
         const lockedDisplay = addChapterForm.querySelector('.new-chapter-locked-generated-audio-display');
-        const generatedTtsUrlInput = addChapterForm.querySelector('.new-chapter-generated-tts-url-input-js'); 
-        const generatedDocTtsUrlInput = addChapterForm.querySelector('.new-chapter-generated-document-tts-url-input-js'); 
+        const generatedTtsUrlInput = addChapterForm.querySelector('.new-chapter-generated-tts-url-input-js');
+        const generatedDocTtsUrlInput = addChapterForm.querySelector('.new-chapter-generated-document-tts-url-input-js');
         const lockedFilenameSpan = addChapterForm.querySelector('.new-chapter-generated-tts-filename-js');
-        
+
         const audioInput = fileUploadControls?.querySelector('#new_chapter_audio');
         const textInput = ttsGenerationControls?.querySelector('#new_chapter_text_content');
         const voiceSelect = ttsGenerationControls?.querySelector('#new_chapter_tts_voice');
-        const documentInput = documentTtsControls?.querySelector('#new_chapter_document_file'); 
-        const docVoiceSelect = documentTtsControls?.querySelector('#new_chapter_doc_tts_voice'); 
-        const documentFileNameSpan = documentTtsControls?.querySelector('.new-chapter-document-filename-js'); 
+        const documentInput = documentTtsControls?.querySelector('#new_chapter_document_file');
+        const docVoiceSelect = documentTtsControls?.querySelector('#new_chapter_doc_tts_voice');
+        const documentFileNameSpan = documentTtsControls?.querySelector('.new-chapter-document-filename-js');
 
 
         function toggleAddNewChapterFields(type) {
-            if (inputTypeHidden) inputTypeHidden.value = type; 
+            if (inputTypeHidden) inputTypeHidden.value = type;
             fileUploadControls?.classList.add('hidden-area'); fileUploadControls?.classList.remove('visible-area');
             ttsGenerationControls?.classList.add('hidden-area'); ttsGenerationControls?.classList.remove('visible-area');
-            documentTtsControls?.classList.add('hidden-area'); documentTtsControls?.classList.remove('visible-area'); 
+            documentTtsControls?.classList.add('hidden-area'); documentTtsControls?.classList.remove('visible-area');
             lockedDisplay?.classList.add('hidden-area'); lockedDisplay?.classList.remove('visible-area');
 
+            // Reset required attributes
             if(audioInput) audioInput.required = false;
             if(textInput) textInput.required = false;
-            if(voiceSelect) voiceSelect.required = false;
-            if(documentInput) documentInput.required = false; 
-            if(docVoiceSelect) docVoiceSelect.required = false; 
+            // voiceSelect is dynamically populated, so don't set required here directly.
+            // Required check is done in JS validation before sending to server.
+            if(documentInput) documentInput.required = false;
+            // docVoiceSelect is dynamically populated.
 
             if (type === 'file') {
                 fileUploadControls?.classList.remove('hidden-area'); fileUploadControls?.classList.add('visible-area');
                 if(audioInput) audioInput.required = true;
-            } else if (type === 'tts') { 
+            } else if (type === 'tts') {
                 ttsGenerationControls?.classList.remove('hidden-area'); ttsGenerationControls?.classList.add('visible-area');
-                lockedDisplay?.classList.add('hidden-area'); lockedDisplay?.classList.remove('visible-area'); 
+                lockedDisplay?.classList.add('hidden-area'); lockedDisplay?.classList.remove('visible-area');
                 if(textInput) textInput.required = true;
-                if(voiceSelect) voiceSelect.required = true;
-                if (inputTypeHidden) inputTypeHidden.value = 'tts'; 
-            } else if (type === 'document_tts') { 
+                // Voice select for TTS is handled by populateChapterTtsVoices & updateChapterPreviewButtonState
+                if (inputTypeHidden) inputTypeHidden.value = 'tts';
+            } else if (type === 'document_tts') {
                 documentTtsControls?.classList.remove('hidden-area'); documentTtsControls?.classList.add('visible-area');
                 if(documentInput) documentInput.required = true;
-                if(docVoiceSelect) docVoiceSelect.required = true;
+                // Voice select for document TTS is handled by populateChapterTtsVoices & updateChapterPreviewButtonState
                 if (inputTypeHidden) inputTypeHidden.value = 'document_tts';
-            } else if (type === 'generated_tts' || type === 'generated_document_tts') { 
+            } else if (type === 'generated_tts' || type === 'generated_document_tts') {
                 lockedDisplay?.classList.remove('hidden-area'); lockedDisplay?.classList.add('visible-area');
                 ttsGenerationControls?.classList.add('hidden-area'); ttsGenerationControls?.classList.remove('visible-area');
                 fileUploadControls?.classList.add('hidden-area'); fileUploadControls?.classList.remove('visible-area');
-                documentTtsControls?.classList.add('hidden-area'); documentTtsControls?.classList.remove('visible-area'); 
-                if (inputTypeHidden) inputTypeHidden.value = type; 
+                documentTtsControls?.classList.add('hidden-area'); documentTtsControls?.classList.remove('visible-area');
+                if (inputTypeHidden) inputTypeHidden.value = type;
             }
             updateChapterPreviewButtonState(addChapterForm, type === 'document_tts');
         }
@@ -459,12 +469,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         addChapterForm.querySelectorAll('.new-chapter-input-type-toggle-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                const type = this.dataset.type; 
+                const type = this.dataset.type;
                 addChapterForm.querySelectorAll('.new-chapter-input-type-toggle-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 if ((type === 'file' || type === 'document_tts') && generatedTtsUrlInput && generatedTtsUrlInput.value) {
-                    generatedTtsUrlInput.value = ''; 
-                    if(lockedFilenameSpan) lockedFilenameSpan.textContent = "Generated Audio"; 
+                    generatedTtsUrlInput.value = '';
+                    if(lockedFilenameSpan) lockedFilenameSpan.textContent = "Generated Audio";
                     const confirmBtnAdd = addChapterForm.querySelector('.confirm-use-new-chapter-generated-audio-btn');
                     if(confirmBtnAdd) confirmBtnAdd.classList.add('hidden');
                     const playerContainerAdd = addChapterForm.querySelector('.new-chapter-tts-preview-player-container');
@@ -472,19 +482,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     const messageElAdd = addChapterForm.querySelector('.new-chapter-tts-message');
                     if(messageElAdd) messageElAdd.textContent = '';
                 }
-                if ((type === 'file' || type === 'tts') && generatedDocTtsUrlInput && generatedDocTtsUrlInput.value) { 
+                if ((type === 'file' || type === 'tts') && generatedDocTtsUrlInput && generatedDocTtsUrlInput.value) {
                     generatedDocTtsUrlInput.value = '';
-                    const confirmDocBtnAdd = addChapterForm.querySelector('.confirm-use-new-chapter-document-audio-btn'); 
+                    const confirmDocBtnAdd = addChapterForm.querySelector('.confirm-use-new-chapter-document-audio-btn');
                     if(confirmDocBtnAdd) confirmDocBtnAdd.classList.add('hidden');
-                    const docPlayerContainerAdd = addChapterForm.querySelector('.new-chapter-document-tts-preview-player-container'); 
+                    const docPlayerContainerAdd = addChapterForm.querySelector('.new-chapter-document-tts-preview-player-container');
                     if(docPlayerContainerAdd) docPlayerContainerAdd.classList.add('hidden');
-                    const docMessageElAdd = addChapterForm.querySelector('.new-chapter-document-tts-message'); 
+                    const docMessageElAdd = addChapterForm.querySelector('.new-chapter-document-tts-message');
                     if(docMessageElAdd) docMessageElAdd.textContent = '';
                 }
-                toggleAddNewChapterFields(type); 
+                toggleAddNewChapterFields(type);
             });
         });
-        
+
         // Use submittedValuesFromDjango for initial state of "Add New Chapter" form
         const initialNewChapterTypeFromDjango = submittedValuesFromDjango.new_chapter_input_type_hidden || 'file';
         let uiInitialType = initialNewChapterTypeFromDjango;
@@ -507,11 +517,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (generateManualTtsBtn && textInput && voiceSelect && manualTtsPlayerContainer && manualTtsPlayer && manualTtsMessageEl && confirmUseManualTtsBtn) {
             generateManualTtsBtn.addEventListener('click', function() {
-                generateChapterTtsPreview({ 
-                    chapterForm: addChapterForm, textContentInput: textInput, voiceSelect, 
+                generateChapterTtsPreview({
+                    chapterForm: addChapterForm, textContentInput: textInput, voiceSelect,
                     playerContainer: manualTtsPlayerContainer, player: manualTtsPlayer, messageEl: manualTtsMessageEl,
-                    confirmUseBtn: confirmUseManualTtsBtn, generateBtn: this, 
-                    generatedUrlInputForChapter: generatedTtsUrlInput, 
+                    confirmUseBtn: confirmUseManualTtsBtn, generateBtn: this,
+                    generatedUrlInputForChapter: generatedTtsUrlInput,
                     lockedDisplayForChapter: lockedDisplay, lockedFilenameSpanForChapter: lockedFilenameSpan,
                 });
             });
@@ -519,26 +529,26 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confirmUseManualTtsBtn && generatedTtsUrlInput && lockedDisplay && lockedFilenameSpan && voiceSelect && inputTypeHidden && manualTtsMessageEl) {
             confirmUseManualTtsBtn.addEventListener('click', function() {
                 const urlToUse = this.dataset.generatedUrl;
-                const voiceUsed = this.dataset.generatedVoiceId; 
+                const voiceUsed = this.dataset.generatedVoiceId;
                 const filenameUsed = this.dataset.generatedFilename;
                 if (urlToUse) {
-                    generatedTtsUrlInput.value = urlToUse; 
-                    if(generatedDocTtsUrlInput) generatedDocTtsUrlInput.value = ''; 
-                    let displayFilenameText = filenameUsed;
+                    generatedTtsUrlInput.value = urlToUse;
+                    if(generatedDocTtsUrlInput) generatedDocTtsUrlInput.value = '';
+                    let displayFilenameText = `Generated Audio (from Text)`;
                     const voiceDetail = ALL_EDGE_TTS_VOICES_MAP_MANAGE[voiceUsed];
                     if (voiceDetail) displayFilenameText += ` (Voice: ${voiceDetail.name})`;
-                    lockedFilenameSpan.textContent = `(from Text): ${displayFilenameText}`;
-                    voiceSelect.value = voiceUsed; 
+                    lockedFilenameSpan.textContent = displayFilenameText;
+                    voiceSelect.value = voiceUsed;
                     manualTtsMessageEl.textContent = 'Audio selected for this new chapter!';
                     manualTtsMessageEl.className = 'new-chapter-tts-message text-xs my-1.5 min-h-[16px] text-green-700 font-semibold';
-                    this.classList.add('hidden'); 
-                    if(manualTtsPlayerContainer) manualTtsPlayerContainer.classList.add('hidden'); 
-                    toggleAddNewChapterFields('generated_tts'); 
+                    this.classList.add('hidden');
+                    if(manualTtsPlayerContainer) manualTtsPlayerContainer.classList.add('hidden');
+                    toggleAddNewChapterFields('generated_tts');
                 }
             });
         }
-        
-        // Event listener for Document TTS preview button in "Add New Chapter" - NEW
+
+        // Event listener for Document TTS preview button in "Add New Chapter"
         const generateDocTtsBtn = addChapterForm.querySelector('.generate-new-chapter-document-tts-preview-btn');
         const docTtsPlayerContainer = addChapterForm.querySelector('.new-chapter-document-tts-preview-player-container');
         const docTtsPlayer = docTtsPlayerContainer?.querySelector('.document-tts-preview-player');
@@ -547,12 +557,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (generateDocTtsBtn && documentInput && docVoiceSelect && docTtsPlayerContainer && docTtsPlayer && docTtsMessageEl && confirmUseDocTtsBtn) {
             generateDocTtsBtn.addEventListener('click', function() {
-                generateDocumentTtsPreview({ 
+                generateDocumentTtsPreview({
                     chapterForm: addChapterForm, documentInput, docVoiceSelect,
                     playerContainer: docTtsPlayerContainer, player: docTtsPlayer, messageEl: docTtsMessageEl,
                     confirmUseBtn: confirmUseDocTtsBtn, generateBtn: this,
-                    generatedDocUrlInput: generatedDocTtsUrlInput, 
-                    lockedDisplay: lockedDisplay, 
+                    generatedDocUrlInput: generatedDocTtsUrlInput,
+                    lockedDisplay: lockedDisplay,
                     lockedFilenameSpan: lockedFilenameSpan,
                 });
             });
@@ -564,9 +574,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const sourceDocName = this.dataset.sourceDocumentName || "document";
                 if (urlToUse) {
                     generatedDocTtsUrlInput.value = urlToUse;
-                    if(generatedTtsUrlInput) generatedTtsUrlInput.value = ''; 
+                    if(generatedTtsUrlInput) generatedTtsUrlInput.value = '';
 
-                    let displayFilenameText = `Audio from: ${sourceDocName}`;
+                    let displayFilenameText = `Generated Audio (from Document: ${sourceDocName})`;
                     const voiceDetail = ALL_EDGE_TTS_VOICES_MAP_MANAGE[voiceUsed];
                     if (voiceDetail) displayFilenameText += ` (Voice: ${voiceDetail.name})`;
                     lockedFilenameSpan.textContent = displayFilenameText;
@@ -576,18 +586,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     docTtsMessageEl.className = 'new-chapter-document-tts-message text-xs my-1.5 min-h-[16px] text-green-700 font-semibold';
                     this.classList.add('hidden');
                     if(docTtsPlayerContainer) docTtsPlayerContainer.classList.add('hidden');
-                    toggleAddNewChapterFields('generated_document_tts'); 
+                    toggleAddNewChapterFields('generated_document_tts');
                 }
             });
         }
 
 
         // Initial population for add new chapter form using the fixed audiobook language
-        if(voiceSelect) { 
-            const submittedNewChapterVoice = submittedValuesFromDjango.new_chapter_tts_voice; 
+        if(voiceSelect) {
+            const submittedNewChapterVoice = submittedValuesFromDjango.new_chapter_tts_voice;
             populateChapterTtsVoices(addChapterForm, currentAudiobookLanguageManage, submittedNewChapterVoice, false);
         }
-        if(docVoiceSelect) { 
+        if(docVoiceSelect) {
             const submittedNewDocChapterVoice = submittedValuesFromDjango.new_chapter_doc_tts_voice;
             populateChapterTtsVoices(addChapterForm, currentAudiobookLanguageManage, submittedNewDocChapterVoice, true);
         }
@@ -598,73 +608,75 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (docErrorEl) docErrorEl.textContent = '';
                 if (e.target.files.length > 0) {
                     const file = e.target.files[0];
-                    const maxSize = 10 * 1024 * 1024; 
+                    const maxSize = 10 * 1024 * 1024;
                     const allowedExtensions = ['.pdf', '.doc', '.docx'];
                     const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
                     if (file.size > maxSize) {
                         if(docErrorEl) docErrorEl.textContent = `File too large (Max 10MB).`;
-                        e.target.value = ''; documentFileNameSpan.textContent = 'No document chosen (too large)'; 
+                        e.target.value = ''; documentFileNameSpan.textContent = 'No document chosen (too large)';
                         updateChapterPreviewButtonState(addChapterForm, true); return;
                     }
                     if (!allowedExtensions.includes(fileExtension)) { // Simplified check
                         if(docErrorEl) docErrorEl.textContent = "Invalid type (PDF, DOC, DOCX).";
-                        e.target.value = ''; documentFileNameSpan.textContent = 'No document chosen (invalid type)'; 
+                        e.target.value = ''; documentFileNameSpan.textContent = 'No document chosen (invalid type)';
                         updateChapterPreviewButtonState(addChapterForm, true); return;
                     }
                     documentFileNameSpan.textContent = file.name;
                 } else {
                     documentFileNameSpan.textContent = 'No document chosen';
                 }
-                updateChapterPreviewButtonState(addChapterForm, true); 
+                updateChapterPreviewButtonState(addChapterForm, true);
             });
         }
-         if(textInput){ // For manual TTS in Add New Chapter
-            textInput.addEventListener('input', () => updateChapterPreviewButtonState(addChapterForm, false));
+           if(textInput){ // For manual TTS in Add New Chapter
+               textInput.addEventListener('input', () => updateChapterPreviewButtonState(addChapterForm, false));
         }
-        if(voiceSelect){ // For manual TTS in Add New Chapter
-            voiceSelect.addEventListener('change', () => updateChapterPreviewButtonState(addChapterForm, false));
+           if(voiceSelect){ // For manual TTS in Add New Chapter
+               voiceSelect.addEventListener('change', () => updateChapterPreviewButtonState(addChapterForm, false));
         }
-        if(docVoiceSelect) { // For document TTS in Add New Chapter
-             docVoiceSelect.addEventListener('change', () => updateChapterPreviewButtonState(addChapterForm, true));
+           if(docVoiceSelect) { // For document TTS in Add New Chapter
+               docVoiceSelect.addEventListener('change', () => updateChapterPreviewButtonState(addChapterForm, true));
         }
     }
 
     // --- Initialize Controls for EACH "Edit Existing Chapter" Form ---
     document.querySelectorAll('.edit-chapter-form-js').forEach(editForm => {
         const chapterId = editForm.dataset.chapterId;
-        const chapterCard = editForm.closest('.chapter-card'); 
+        const chapterCard = editForm.closest('.chapter-card');
 
         const inputTypeHidden = editForm.querySelector(`.edit-chapter-input-type-hidden-js`);
         const fileUploadControls = editForm.querySelector(`.edit-chapter-file-upload-controls`);
         const ttsGenerationControls = editForm.querySelector(`.edit-chapter-tts-generation-controls`);
-        const documentTtsControls = editForm.querySelector('.edit-chapter-document-tts-controls'); 
-        const lockedDisplay = editForm.querySelector('.locked-generated-audio-display'); 
-        const generatedTtsUrlInput = editForm.querySelector(`.edit-chapter-generated-tts-url-input-js`); 
-        const generatedDocTtsUrlInput = editForm.querySelector(`.edit-chapter-generated-document-tts-url-input-js`); 
+        const documentTtsControls = editForm.querySelector('.edit-chapter-document-tts-controls');
+        const lockedDisplay = editForm.querySelector('.locked-generated-audio-display');
+        const generatedTtsUrlInput = editForm.querySelector(`.edit-chapter-generated-tts-url-input-js`);
+        const generatedDocTtsUrlInput = editForm.querySelector(`.edit-chapter-generated-document-tts-url-input-js`);
         const lockedFilenameSpan = lockedDisplay?.querySelector('.chapter-generated-tts-filename-js');
-        
-        const audioInput = fileUploadControls?.querySelector(`#chapter_audio_edit_${chapterId}`); 
-        const textInput = ttsGenerationControls?.querySelector(`#chapter_text_content_edit_${chapterId}`); 
-        const voiceSelect = ttsGenerationControls?.querySelector(`#chapter_tts_voice_edit_${chapterId}`); 
+
+        const audioInput = fileUploadControls?.querySelector(`#chapter_audio_edit_${chapterId}`);
+        const textInput = ttsGenerationControls?.querySelector(`#chapter_text_content_edit_${chapterId}`);
+        const voiceSelect = ttsGenerationControls?.querySelector(`#chapter_tts_voice_edit_${chapterId}`);
         const fileNameSpan = fileUploadControls?.querySelector('.chapter-filename-js');
 
-        const documentInput = documentTtsControls?.querySelector(`#chapter_document_edit_${chapterId}`); 
-        const docVoiceSelect = documentTtsControls?.querySelector(`#chapter_doc_tts_voice_edit_${chapterId}`); 
-        const documentFileNameSpan = documentTtsControls?.querySelector('.chapter-document-filename-js'); 
+        const documentInput = documentTtsControls?.querySelector(`#chapter_document_edit_${chapterId}`);
+        const docVoiceSelect = documentTtsControls?.querySelector(`#chapter_doc_tts_voice_edit_${chapterId}`);
+        const documentFileNameSpan = documentTtsControls?.querySelector('.chapter-document-filename-js');
 
 
         function toggleEditChapterFields(type) {
-            if (inputTypeHidden) inputTypeHidden.value = type; 
+            if (inputTypeHidden) inputTypeHidden.value = type;
             fileUploadControls?.classList.add('hidden-area'); fileUploadControls?.classList.remove('visible-area');
             ttsGenerationControls?.classList.add('hidden-area'); ttsGenerationControls?.classList.remove('visible-area');
-            documentTtsControls?.classList.add('hidden-area'); documentTtsControls?.classList.remove('visible-area'); 
+            documentTtsControls?.classList.add('hidden-area'); documentTtsControls?.classList.remove('visible-area');
             lockedDisplay?.classList.add('hidden-area'); lockedDisplay?.classList.remove('visible-area');
 
-            if(audioInput) audioInput.required = false; 
+            // Reset required attributes
+            if(audioInput) audioInput.required = false;
             if(textInput) textInput.required = false;
-            if(voiceSelect) voiceSelect.required = false;
-            if(documentInput) documentInput.required = false; 
-            if(docVoiceSelect) docVoiceSelect.required = false; 
+            // voiceSelect is dynamically populated, so don't set required here directly.
+            // Required check is done in JS validation before sending to server.
+            if(documentInput) documentInput.required = false;
+            // docVoiceSelect is dynamically populated.
 
 
             if (type === 'file') {
@@ -673,30 +685,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 ttsGenerationControls?.classList.remove('hidden-area'); ttsGenerationControls?.classList.add('visible-area');
                 lockedDisplay?.classList.add('hidden-area'); lockedDisplay?.classList.remove('visible-area');
                 if(textInput) textInput.required = true;
-                if(voiceSelect) voiceSelect.required = true;
+                // Voice select for TTS is handled by populateChapterTtsVoices & updateChapterPreviewButtonState
                 if (inputTypeHidden) inputTypeHidden.value = 'tts';
-            } else if (type === 'document_tts') { 
+            } else if (type === 'document_tts') {
                 documentTtsControls?.classList.remove('hidden-area'); documentTtsControls?.classList.add('visible-area');
-                if(docVoiceSelect) docVoiceSelect.required = true; 
+                if(documentInput) documentInput.required = true;
+                // Voice select for document TTS is handled by populateChapterTtsVoices & updateChapterPreviewButtonState
                 if (inputTypeHidden) inputTypeHidden.value = 'document_tts';
-            } else if (type === 'generated_tts' || type === 'generated_document_tts') { 
+            } else if (type === 'generated_tts' || type === 'generated_document_tts') {
                 lockedDisplay?.classList.remove('hidden-area'); lockedDisplay?.classList.add('visible-area');
                 ttsGenerationControls?.classList.add('hidden-area'); ttsGenerationControls?.classList.remove('visible-area');
                 fileUploadControls?.classList.add('hidden-area'); fileUploadControls?.classList.remove('visible-area');
-                documentTtsControls?.classList.add('hidden-area'); documentTtsControls?.classList.remove('visible-area'); 
-                if (inputTypeHidden) inputTypeHidden.value = type; 
+                documentTtsControls?.classList.add('hidden-area'); documentTtsControls?.classList.remove('visible-area');
+                if (inputTypeHidden) inputTypeHidden.value = type;
             }
-             updateChapterPreviewButtonState(editForm, type === 'document_tts'); 
+               updateChapterPreviewButtonState(editForm, type === 'document_tts' || type === 'generated_document_tts');
         }
 
         editForm.querySelectorAll('.edit-chapter-input-type-toggle-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                const type = this.dataset.type; 
+                const type = this.dataset.type;
                 editForm.querySelectorAll('.edit-chapter-input-type-toggle-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                 if ((type === 'file' || type === 'document_tts') && generatedTtsUrlInput && generatedTtsUrlInput.value) { 
-                    generatedTtsUrlInput.value = ''; 
-                    if(lockedFilenameSpan) lockedFilenameSpan.textContent = "Generated Audio"; 
+                   if ((type === 'file' || type === 'document_tts') && generatedTtsUrlInput && generatedTtsUrlInput.value) {
+                    generatedTtsUrlInput.value = '';
+                    if(lockedFilenameSpan) lockedFilenameSpan.textContent = "Generated Audio";
                     const confirmBtnEdit = editForm.querySelector('.confirm-use-generated-audio-btn');
                     if(confirmBtnEdit) confirmBtnEdit.classList.add('hidden');
                     const playerContainerEdit = editForm.querySelector('.chapter-tts-preview-player-container');
@@ -704,7 +717,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const messageElEdit = editForm.querySelector('.chapter-tts-message');
                     if(messageElEdit) messageElEdit.textContent = '';
                 }
-                if ((type === 'file' || type === 'tts') && generatedDocTtsUrlInput && generatedDocTtsUrlInput.value) { 
+                if ((type === 'file' || type === 'tts') && generatedDocTtsUrlInput && generatedDocTtsUrlInput.value) {
                     generatedDocTtsUrlInput.value = '';
                     const confirmDocBtnEdit = editForm.querySelector('.confirm-use-edit-chapter-document-audio-btn');
                     if(confirmDocBtnEdit) confirmDocBtnEdit.classList.add('hidden');
@@ -713,15 +726,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     const docMessageElEdit = editForm.querySelector('.edit-chapter-document-tts-message');
                     if(docMessageElEdit) docMessageElEdit.textContent = '';
                 }
-                toggleEditChapterFields(type); 
+                toggleEditChapterFields(type);
             });
         });
 
         const initialEditTypeRaw = inputTypeHidden ? inputTypeHidden.value : 'file';
         let initialEditTypeUI = initialEditTypeRaw;
-        if (initialEditTypeRaw === 'generated_tts') { 
-            initialEditTypeUI = 'tts'; 
-        } else if (initialEditTypeRaw === 'generated_document_tts') { 
+        if (initialEditTypeRaw === 'generated_tts') {
+            initialEditTypeUI = 'tts';
+        } else if (initialEditTypeRaw === 'generated_document_tts') {
             initialEditTypeUI = 'document_tts';
         }
 
@@ -729,7 +742,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (btn.dataset.type === initialEditTypeUI) btn.classList.add('active');
             else btn.classList.remove('active');
         });
-        toggleEditChapterFields(initialEditTypeRaw); 
+        toggleEditChapterFields(initialEditTypeRaw);
 
         // Event listener for manual TTS preview button in "Edit Chapter"
         const generateManualTtsBtn = editForm.querySelector('.generate-chapter-tts-preview-btn');
@@ -741,10 +754,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (generateManualTtsBtn && textInput && voiceSelect && manualTtsPlayerContainer && manualTtsPlayer && manualTtsMessageEl && confirmUseManualTtsBtn) {
             generateManualTtsBtn.addEventListener('click', function() {
                 generateChapterTtsPreview({
-                    chapterForm: editForm, textContentInput: textInput, voiceSelect, 
+                    chapterForm: editForm, textContentInput: textInput, voiceSelect,
                     playerContainer: manualTtsPlayerContainer, player: manualTtsPlayer, messageEl: manualTtsMessageEl,
-                    confirmUseBtn: confirmUseManualTtsBtn, generateBtn: this, 
-                    generatedUrlInputForChapter: generatedTtsUrlInput, 
+                    confirmUseBtn: confirmUseManualTtsBtn, generateBtn: this,
+                    generatedUrlInputForChapter: generatedTtsUrlInput,
                     lockedDisplayForChapter: lockedDisplay, lockedFilenameSpanForChapter: lockedFilenameSpan,
                 });
             });
@@ -752,40 +765,40 @@ document.addEventListener('DOMContentLoaded', function() {
         if (confirmUseManualTtsBtn && generatedTtsUrlInput && lockedDisplay && lockedFilenameSpan && voiceSelect && inputTypeHidden && manualTtsMessageEl) {
             confirmUseManualTtsBtn.addEventListener('click', function() {
                 const urlToUse = this.dataset.generatedUrl;
-                const voiceUsed = this.dataset.generatedVoiceId; 
+                const voiceUsed = this.dataset.generatedVoiceId;
                 const filenameUsed = this.dataset.generatedFilename;
                 if (urlToUse) {
-                    generatedTtsUrlInput.value = urlToUse; 
-                    if(generatedDocTtsUrlInput) generatedDocTtsUrlInput.value = ''; 
+                    generatedTtsUrlInput.value = urlToUse;
+                    if(generatedDocTtsUrlInput) generatedDocTtsUrlInput.value = '';
                     let displayFilenameText = filenameUsed;
                     const voiceDetail = ALL_EDGE_TTS_VOICES_MAP_MANAGE[voiceUsed];
                     if (voiceDetail) displayFilenameText += ` (Voice: ${voiceDetail.name})`;
                     lockedFilenameSpan.textContent = `(from Text): ${displayFilenameText}`;
-                    voiceSelect.value = voiceUsed; 
+                    voiceSelect.value = voiceUsed;
                     manualTtsMessageEl.textContent = 'Previewed audio selected for this chapter.';
                     manualTtsMessageEl.className = 'chapter-tts-message text-xs my-1.5 min-h-[16px] text-green-700 font-semibold';
-                    this.classList.add('hidden'); 
-                    if(manualTtsPlayerContainer) manualTtsPlayerContainer.classList.add('hidden'); 
-                    toggleEditChapterFields('generated_tts'); 
+                    this.classList.add('hidden');
+                    if(manualTtsPlayerContainer) manualTtsPlayerContainer.classList.add('hidden');
+                    toggleEditChapterFields('generated_tts');
                 }
             });
         }
 
-        // Event listener for Document TTS preview button in "Edit Chapter" - NEW
+        // Event listener for Document TTS preview button in "Edit Chapter"
         const generateDocTtsBtn = editForm.querySelector('.generate-edit-chapter-document-tts-preview-btn');
         const docTtsPlayerContainer = editForm.querySelector('.edit-chapter-document-tts-preview-player-container');
         const docTtsPlayer = docTtsPlayerContainer?.querySelector('.document-tts-preview-player');
         const docTtsMessageEl = editForm.querySelector('.edit-chapter-document-tts-message');
         const confirmUseDocTtsBtn = editForm.querySelector('.confirm-use-edit-chapter-document-audio-btn');
-        
+
         if (generateDocTtsBtn && documentInput && docVoiceSelect && docTtsPlayerContainer && docTtsPlayer && docTtsMessageEl && confirmUseDocTtsBtn) {
             generateDocTtsBtn.addEventListener('click', function() {
                 generateDocumentTtsPreview({
                     chapterForm: editForm, documentInput, docVoiceSelect,
                     playerContainer: docTtsPlayerContainer, player: docTtsPlayer, messageEl: docTtsMessageEl,
                     confirmUseBtn: confirmUseDocTtsBtn, generateBtn: this,
-                    generatedDocUrlInput: generatedDocTtsUrlInput, 
-                    lockedDisplay: lockedDisplay, 
+                    generatedDocUrlInput: generatedDocTtsUrlInput,
+                    lockedDisplay: lockedDisplay,
                     lockedFilenameSpan: lockedFilenameSpan,
                 });
             });
@@ -797,7 +810,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const sourceDocName = this.dataset.sourceDocumentName || "document";
                 if (urlToUse) {
                     generatedDocTtsUrlInput.value = urlToUse;
-                    if(generatedTtsUrlInput) generatedTtsUrlInput.value = ''; 
+                    if(generatedTtsUrlInput) generatedTtsUrlInput.value = '';
 
                     let displayFilenameText = `Audio from: ${sourceDocName}`;
                     const voiceDetail = ALL_EDGE_TTS_VOICES_MAP_MANAGE[voiceUsed];
@@ -809,7 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     docTtsMessageEl.className = 'edit-chapter-document-tts-message text-xs my-1.5 min-h-[16px] text-green-700 font-semibold';
                     this.classList.add('hidden');
                     if(docTtsPlayerContainer) docTtsPlayerContainer.classList.add('hidden');
-                    toggleEditChapterFields('generated_document_tts'); 
+                    toggleEditChapterFields('generated_document_tts');
                 }
             });
         }
@@ -817,8 +830,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (audioInput && fileNameSpan) {
             audioInput.addEventListener('change', function(e) {
-                const audioErrorEl = editForm.querySelector('.chapter-audio-error-js'); 
-                if(audioErrorEl) audioErrorEl.textContent = ''; 
+                const audioErrorEl = editForm.querySelector('.chapter-audio-error-js');
+                if(audioErrorEl) audioErrorEl.textContent = '';
 
                 if (e.target.files.length > 0) {
                     const file = e.target.files[0];
@@ -836,7 +849,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else { fileNameSpan.textContent = 'Choose new audio file...'; }
             });
         }
-        // Event listener for document file input in "Edit Chapter" form - NEW
+        // Event listener for document file input in "Edit Chapter" form
         if (documentInput && documentFileNameSpan) {
             documentInput.addEventListener('change', function(e) {
                 const docErrorEl = editForm.querySelector('.edit-chapter-document-tts-controls .chapter-document-error-js');
@@ -851,30 +864,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (file.size > maxSize) {
                         if(docErrorEl) docErrorEl.textContent = `File too large (Max 10MB).`;
-                        e.target.value = ''; documentFileNameSpan.textContent = 'No document chosen (too large)'; 
+                        e.target.value = ''; documentFileNameSpan.textContent = 'No document chosen (too large)';
                         updateChapterPreviewButtonState(editForm, true); return;
                     }
                     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
                         if(docErrorEl) docErrorEl.textContent = "Invalid document type (PDF, DOC, DOCX).";
-                        e.target.value = ''; documentFileNameSpan.textContent = 'No document chosen (invalid type)'; 
+                        e.target.value = ''; documentFileNameSpan.textContent = 'No document chosen (invalid type)';
                         updateChapterPreviewButtonState(editForm, true); return;
                     }
                     documentFileNameSpan.textContent = file.name;
                 } else {
-                    const existingDocName = chapterCard.dataset.existingDocumentFilename; 
+                    const existingDocName = chapterCard.dataset.existingDocumentFilename;
                     documentFileNameSpan.textContent = existingDocName || 'No document chosen';
                 }
-                 updateChapterPreviewButtonState(editForm, true); // Update button state on file change
+                   updateChapterPreviewButtonState(editForm, true); // Update button state on file change
             });
         }
-         if(textInput){ // For manual TTS in Edit Chapter
-            textInput.addEventListener('input', () => updateChapterPreviewButtonState(editForm, false));
+           if(textInput){ // For manual TTS in Edit Chapter
+               textInput.addEventListener('input', () => updateChapterPreviewButtonState(editForm, false));
         }
-        if(voiceSelect){ // For manual TTS in Edit Chapter
-            voiceSelect.addEventListener('change', () => updateChapterPreviewButtonState(editForm, false));
+           if(voiceSelect){ // For manual TTS in Edit Chapter
+               voiceSelect.addEventListener('change', () => updateChapterPreviewButtonState(editForm, false));
         }
-        if(docVoiceSelect) { // For document TTS in Edit form
-             docVoiceSelect.addEventListener('change', () => updateChapterPreviewButtonState(editForm, true));
+           if(docVoiceSelect) { // For document TTS in Edit form
+               docVoiceSelect.addEventListener('change', () => updateChapterPreviewButtonState(editForm, true));
         }
 
 
@@ -884,8 +897,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalVoiceId = originalVoiceIdField ? originalVoiceIdField.value : voiceSelect.value;
             populateChapterTtsVoices(editForm, currentAudiobookLanguageManage, originalVoiceId, false);
         }
-        if(docVoiceSelect) { // For document TTS - NEW
-            const existingDocTTSVoiceId = chapterCard.dataset.existingDocTtsVoiceId; 
+        if(docVoiceSelect) { // For document TTS
+            const existingDocTTSVoiceId = chapterCard.dataset.existingDocTtsVoiceId;
             populateChapterTtsVoices(editForm, currentAudiobookLanguageManage, existingDocTTSVoiceId || docVoiceSelect.value, true);
         }
     });
@@ -895,8 +908,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const djangoMessagesJsonScript = document.getElementById('django_messages_json');
     if (djangoMessagesJsonScript && typeof Swal !== 'undefined' && djangoMessagesJsonScript.textContent) {
         try {
+            // Ensure messagesData is always an array
             const messagesData = JSON.parse(djangoMessagesJsonScript.textContent || '[]');
-            if (messagesData.length > 0) {
+            if (Array.isArray(messagesData) && messagesData.length > 0) { // Add Array.isArray check
                 const Toast = Swal.mixin({
                     toast: true, position: 'top-end', showConfirmButton: false, timer: 5000, timerProgressBar: true,
                     didOpen: (toast) => {
@@ -905,12 +919,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
                 messagesData.forEach(message => {
-                    let iconType = message.tags; 
+                    let iconType = message.tags;
                     if (message.tags === 'debug') iconType = 'info';
                     else if (message.tags === 'error') iconType = 'error';
                     else if (message.tags === 'success') iconType = 'success';
                     else if (message.tags === 'warning') iconType = 'warning';
-                    else iconType = 'info'; 
+                    else iconType = 'info';
 
                     let bgColor, textColor, progressBarClass;
                     switch (message.tags) {
@@ -943,7 +957,7 @@ document.addEventListener('DOMContentLoaded', function() {
             form.querySelectorAll('input[required]:not([type="file"]), select[required], textarea[required]').forEach(requiredField => {
                 let parent = requiredField;
                 let isVisible = true;
-                while(parent && parent !== form) { 
+                while(parent && parent !== form) {
                     if (parent.classList.contains('hidden') || parent.classList.contains('hidden-area') || getComputedStyle(parent).display === 'none') {
                         isVisible = false; break;
                     }
@@ -953,22 +967,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     formIsValid = false;
                 }
             });
-             form.querySelectorAll('input[type="file"][required]').forEach(fileInput => {
-                let parentControls = fileInput.closest('.new-chapter-file-upload-controls, .edit-chapter-file-upload-controls, .new-chapter-document-tts-controls, .edit-chapter-document-tts-controls'); 
-                let isVisible = parentControls && (parentControls.classList.contains('visible-area') || (!parentControls.classList.contains('hidden-area') && !parentControls.classList.contains('hidden')));
+               form.querySelectorAll('input[type="file"][required]').forEach(fileInput => {
+                   let parentControls = fileInput.closest('.new-chapter-file-upload-controls, .edit-chapter-file-upload-controls, .new-chapter-document-tts-controls, .edit-chapter-document-tts-controls');
+                   let isVisible = parentControls && (parentControls.classList.contains('visible-area') || (!parentControls.classList.contains('hidden-area') && !parentControls.classList.contains('hidden')));
 
-                if (isVisible && fileInput.files.length === 0) {
-                    // For edit forms, a file is only required if one wasn't already there or if explicitly replacing
-                    // This basic check might need refinement based on specific edit logic
-                    if (form.id === 'addChapterForm' || (form.classList.contains('edit-chapter-form-js') && !fileInput.dataset.hasExistingFile)) {
-                         formIsValid = false;
-                    }
-                }
-            });
+                   if (isVisible && fileInput.files.length === 0) {
+                       // For edit forms, a file is only required if one wasn't already there or if explicitly replacing
+                       // This basic check might need refinement based on specific edit logic
+                       if (form.id === 'addChapterForm' || (form.classList.contains('edit-chapter-form-js') && !fileInput.dataset.hasExistingFile)) {
+                            formIsValid = false;
+                       }
+                   }
+               });
 
             if (!formIsValid) {
                 // Optionally, show a generic error or highlight fields, but Django will do more thorough validation
-                console.warn("Basic client-side validation failed. Form will still attempt to submit.");
+                // console.warn("Basic client-side validation failed. Form will still attempt to submit.");
                 // To prevent submission if client-side validation fails:
                 // event.preventDefault();
                 // Swal.fire('Incomplete Form', 'Please fill all required fields.', 'warning');
@@ -1021,9 +1035,13 @@ window.confirmDeleteChapter = (chapterName) => {
     return Swal.fire({
         title: 'Delete Chapter?',
         html: `Are you sure you want to delete chapter: "<strong>${chapterName}</strong>"?<br/>This action cannot be undone.`,
-        icon: 'warning', iconColor: THEME_COLOR_ERROR, showCancelButton: true,
-        confirmButtonText: 'Yes, Delete It!', confirmButtonColor: THEME_COLOR_ERROR,
-        cancelButtonText: 'Keep Chapter', reverseButtons: true,
+        icon: 'warning',
+        iconColor: '#ef4444', // THEME_COLOR_ERROR
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Delete It!',
+        confirmButtonColor: '#ef4444', // THEME_COLOR_ERROR
+        cancelButtonText: 'Keep Chapter',
+        reverseButtons: true,
         customClass: {
             popup: 'rounded-xl shadow-2xl font-sans text-sm',
             title: 'text-lg font-semibold text-slate-800',
@@ -1031,5 +1049,5 @@ window.confirmDeleteChapter = (chapterName) => {
             confirmButton: 'px-5 py-2.5 rounded-lg text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow',
             cancelButton: 'px-5 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-colors'
         }
-    }).then((result) => result.isConfirmed); 
+    }).then((result) => result.isConfirmed);
 };

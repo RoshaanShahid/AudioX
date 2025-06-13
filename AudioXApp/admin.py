@@ -7,27 +7,23 @@ from .models import (
     Audiobook, Chapter, Review, Subscription, AudiobookViewLog,
     TicketCategory, Ticket, TicketMessage,
     ListeningHistory, UserLibraryItem,
-    UserDownloadedAudiobook # <<< --- IMPORT THE NEW MODEL
+    UserDownloadedAudiobook
 )
 from django.utils.translation import gettext_lazy as _
-from django.utils.html import format_html # For custom display methods
-from django.urls import reverse # For linking to related objects
+from django.utils.html import format_html
+from django.urls import reverse
 
-# Existing admin registrations (assuming you have them, example below)
-# If you already have an admin.py, these would be present.
-# Keep your existing ModelAdmin classes and registrations.
-
-# Example of how your existing UserAdmin might look (keep yours if different)
+# --- User Admin ---
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('email', 'username', 'full_name', 'subscription_type', 'is_active', 'is_staff', 'is_creator')
     search_fields = ('email', 'username', 'full_name')
     list_filter = ('is_active', 'is_staff', 'subscription_type', 'date_joined')
     ordering = ('-date_joined',)
-    # Add other configurations as needed for your User model
 
+# --- Custom Admin ---
 @admin.register(Admin)
-class CustomAdminAdmin(admin.ModelAdmin): # Renamed to avoid conflict with django.contrib.admin
+class CustomAdminAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'get_display_roles_list_admin', 'is_active', 'last_login')
     search_fields = ('username', 'email')
     list_filter = ('is_active', 'roles')
@@ -37,7 +33,7 @@ class CustomAdminAdmin(admin.ModelAdmin): # Renamed to avoid conflict with djang
         return ", ".join(obj.get_display_roles_list())
     get_display_roles_list_admin.short_description = 'Roles'
 
-
+# --- Audiobook Admin ---
 @admin.register(Audiobook)
 class AudiobookAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'creator_link', 'status', 'is_paid', 'price', 'total_views', 'total_sales', 'created_at', 'updated_at')
@@ -74,14 +70,14 @@ class AudiobookAdmin(admin.ModelAdmin):
     creator_link.short_description = 'Creator'
     creator_link.admin_order_field = 'creator'
 
-
+# --- Chapter Admin ---
 @admin.register(Chapter)
 class ChapterAdmin(admin.ModelAdmin):
     list_display = ('chapter_name', 'audiobook_title_link', 'chapter_order', 'is_tts_generated', 'created_at')
     search_fields = ('chapter_name', 'audiobook__title')
     list_filter = ('is_tts_generated', 'audiobook__language', 'created_at')
     ordering = ('audiobook', 'chapter_order')
-    autocomplete_fields = ['audiobook'] # Makes selecting audiobook easier
+    autocomplete_fields = ['audiobook']
 
     def audiobook_title_link(self, obj):
         link = reverse("admin:AudioXApp_audiobook_change", args=[obj.audiobook.pk])
@@ -89,7 +85,7 @@ class ChapterAdmin(admin.ModelAdmin):
     audiobook_title_link.short_description = 'Audiobook'
     audiobook_title_link.admin_order_field = 'audiobook__title'
 
-
+# --- Creator Admin ---
 @admin.register(Creator)
 class CreatorAdmin(admin.ModelAdmin):
     list_display = ('user_email', 'creator_name', 'creator_unique_name', 'cid', 'verification_status', 'is_banned', 'available_balance', 'approved_at')
@@ -104,8 +100,7 @@ class CreatorAdmin(admin.ModelAdmin):
     user_email.short_description = 'User Email'
     user_email.admin_order_field = 'user__email'
 
-
-# --- NEW ADMIN REGISTRATION FOR UserDownloadedAudiobook ---
+# --- User Downloaded Audiobook Admin ---
 @admin.register(UserDownloadedAudiobook)
 class UserDownloadedAudiobookAdmin(admin.ModelAdmin):
     list_display = (
@@ -115,26 +110,25 @@ class UserDownloadedAudiobookAdmin(admin.ModelAdmin):
         'is_active',
         'expiry_date',
         'last_verified_at',
-        'download_id' # Displaying the UUID for reference
+        'download_id'
     )
     search_fields = (
         'user__username',
         'user__email',
         'audiobook__title',
-        'download_id' # Search by UUID
+        'download_id'
     )
     list_filter = (
         'is_active',
         'download_date',
         'expiry_date',
         'last_verified_at',
-        ('audiobook', admin.RelatedOnlyFieldListFilter), # Filter by audiobook
-        ('user', admin.RelatedOnlyFieldListFilter),       # Filter by user
+        ('audiobook', admin.RelatedOnlyFieldListFilter),
+        ('user', admin.RelatedOnlyFieldListFilter),
     )
     ordering = ('-download_date',)
-    readonly_fields = ('download_id', 'download_date', 'user', 'audiobook') # Make some fields read-only
-    # autocomplete_fields = ['user', 'audiobook'] # If you have many users/audiobooks
-
+    readonly_fields = ('download_id', 'download_date', 'user', 'audiobook')
+    
     fieldsets = (
         (None, {
             'fields': ('download_id', 'user', 'audiobook')
@@ -146,12 +140,10 @@ class UserDownloadedAudiobookAdmin(admin.ModelAdmin):
 
     def user_email(self, obj):
         if obj.user:
-            # Assuming your User model is registered with an admin site
-            # and 'AudioXApp' is your app_label.
             try:
                 user_admin_url = reverse(f"admin:{obj.user._meta.app_label}_user_change", args=[obj.user.pk])
                 return format_html('<a href="{}">{}</a>', user_admin_url, obj.user.email)
-            except Exception: # Fallback if reverse fails
+            except Exception:
                 return obj.user.email
         return "-"
     user_email.short_description = 'User Email'
@@ -162,29 +154,8 @@ class UserDownloadedAudiobookAdmin(admin.ModelAdmin):
             try:
                 audiobook_admin_url = reverse(f"admin:{obj.audiobook._meta.app_label}_audiobook_change", args=[obj.audiobook.pk])
                 return format_html('<a href="{}">{}</a>', audiobook_admin_url, obj.audiobook.title)
-            except Exception: # Fallback if reverse fails
+            except Exception:
                 return obj.audiobook.title
         return "-"
     audiobook_title.short_description = 'Audiobook Title'
     audiobook_title.admin_order_field = 'audiobook__title'
-
-# --- END NEW ADMIN REGISTRATION ---
-
-# Register other models if they are not already (examples, keep your existing ones)
-# admin.site.register(CoinTransaction)
-# admin.site.register(AudiobookPurchase)
-# admin.site.register(CreatorEarning)
-# admin.site.register(CreatorApplicationLog)
-# admin.site.register(WithdrawalAccount)
-# admin.site.register(WithdrawalRequest)
-# admin.site.register(Review)
-# admin.site.register(Subscription)
-# admin.site.register(AudiobookViewLog)
-# admin.site.register(TicketCategory)
-# admin.site.register(Ticket)
-# admin.site.register(TicketMessage)
-# admin.site.register(ListeningHistory)
-# admin.site.register(UserLibraryItem)
-
-# Ensure all your models that you want in the admin are registered.
-# The @admin.register decorator is a clean way to do it, or use admin.site.register(Model, ModelAdminClass).

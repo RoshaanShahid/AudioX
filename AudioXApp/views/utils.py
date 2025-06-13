@@ -1,21 +1,22 @@
 # AudioXApp/views/utils.py
+
 import json
 from django.urls import reverse, NoReverseMatch
 import logging
 from django.conf import settings as django_settings
-
-# Import your models (adjust path if utils.py is not in the 'views' subdirectory)
-from ..models import User, Creator 
+from ..models import User, Creator
 
 logger = logging.getLogger(__name__)
 
-def get_creator_context(user): # user is request.user
+# --- Creator Context Helper ---
+
+def get_creator_context(user):
     context = {
         'is_creator': False,
         'creator_status': None, 
         'is_banned': False,
         'ban_reason': None,
-        'can_reapply': False, # Default to False, only True if rejected and eligible
+        'can_reapply': False,
         'rejection_reason': None,
         'show_welcome_popup': False,
         'show_rejection_popup': False,
@@ -49,7 +50,6 @@ def get_creator_context(user): # user is request.user
             context['is_creator'] = True
             if not creator_profile.welcome_popup_shown:
                 context['show_welcome_popup'] = True
-        # else, is_creator remains False
 
         context['application_attempts_current_month'] = creator_profile.get_attempts_this_month()
 
@@ -58,25 +58,18 @@ def get_creator_context(user): # user is request.user
             context['rejection_reason'] = creator_profile.rejection_reason
             if not creator_profile.rejection_popup_shown:
                 context['show_rejection_popup'] = True
-        # else, can_reapply remains False (unless no profile, handled below)
-        
-    else: # No creator_profile exists for this authenticated user
-        # This means they can apply to become a creator.
-        # The template's {% else %} block for "Become a Creator" will be hit.
-        # For clarity in context if needed elsewhere, or for JS:
+    else:
         context['creator_status'] = 'not_applied' 
-        # context['can_reapply'] remains False, as this flag is for *re*-applying after rejection.
-        # The ability to make a *first* application is handled by the template's final `else`.
-
     return context
 
+# --- Full Context Helper ---
 
 def _get_full_context(request):
     user = request.user
     base_context = {}
     
     admin_user_from_request = getattr(request, 'admin_user', None)
-    base_context['admin_user'] = admin_user_from_request # Keeping your original key name
+    base_context['admin_user'] = admin_user_from_request
 
     if user.is_authenticated:
         try:
