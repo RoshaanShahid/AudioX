@@ -1,0 +1,247 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Manage Content - Admin Dashboard (AudioX){% endblock %}
+
+{% block header_title %}Manage Content{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+{# Main content for the Manage Content page #}
+
+{% if messages %}
+    <div class="mb-6 space-y-3">
+        {% for message in messages %}
+            <div class="p-4 rounded-xl border {% if message.tags == 'success' %} bg-brand-success-light text-brand-success-dark border-brand-success {% elif message.tags == 'error' %} bg-brand-danger-light text-brand-danger-dark border-brand-danger {% elif message.tags == 'warning' %} bg-brand-warning-light text-brand-warning-dark border-brand-warning {% else %} bg-brand-info-light text-brand-info-dark border-brand-info {% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="mb-8 bg-brand-surface rounded-2xl border border-brand-border shadow-card overflow-hidden bg-gradient-chart-bg">
+    <div class="px-6 py-5 border-b border-brand-border bg-transparent">
+        <h3 class="text-lg font-semibold text-brand-text-primary">Content Upload Statistics (Last 7 Days)</h3>
+    </div>
+    <div class="p-6">
+        <div class="h-72 rounded-xl p-4">
+            <canvas id="contentStatsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+
+    {# NEW: User Reports Box #}
+    <a href="{% url 'AudioXApp:admin_content_reports_list' %}" class="group content-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-pink shadow-pink-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-pink-glow hover:shadow-card-lg cursor-pointer">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <i class="fas fa-flag w-7 h-7"></i>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">User Reports</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">Review content reported by users.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ user_reports_count|default:"0"|intcomma }}</div>
+    </a>
+
+    {# Moderation Queue Box #}
+    <a href="{% url 'AudioXApp:admin_moderation_queue' %}" class="group content-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-danger shadow-danger-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-danger-glow hover:shadow-card-lg cursor-pointer">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <i class="fas fa-gavel w-7 h-7"></i>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Moderation Queue</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">Review newly uploaded content.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ moderation_queue_count|default:"0"|intcomma }}</div>
+    </a>
+
+    {# Manage Keywords Box #}
+    <a href="{% url 'AudioXApp:admin_manage_keywords' %}" class="group content-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-warning shadow-warning-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-warning-glow hover:shadow-card-lg cursor-pointer">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <i class="fas fa-ban w-7 h-7"></i>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Manage Keywords</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">Add or remove banned keywords.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]"><i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    {# Add New Audiobook #}
+    <a href="{% url 'AudioXApp:admin_add_audiobook' %}" class="group content-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-blue shadow-blue-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-blue-glow hover:shadow-card-lg cursor-pointer">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <i class="fas fa-plus-circle w-7 h-7"></i>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Add New Audiobook</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">Manually add a book to the platform.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]"><i class="fas fa-arrow-right"></i></div>
+    </a>
+
+    {# Existing: Total Audiobooks #}
+    <a href="{% url 'AudioXApp:admin_all_audiobooks_list' %}" class="group content-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-purple shadow-purple-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-purple-glow hover:shadow-card-lg cursor-pointer xl:col-span-1">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <i class="fas fa-book-open w-7 h-7"></i>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Total Audiobooks</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">All audiobooks on the platform.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ total_audiobooks|default:"0"|intcomma }}</div>
+    </a>
+
+    {# Existing: Creator Content #}
+    <a href="{% url 'AudioXApp:admin_creator_content_list' %}" class="group content-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-teal shadow-teal-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-teal-glow hover:shadow-card-lg cursor-pointer xl:col-span-1">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                 <i class="fas fa-microphone-alt w-7 h-7"></i>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Creator Content</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">Audiobooks uploaded by creators.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ creator_content_count|default:"0"|intcomma }}</div>
+    </a>
+
+    {# Existing: Platform Content #}
+    <a href="{% url 'AudioXApp:admin_platform_content_list' %}" class="group content-box relative flex flex-col justify-between p-6 rounded-2xl overflow-hidden transition-all duration-300 ease-smooth min-h-[200px] text-brand-text-on-gradient bg-gradient-info shadow-info-glow border-none hover:translate-y-[-8px] hover:scale-103 hover:shadow-info-glow hover:shadow-card-lg cursor-pointer xl:col-span-1">
+        <div class="flex items-center gap-4 mb-4">
+            <div class="w-14 h-14 rounded-xl inline-flex items-center justify-center flex-shrink-0 bg-white/20 text-brand-text-on-gradient backdrop-blur-sm">
+                <i class="fas fa-cogs w-7 h-7"></i>
+            </div>
+            <div class="flex-grow">
+                <h3 class="text-lg font-bold text-brand-text-on-gradient mb-1">Platform Content</h3>
+                <p class="text-sm text-brand-text-on-gradient opacity-85 leading-snug">Content managed by the platform.</p>
+            </div>
+        </div>
+        <div class="text-right text-5xl font-extrabold text-brand-text-on-gradient mt-auto pt-3 leading-none [text-shadow:1px_1px_3px_rgba(0,0,0,0.1)]">{{ platform_content_count|default:"0"|intcomma }}</div>
+    </a>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('contentStatsChart');
+        if (!ctx) {
+            console.error("Canvas element 'contentStatsChart' not found.");
+            return;
+        }
+
+        // Safely parse JSON data passed from the Django view context
+        const labels = JSON.parse('{{ daily_chart_labels_json|safe|default:"[]" }}');
+        const uploadsData = JSON.parse('{{ daily_uploads_data_json|safe|default:"[]" }}');
+        const publishedData = JSON.parse('{{ daily_published_data_json|safe|default:"[]" }}');
+        const pendingData = JSON.parse('{{ daily_pending_data_json|safe|default:"[]" }}');
+
+        const contentStatsData = {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Uploaded',
+                    data: uploadsData,
+                    borderColor: '#8B5CF6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#8B5CF6',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                },
+                {
+                    label: 'Published',
+                    data: publishedData,
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#10B981',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                },
+                {
+                    label: 'Pending',
+                    data: pendingData,
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#F59E0B',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                }
+            ]
+        };
+
+        const contentStatsConfig = {
+            type: 'line',
+            data: contentStatsData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 20,
+                            color: '#4B5563',
+                            font: { size: 12, family: 'Inter, sans-serif' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: { size: 14, weight: 'bold', family: 'Inter, sans-serif' },
+                        bodyFont: { size: 12, family: 'Inter, sans-serif' },
+                        padding: 12,
+                        cornerRadius: 6,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#E5E7EB', drawBorder: false },
+                        ticks: { color: '#4B5563', padding: 10, precision: 0, font: { family: 'Inter, sans-serif' } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#4B5563', padding: 10, font: { family: 'Inter, sans-serif' } }
+                    }
+                }
+            }
+        };
+
+        if (typeof Chart !== 'undefined') {
+            new Chart(ctx, contentStatsConfig);
+        } else {
+            console.error("Chart.js library not loaded.");
+            ctx.parentElement.innerHTML = '<p class="text-center text-brand-text-muted">Error loading chart. Chart.js might not be available.</p>';
+        }
+    });
+</script>
+{% endblock %}

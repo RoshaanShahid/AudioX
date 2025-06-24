@@ -1,4 +1,7 @@
-# AudioXApp/views/content_views.py
+"""
+AudioXApp Content Views
+Handles audiobook content display, search, streaming, and related functionality
+"""
 
 import random
 import requests
@@ -6,12 +9,13 @@ import feedparser
 import mimetypes
 import json
 import os
-from urllib.parse import urlparse, quote, parse_qs, urlencode
-from django.db.models import Q
-from decimal import Decimal, InvalidOperation
-import datetime
-import time
 import re
+import time
+import logging
+from urllib.parse import urlparse, quote
+from decimal import Decimal
+from collections import defaultdict
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse, StreamingHttpResponse, Http404, FileResponse
 from django.contrib import messages
@@ -21,115 +25,298 @@ from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch, Avg, F
+from django.db.models import Q, Prefetch, Avg, F, Count
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.utils.timesince import timesince
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.utils import timezone
-from django.core.files.base import ContentFile
 from django.middleware.csrf import get_token
-import logging
-from ..models import Audiobook, Chapter, Review, User, AudiobookPurchase, CreatorEarning, Creator, AudiobookViewLog
+from django.core.paginator import Paginator
+from django.templatetags.static import static
+
+
+from ..models import (
+    Audiobook, Chapter, Review, User, AudiobookPurchase,
+    CreatorEarning, Creator, AudiobookViewLog, ContentReport, ListeningHistory,
+    ChapterUnlock
+)
 from .utils import _get_full_context
 
 logger = logging.getLogger(__name__)
 
-# --- Helper Functions ---
+# ==========================================
+# CONSTANTS AND CONFIGURATIONS
+# ==========================================
+
+LANGUAGE_GENRE_MAPPING = {
+    'English': [
+        'Fiction', 'Mystery', 'Thriller', 'Science Fiction', 'Fantasy',
+        'Romance', 'Biography', 'History', 'Self Help', 'Business'
+    ],
+    'Urdu': [
+        'Novel Afsana', 'Shayari', 'Tareekh', 'Safarnama',
+        'Mazah', 'Bachon Ka Adab', 'Mazhabi Adab'
+    ],
+    'Punjabi': ['Qissa Lok', 'Geet'],
+    'Sindhi': ['Lok Adab', 'Shayari']
+}
+
+CACHE_KEY = 'librivox_archive_audiobooks_data_v7'
+CACHE_DURATION = 6 * 60 * 60  # 6 hours
+FREE_PREVIEW_CHAPTERS = getattr(settings, 'FREE_PREVIEW_CHAPTERS_COUNT', 1)
+DEFAULT_COVER_IMAGE = static('img/default_book_cover.png')
+CHAPTER_UNLOCK_COST = 50 # NEW: Define chapter unlock cost
+
+
+# ==========================================
+# UTILITY FUNCTIONS
+# ==========================================
 
 def parse_duration_to_seconds(duration_str):
+    """Convert duration string to seconds"""
     if duration_str is None:
         return None
     if isinstance(duration_str, (int, float)):
         return int(duration_str)
     if not isinstance(duration_str, str):
         return None
+
     duration_str = duration_str.strip()
     parts = duration_str.split(':')
+
     try:
-        if len(parts) == 3:
+        if len(parts) == 3:  # HH:MM:SS
             return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(float(parts[2]))
-        elif len(parts) == 2:
-            return int(parts[0]) * 60 + int(float(parts[1]))
-        elif len(parts) == 1:
+        elif len(parts) == 2:  # MM:SS
+            return int(parts[0]) * 60 + int(float(parts[2]))
+        elif len(parts) == 1:  # SS
             return int(float(duration_str))
     except ValueError:
         pass
+
     try:
         return int(float(duration_str))
     except ValueError:
         return None
 
-# --- Data Fetching and Caching ---
+
+def get_chapter_accessibility(chapter, audiobook, user, chapter_index):
+    """
+    Determine if a user can access a specific chapter based on AudioX access control rules:
+    
+    1. PAID creator audiobooks: Both FREE and PREMIUM users must purchase
+    2. FREE audiobooks (external, admin-added, or creator-set-as-free):
+        - PREMIUM users: Full access to all chapters
+        - FREE users: Only first chapter access, unless unlocked with coins
+        - Unauthenticated users: Only first chapter access
+        
+    Args:
+        chapter: Chapter instance
+        audiobook: Audiobook instance  
+        user: User instance (can be AnonymousUser)
+        chapter_index: 0-based index of the chapter
+        
+    Returns:
+        tuple: (bool: True if accessible, str: lock_reason or None)
+    """
+    
+    # For PAID creator audiobooks - both free and premium users must purchase
+    if audiobook.is_creator_book and audiobook.is_paid:
+        if not user.is_authenticated:
+            is_preview = chapter.is_preview_eligible or (chapter_index < FREE_PREVIEW_CHAPTERS)
+            return (is_preview, "purchase_required" if not is_preview else None)
+        
+        has_purchased = user.has_purchased_audiobook(audiobook)
+        return (has_purchased, "purchase_required" if not has_purchased else None)
+    
+    # For FREE audiobooks (external, admin-added, or creator-set-as-free)
+    if not audiobook.is_paid:
+        is_first_chapter = chapter_index == 0
+
+        if not user.is_authenticated:
+            return (is_first_chapter, "premium_required" if not is_first_chapter else None)
+
+        # Check user subscription type
+        if user.subscription_type == 'PR':  # Premium user
+            return (True, None)  # Full access to all chapters
+        else:  # Free user (subscription_type == 'FR')
+            if is_first_chapter:
+                return (True, None)
+            
+            # NEW: Check if this specific chapter has been unlocked by the user
+            has_unlocked_chapter = ChapterUnlock.objects.filter(user=user, chapter=chapter).exists()
+            if has_unlocked_chapter:
+                return (True, None)
+            
+            return (False, "coin_unlock_available")
+            
+    # Fallback - should not reach here with current audiobook types
+    return (False, "unknown")
+
+
+def calculate_relevance_score(book, query):
+    """Calculate relevance score for search results"""
+    if not query:
+        return 1.0
+
+    score = 0.0
+    query_lower = query.lower()
+
+    # Title match (highest weight)
+    if query_lower in book.title.lower():
+        score += 0.4
+        if book.title.lower().startswith(query_lower):
+            score += 0.2
+
+    # Author match
+    if book.author and query_lower in book.author.lower():
+        score += 0.2
+
+    # Genre match
+    if book.genre and query_lower in book.genre.lower():
+        score += 0.1
+
+    # Creator match
+    if hasattr(book, 'creator') and book.creator and book.creator.creator_name:
+        if query_lower in book.creator.creator_name.lower():
+            score += 0.1
+
+    # Description match
+    if book.description and query_lower in book.description.lower():
+        score += 0.1
+
+    # Boost popular books
+    if book.total_views > 1000:
+        score += 0.1
+
+    return min(score, 1.0)
+
+
+def sort_search_results(results, query):
+    """Sort search results by relevance and popularity"""
+    if query:
+        return sorted(
+            results,
+            key=lambda x: (x.get('relevance_score', 0), x.get('total_views', 0)),
+            reverse=True
+        )
+    else:
+        return sorted(
+            results,
+            key=lambda x: (x.get('total_views', 0), x.get('publish_date') or ''),
+            reverse=True
+        )
+
+# ==========================================
+# EXTERNAL DATA FETCHING
+# ==========================================
 
 def fetch_audiobooks_data():
-    cache_key = 'librivox_archive_audiobooks_data_v7'
-    cached_data = cache.get(cache_key)
+    """Fetch and cache audiobook data from external sources"""
+    cached_data = cache.get(CACHE_KEY)
     if cached_data:
-        logger.info(f"CACHE HIT: Using cached data for audiobooks (key: {cache_key}).")
+        logger.info(f"CACHE HIT: Using cached data for audiobooks (key: {CACHE_KEY})")
         return cached_data
 
-    logger.info(f"CACHE MISS: Fetching fresh data for audiobooks (key: {cache_key})...")
+    logger.info(f"CACHE MISS: Fetching fresh data for audiobooks (key: {CACHE_KEY})")
+
     librivox_audiobooks = []
     archive_genre_audiobooks = {}
     archive_language_audiobooks = {}
     fetch_successful = False
-    rss_feeds = ["https://librivox.org/rss/47", "https://librivox.org/rss/52", "https://librivox.org/rss/53", "https://librivox.org/rss/54", "https://librivox.org/rss/59", "https://librivox.org/rss/60", "https://librivox.org/rss/61", "https://librivox.org/rss/62"]
+
+    # RSS feeds for LibriVox
+    rss_feeds = [
+        "https://librivox.org/rss/47", "https://librivox.org/rss/52",
+        "https://librivox.org/rss/53", "https://librivox.org/rss/54",
+        "https://librivox.org/rss/59", "https://librivox.org/rss/60",
+        "https://librivox.org/rss/61", "https://librivox.org/rss/62"
+    ]
+
     session = requests.Session()
     user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "AudioXApp.com"
     headers = {'User-Agent': f'AudioXApp/1.0 (+http://{user_agent_host})'}
-    rss_timeout = 45
 
+    # Fetch LibriVox data
     for rss_url in rss_feeds:
         try:
-            response = session.get(rss_url, timeout=rss_timeout, headers=headers)
+            response = session.get(rss_url, timeout=45, headers=headers)
             response.raise_for_status()
             feed = feedparser.parse(response.content)
+
             if feed.bozo:
                 logger.warning(f"Bozo feed detected for {rss_url}: {feed.bozo_exception}")
             if not feed.entries:
                 logger.info(f"No entries found in RSS feed: {rss_url}")
                 continue
 
-            chapters_data_for_book = []
+            chapters_data = []
             for entry in feed.entries:
                 audio_url = None
+
+                # Extract audio URL from enclosures
                 if entry.enclosures:
                     for enc in entry.enclosures:
                         if 'audio' in enc.get('type', '').lower():
                             audio_url = enc.href
                             break
+
+                # Fallback to links
                 if not audio_url and entry.links:
                     for link_entry in entry.links:
-                        if 'audio' in link_entry.get('type', '').lower() or any(link_entry.href.lower().endswith(ext) for ext in ['.mp3', '.ogg', '.m4a', '.wav']):
+                        if ('audio' in link_entry.get('type', '').lower() or
+                                any(link_entry.href.lower().endswith(ext) for ext in ['.mp3', '.ogg', '.m4a', '.wav'])):
                             audio_url = link_entry.href
                             break
+
                 if not audio_url:
                     continue
 
                 chapter_title = entry.title.replace('"', '').strip() if entry.title else 'Untitled Chapter'
-                chapter_duration_seconds = None
+                chapter_duration = None
                 if hasattr(entry, 'itunes_duration'):
-                    chapter_duration_seconds = parse_duration_to_seconds(entry.itunes_duration)
-                chapters_data_for_book.append({"chapter_title": chapter_title, "audio_url": audio_url, "duration_seconds": chapter_duration_seconds})
+                    chapter_duration = parse_duration_to_seconds(entry.itunes_duration)
 
-            if not chapters_data_for_book:
+                chapters_data.append({
+                    "chapter_title": chapter_title,
+                    "audio_url": audio_url,
+                    "duration_seconds": chapter_duration
+                })
+
+            if not chapters_data:
                 logger.info(f"No chapters with audio found for audiobook in {rss_url}")
                 continue
 
             title = feed.feed.get('title', 'Unknown Title').replace('LibriVox', '').strip()
             description = feed.feed.get('summary', feed.feed.get('itunes_summary', 'No description available.'))
             author = feed.feed.get('author', feed.feed.get('itunes_author', 'Various Authors'))
-            cover_image_original_url = None
+
+            cover_image_url = None
             if hasattr(feed.feed, 'image') and hasattr(feed.feed.image, 'href'):
-                cover_image_original_url = feed.feed.image.href
+                cover_image_url = feed.feed.image.href
 
             slug = slugify(title) if title and title != 'Unknown Title' else f'librivox-book-{random.randint(1000,9999)}'
-            cover_image_for_dict = cover_image_original_url
-            first_chapter_original_audio_url = chapters_data_for_book[0]["audio_url"] if chapters_data_for_book else None
-            first_chapter_title = chapters_data_for_book[0]["chapter_title"] if chapters_data_for_book else None
-            librivox_audiobooks.append({"source": "librivox", "title": title, "description": description, "author": author, "cover_image": cover_image_for_dict, "chapters": chapters_data_for_book, "first_chapter_audio_url": first_chapter_original_audio_url, "first_chapter_title": first_chapter_title, "slug": slug, "is_creator_book": False, "total_views": 0, "average_rating": None, "is_paid": False, "price": Decimal("0.00"), "language": feed.feed.get('language', 'en')})
+
+            librivox_audiobooks.append({
+                "source": "librivox",
+                "title": title,
+                "description": description,
+                "author": author,
+                "cover_image": cover_image_url or DEFAULT_COVER_IMAGE,
+                "chapters": chapters_data,
+                "first_chapter_audio_url": chapters_data[0]["audio_url"] if chapters_data else None,
+                "first_chapter_title": chapters_data[0]["chapter_title"] if chapters_data else None,
+                "slug": slug,
+                "is_creator_book": False,
+                "total_views": 0,
+                "average_rating": None,
+                "is_paid": False,
+                "price": Decimal("0.00"),
+                "language": feed.feed.get('language', 'en')
+            })
             fetch_successful = True
+
         except requests.exceptions.Timeout as e:
             logger.error(f"TIMEOUT error fetching RSS feed {rss_url}: {e}")
         except requests.exceptions.RequestException as e:
@@ -137,803 +324,1967 @@ def fetch_audiobooks_data():
         except Exception as e:
             logger.error(f"Generic error processing RSS feed {rss_url}: {e}", exc_info=True)
 
+    # Fetch Archive.org data
     base_url = "https://archive.org/advancedsearch.php"
-    search_terms = ["Fiction", "Mystery", "Thriller", "Science Fiction", "Fantasy", "Romance", "Biography", "History", "Self-Help", "Business", "Urdu", "Punjabi", "Sindhi"]
+    search_terms = ["Fiction", "Mystery", "Thriller", "Science Fiction", "Fantasy",
+                    "Romance", "Biography", "History", "Self-Help", "Business",
+                    "Urdu", "Punjabi", "Sindhi"]
     language_specific_terms = ["Urdu", "Punjabi", "Sindhi"]
-    archive_timeout = 30
-    term_index_api_search = 0
 
-    for term in search_terms:
-        if term_index_api_search > 0: time.sleep(1)
-        term_index_api_search += 1
-        query_string = ""
+    for i, term in enumerate(search_terms):
+        if i > 0:
+            time.sleep(1)  # Rate limiting
+
+        # Build query based on term type
         if term in language_specific_terms:
             query_string = f'language:"{term}" AND collection:librivoxaudio AND mediatype:audio'
         else:
             query_string = f'subject:"{term}" AND collection:librivoxaudio AND mediatype:audio'
-        params = {"q": query_string, "fl[]": ["identifier", "title", "creator", "description", "subject", "language"], "rows": 10, "output": "json"}
+
+        params = {
+            "q": query_string,
+            "fl[]": ["identifier", "title", "creator", "description", "subject", "language"],
+            "rows": 10,
+            "output": "json"
+        }
+
         try:
-            response = session.get(base_url, params=params, timeout=archive_timeout, headers=headers)
+            response = session.get(base_url, params=params, timeout=30, headers=headers)
             response.raise_for_status()
             data = response.json()
             docs = data.get('response', {}).get('docs', [])
-            logger.info(f"For term '{term}' (API Search), Archive.org API returned {len(docs)} documents. numFound: {data.get('response', {}).get('numFound', 'N/A')}")
+
+            logger.info(f"For term '{term}', Archive.org API returned {len(docs)} documents")
+
             audiobooks_for_term = []
-            for doc_api_data in docs:
-                identifier = doc_api_data.get('identifier')
-                doc_title = doc_api_data.get('title', 'Unknown Title')
-                creator_data = doc_api_data.get('creator', 'Unknown Author')
-                author_from_doc = ', '.join(creator_data) if isinstance(creator_data, list) else creator_data
-                description_data = doc_api_data.get('description', 'No description available.')
-                description_from_doc = ' '.join(description_data) if isinstance(description_data, list) else description_data
-                subjects = doc_api_data.get('subject', [])
-                language_from_doc = doc_api_data.get('language', 'English')
-                if isinstance(language_from_doc, list): language_from_doc = language_from_doc[0] if language_from_doc else 'English'
+            for doc in docs:
+                identifier = doc.get('identifier')
                 if not identifier:
-                    logger.warning(f"API Doc for term '{term}' (Title: '{doc_title}') has no identifier. Skipping.")
                     continue
+
+                # Get detailed metadata
                 meta_url = f"https://archive.org/metadata/{identifier}"
-                meta_resp = session.get(meta_url, timeout=archive_timeout, headers=headers)
+                meta_resp = session.get(meta_url, timeout=30, headers=headers)
                 meta_resp.raise_for_status()
-                item_full_metadata_api = meta_resp.json()
-                files_metadata_api = item_full_metadata_api.get("files", [])
-                chapters_from_api = []
-                for f_item in files_metadata_api:
-                    if f_item.get("format") in ["VBR MP3", "MP3", "64Kbps MP3", "128Kbps MP3"] and "name" in f_item:
-                        chapter_title_raw = f_item.get("title", f_item.get("name", 'Untitled Chapter'))
-                        chapter_title = str(chapter_title_raw).replace('"', '').strip()
-                        chapter_duration_seconds = None
-                        raw_length = f_item.get('length') or f_item.get('duration')
-                        if raw_length:
-                            chapter_duration_seconds = parse_duration_to_seconds(raw_length)
-                        chapters_from_api.append({"chapter_title": chapter_title, "audio_url": f"https://archive.org/download/{identifier}/{quote(f_item['name'])}", "duration_seconds": chapter_duration_seconds})
-                if not chapters_from_api:
-                    logger.warning(f"No chapters extracted for API doc ID: {identifier} (Title: '{doc_title}', term: '{term}'). Skipping.")
+                item_metadata = meta_resp.json()
+
+                # Extract book information
+                doc_title = doc.get('title', 'Unknown Title')
+                creator_data = doc.get('creator', 'Unknown Author')
+                author = ', '.join(creator_data) if isinstance(creator_data, list) else creator_data
+                description_data = doc.get('description', 'No description available.')
+                description = ' '.join(description_data) if isinstance(description_data, list) else description_data
+                subjects = doc.get('subject', [])
+                language = doc.get('language', 'English')
+                if isinstance(language, list):
+                    language = language[0] if language else 'English'
+
+                # Extract chapters from files
+                files = item_metadata.get("files", [])
+                chapters = []
+                for file_item in files:
+                    if (file_item.get("format") in ["VBR MP3", "MP3", "64Kbps MP3", "128Kbps MP3"]
+                            and "name" in file_item):
+                        chapter_title = str(file_item.get("title", file_item.get("name", 'Untitled Chapter'))).replace('"', '').strip()
+                        duration = parse_duration_to_seconds(file_item.get('length') or file_item.get('duration'))
+
+                        chapters.append({
+                            "chapter_title": chapter_title,
+                            "audio_url": f"https://archive.org/download/{identifier}/{quote(file_item['name'])}",
+                            "duration_seconds": duration
+                        })
+
+                if not chapters:
                     continue
-                slug = slugify(doc_title) if doc_title and doc_title != 'Unknown Title' else f'archive-api-{term.lower().replace(" ", "-")}-{random.randint(1000,9999)}'
-                book_data = {"source": "archive", "title": doc_title, "description": description_from_doc, "author": author_from_doc, "cover_image": f"https://archive.org/services/img/{identifier}", "chapters": chapters_from_api, "first_chapter_audio_url": chapters_from_api[0]["audio_url"] if chapters_from_api else None, "first_chapter_title": chapters_from_api[0]["chapter_title"] if chapters_from_api else None, "slug": slug, "is_creator_book": False, "total_views": 0, "average_rating": None, "is_paid": False, "price": Decimal("0.00"), "subjects": subjects, "language": language_from_doc, "genre": term if term not in language_specific_terms else None}
+
+                slug = slugify(doc_title) if doc_title != 'Unknown Title' else f'archive-{term.lower().replace(" ", "-")}-{random.randint(1000,9999)}'
+
+                book_data = {
+                    "source": "archive",
+                    "title": doc_title,
+                    "description": description,
+                    "author": author,
+                    "cover_image": f"https://archive.org/services/img/{identifier}" or DEFAULT_COVER_IMAGE,
+                    "chapters": chapters,
+                    "first_chapter_audio_url": chapters[0]["audio_url"] if chapters else None,
+                    "first_chapter_title": chapters[0]["chapter_title"] if chapters else None,
+                    "slug": slug,
+                    "is_creator_book": False,
+                    "total_views": 0,
+                    "average_rating": None,
+                    "is_paid": False,
+                    "price": Decimal("0.00"),
+                    "subjects": subjects,
+                    "language": language,
+                    "genre": term if term not in language_specific_terms else None
+                }
                 audiobooks_for_term.append(book_data)
+
             if audiobooks_for_term:
                 if term in language_specific_terms:
-                    if term not in archive_language_audiobooks: archive_language_audiobooks[term] = []
+                    if term not in archive_language_audiobooks:
+                        archive_language_audiobooks[term] = []
                     archive_language_audiobooks[term].extend(audiobooks_for_term)
                 else:
                     archive_genre_audiobooks[term] = audiobooks_for_term
                 fetch_successful = True
-        except requests.exceptions.HTTPError as e_http:
-            logger.error(f"HTTPError for API term '{term}' (URL: {e_http.request.url if e_http.request else 'N/A'}): {e_http.response.status_code} - {e_http.response.text if e_http.response else 'No response body'}", exc_info=False)
+
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTPError for API term '{term}': {e.response.status_code if e.response else 'No response'}")
         except Exception as e:
             logger.error(f"Error processing API term '{term}': {e}", exc_info=True)
 
-    manual_language_items = {"Urdu": ["Ashra-Mubashra-Darussalam-Urdu-Audio-MP3-CD", "Tafsir-ibne-kaseer-kathir-urdu-----audio-mp3-hq", "iman-syed-suleiman-nadvi", "Seerat-e-Khulfa-e-Rashideen----Audio-MP3"], "Punjabi": [], "Sindhi": []}
-    processed_manual_ids_this_run = set()
-    for lang_key, item_ids_list in manual_language_items.items():
-        if not item_ids_list: continue
-        if lang_key not in archive_language_audiobooks: archive_language_audiobooks[lang_key] = []
-        current_slugs_for_lang = {b.get('slug') for b in archive_language_audiobooks[lang_key]}
-        for item_identifier in item_ids_list:
-            if item_identifier in processed_manual_ids_this_run: continue
-            try:
-                time.sleep(0.5)
-                meta_url = f"https://archive.org/metadata/{item_identifier}"
-                meta_resp = session.get(meta_url, timeout=archive_timeout, headers=headers)
-                meta_resp.raise_for_status()
-                item_full_metadata = meta_resp.json()
-                item_doc_data = item_full_metadata.get('metadata')
-                doc_title_manual = (item_doc_data or item_full_metadata).get('title', f"Unknown Title - {item_identifier}")
-                creator_data_manual = (item_doc_data or item_full_metadata).get('creator', 'Unknown Author')
-                description_from_doc_manual = (item_doc_data or item_full_metadata).get('description', 'No description available.')
-                language_from_doc_manual = (item_doc_data or item_full_metadata).get('language', lang_key)
-                subjects_manual = (item_doc_data or item_full_metadata).get('subject', [])
-                if doc_title_manual.startswith("Unknown Title -"): logger.warning(f"Could not determine title for manual item {item_identifier}. Skipping."); continue
-                author_from_doc_manual = ', '.join(creator_data_manual) if isinstance(creator_data_manual, list) else creator_data_manual
-                if isinstance(description_from_doc_manual, list): description_from_doc_manual = ' '.join(description_from_doc_manual)
-                if isinstance(language_from_doc_manual, list): language_from_doc_manual = language_from_doc_manual[0] if language_from_doc_manual else lang_key
-                files_metadata_manual = item_full_metadata.get("files", [])
-                chapters_for_manual_item = []
-                for f_item_manual in files_metadata_manual:
-                    if f_item_manual.get("format") in ["VBR MP3", "MP3", "64Kbps MP3", "128Kbps MP3"] and "name" in f_item_manual:
-                        chapter_title_raw_manual = f_item_manual.get("title", f_item_manual.get("name", 'Untitled Chapter'))
-                        chapter_title_manual = str(chapter_title_raw_manual).replace('"', '').strip()
-                        manual_chapter_duration_seconds = None
-                        raw_length_manual = f_item_manual.get('length') or f_item_manual.get('duration')
-                        if raw_length_manual:
-                            manual_chapter_duration_seconds = parse_duration_to_seconds(raw_length_manual)
-                        chapters_for_manual_item.append({"chapter_title": chapter_title_manual, "audio_url": f"https://archive.org/download/{item_identifier}/{quote(f_item_manual['name'])}", "duration_seconds": manual_chapter_duration_seconds})
-                if not chapters_for_manual_item:
-                    logger.warning(f"No chapters extracted for manual item ID: {item_identifier} (Title: '{doc_title_manual}', language: {lang_key}). Skipping.")
-                    continue
-                slug_manual = slugify(doc_title_manual) if doc_title_manual and not doc_title_manual.startswith("Unknown Title") else f'archive-manual-{lang_key.lower()}-{item_identifier.replace("_", "-")}'
-                book_data_manual = {"source": "archive", "title": doc_title_manual, "description": description_from_doc_manual, "author": author_from_doc_manual, "cover_image": f"https://archive.org/services/img/{item_identifier}", "chapters": chapters_for_manual_item, "first_chapter_audio_url": chapters_for_manual_item[0]["audio_url"] if chapters_for_manual_item else None, "first_chapter_title": chapters_for_manual_item[0]["chapter_title"] if chapters_for_manual_item else None, "slug": slug_manual, "is_creator_book": False, "total_views": 0, "average_rating": None, "is_paid": False, "price": Decimal("0.00"), "subjects": subjects_manual, "language": language_from_doc_manual, "genre": None}
-                if slug_manual not in current_slugs_for_lang:
-                    archive_language_audiobooks[lang_key].append(book_data_manual)
-                    current_slugs_for_lang.add(slug_manual)
-                    fetch_successful = True
-                else:
-                    logger.info(f"Manual book with slug '{slug_manual}' (ID: {item_identifier}) already exists for language '{lang_key}'. Skipping.")
-                processed_manual_ids_this_run.add(item_identifier)
-            except requests.exceptions.HTTPError as e_http:
-                logger.error(f"HTTPError for manual item ID '{item_identifier}' (URL: {e_http.request.url if e_http.request else 'N/A'}): {e_http.response.status_code}", exc_info=False)
-            except Exception as e:
-                logger.error(f"Error processing manually specified item ID '{item_identifier}' for language '{lang_key}': {e}", exc_info=True)
+    # Manual language items (specific high-quality content)
+    manual_language_items = {
+        "Urdu": [
+            "Ashra-Mubashra-Darussalam-Urdu-Audio-MP3-CD",
+            "Tafsir-ibne-kaseer-kathir-urdu-----audio-mp3-hq",
+            "iman-syed-suleiman-nadvi",
+            "Seerat-e-Khulfa-e-Rashideen----Audio-MP3"
+        ],
+        "Punjabi": [],
+        "Sindhi": []
+    }
 
-    combined_data = {"librivox_audiobooks": librivox_audiobooks, "archive_genre_audiobooks": archive_genre_audiobooks, "archive_language_audiobooks": archive_language_audiobooks}
+    # Process manual items
+    for lang_key, item_ids in manual_language_items.items():
+        if not item_ids:
+            continue
+
+        if lang_key not in archive_language_audiobooks:
+            archive_language_audiobooks[lang_key] = []
+
+        current_slugs = {b.get('slug') for b in archive_language_audiobooks[lang_key]}
+
+        for item_id in item_ids:
+            try:
+                time.sleep(0.5)  # Rate limiting
+
+                meta_url = f"https://archive.org/metadata/{item_id}"
+                meta_resp = session.get(meta_url, timeout=30, headers=headers)
+                meta_resp.raise_for_status()
+                item_metadata = meta_resp.json()
+
+                metadata = item_metadata.get('metadata', item_metadata)
+                title = metadata.get('title', f"Unknown Title - {item_id}")
+
+                if title.startswith("Unknown Title -"):
+                    continue
+
+                creator_data = metadata.get('creator', 'Unknown Author')
+                author = ', '.join(creator_data) if isinstance(creator_data, list) else creator_data
+                description_data = metadata.get('description', 'No description available.')
+                description = ' '.join(description_data) if isinstance(description_data, list) else description_data
+                language = metadata.get('language', lang_key)
+                if isinstance(language, list):
+                    language = language[0] if language else lang_key
+                subjects = metadata.get('subject', [])
+
+                # Extract chapters
+                files = item_metadata.get("files", [])
+                chapters = []
+                for file_item in files:
+                    if (file_item.get("format") in ["VBR MP3", "MP3", "64Kbps MP3", "128Kbps MP3"]
+                            and "name" in file_item):
+                        chapter_title = str(file_item.get("title", file_item.get("name", 'Untitled Chapter'))).replace('"', '').strip()
+                        duration = parse_duration_to_seconds(file_item.get('length') or file_item.get('duration'))
+
+                        chapters.append({
+                            "chapter_title": chapter_title,
+                            "audio_url": f"https://archive.org/download/{item_id}/{quote(file_item['name'])}",
+                            "duration_seconds": duration
+                        })
+
+                if not chapters:
+                    continue
+
+                slug = slugify(title) if not title.startswith("Unknown Title") else f'archive-manual-{lang_key.lower()}-{item_id.replace("_", "-")}'
+
+                if slug not in current_slugs:
+                    book_data = {
+                        "source": "archive",
+                        "title": title,
+                        "description": description,
+                        "author": author,
+                        "cover_image": f"https://archive.org/services/img/{item_id}" or DEFAULT_COVER_IMAGE,
+                        "chapters": chapters,
+                        "first_chapter_audio_url": chapters[0]["audio_url"] if chapters else None,
+                        "first_chapter_title": chapters[0]["chapter_title"] if chapters else None,
+                        "slug": slug,
+                        "is_creator_book": False,
+                        "total_views": 0,
+                        "average_rating": None,
+                        "is_paid": False,
+                        "price": Decimal("0.00"),
+                        "subjects": subjects,
+                        "language": language,
+                        "genre": None
+                    }
+                    archive_language_audiobooks[lang_key].append(book_data)
+                    current_slugs.add(slug)
+                    fetch_successful = True
+
+            except Exception as e:
+                logger.error(f"Error processing manual item '{item_id}' for language '{lang_key}': {e}", exc_info=True)
+
+    # Cache the results
+    combined_data = {
+        "librivox_audiobooks": librivox_audiobooks,
+        "archive_genre_audiobooks": archive_genre_audiobooks,
+        "archive_language_audiobooks": archive_language_audiobooks
+    }
+
     if fetch_successful:
-        new_cache_duration = 6 * 60 * 60
-        logger.info(f"CACHE SET: Storing fetched data in cache (key: {cache_key}, duration: {new_cache_duration}s).")
-        final_lang_count = sum(len(v) for v in archive_language_audiobooks.values())
-        logger.info(f"Final counts: LibriVox: {len(librivox_audiobooks)}, Archive Genres: {sum(len(v) for v in archive_genre_audiobooks.values())}, Archive Languages: {final_lang_count}")
-        cache.set(cache_key, combined_data, new_cache_duration)
+        logger.info(f"CACHE SET: Storing fetched data in cache (key: {CACHE_KEY}, duration: {CACHE_DURATION}s)")
+        cache.set(CACHE_KEY, combined_data, CACHE_DURATION)
         return combined_data
     else:
-        logger.warning(f"FETCH UNSUCCESSFUL: No new data to cache. Returning potentially partial or None.")
-        final_lang_count_fail = sum(len(v) for v in archive_language_audiobooks.values())
-        if librivox_audiobooks or archive_genre_audiobooks or archive_language_audiobooks:
-            logger.info(f"Final counts (partial/failed fetch): LibriVox: {len(librivox_audiobooks)}, Archive Genres: {sum(len(v) for v in archive_genre_audiobooks.values())}, Archive Languages: {final_lang_count_fail}")
-            return combined_data
-        else:
-            return None
+        logger.warning("FETCH UNSUCCESSFUL: No new data to cache")
+        return combined_data if any([librivox_audiobooks, archive_genre_audiobooks, archive_language_audiobooks]) else None
 
-# --- Core Content Views ---
+# ==========================================
+# SEARCH FUNCTIONALITY - FIXED
+# ==========================================
 
-def home(request):
-    context = _get_full_context(request)
-    cache_key = 'librivox_archive_audiobooks_data_v7'
-    audiobook_data_from_cache = cache.get(cache_key)
-    librivox_audiobooks_final = []
-    archive_genre_audiobooks_final = {}
-    cached_archive_genres = None
-    context["error_message"] = None
-    all_external_book_slugs = set()
-    if audiobook_data_from_cache:
-        for book_dict in audiobook_data_from_cache.get("librivox_audiobooks", []):
-            if book_dict.get('slug'):
-                all_external_book_slugs.add(book_dict.get('slug'))
-        for genre, book_list in audiobook_data_from_cache.get("archive_genre_audiobooks", {}).items():
-            for book_dict in book_list:
-                if book_dict.get('slug'):
-                    all_external_book_slugs.add(book_dict.get('slug'))
-        for lang_key, book_list_lang in audiobook_data_from_cache.get("archive_language_audiobooks", {}).items():
-            for book_dict_lang in book_list_lang:
-                if book_dict_lang.get('slug'):
-                    all_external_book_slugs.add(book_dict_lang.get('slug'))
+def search_creator_audiobooks(query, language_filter, genre_filter, creator_filter, seen_slugs):
+    """Search creator and admin audiobooks with optimized database queries"""
+    results = []
 
-    db_book_stats = {}
-    if all_external_book_slugs:
-        db_instances = Audiobook.objects.filter(slug__in=list(all_external_book_slugs), is_creator_book=False)
-        for db_book in db_instances:
-            db_book_stats[db_book.slug] = {'total_views': db_book.total_views, 'average_rating': db_book.average_rating, 'author': db_book.author, 'title': db_book.title, 'cover_image': db_book.cover_image.url if db_book.cover_image else None}
-
-    if audiobook_data_from_cache:
-        cached_librivox_books = audiobook_data_from_cache.get("librivox_audiobooks", [])
-        for book_data in cached_librivox_books:
-            slug = book_data.get('slug')
-            if slug and slug in db_book_stats:
-                book_data['total_views'] = db_book_stats[slug]['total_views']
-                book_data['average_rating'] = db_book_stats[slug]['average_rating']
-                book_data['author'] = db_book_stats[slug].get('author', book_data.get('author'))
-                book_data['title'] = db_book_stats[slug].get('title', book_data.get('title'))
-                if db_book_stats[slug].get('cover_image'): 
-                    book_data['cover_image'] = db_book_stats[slug]['cover_image']
-            else: 
-                book_data.setdefault('total_views', 0)
-                book_data.setdefault('average_rating', None)
-            librivox_audiobooks_final.append(book_data)
-        cached_archive_genres = audiobook_data_from_cache.get("archive_genre_audiobooks", {})
-        if not cached_archive_genres:
-            logger.warning("'archive_genre_audiobooks' is empty or not found in cache.")
-        for genre, book_list in cached_archive_genres.items():
-            english_books_for_genre = []
-            for i, book_data in enumerate(book_list): 
-                lang = book_data.get('language', 'English') 
-                is_english = False
-                if isinstance(lang, list): 
-                    is_english = any(str(l).lower().strip() in ['english', 'en', 'eng'] for l in lang)
-                elif isinstance(lang, str): 
-                    is_english = lang.lower().strip() in ['english', 'en', 'eng']
-                if is_english:
-                    slug = book_data.get('slug')
-                    if slug and slug in db_book_stats:
-                        book_data['total_views'] = db_book_stats[slug]['total_views']
-                        book_data['average_rating'] = db_book_stats[slug]['average_rating']
-                        book_data['author'] = db_book_stats[slug].get('author', book_data.get('author'))
-                        book_data['title'] = db_book_stats[slug].get('title', book_data.get('title'))
-                        if db_book_stats[slug].get('cover_image'):
-                            book_data['cover_image'] = db_book_stats[slug]['cover_image']
-                    else: 
-                        book_data.setdefault('total_views', 0)
-                        book_data.setdefault('average_rating', None)
-                    english_books_for_genre.append(book_data)
-            if english_books_for_genre:
-                archive_genre_audiobooks_final[genre] = english_books_for_genre
-            elif book_list: 
-                logger.warning(f"Genre '{genre}' had {len(book_list)} books from cache, but none were identified as English after filtering.")
-    else:
-        context["error_message"] = "External audiobook listings are currently being updated or the cache is empty. Please check back shortly."
-        logger.warning("Audiobook data cache was empty or not found.")
-
-    context["librivox_audiobooks"] = librivox_audiobooks_final
-    context["archive_genre_audiobooks"] = archive_genre_audiobooks_final
-    if not archive_genre_audiobooks_final and cached_archive_genres:
-        logger.warning("'archive_genre_audiobooks_final' is empty, but 'cached_archive_genres' was not. This suggests the English filter removed all items.")
-
-    creator_books_list = []
     try:
-        first_chapter_prefetch = Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order'), to_attr='first_chapter_list')
-        creator_books_qs = Audiobook.objects.filter(status='PUBLISHED', is_creator_book=True, language__iexact='English').select_related('creator').prefetch_related(first_chapter_prefetch, Prefetch('reviews', queryset=Review.objects.select_related('user').order_by('-created_at'))).order_by('-publish_date')[:12] 
-        for book in creator_books_qs:
-            first_chapter_audio_url = None
-            first_chapter_title = None
-            if hasattr(book, 'first_chapter_list') and book.first_chapter_list:
-                first_chapter = book.first_chapter_list[0]
-                first_chapter_title = first_chapter.chapter_name
-                if first_chapter.audio_file and hasattr(first_chapter.audio_file, 'url'):
-                    first_chapter_audio_url = first_chapter.audio_file.url
-            creator_books_list.append({'source': 'creator', 'title': book.title, 'slug': book.slug, 'cover_image': book.cover_image.url if book.cover_image else None, 'author': book.author, 'creator': book.creator, 'first_chapter_audio_url': first_chapter_audio_url, 'first_chapter_title': first_chapter_title, 'is_creator_book': True, 'average_rating': book.average_rating, 'total_views': book.total_views, 'is_paid': book.is_paid, 'price': book.price, 'status': book.status, 'language': book.language, 'genre': book.genre})
-        context["creator_audiobooks"] = creator_books_list
-        if not creator_books_list and not librivox_audiobooks_final and not archive_genre_audiobooks_final and not context["error_message"]:
-            context["error_message"] = "No English audiobooks are currently available from any source."
-    except Exception as db_err:
-        logger.error(f"Error fetching creator audiobooks for English homepage: {db_err}", exc_info=True)
-        if not context.get("librivox_audiobooks") and not context.get("archive_genre_audiobooks") and not creator_books_list:
-            if not context.get("error_message"): 
-                context["error_message"] = "Failed to load any audiobooks at this time. Please try again later."
-    if audiobook_data_from_cache is None and not context.get("error_message"):
-        logger.warning("Home page loaded but external audiobook cache was None. This might be during cache repopulation.")
-    return render(request, "audiobooks/English/English_Home.html", context)
+        # Build query to include ALL published audiobooks (creator + admin)
+        db_query = Q(status='PUBLISHED')
+
+        if language_filter:
+            db_query &= Q(language__iexact=language_filter)
+
+        if genre_filter:
+            genre_q = (
+                Q(genre__icontains=genre_filter) |
+                Q(genre__iexact=genre_filter) |
+                Q(genre__istartswith=genre_filter)
+            )
+            db_query &= genre_q
+
+        if creator_filter:
+            # Only apply creator filter to creator books
+            creator_q = (
+                Q(creator__creator_name__icontains=creator_filter) |
+                Q(creator__user__username__icontains=creator_filter) |
+                Q(creator__user__first_name__icontains=creator_filter) |
+                Q(creator__user__last_name__icontains=creator_filter)
+            )
+            db_query &= (Q(is_creator_book=True) & creator_q)
+
+        if query:
+            text_search_q = (
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(author__icontains=query) |
+                Q(genre__icontains=query) |
+                Q(creator__creator_name__icontains=query)
+            )
+            db_query &= text_search_q
+
+        # Execute optimized query
+        audiobooks = (
+            Audiobook.objects.filter(db_query)
+            .select_related('creator', 'creator__user')
+            .prefetch_related('reviews')
+            .annotate(
+                review_count=Count('reviews'),
+                avg_rating=Avg('reviews__rating')
+            )
+            .distinct()
+            .order_by('-publish_date', '-total_views')
+        )
+
+        # Process results
+        for book in audiobooks:
+            if book.slug not in seen_slugs:
+                relevance_score = calculate_relevance_score(book, query)
+
+                # Handle both creator and admin audiobooks
+                creator_name = None
+                source_type = 'platform'  # Default for admin audiobooks
+
+                if book.is_creator_book and book.creator:
+                    creator_name = book.creator.creator_name
+                    source_type = 'creator'
+                elif not book.is_creator_book:
+                    # Admin/platform audiobook
+                    if book.source == 'librivox':
+                        source_type = 'librivox'
+                    elif book.source == 'archive':
+                        source_type = 'archive.org'
+                    else:
+                        source_type = 'platform'
+
+                results.append({
+                    'slug': book.slug,
+                    'title': book.title,
+                    'author': book.author,
+                    'cover_image_url': book.cover_image.url if book.cover_image else DEFAULT_COVER_IMAGE,
+                    'creator_name': creator_name,
+                    'average_rating': book.avg_rating or book.average_rating,
+                    'total_views': book.total_views,
+                    'review_count': book.review_count,
+                    'is_creator_book': book.is_creator_book,
+                    'source_type': source_type,
+                    'price': book.price,
+                    'is_paid': book.is_paid,
+                    'genre': book.genre,
+                    'language': book.language,
+                    'publish_date': book.publish_date,
+                    'relevance_score': relevance_score,
+                    'description': book.description[:200] + '...' if len(book.description) > 200 else book.description
+                })
+                seen_slugs.add(book.slug)
+
+    except Exception as e:
+        logger.error(f"Error searching audiobooks: {str(e)}")
+
+    return results
+
+
+def search_external_audiobooks(query, language_filter, genre_filter, creator_filter, seen_slugs):
+    """Search external audiobooks - FIXED VERSION"""
+    results = []
+
+    # Skip if creator filter is applied (external books don't have creators)
+    if creator_filter:
+        return results
+
+    try:
+        # Get cached data from your management command
+        cached_data = cache.get(CACHE_KEY)
+        if not cached_data:
+            logger.warning(f"No cached external data found for key: {CACHE_KEY}")
+            return results
+
+        logger.info(f"Found cached external data with keys: {list(cached_data.keys())}")
+
+        # Search LibriVox audiobooks
+        librivox_books = cached_data.get('librivox_audiobooks', [])
+        logger.info(f"Searching {len(librivox_books)} LibriVox books")
+
+        librivox_matches = 0
+        for book_dict in librivox_books:
+            if _matches_external_filters(book_dict, query, language_filter, genre_filter):
+                book_slug = book_dict.get('slug')
+                if book_slug and book_slug not in seen_slugs:
+                    results.append(_format_external_result(book_dict, 'librivox'))
+                    seen_slugs.add(book_slug)
+                    librivox_matches += 1
+
+        logger.info(f"LibriVox matches: {librivox_matches}")
+
+        # Search Archive.org audiobooks
+        archive_matches = 0
+        for source_key in ['archive_genre_audiobooks', 'archive_language_audiobooks']:
+            source_data = cached_data.get(source_key, {})
+            logger.info(f"Searching {source_key} with {len(source_data)} categories")
+
+            for category_name, books_list in source_data.items():
+                for book_dict in books_list:
+                    if _matches_external_filters(book_dict, query, language_filter, genre_filter):
+                        book_slug = book_dict.get('slug')
+                        if book_slug and book_slug not in seen_slugs:
+                            results.append(_format_external_result(book_dict, 'archive.org'))
+                            seen_slugs.add(book_slug)
+                            archive_matches += 1
+
+        logger.info(f"Archive.org matches: {archive_matches}")
+        logger.info(f"External search completed: {len(results)} total results")
+
+    except Exception as e:
+        logger.error(f"Error searching external audiobooks: {str(e)}", exc_info=True)
+
+    return results
+
+
+def _matches_external_filters(book_dict, query, language_filter, genre_filter):
+    """Check if external book matches all applied filters - SIMPLIFIED"""
+    # Check query match
+    if query:
+        query_lower = query.lower()
+        title_match = query_lower in book_dict.get('title', '').lower()
+        author_match = query_lower in book_dict.get('author', '').lower()
+        desc_match = query_lower in book_dict.get('description', '').lower()
+        if not (title_match or author_match or desc_match):
+            return False
+
+    # Check language filter
+    if language_filter:
+        book_language = book_dict.get('language', 'English')
+        if isinstance(book_language, list):
+            language_match = any(language_filter.lower() in str(lang).lower() for lang in book_language)
+        else:
+            language_match = language_filter.lower() in str(book_language).lower()
+        if not language_match:
+            return False
+
+    # Check genre filter
+    if genre_filter:
+        book_genre = book_dict.get('genre', '')
+        book_subjects = book_dict.get('subjects', [])
+
+        genre_match = False
+        if book_genre and genre_filter.lower() in book_genre.lower():
+            genre_match = True
+        elif book_subjects:
+            genre_match = any(genre_filter.lower() in str(subject).lower() for subject in book_subjects)
+
+        if not genre_match:
+            return False
+
+    return True
+
+
+def _format_external_result(book_dict, source_type):
+    """Format external book data for consistent result structure"""
+    return {
+        'slug': book_dict.get('slug'),
+        'title': book_dict.get('title', 'Unknown Title'),
+        'author': book_dict.get('author', 'Unknown Author'),
+        'cover_image_url': book_dict.get('cover_image') or DEFAULT_COVER_IMAGE,
+        'creator_name': None,
+        'average_rating': book_dict.get('average_rating'),
+        'total_views': book_dict.get('total_views', 0),
+        'review_count': 0,
+        'is_creator_book': False,
+        'source_type': source_type,
+        'price': Decimal("0.00"),
+        'is_paid': False,
+        'genre': book_dict.get('genre', 'Fiction'),
+        'language': book_dict.get('language', 'English'),
+        'publish_date': None,
+        'relevance_score': 1.0,
+        'description': book_dict.get('description', '')[:200] + '...' if len(book_dict.get('description', '')) > 200 else book_dict.get('description', '')
+    }
+
+
+def get_featured_audiobooks(seen_slugs):
+    """Get featured/trending audiobooks when no search filters are applied"""
+    results = []
+
+    try:
+        # Include all published audiobooks
+        trending_books = (
+            Audiobook.objects.filter(status='PUBLISHED')
+            .select_related('creator')
+            .annotate(
+                review_count=Count('reviews'),
+                avg_rating=Avg('reviews__rating')
+            )
+            .order_by('-total_views', '-publish_date')[:20]
+        )
+
+        for book in trending_books:
+            if book.slug not in seen_slugs:
+                # Handle both creator and admin audiobooks
+                creator_name = None
+                source_type = 'platform'
+
+                if book.is_creator_book and book.creator:
+                    creator_name = book.creator.creator_name
+                    source_type = 'creator'
+                elif not book.is_creator_book:
+                    if book.source == 'librivox':
+                        source_type = 'librivox'
+                    elif book.source == 'archive':
+                        source_type = 'archive.org'
+                    else:
+                        source_type = 'platform'
+
+                results.append({
+                    'slug': book.slug,
+                    'title': book.title,
+                    'author': book.author,
+                    'cover_image_url': book.cover_image.url if book.cover_image else DEFAULT_COVER_IMAGE,
+                    'creator_name': creator_name,
+                    'average_rating': book.avg_rating or book.average_rating,
+                    'total_views': book.total_views,
+                    'review_count': book.review_count,
+                    'is_creator_book': book.is_creator_book,
+                    'source_type': source_type,
+                    'price': book.price,
+                    'is_paid': book.is_paid,
+                    'genre': book.genre,
+                    'language': book.language,
+                    'publish_date': book.publish_date,
+                    'relevance_score': 1.0,
+                    'description': book.description[:200] + '...' if len(book.description) > 200 else book.description
+                })
+                seen_slugs.add(book.slug)
+
+    except Exception as e:
+        logger.error(f"Error getting featured audiobooks: {str(e)}")
+
+    return results
+
 
 def search_results_view(request):
-    query = request.GET.get('q', '').strip().lower()
+    """Enhanced search view with improved performance and seamless filtering"""
+    # Get search parameters
+    query = request.GET.get('q', '').strip()
+    language_filter = request.GET.get('language', '').strip()
+    genre_filter = request.GET.get('genre', '').strip()
+    creator_filter = request.GET.get('creator', '').strip()
+    page_number = request.GET.get('page', 1)
+
+    # Initialize results
     processed_results = []
     seen_slugs = set()
     common_context = _get_full_context(request)
+
+    # Determine if any filters are applied
+    has_any_filter = bool(query or language_filter or genre_filter or creator_filter)
+
+    if has_any_filter:
+        # Search all database audiobooks (creator + admin + external)
+        processed_results.extend(
+            search_creator_audiobooks(query, language_filter, genre_filter, creator_filter, seen_slugs)
+        )
+
+        # Search cached external audiobooks
+        processed_results.extend(
+            search_external_audiobooks(query, language_filter, genre_filter, creator_filter, seen_slugs)
+        )
+    else:
+        # Show featured content when no filters applied
+        processed_results.extend(get_featured_audiobooks(seen_slugs))
+
+    # Sort results
+    processed_results = sort_search_results(processed_results, query)
+
+    # Implement pagination
+    paginator = Paginator(processed_results, 20)
+    try:
+        page_obj = paginator.get_page(page_number)
+    except:
+        page_obj = paginator.get_page(1)
+
+    # Generate page title
     if query:
-        db_audiobooks = Audiobook.objects.filter(Q(title__icontains=query) | Q(author__icontains=query) | Q(creator__creator_name__icontains=query) | Q(genre__icontains=query) | Q(description__icontains=query), status='PUBLISHED', is_creator_book=True).select_related('creator').distinct().order_by('-publish_date')
-        for book in db_audiobooks:
-            if book.slug not in seen_slugs:
-                processed_results.append({'slug': book.slug, 'title': book.title, 'author': book.author, 'cover_image_url': book.cover_image.url if book.cover_image else None, 'creator_name': book.creator.creator_name if book.creator else None, 'average_rating': book.average_rating, 'total_views': book.total_views, 'is_creator_book': True, 'source_type': 'creator', 'price': book.price, 'is_paid': book.is_paid, 'genre': book.genre, 'language': book.language})
-                seen_slugs.add(book.slug)
-        cache_key = 'librivox_archive_audiobooks_data_v7'
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            external_sources_to_search = [("librivox_audiobooks", "librivox"), ("archive_genre_audiobooks", "archive.org"), ("archive_language_audiobooks", "archive.org")]
-            for source_list_key, source_type_val in external_sources_to_search:
-                if source_list_key == "librivox_audiobooks":
-                    item_list = cached_data.get(source_list_key, [])
-                    for book_dict in item_list:
-                        book_slug = book_dict.get('slug')
-                        if book_slug and book_slug not in seen_slugs:
-                            title_match = query in book_dict.get('title', '').lower()
-                            desc_match = query in book_dict.get('description', '').lower()
-                            author_match = query in book_dict.get('author', '').lower() if book_dict.get('author') else False
-                            genre_match = query in book_dict.get('genre', '').lower() if book_dict.get('genre') else False
-                            lang_match = query in book_dict.get('language', '').lower() if book_dict.get('language') else False
-                            if title_match or desc_match or author_match or genre_match or lang_match:
-                                processed_results.append({'slug': book_slug, 'title': book_dict.get('title'), 'author': book_dict.get('author', 'LibriVox'), 'cover_image_url': book_dict.get('cover_image'), 'creator_name': None, 'average_rating': None, 'total_views': None, 'is_creator_book': False, 'source_type': source_type_val, 'price': Decimal("0.00"), 'is_paid': False, 'genre': book_dict.get('genre'), 'language': book_dict.get('language')})
-                                seen_slugs.add(book_slug)
-                else:
-                    for term_key, term_books_list in cached_data.get(source_list_key, {}).items():
-                        for book_dict in term_books_list:
-                            book_slug = book_dict.get('slug')
-                            if book_slug and book_slug not in seen_slugs:
-                                title_match = query in book_dict.get('title', '').lower()
-                                desc_match = query in book_dict.get('description', '').lower()
-                                author_match = query in book_dict.get('author', '').lower()
-                                subject_match = any(query in subject.lower() for subject in book_dict.get('subjects', []))
-                                genre_match = query in book_dict.get('genre', '').lower() if book_dict.get('genre') else False
-                                lang_match = query in book_dict.get('language', '').lower() if book_dict.get('language') else False
-                                if title_match or desc_match or author_match or subject_match or genre_match or lang_match:
-                                    processed_results.append({'slug': book_slug, 'title': book_dict.get('title'), 'author': book_dict.get('author'), 'cover_image_url': book_dict.get('cover_image'), 'creator_name': None, 'average_rating': None, 'total_views': None, 'is_creator_book': False, 'source_type': source_type_val, 'price': Decimal("0.00"), 'is_paid': False, 'genre': book_dict.get('genre'), 'language': book_dict.get('language')})
-                                    seen_slugs.add(book_slug)
-        else:
-            logger.warning("Search: External audiobook cache is empty or not available.")
-            messages.info(request, "External audiobook listings are currently being updated. Search results may be limited.")
-    context_data = {'query': request.GET.get('q', '').strip(), 'results': processed_results, 'page_title': f"Search Results for '{request.GET.get('q', '').strip()}'" if query else "Search Audiobooks"}
+        page_title = f"Search Results for '{query}'"
+    else:
+        title_parts = []
+        if language_filter:
+            title_parts.append(f"{language_filter} Audiobooks")
+        if genre_filter:
+            title_parts.append(f"{genre_filter}")
+        if creator_filter:
+            title_parts.append(f"by {creator_filter}")
+        page_title = " - ".join(title_parts) if title_parts else "Browse Audiobooks"
+
+    # Generate filter summary
+    filters = []
+    if language_filter:
+        filters.append(f"Language: {language_filter}")
+    if genre_filter:
+        filters.append(f"Genre: {genre_filter}")
+    if creator_filter:
+        filters.append(f"Creator: {creator_filter}")
+    filter_summary = " | ".join(filters) if filters else None
+
+    # Prepare context
+    context_data = {
+        'query': query,
+        'results': page_obj.object_list,
+        'page_obj': page_obj,
+        'page_title': page_title,
+        'current_language_filter': language_filter,
+        'current_genre_filter': genre_filter,
+        'current_creator_filter': creator_filter,
+        'total_results': len(processed_results),
+        'has_filters': has_any_filter,
+        'search_performed': has_any_filter,
+        'filter_summary': filter_summary
+    }
+
     context_data.update(common_context)
     return render(request, 'audiobooks/English/english_search.html', context_data)
 
+# ==========================================
+# FILTER OPTIONS API
+# ==========================================
+
+def get_filter_options(request):
+    """Enhanced filter options endpoint with language-specific genre mapping"""
+    language = request.GET.get('language', '').strip()
+    genre = request.GET.get('genre', '').strip()
+
+    try:
+        # Start with published creator audiobooks
+        audiobooks_query = Audiobook.objects.filter(
+            status='PUBLISHED',
+            is_creator_book=True
+        ).select_related('creator')
+
+        # Apply language filter
+        if language:
+            audiobooks_query = audiobooks_query.filter(language__iexact=language)
+
+        # Apply genre filter
+        if genre:
+            audiobooks_query = audiobooks_query.filter(
+                Q(genre__icontains=genre) | Q(genre__iexact=genre)
+            )
+
+        # Get available genres based on language preference
+        if language and language in LANGUAGE_GENRE_MAPPING:
+            available_genres = LANGUAGE_GENRE_MAPPING[language]
+        else:
+            # Get genres from database
+            db_genres = list(
+                audiobooks_query.values_list('genre', flat=True)
+                .distinct()
+                .exclude(genre__isnull=True)
+                .exclude(genre__exact='')
+            )
+
+            if not language:
+                # Include all predefined genres
+                all_predefined_genres = []
+                for lang_genres in LANGUAGE_GENRE_MAPPING.values():
+                    all_predefined_genres.extend(lang_genres)
+                available_genres = list(set(db_genres + all_predefined_genres))
+            else:
+                available_genres = db_genres
+
+        # Get available creators
+        available_creators = list(
+            audiobooks_query.filter(creator__isnull=False)
+            .values_list('creator__creator_name', flat=True)
+            .distinct()
+            .exclude(creator__creator_name__isnull=True)
+            .exclude(creator__creator_name__exact='')
+        )
+
+        # Include external audiobook data
+        cached_data = cache.get(CACHE_KEY)
+        external_genres = set()
+
+        if cached_data:
+            # Process external data for additional options
+            for source_key in ['librivox_audiobooks', 'archive_genre_audiobooks', 'archive_language_audiobooks']:
+                if source_key == 'librivox_audiobooks':
+                    books = cached_data.get(source_key, [])
+                    for book in books:
+                        if _matches_language_filter(book, language) and book.get('genre'):
+                            external_genres.add(book['genre'])
+                else:
+                    source_data = cached_data.get(source_key, {})
+                    for term_books in source_data.values():
+                        for book in term_books:
+                            if _matches_language_filter(book, language):
+                                if book.get('genre'):
+                                    external_genres.add(book.get('genre'))
+                                for subject in book.get('subjects', []):
+                                    if subject and len(subject) < 50:
+                                        external_genres.add(subject)
+
+        # Combine genres (only if not using predefined mapping)
+        if not (language and language in LANGUAGE_GENRE_MAPPING):
+            available_genres.extend(list(external_genres))
+            available_genres = list(set(available_genres))
+
+        # Clean and sort
+        available_genres = sorted([g for g in available_genres if g and len(g.strip()) > 0])
+        available_creators = sorted([c for c in available_creators if c and len(c.strip()) > 0])
+
+        return JsonResponse({
+            'genres': available_genres,
+            'creators': available_creators,
+            'total_audiobooks': audiobooks_query.count(),
+            'language_specific': language in LANGUAGE_GENRE_MAPPING if language else False
+        })
+
+    except Exception as e:
+        logger.error(f"Error in get_filter_options: {str(e)}")
+        return JsonResponse({
+            'genres': LANGUAGE_GENRE_MAPPING.get(language, []) if language else [],
+            'creators': [],
+            'total_audiobooks': 0,
+            'error': 'Failed to load filter options'
+        })
+
+
+def _matches_language_filter(book, language_filter):
+    """Check if book matches language filter"""
+    if not language_filter:
+        return True
+
+    book_language = book.get('language', 'English')
+    if isinstance(book_language, list):
+        return any(language_filter.lower() in str(lang).lower() for lang in book_language)
+    else:
+        return language_filter.lower() in str(book_language).lower()
+
+# ==========================================
+# MAIN VIEW FUNCTIONS
+# ==========================================
+
+def home(request):
+    """Enhanced home page with better data organization"""
+    context = _get_full_context(request)
+
+    # Get cached audiobook data
+    audiobook_data = cache.get(CACHE_KEY)
+    librivox_audiobooks = []
+    archive_genre_audiobooks = defaultdict(list)
+    context["error_message"] = None
+
+    # Collect external book slugs for database lookup
+    all_external_slugs = set()
+    if audiobook_data:
+        for book_dict in audiobook_data.get("librivox_audiobooks", []):
+            if book_dict.get('slug'):
+                all_external_slugs.add(book_dict.get('slug'))
+
+        for genre, book_list in audiobook_data.get("archive_genre_audiobooks", {}).items():
+            for book_dict in book_list:
+                if book_dict.get('slug'):
+                    all_external_slugs.add(book_dict.get('slug'))
+
+        for lang_key, book_list in audiobook_data.get("archive_language_audiobooks", {}).items():
+            for book_dict in book_list:
+                if book_dict.get('slug'):
+                    all_external_slugs.add(book_dict.get('slug'))
+
+    # Get database stats for external books
+    db_book_stats = {}
+    if all_external_slugs:
+        db_instances = Audiobook.objects.filter(
+            slug__in=list(all_external_slugs),
+            is_creator_book=False
+        )
+        for db_book in db_instances:
+            db_book_stats[db_book.slug] = {
+                'total_views': db_book.total_views,
+                'average_rating': db_book.average_rating,
+                'author': db_book.author,
+                'title': db_book.title,
+                'cover_image': db_book.cover_image.url if db_book.cover_image else DEFAULT_COVER_IMAGE
+            }
+
+    # Process cached data
+    if audiobook_data:
+        # Process LibriVox books
+        cached_librivox_books = audiobook_data.get("librivox_audiobooks", [])
+        for book_data in cached_librivox_books:
+            slug = book_data.get('slug')
+            if slug and slug in db_book_stats:
+                book_data.update(db_book_stats[slug])
+            else:
+                book_data.setdefault('total_views', 0)
+                book_data.setdefault('average_rating', None)
+                book_data.setdefault('cover_image', DEFAULT_COVER_IMAGE)
+            librivox_audiobooks.append(book_data)
+
+        # Process Archive.org genre books (English only)
+        cached_archive_genres = audiobook_data.get("archive_genre_audiobooks", {})
+        for genre, book_list in cached_archive_genres.items():
+            english_books = []
+            for book_data in book_list:
+                lang = book_data.get('language', 'English')
+                is_english = False
+
+                if isinstance(lang, list):
+                    is_english = any(str(l).lower().strip() in ['english', 'en', 'eng'] for l in lang)
+                elif isinstance(lang, str):
+                    is_english = lang.lower().strip() in ['english', 'en', 'eng']
+
+                if is_english:
+                    slug = book_data.get('slug')
+                    if slug and slug in db_book_stats:
+                        book_data.update(db_book_stats[slug])
+                    else:
+                        book_data.setdefault('total_views', 0)
+                        book_data.setdefault('average_rating', None)
+                        book_data.setdefault('cover_image', DEFAULT_COVER_IMAGE)
+                    english_books.append(book_data)
+
+            if english_books:
+                archive_genre_audiobooks[genre].extend(english_books)
+    else:
+        context["error_message"] = "External audiobook listings are currently being updated. Please check back shortly."
+        logger.warning("Audiobook data cache was empty")
+
+    # Add platform books
+    try:
+        platform_books = Audiobook.objects.filter(
+            status='PUBLISHED',
+            creator__isnull=True,
+            language__iexact='English'
+        ).order_by('genre', '-publish_date')
+
+        for book in platform_books:
+            book_dict = {
+                'slug': book.slug,
+                'title': book.title,
+                'author': book.author,
+                'cover_image': book.cover_image.url if book.cover_image else DEFAULT_COVER_IMAGE,
+                'average_rating': book.average_rating,
+                'total_views': book.total_views,
+                'is_paid': book.is_paid,
+                'price': book.price,
+                'creator': None,
+            }
+
+            if book.genre == 'Other':
+                librivox_audiobooks.insert(0, book_dict)
+            else:
+                archive_genre_audiobooks[book.genre].insert(0, book_dict)
+
+    except Exception as e:
+        logger.error(f"Error fetching platform audiobooks: {e}", exc_info=True)
+
+    # Get creator audiobooks
+    try:
+        creator_books = Audiobook.objects.filter(
+            status='PUBLISHED',
+            creator__isnull=False,
+            language__iexact='English'
+        ).select_related('creator').order_by('-publish_date')[:12]
+
+        context["creator_audiobooks"] = list(creator_books)
+    except Exception as e:
+        logger.error(f"Error fetching creator audiobooks: {e}", exc_info=True)
+        context["creator_audiobooks"] = []
+
+    context["librivox_audiobooks"] = librivox_audiobooks
+    context["archive_genre_audiobooks"] = dict(archive_genre_audiobooks)
+
+    # Check if any content is available
+    if (not context.get("creator_audiobooks") and
+        not context.get("librivox_audiobooks") and
+        not context.get("archive_genre_audiobooks") and
+        not context.get("error_message")):
+        context["error_message"] = "No English audiobooks are currently available."
+
+    return render(request, "audiobooks/English/English_Home.html", context)
+
+
 def audiobook_detail(request, audiobook_slug):
+    """Enhanced audiobook detail view with improved security and performance"""
+    if not request.user.is_authenticated:
+        login_url = reverse('AudioXApp:login')
+        current_url = request.get_full_path()
+        return redirect(f"{login_url}?next={current_url}")
+
+    context = _get_full_context(request)
     audiobook_obj = None
     found_external_book_dict = None
-    is_creator_book_page_flag = False
-    context = _get_full_context(request)
-    template_name = 'audiobook_detail.html'
-    reviews_list = []
-    user_review_object = None
-    current_user_has_reviewed = False
-    user_has_purchased = False
-    audiobook_lock_message = None 
-    chapters_to_display = []
+
     try:
-        audiobook_obj = Audiobook.objects.prefetch_related(Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order')), 'reviews__user').select_related('creator').get(slug=audiobook_slug)
-        is_creator_book_page_flag = audiobook_obj.is_creator_book
-        if not is_creator_book_page_flag: 
-            cache_key = 'librivox_archive_audiobooks_data_v7'
-            external_audiobook_data_cache = cache.get(cache_key)
-            if external_audiobook_data_cache:
-                for book_dict_item in external_audiobook_data_cache.get("librivox_audiobooks", []):
-                    if book_dict_item.get('slug') == audiobook_slug:
-                        found_external_book_dict = book_dict_item
-                        break
-                if not found_external_book_dict:
-                    for source_key in ["archive_genre_audiobooks", "archive_language_audiobooks"]:
-                        for _, book_list_items in external_audiobook_data_cache.get(source_key, {}).items():
-                            for book_dict_item in book_list_items:
-                                if book_dict_item.get('slug') == audiobook_slug:
-                                    found_external_book_dict = book_dict_item
-                                    break
-                            if found_external_book_dict: break
-                        if found_external_book_dict: break
-            if not found_external_book_dict:
-                logger.warning(f"External book (slug: {audiobook_slug}) placeholder found in DB, but its full chapter data not in current cache.")
+        # Get audiobook with optimized queries
+        audiobook_obj = Audiobook.objects.prefetch_related(
+            Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order')),
+            'reviews__user'
+        ).select_related('creator').get(slug=audiobook_slug)
+
+        # Handle external audiobooks
+        if not audiobook_obj.is_creator_book:
+            external_data = cache.get(CACHE_KEY)
+            if external_data:
+                found_external_book_dict = _find_external_book(external_data, audiobook_slug)
+
+                if found_external_book_dict:
+                    _sync_external_chapters(audiobook_obj, found_external_book_dict)
+                    # Refresh audiobook object
+                    audiobook_obj = Audiobook.objects.prefetch_related(
+                        Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order')),
+                        'reviews__user'
+                    ).select_related('creator').get(slug=audiobook_slug)
+
     except Audiobook.DoesNotExist:
-        logger.info(f"Audiobook with slug '{audiobook_slug}' not in DB. Checking cache for external book.")
-        cache_key = 'librivox_archive_audiobooks_data_v7'
-        external_audiobook_data_cache = cache.get(cache_key)
-        if external_audiobook_data_cache:
-            for book_dict_item in external_audiobook_data_cache.get("librivox_audiobooks", []):
-                if book_dict_item.get('slug') == audiobook_slug: found_external_book_dict = book_dict_item; break
-            if not found_external_book_dict:
-                for source_key in ["archive_genre_audiobooks", "archive_language_audiobooks"]:
-                    for _, book_list_items in external_audiobook_data_cache.get(source_key, {}).items():
-                        for book_dict_item in book_list_items:
-                            if book_dict_item.get('slug') == audiobook_slug: found_external_book_dict = book_dict_item; break
-                        if found_external_book_dict: break
-                    if found_external_book_dict: break
-        if found_external_book_dict:
-            is_creator_book_page_flag = False
-            audiobook_obj, created = Audiobook.objects.get_or_create(slug=audiobook_slug, defaults={'title': found_external_book_dict.get('title', 'Unknown Title'), 'author': found_external_book_dict.get('author'), 'description': found_external_book_dict.get('description',"No description provided."), 'language': found_external_book_dict.get('language'), 'genre': found_external_book_dict.get('genre'), 'source': found_external_book_dict.get('source', 'archive'), 'is_creator_book': False, 'creator': None, 'is_paid': False, 'price': Decimal('0.00'), 'status': 'PUBLISHED'})
-            if created:
-                logger.info(f"Created new Audiobook DB entry shell for external book: {audiobook_slug}.")
-        else:
+        # Try to create from external data
+        audiobook_obj = _create_from_external_data(audiobook_slug)
+        if not audiobook_obj:
             messages.error(request, "Audiobook not found.")
             raise Http404("Audiobook not found.")
 
-    context_audiobook_data_for_display = {}
-    if is_creator_book_page_flag and audiobook_obj:
-        context_audiobook_data_for_display = audiobook_obj 
-    elif found_external_book_dict and audiobook_obj:
-        context_audiobook_data_for_display = found_external_book_dict.copy()
-        context_audiobook_data_for_display['title'] = audiobook_obj.title 
-        context_audiobook_data_for_display['author'] = audiobook_obj.author
-        context_audiobook_data_for_display['description'] = audiobook_obj.description
-        if audiobook_obj.cover_image and hasattr(audiobook_obj.cover_image, 'url'):
-            try:
-                context_audiobook_data_for_display['cover_image'] = audiobook_obj.cover_image.url
-            except ValueError:
-                context_audiobook_data_for_display['cover_image'] = found_external_book_dict.get('cover_image')
-        else:
-            context_audiobook_data_for_display['cover_image'] = found_external_book_dict.get('cover_image')
-        context_audiobook_data_for_display['source'] = audiobook_obj.source
-        context_audiobook_data_for_display['total_views'] = audiobook_obj.total_views
-        context_audiobook_data_for_display['average_rating'] = audiobook_obj.average_rating 
-    elif audiobook_obj: 
-        context_audiobook_data_for_display = audiobook_obj 
-        is_creator_book_page_flag = audiobook_obj.is_creator_book
-        logger.warning(f"Audiobook {audiobook_slug} from DB (is_creator_book={is_creator_book_page_flag}), but not found in external cache. Chapters might be missing if external.")
-    else:
-        raise Http404("Audiobook data could not be prepared.")
+    except Exception as e:
+        logger.error(f"Error fetching audiobook {audiobook_slug}: {e}", exc_info=True)
+        messages.error(request, "An error occurred while loading this audiobook.")
+        raise Http404("Failed to load audiobook.")
 
-    if audiobook_obj:
-        current_user_for_log = request.user if request.user.is_authenticated else None
-        AudiobookViewLog.objects.create(audiobook=audiobook_obj, user=current_user_for_log)
-        Audiobook.objects.filter(pk=audiobook_obj.pk).update(total_views=F('total_views') + 1)
-        audiobook_obj.refresh_from_db(fields=['total_views'])
-        if isinstance(context_audiobook_data_for_display, dict):
-            context_audiobook_data_for_display['total_views'] = audiobook_obj.total_views
-            context_audiobook_data_for_display['average_rating'] = audiobook_obj.average_rating 
-        reviews_list = audiobook_obj.reviews.select_related('user').order_by('-created_at')
-        if request.user.is_authenticated:
-            user_review_object = reviews_list.filter(user=request.user).first()
-            if user_review_object:
-                current_user_has_reviewed = True
+    # Record view
+    _record_audiobook_view(request.user, audiobook_obj)
 
-    if audiobook_obj and is_creator_book_page_flag:
-        all_db_chapters = audiobook_obj.chapters.all()
-        if audiobook_obj.is_paid and request.user.is_authenticated and hasattr(request.user, 'has_purchased_audiobook'):
-            user_has_purchased = request.user.has_purchased_audiobook(audiobook_obj)
-        preview_limit_count = 1 if all_db_chapters.exists() else 0 
-        for i, chapter_db_obj in enumerate(all_db_chapters):
-            is_accessible = True
-            if audiobook_obj.is_paid and not user_has_purchased:
-                is_accessible = chapter_db_obj.is_preview_eligible or (i < preview_limit_count and not any(c.is_preview_eligible for c in all_db_chapters))
-            chapters_to_display.append({'chapter_title': chapter_db_obj.chapter_name, 'audio_url_template': chapter_db_obj.get_streaming_url(), 'is_accessible': is_accessible, 'duration_seconds': chapter_db_obj.duration_seconds, 'chapter_index': i, 'chapter_id': str(chapter_db_obj.chapter_id)})
-    elif found_external_book_dict:
-        external_chapters_raw = found_external_book_dict.get('chapters', [])
-        for i, ch_info in enumerate(external_chapters_raw):
-            external_audio_url = ch_info.get('audio_url')
-            streaming_url_template = None
-            if external_audio_url:
-                streaming_url_template = reverse('AudioXApp:stream_audio') + f'?url={quote(external_audio_url)}'
-            chapters_to_display.append({'chapter_title': ch_info.get('chapter_title'), 'audio_url_template': streaming_url_template, 'is_accessible': True, 'duration_seconds': ch_info.get('duration_seconds'), 'chapter_index': i, 'chapter_id': f"ext-{audiobook_obj.slug}-{i}" if audiobook_obj else f"ext-unknown-{i}"})
+    # Check purchase status
+    user_has_purchased = False
+    if (audiobook_obj.is_creator_book and audiobook_obj.is_paid and
+        request.user.is_authenticated):
+        user_has_purchased = request.user.has_purchased_audiobook(audiobook_obj)
 
-    page_context_for_js = {"isAuthenticated": request.user.is_authenticated, "csrfToken": get_token(request), "audiobookId": str(audiobook_obj.audiobook_id) if audiobook_obj and audiobook_obj.audiobook_id else None, "audiobookSlug": audiobook_obj.slug if audiobook_obj else None, "audiobookTitle": audiobook_obj.title if audiobook_obj else (found_external_book_dict.get('title', "Audiobook") if found_external_book_dict else "Audiobook"), "addReviewUrl": reverse('AudioXApp:add_review', kwargs={'audiobook_slug': audiobook_obj.slug}) if audiobook_obj else "#error-no-slug-for-review", "addToLibraryApiUrl": reverse('AudioXApp:toggle_library_item'), "myLibraryUrl": reverse('AudioXApp:my_library_page'), "loginUrl": f"{reverse('AudioXApp:login')}?next={urlencode({'next': request.path})}", "getAiSummaryUrl": reverse('AudioXApp:get_ai_summary', kwargs={'audiobook_id': audiobook_obj.audiobook_id}) if audiobook_obj and audiobook_obj.audiobook_id else reverse('AudioXApp:get_ai_summary', kwargs={'audiobook_id': 0}), "updateListeningProgressUrl": reverse('AudioXApp:update_listening_progress'), "postChapterCommentUrlBase": "URL_STILL_NEEDS_DEFINITION_post_chapter_comment", "getChapterCommentsUrlBase": "URL_STILL_NEEDS_DEFINITION_get_chapter_comments", "audiobookAuthor": audiobook_obj.author if audiobook_obj else (found_external_book_dict.get('author') if found_external_book_dict else "Unknown Author"), "audiobookLanguage": audiobook_obj.language if audiobook_obj else (found_external_book_dict.get('language') if found_external_book_dict else "N/A"), "audiobookGenre": audiobook_obj.genre if audiobook_obj else (found_external_book_dict.get('genre') if found_external_book_dict else "N/A"), "isCreatorBook": is_creator_book_page_flag, "generateAudioClipUrl": reverse('AudioXApp:generate_audio_clip'), "stripePublishableKey": settings.STRIPE_PUBLISHABLE_KEY if hasattr(settings, 'STRIPE_PUBLISHABLE_KEY') else None, "createCheckoutSessionUrl": reverse('AudioXApp:create_checkout_session') if is_creator_book_page_flag and audiobook_obj and audiobook_obj.is_paid else None, "audiobookPrice": str(audiobook_obj.price) if audiobook_obj and audiobook_obj.is_paid else "0.00"}
+    is_in_library = False
     if request.user.is_authenticated:
-        page_context_for_js["userId"] = str(request.user.user_id) 
-        page_context_for_js["userFullName"] = request.user.full_name or request.user.username
-        page_context_for_js["userProfilePicUrl"] = request.user.profile_pic.url if hasattr(request.user, 'profile_pic') and request.user.profile_pic else None
+        is_in_library = request.user.library_audiobooks.filter(pk=audiobook_obj.pk).exists()
+
+    # Process chapters
+    chapters_to_display = []
+    audiobook_lock_message = None
+
+    for i, chapter in enumerate(audiobook_obj.chapters.all()):
+        is_accessible, lock_reason = get_chapter_accessibility(chapter, audiobook_obj, request.user, i)
+
+        if (audiobook_obj.is_creator_book and audiobook_obj.is_paid and
+            not user_has_purchased and not is_accessible):
+            audiobook_lock_message = f"This is a premium audiobook. Purchase for PKR {audiobook_obj.price} to unlock all chapters."
+
+        chapters_to_display.append({
+            'chapter_title': chapter.chapter_name,
+            'audio_url_template': chapter.get_streaming_url(),
+            'is_accessible': is_accessible,
+            'lock_reason': lock_reason,
+            'duration_seconds': chapter.duration_seconds,
+            'chapter_index': i,
+            'chapter_id': chapter.pk,
+            'unlock_cost': CHAPTER_UNLOCK_COST, # NEW: Add unlock cost
+        })
+
+    # Get listening history
+    listening_history_data = {}
+    if request.user.is_authenticated:
+        history_records = ListeningHistory.objects.filter(
+            user=request.user,
+            chapter__audiobook=audiobook_obj
+        ).select_related('chapter')
+
+        for record in history_records:
+            listening_history_data[str(record.chapter.pk)] = {
+                'position': record.last_position_seconds,
+                'completed': record.is_completed
+            }
+
+    # Get reviews
+    reviews = audiobook_obj.reviews.select_related('user').order_by('-created_at')
+    user_review = None
+    if request.user.is_authenticated:
+        user_review = reviews.filter(user=request.user).first()
+    
+    # ✅ NEW: Determine if user can review
+    can_user_review = False
+    if request.user.is_authenticated:
+        if not audiobook_obj.is_paid:
+            can_user_review = True
+        elif audiobook_obj.is_paid and user_has_purchased:
+            can_user_review = True
+        # Note: This logic could be expanded (e.g., allow reviews for external books always)
+        # but for now, it mirrors the check in the `add_review` view.
+
+
+    # Get recommendations
+    recommended_audiobooks = _get_recommendations(audiobook_obj, max_count=5)
+
+    # ✅ NEW: Prepare context data for JavaScript (renamed from page_context)
+    page_context_data_dict = {
+        "isAuthenticated": request.user.is_authenticated,
+        "csrfToken": get_token(request),
+        "audiobookId": str(audiobook_obj.audiobook_id) if audiobook_obj.audiobook_id else None,
+        "audiobookSlug": audiobook_obj.slug,
+        "audiobookTitle": audiobook_obj.title,
+        "addReviewUrl": reverse('AudioXApp:add_review', kwargs={'audiobook_slug': audiobook_obj.slug}),
+        "addToLibraryApiUrl": reverse('AudioXApp:toggle_library_item'),
+        "myLibraryUrl": reverse('AudioXApp:my_library_page'),
+        "loginUrl": f"{reverse('AudioXApp:login')}?next={request.path}",
+        "getAiSummaryUrl": reverse('AudioXApp:get_ai_summary', kwargs={'audiobook_id': audiobook_obj.audiobook_id or 0}),
+        "updateListeningProgressUrl": reverse('AudioXApp:update_listening_progress'),
+        "audiobookAuthor": audiobook_obj.author,
+        "audiobookLanguage": audiobook_obj.language,
+        "audiobookGenre": audiobook_obj.genre,
+        "isCreatorBook": audiobook_obj.is_creator_book,
+        "generateAudioClipUrl": reverse('AudioXApp:generate_audio_clip'),
+        "stripePublishableKey": getattr(settings, 'STRIPE_PUBLISHABLE_KEY', None),
+        "createCheckoutSessionUrl": reverse('AudioXApp:create_checkout_session') if audiobook_obj.is_creator_book and audiobook_obj.is_paid else None,
+        "audiobookPrice": str(audiobook_obj.price) if audiobook_obj.is_paid else "0.00",
+        "maxAudioClipDurationSeconds": getattr(settings, 'MAX_AUDIO_CLIP_DURATION_SECONDS', 300),
+        "userId": str(request.user.user_id) if request.user.is_authenticated else None,
+        "userFullName": request.user.full_name or request.user.username if request.user.is_authenticated else None,
+        "userProfilePicUrl": request.user.profile_pic.url if (request.user.is_authenticated and
+                                                                hasattr(request.user, 'profile_pic') and
+                                                                request.user.profile_pic) else None,
+        "current_user_has_reviewed": bool(user_review),
+        "user_review_object": {
+            'rating': user_review.rating,
+            'comment': user_review.comment
+        } if user_review else None,
+        "checkCoinEligibilityUrl": reverse('AudioXApp:check_coin_purchase_eligibility', kwargs={'audiobook_slug': audiobook_obj.slug}),
+        "purchaseWithCoinsUrl": reverse('AudioXApp:purchase_audiobook_with_coins'),
+        "recordVisitUrl": reverse('AudioXApp:record_audiobook_visit'),
+        "buyCoinsUrl": reverse('AudioXApp:buycoins'),
+        "userSubscriptionType": request.user.subscription_type if request.user.is_authenticated else "FR",
+        "subscriptionUrl": reverse('AudioXApp:subscribe'),
+        "unlockChapterUrl": reverse('AudioXApp:unlock_chapter_with_coins'),
+        "is_in_library": is_in_library,
+    }
+
+    # Prepare audiobook data for display
+    if audiobook_obj.is_creator_book:
+        audiobook_data_for_display = audiobook_obj
     else:
-        page_context_for_js["userId"] = None
-        page_context_for_js["userFullName"] = None
-        page_context_for_js["userProfilePicUrl"] = None
+        audiobook_data_for_display = {
+            'title': audiobook_obj.title,
+            'author': audiobook_obj.author,
+            'description': audiobook_obj.description,
+            'language': audiobook_obj.language,
+            'genre': audiobook_obj.genre,
+            'source': audiobook_obj.source,
+            'is_creator_book': False,
+            'total_views': audiobook_obj.total_views,
+            'average_rating': audiobook_obj.average_rating,
+            'is_paid': audiobook_obj.is_paid,
+            'price': audiobook_obj.price,
+            'cover_image': (audiobook_obj.cover_image.url if audiobook_obj.cover_image
+                            else (found_external_book_dict.get('cover_image') if found_external_book_dict else DEFAULT_COVER_IMAGE))
+        }
 
-    recommended_audiobooks_list = []
-    seen_recommended_slugs = set()
-    current_book_slug_for_exclusion = None
-    if audiobook_obj and audiobook_obj.slug:
-        current_book_slug_for_exclusion = audiobook_obj.slug
-    elif found_external_book_dict and found_external_book_dict.get('slug'):
-        current_book_slug_for_exclusion = found_external_book_dict.get('slug')
-    if current_book_slug_for_exclusion:
-        seen_recommended_slugs.add(current_book_slug_for_exclusion)
+    # Update context
+    context.update({
+        'audiobook': audiobook_obj,
+        'audiobook_data_for_display': audiobook_data_for_display,
+        'is_creator_book_page': audiobook_obj.is_creator_book,
+        'reviews': reviews,
+        'user_review_object': user_review,
+        'current_user_has_reviewed': bool(user_review),
+        'user_has_purchased': user_has_purchased,
+        'chapters_to_display': chapters_to_display,
+        'audiobook_lock_message': audiobook_lock_message,
+        'recommended_audiobooks': recommended_audiobooks,
+        'listening_history_json': json.dumps(listening_history_data),
+        # ✅ NEW CONTEXT VARIABLES ADDED HERE
+        'page_context_data_dict': json.dumps(page_context_data_dict),
+        'can_user_review': can_user_review,
+        'is_in_library': is_in_library,
+    })
 
-    current_book_language = None
-    current_book_genre = None
-    if isinstance(context_audiobook_data_for_display, Audiobook):
-        current_book_language = context_audiobook_data_for_display.language
-        current_book_genre = context_audiobook_data_for_display.genre
-    elif isinstance(context_audiobook_data_for_display, dict):
-        current_book_language = context_audiobook_data_for_display.get('language')
-        current_book_genre = context_audiobook_data_for_display.get('genre')
-        if not current_book_genre and 'subjects' in context_audiobook_data_for_display:
-            subjects = context_audiobook_data_for_display.get('subjects')
-            if isinstance(subjects, list) and subjects:
-                current_book_genre = subjects[0]
-            elif isinstance(subjects, str):
-                current_book_genre = subjects.split(';')[0].strip() if subjects.split(';')[0].strip() else None
+    return render(request, 'audiobook_detail.html', context)
 
-    logger.info(f"Reco Details - Current Book: Slug='{current_book_slug_for_exclusion}', Lang='{current_book_language}', Genre='{current_book_genre}'")
-    max_recommendations = 5
-    if current_book_language:
-        db_recs_query_base = Audiobook.objects.filter(status='PUBLISHED', is_creator_book=True, language__iexact=current_book_language).exclude(slug__in=list(seen_recommended_slugs)).annotate(calculated_average_rating=Avg('reviews__rating'))
-        if current_book_genre:
-            genre_specific_db_recs = list(db_recs_query_base.filter(genre__iexact=current_book_genre).order_by('-calculated_average_rating', '?')[:max_recommendations])
-            for rec in genre_specific_db_recs:
-                if rec.slug not in seen_recommended_slugs and len(recommended_audiobooks_list) < max_recommendations:
-                    recommended_audiobooks_list.append(rec)
-                    seen_recommended_slugs.add(rec.slug)
-        if len(recommended_audiobooks_list) < max_recommendations:
-            exclude_q = Q()
-            if current_book_genre:
-                exclude_q = Q(genre__iexact=current_book_genre)
-            other_lang_db_recs = list(db_recs_query_base.exclude(exclude_q).order_by('-calculated_average_rating', '?')[:max_recommendations - len(recommended_audiobooks_list)])
-            for rec in other_lang_db_recs:
-                if rec.slug not in seen_recommended_slugs and len(recommended_audiobooks_list) < max_recommendations:
-                    recommended_audiobooks_list.append(rec)
-                    seen_recommended_slugs.add(rec.slug)
-
-    if len(recommended_audiobooks_list) < max_recommendations and current_book_language:
-        cache_key_external = 'librivox_archive_audiobooks_data_v7'
-        external_audiobook_data_cache = cache.get(cache_key_external)
-        if external_audiobook_data_cache:
-            potential_external_recs_for_lang = []
-            for book_dict in external_audiobook_data_cache.get("librivox_audiobooks", []):
-                book_lang_ext = book_dict.get('language', 'en') 
-                if book_lang_ext and current_book_language.lower() in book_lang_ext.lower() and book_dict.get('slug') not in seen_recommended_slugs:
-                    potential_external_recs_for_lang.append(book_dict)
-            archive_lang_books = external_audiobook_data_cache.get("archive_language_audiobooks", {})
-            if isinstance(archive_lang_books, dict) and current_book_language in archive_lang_books:
-                for book_dict in archive_lang_books[current_book_language]:
-                    if book_dict.get('slug') not in seen_recommended_slugs:
-                        potential_external_recs_for_lang.append(book_dict)
-            archive_genre_books = external_audiobook_data_cache.get("archive_genre_audiobooks", {})
-            if isinstance(archive_genre_books, dict):
-                for genre_key, book_list in archive_genre_books.items():
-                    for book_dict in book_list:
-                        book_lang_ext = book_dict.get('language')
-                        if book_lang_ext and current_book_language.lower() in book_lang_ext.lower() and book_dict.get('slug') not in seen_recommended_slugs:
-                            if not any(p_rec.get('slug') == book_dict.get('slug') for p_rec in potential_external_recs_for_lang):
-                                potential_external_recs_for_lang.append(book_dict)
-            unique_external_recs_by_slug = {}
-            for book_dict in potential_external_recs_for_lang:
-                slug_val = book_dict.get('slug')
-                if slug_val and slug_val not in unique_external_recs_by_slug:
-                    unique_external_recs_by_slug[slug_val] = book_dict
-            sorted_external_recs = []
-            if current_book_genre:
-                genre_matches = []
-                other_matches = []
-                for slug, book_dict_item in unique_external_recs_by_slug.items():
-                    book_g_ext = book_dict_item.get('genre', '')
-                    book_s_ext = book_dict_item.get('subjects', [])
-                    if isinstance(book_s_ext, str): book_s_ext = [s.strip() for s in book_s_ext.split(';')]
-                    genre_match_found = (book_g_ext and current_book_genre.lower() in book_g_ext.lower()) or any(current_book_genre.lower() in s.lower() for s in book_s_ext if isinstance(s, str))
-                    if genre_match_found:
-                        genre_matches.append(book_dict_item)
-                    else:
-                        other_matches.append(book_dict_item)
-                random.shuffle(genre_matches)
-                random.shuffle(other_matches)
-                sorted_external_recs = genre_matches + other_matches
-            else:
-                sorted_external_recs = list(unique_external_recs_by_slug.values())
-                random.shuffle(sorted_external_recs)
-            for book_dict_ext in sorted_external_recs:
-                if len(recommended_audiobooks_list) >= max_recommendations:
-                    break
-                ext_slug = book_dict_ext.get('slug')
-                if ext_slug and ext_slug not in seen_recommended_slugs:
-                    if 'author' in book_dict_ext and 'creator' not in book_dict_ext:
-                        book_dict_ext['creator'] = {'creator_name': book_dict_ext['author']}
-                    elif 'creator' in book_dict_ext and isinstance(book_dict_ext['creator'], str):
-                        book_dict_ext['creator'] = {'creator_name': book_dict_ext['creator']}
-                    try:
-                        shell_for_rec = Audiobook.objects.get(slug=ext_slug, is_creator_book=False)
-                        book_dict_ext['average_rating'] = shell_for_rec.average_rating
-                        book_dict_ext['total_views'] = shell_for_rec.total_views
-                    except Audiobook.DoesNotExist:
-                        book_dict_ext['average_rating'] = None
-                        book_dict_ext['total_views'] = 0
-                    recommended_audiobooks_list.append(book_dict_ext)
-                    seen_recommended_slugs.add(ext_slug)
-    logger.info(f"Found {len(recommended_audiobooks_list)} recommendations for '{current_book_slug_for_exclusion}'.")
-
-    context['audiobook'] = audiobook_obj
-    context['audiobook_data_for_display'] = context_audiobook_data_for_display
-    context['is_creator_book_page'] = is_creator_book_page_flag
-    context['reviews'] = reviews_list
-    context['user_review_object'] = user_review_object
-    context['current_user_has_reviewed'] = current_user_has_reviewed
-    context['user_has_purchased'] = user_has_purchased
-    context['chapters_to_display'] = chapters_to_display
-    context['audiobook_lock_message'] = audiobook_lock_message
-    context['page_context_data_dict'] = page_context_for_js
-    context['recommended_audiobooks'] = recommended_audiobooks_list
-    return render(request, template_name, context)
 
 def trending_audiobooks_view(request):
+    """Display trending audiobooks"""
     context = _get_full_context(request)
+
     try:
-        trending_books_qs = Audiobook.objects.filter(status='PUBLISHED').select_related('creator').order_by('-total_views')[:10]
-        context["trending_audiobooks"] = list(trending_books_qs)
+        trending_books = Audiobook.objects.filter(
+            status='PUBLISHED'
+        ).select_related('creator').order_by('-total_views')[:10]
+
+        context["trending_audiobooks"] = list(trending_books)
+
         if not context["trending_audiobooks"]:
             context["error_message"] = "No trending audiobooks found at the moment. Check back later!"
+
     except Exception as e:
         logger.error(f"Error fetching trending audiobooks: {e}", exc_info=True)
         context["error_message"] = "Could not load trending audiobooks due to a server error."
         context["trending_audiobooks"] = []
+
     return render(request, "audiobooks/trending_audiobooks.html", context)
 
-# --- Page Rendering Views ---
+# ==========================================
+# HELPER FUNCTIONS FOR AUDIOBOOK DETAIL
+# ==========================================
 
-def _render_genre_or_language_page(request, page_type, display_name, template_name, cache_key_segment, query_term, language_for_genre_page=None):
+def _find_external_book(external_data, audiobook_slug):
+    """Find external book data by slug"""
+    for source_key in ["librivox_audiobooks", "archive_genre_audiobooks", "archive_language_audiobooks"]:
+        if source_key in ["archive_genre_audiobooks", "archive_language_audiobooks"]:
+            for _, book_list in external_data.get(source_key, {}).items():
+                for book_dict in book_list:
+                    if book_dict.get('slug') == audiobook_slug:
+                        return book_dict
+        else:
+            for book_dict in external_data.get(source_key, []):
+                if book_dict.get('slug') == audiobook_slug:
+                    return book_dict
+    return None
+
+
+def _sync_external_chapters(audiobook_obj, external_book_dict):
+    """Sync external book chapters with database"""
+    with transaction.atomic():
+        for i, ch_info in enumerate(external_book_dict.get('chapters', [])):
+            external_identifier = f"ext-{audiobook_obj.slug}-{i}"
+
+            Chapter.objects.update_or_create(
+                audiobook=audiobook_obj,
+                chapter_order=i,
+                defaults={
+                    'chapter_name': ch_info.get('chapter_title', f"Chapter {i+1}"),
+                    'external_audio_url': ch_info.get('audio_url'),
+                    'duration_seconds': ch_info.get('duration_seconds', 0),
+                    'is_preview_eligible': True,
+                    'external_chapter_identifier': external_identifier
+                }
+            )
+
+
+def _create_from_external_data(audiobook_slug):
+    """Create audiobook from external data if not found in database"""
+    external_data = cache.get(CACHE_KEY)
+    if not external_data:
+        return None
+
+    found_external_book_dict = _find_external_book(external_data, audiobook_slug)
+    if not found_external_book_dict:
+        return None
+
+    try:
+        with transaction.atomic():
+            audiobook_obj = Audiobook.objects.create(
+                slug=audiobook_slug,
+                title=found_external_book_dict.get('title', 'Unknown Title'),
+                author=found_external_book_dict.get('author'),
+                description=found_external_book_dict.get('description', "No description provided."),
+                language=found_external_book_dict.get('language'),
+                genre=found_external_book_dict.get('genre'),
+                source=found_external_book_dict.get('source', 'archive'),
+                is_creator_book=False,
+                creator=None,
+                is_paid=False,
+                price=Decimal('0.00'),
+                status='PUBLISHED'
+            )
+
+            _sync_external_chapters(audiobook_obj, found_external_book_dict)
+
+            logger.info(f"Created new audiobook from external data: {audiobook_slug}")
+            return audiobook_obj
+
+    except Exception as e:
+        logger.error(f"Error creating audiobook from external data: {e}", exc_info=True)
+        return None
+
+
+def _record_audiobook_view(user, audiobook_obj):
+    """Record audiobook view with rate limiting"""
+    current_user = user if user.is_authenticated else None
+    should_count_view = True
+
+    if current_user:
+        twenty_four_hours_ago = timezone.now() - timezone.timedelta(hours=24)
+        recent_view_exists = AudiobookViewLog.objects.filter(
+            audiobook=audiobook_obj,
+            user=current_user,
+            viewed_at__gte=twenty_four_hours_ago
+        ).exists()
+
+        if recent_view_exists:
+            should_count_view = False
+
+    if should_count_view:
+        with transaction.atomic():
+            AudiobookViewLog.objects.create(audiobook=audiobook_obj, user=current_user)
+            Audiobook.objects.filter(pk=audiobook_obj.pk).update(total_views=F('total_views') + 1)
+            audiobook_obj.refresh_from_db(fields=['total_views'])
+
+
+def _get_recommendations(audiobook_obj, max_count=5):
+    """Get recommended audiobooks based on current audiobook"""
+    recommended_audiobooks = []
+    seen_slugs = {audiobook_obj.slug}
+
+    # Get database recommendations
+    if audiobook_obj.language:
+        db_query = Audiobook.objects.filter(
+            status='PUBLISHED',
+            is_creator_book=True,
+            language__iexact=audiobook_obj.language
+        ).exclude(slug__in=list(seen_slugs)).annotate(
+            calculated_average_rating=Avg('reviews__rating')
+        )
+
+        # Prefer same genre
+        if audiobook_obj.genre and audiobook_obj.genre != 'Other':
+            genre_recs = list(db_query.filter(
+                genre__iexact=audiobook_obj.genre
+            ).order_by('-calculated_average_rating', '?')[:max_count])
+
+            for rec in genre_recs:
+                if rec.slug not in seen_slugs and len(recommended_audiobooks) < max_count:
+                    recommended_audiobooks.append(rec)
+                    seen_slugs.add(rec.slug)
+
+        # Fill remaining slots with other books in same language
+        if len(recommended_audiobooks) < max_count:
+            exclude_q = Q()
+            if audiobook_obj.genre and audiobook_obj.genre != 'Other':
+                exclude_q = Q(genre__iexact=audiobook_obj.genre)
+
+            other_recs = list(db_query.exclude(exclude_q).order_by(
+                '-calculated_average_rating', '?'
+            )[:max_count - len(recommended_audiobooks)])
+
+            for rec in other_recs:
+                if rec.slug not in seen_slugs and len(recommended_audiobooks) < max_count:
+                    recommended_audiobooks.append(rec)
+                    seen_slugs.add(rec.slug)
+
+    # Add external recommendations if needed
+    if len(recommended_audiobooks) < max_count:
+        external_data = cache.get(CACHE_KEY)
+        if external_data:
+            potential_external_recs = []
+
+            # Get external books from same language
+            for book_dict in external_data.get("librivox_audiobooks", []):
+                if (book_dict.get('slug') != audiobook_obj.slug and
+                    book_dict.get('slug') not in seen_slugs and
+                    _matches_language_filter(book_dict, audiobook_obj.language)):
+                    potential_external_recs.append(book_dict)
+
+            for term_key, term_books in external_data.get("archive_genre_audiobooks", {}).items():
+                for book_dict in term_books:
+                    if (book_dict.get('slug') != audiobook_obj.slug and
+                        book_dict.get('slug') not in seen_slugs and
+                        _matches_language_filter(book_dict, audiobook_obj.language)):
+                        potential_external_recs.append(book_dict)
+
+            for lang_key, lang_books in external_data.get("archive_language_audiobooks", {}).items():
+                for book_dict in lang_books:
+                    if (book_dict.get('slug') != audiobook_obj.slug and
+                        book_dict.get('slug') not in seen_slugs and
+                        audiobook_obj.language and audiobook_obj.language.lower() == lang_key.lower()):
+                        potential_external_recs.append(book_dict)
+
+            # Prioritize by genre match
+            genre_matches = []
+            other_matches = []
+
+            for book_dict in potential_external_recs:
+                book_genre = book_dict.get('genre', '')
+                book_subjects = book_dict.get('subjects', [])
+
+                genre_match = False
+                if audiobook_obj.genre:
+                    if book_genre and audiobook_obj.genre.lower() in book_genre.lower():
+                        genre_match = True
+                    elif any(audiobook_obj.genre.lower() in str(subject).lower() for subject in book_subjects):
+                        genre_match = True
+
+                if genre_match:
+                    genre_matches.append(book_dict)
+                else:
+                    other_matches.append(book_dict)
+
+            # Randomize and combine
+            random.shuffle(genre_matches)
+            random.shuffle(other_matches)
+            sorted_external_recs = genre_matches + other_matches
+
+            # Add to recommendations
+            for book_dict in sorted_external_recs:
+                if len(recommended_audiobooks) >= max_count:
+                    break
+
+                ext_slug = book_dict.get('slug')
+                if ext_slug and ext_slug not in seen_slugs:
+                    try:
+                        # Create or get shell audiobook
+                        shell_audiobook, _ = Audiobook.objects.get_or_create(
+                            slug=ext_slug,
+                            defaults={
+                                'title': book_dict.get('title', 'Unknown Title'),
+                                'author': book_dict.get('author'),
+                                'description': book_dict.get('description', "No description provided."),
+                                'language': book_dict.get('language'),
+                                'genre': book_dict.get('genre'),
+                                'source': book_dict.get('source', 'archive'),
+                                'is_creator_book': False,
+                                'creator': None,
+                                'is_paid': False,
+                                'price': Decimal('0.00'),
+                                'status': 'PUBLISHED'
+                            }
+                        )
+
+                        # Update book dict with database values
+                        book_dict['average_rating'] = shell_audiobook.average_rating
+                        book_dict['total_views'] = shell_audiobook.total_views
+                        if shell_audiobook.cover_image:
+                            book_dict['cover_image'] = shell_audiobook.cover_image.url
+                        else:
+                            book_dict['cover_image'] = DEFAULT_COVER_IMAGE
+
+                    except Exception as e:
+                        logger.error(f"Error creating recommendation shell: {e}")
+                        book_dict['average_rating'] = None
+                        book_dict['total_views'] = 0
+                        book_dict['cover_image'] = DEFAULT_COVER_IMAGE
+
+                    # Ensure creator field format
+                    if 'author' in book_dict and 'creator' not in book_dict:
+                        book_dict['creator'] = {'creator_name': book_dict['author']}
+                    elif 'creator' in book_dict and isinstance(book_dict['creator'], str):
+                        book_dict['creator'] = {'creator_name': book_dict['creator']}
+
+                    recommended_audiobooks.append(book_dict)
+                    seen_slugs.add(ext_slug)
+
+    return recommended_audiobooks
+
+# ==========================================
+# LANGUAGE AND GENRE PAGES
+# ==========================================
+
+def _render_genre_or_language_page(request, page_type, display_name, template_name,
+                                 cache_key_segment, query_term, language_for_genre_page=None):
+    """Unified function for rendering genre and language pages"""
     context = _get_full_context(request)
-    cache_key = 'librivox_archive_audiobooks_data_v7'
-    external_audiobook_data_cache = cache.get(cache_key)
-    context["display_name"] = display_name
-    context["page_language"] = language_for_genre_page or (query_term if page_type == "language" else "English")
-    context["page_genre"] = query_term if page_type == "genre" else None
+    current_page_language = language_for_genre_page or (query_term if page_type == "language" else "English")
+
+    context.update({
+        "display_name": display_name,
+        "page_language": current_page_language,
+        "page_genre": query_term if page_type == "genre" else None
+    })
+
     processed_external_books = []
-    context["error_message"] = None
-    cached_book_list_for_term = []
-    if external_audiobook_data_cache:
-        source_dict_for_external = external_audiobook_data_cache.get(cache_key_segment, {})
+
+    # Get external audiobook data
+    external_data = cache.get(CACHE_KEY)
+    cached_books = []
+
+    if external_data:
+        source_dict = external_data.get(cache_key_segment, {})
+
         if page_type == "language":
-            cached_book_list_for_term = source_dict_for_external.get(query_term, [])
+            cached_books = source_dict.get(query_term, [])
         elif page_type == "genre":
             if language_for_genre_page:
-                books_of_the_language = source_dict_for_external.get(language_for_genre_page, [])
-                for book_in_lang in books_of_the_language:
-                    book_subjects = book_in_lang.get('subjects', [])
-                    book_genre_field = (book_in_lang.get('genre') or "").lower()
-                    if isinstance(book_subjects, str): book_subjects = [s.strip() for s in book_subjects.split(';')]
-                    genre_match = query_term.lower() in book_genre_field
-                    if not genre_match and isinstance(book_subjects, list):
-                        genre_match = any(query_term.lower() in (s.lower() if isinstance(s, str) else "") for s in book_subjects)
-                    if genre_match:
-                        cached_book_list_for_term.append(book_in_lang)
-                if not books_of_the_language:
-                    logger.warning(f"No external books found for language '{language_for_genre_page}' in cache segment '{cache_key_segment}' for genre page '{display_name}'.")
-                elif not cached_book_list_for_term:
-                    logger.info(f"External books for lang '{language_for_genre_page}' found, but none matched genre '{query_term}'.")
-            else: 
-                cached_book_list_for_term = source_dict_for_external.get(query_term, [])
-    if not cached_book_list_for_term and not context.get("error_message"):
-        context["error_message"] = f"فی الحال '{display_name}' کے لیے عوامی آرکائیوز سے کوئی آڈیو کتابیں دستیاب نہیں ہیں۔"
-    external_book_slugs_from_cache = {book.get('slug') for book in cached_book_list_for_term if book.get('slug')}
-    db_book_stats_map = {}
-    if external_book_slugs_from_cache:
-        db_instances = Audiobook.objects.filter(slug__in=list(external_book_slugs_from_cache), is_creator_book=False)
-        for db_book in db_instances:
-            db_book_stats_map[db_book.slug] = {'total_views': db_book.total_views, 'average_rating': db_book.average_rating, 'author': db_book.author, 'title': db_book.title, 'cover_image': db_book.cover_image.url if db_book.cover_image else None}
+                # Filter by genre within language
+                books_in_language = source_dict.get(language_for_genre_page, [])
+                for book in books_in_language:
+                    book_subjects = book.get('subjects', [])
+                    book_genre = (book.get('genre') or "").lower()
 
-    for book_data_cache in cached_book_list_for_term:
-        slug = book_data_cache.get('slug')
-        if slug and slug in db_book_stats_map:
-            book_data_cache['total_views'] = db_book_stats_map[slug]['total_views']
-            book_data_cache['average_rating'] = db_book_stats_map[slug]['average_rating']
-            book_data_cache['author'] = db_book_stats_map[slug].get('author', book_data_cache.get('author'))
-            book_data_cache['title'] = db_book_stats_map[slug].get('title', book_data_cache.get('title'))
-            if db_book_stats_map[slug].get('cover_image'):
-                book_data_cache['cover_image'] = db_book_stats_map[slug]['cover_image']
+                    if isinstance(book_subjects, str):
+                        book_subjects = [s.strip() for s in book_subjects.split(';')]
+
+                    genre_match = query_term.lower() in book_genre
+                    if not genre_match and isinstance(book_subjects, list):
+                        genre_match = any(
+                            query_term.lower() in str(subject).lower()
+                            for subject in book_subjects
+                        )
+
+                    if genre_match:
+                        cached_books.append(book)
+            else:
+                cached_books = source_dict.get(query_term, [])
+
+    # Get database stats for external books
+    external_slugs = {book.get('slug') for book in cached_books if book.get('slug')}
+    db_stats = {}
+
+    if external_slugs:
+        db_instances = Audiobook.objects.filter(
+            slug__in=list(external_slugs),
+            is_creator_book=False
+        )
+        for db_book in db_instances:
+            db_stats[db_book.slug] = {
+                'total_views': db_book.total_views,
+                'average_rating': db_book.average_rating,
+                'author': db_book.author,
+                'title': db_book.title,
+                'cover_image': db_book.cover_image.url if db_book.cover_image else DEFAULT_COVER_IMAGE
+            }
+
+    # Process external books
+    for book_data in cached_books:
+        slug = book_data.get('slug')
+        if slug and slug in db_stats:
+            book_data.update(db_stats[slug])
         else:
-            book_data_cache.setdefault('total_views', 0)
-            book_data_cache.setdefault('average_rating', None)
-        processed_external_books.append(book_data_cache)
-    context["audiobooks_list"] = processed_external_books
-    creator_books_final_list = []
+            book_data.setdefault('total_views', 0)
+            book_data.setdefault('average_rating', None)
+            book_data.setdefault('cover_image', DEFAULT_COVER_IMAGE)
+        processed_external_books.append(book_data)
+
+    # Add platform books
     try:
-        first_chapter_prefetch = Prefetch('chapters', queryset=Chapter.objects.order_by('chapter_order'), to_attr='first_chapter_list')
-        creator_books_query = Audiobook.objects.filter(status='PUBLISHED', is_creator_book=True)
-        current_page_language = context["page_language"]
+        platform_query = Audiobook.objects.filter(
+            status='PUBLISHED',
+            creator__isnull=True
+        )
+
+        if page_type == "language":
+            platform_query = platform_query.filter(language__iexact=current_page_language)
+        elif page_type == "genre":
+            platform_query = platform_query.filter(
+                language__iexact=current_page_language,
+                genre__iexact=query_term
+            )
+
+        platform_books = platform_query.order_by('-publish_date')
+
+        for book in platform_books:
+            processed_external_books.insert(0, {
+                'slug': book.slug,
+                'title': book.title,
+                'author': book.author,
+                'cover_image': book.cover_image.url if book.cover_image else DEFAULT_COVER_IMAGE,
+                'average_rating': book.average_rating,
+                'total_views': book.total_views,
+                'is_paid': book.is_paid,
+                'price': book.price,
+                'creator': None,
+            })
+
+    except Exception as e:
+        logger.error(f"Error fetching platform books for {display_name}: {e}", exc_info=True)
+
+    context["audiobooks_list"] = processed_external_books
+
+    # Get creator audiobooks
+    try:
+        creator_query = Audiobook.objects.filter(
+            status='PUBLISHED',
+            creator__isnull=False
+        )
+
         if page_type == "genre":
-            creator_books_query = creator_books_query.filter(language__iexact=current_page_language, genre__iexact=query_term)
+            creator_query = creator_query.filter(
+                language__iexact=current_page_language,
+                genre__iexact=query_term
+            )
         elif page_type == "language":
-            creator_books_query = creator_books_query.filter(language__iexact=current_page_language)
-        creator_books_qs = creator_books_query.select_related('creator').prefetch_related(first_chapter_prefetch, Prefetch('reviews', queryset=Review.objects.select_related('user').order_by('-created_at'))).order_by('-publish_date')
-        for book in creator_books_qs:
-            first_chapter_audio_url = None
-            first_chapter_title = None
-            if hasattr(book, 'first_chapter_list') and book.first_chapter_list:
-                first_chapter = book.first_chapter_list[0]
-                first_chapter_title = first_chapter.chapter_name
-                if first_chapter.audio_file and hasattr(first_chapter.audio_file, 'url'):
-                    first_chapter_audio_url = first_chapter.audio_file.url
-            creator_books_final_list.append({'source': 'creator', 'title': book.title, 'slug': book.slug, 'cover_image': book.cover_image.url if book.cover_image else None, 'author': book.author, 'creator': book.creator, 'first_chapter_audio_url': first_chapter_audio_url, 'first_chapter_title': first_chapter_title, 'is_creator_book': True, 'average_rating': book.average_rating, 'total_views': book.total_views, 'is_paid': book.is_paid, 'price': book.price, 'status': book.status, 'language': book.language, 'genre': book.genre})
-        context["creator_audiobooks"] = creator_books_final_list
-        if not creator_books_final_list and not processed_external_books and not context.get("error_message"):
-            context["error_message"] = f"فی الحال '{display_name}' کے لیے کوئی آڈیو کتابیں دستیاب نہیں ہیں۔"
-    except Exception as db_err:
-        logger.error(f"Error fetching creator audiobooks for {page_type} '{display_name}' (Lang: {current_page_language}, Query: {query_term}): {db_err}", exc_info=True)
-        if not processed_external_books and not creator_books_final_list and not context.get("error_message"):
-            context["error_message"] = f"'{display_name}' کے لیے آڈیو کتابیں لوڈ کرنے میں ناکامی۔ براہ کرم کچھ دیر بعد کوشش کریں."
-    if not messages.get_messages(request) and external_audiobook_data_cache is None and not context.get("error_message"):
-        messages.error(request, f"'{display_name}' کے لیے ڈیٹا لوڈ کرنے میں ایک مسئلہ درپیش ہے۔")
+            creator_query = creator_query.filter(language__iexact=current_page_language)
+
+        context["creator_audiobooks"] = list(
+            creator_query.select_related('creator').order_by('-publish_date')
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching creator audiobooks for {display_name}: {e}", exc_info=True)
+        context["creator_audiobooks"] = []
+
+    # Set error message if no content
+    if not context.get("creator_audiobooks") and not processed_external_books:
+        context["error_message"] = f"فی الحال '{display_name}' کے لیے کوئی آڈیو کتابیں دستیاب نہیں ہیں۔"
+
     return render(request, template_name, context)
 
-def genre_fiction(request): return _render_genre_or_language_page(request, "genre", "Fiction", 'audiobooks/English/genrefiction.html', "archive_genre_audiobooks", "Fiction")
-def genre_mystery(request): return _render_genre_or_language_page(request, "genre", "Mystery", 'audiobooks/English/genremystery.html', "archive_genre_audiobooks", "Mystery")
-def genre_thriller(request): return _render_genre_or_language_page(request, "genre", "Thriller", 'audiobooks/English/genrethriller.html', "archive_genre_audiobooks", "Thriller")
-def genre_scifi(request): return _render_genre_or_language_page(request, "genre", "Science Fiction", 'audiobooks/English/genrescifi.html', "archive_genre_audiobooks", "Science Fiction")
-def genre_fantasy(request): return _render_genre_or_language_page(request, "genre", "Fantasy", 'audiobooks/English/genrefantasy.html', "archive_genre_audiobooks", "Fantasy")
-def genre_romance(request): return _render_genre_or_language_page(request, "genre", "Romance", 'audiobooks/English/genreromance.html', "archive_genre_audiobooks", "Romance")
-def genre_biography(request): return _render_genre_or_language_page(request, "genre", "Biography", 'audiobooks/English/genrebiography.html', "archive_genre_audiobooks", "Biography")
-def genre_history(request): return _render_genre_or_language_page(request, "genre", "History", 'audiobooks/English/genrehistory.html', "archive_genre_audiobooks", "History")
-def genre_selfhelp(request): return _render_genre_or_language_page(request, "genre", "Self-Help", 'audiobooks/English/genreselfhelp.html', "archive_genre_audiobooks", "Self-Help")
-def genre_business(request): return _render_genre_or_language_page(request, "genre", "Business", 'audiobooks/English/genrebusiness.html', "archive_genre_audiobooks", "Business")
-def urdu_page(request): return _render_genre_or_language_page(request, "language", "Urdu", 'audiobooks/Urdu/Urdu_Home.html', "archive_language_audiobooks", "Urdu")
-def punjabi_page(request): return _render_genre_or_language_page(request, "language", "Punjabi", 'audiobooks/Punjabi/Punjabi_Home.html', "archive_language_audiobooks", "Punjabi")
-def sindhi_page(request): return _render_genre_or_language_page(request, "language", "Sindhi", 'audiobooks/Sindhi/Sindhi_Home.html', "archive_language_audiobooks", "Sindhi")
-def urdu_genre_novel_afsana(request): return _render_genre_or_language_page(request, "genre", "Urdu Novel & Afsana", 'audiobooks/Urdu/genre_novel_afsana.html', "archive_language_audiobooks", "Novel Afsana", language_for_genre_page="Urdu")
-def urdu_genre_shayari(request): return _render_genre_or_language_page(request, "genre", "Urdu Shayari", 'audiobooks/Urdu/genre_shayari.html', "archive_language_audiobooks", "Shayari", language_for_genre_page="Urdu")
-def urdu_genre_tareekh(request): return _render_genre_or_language_page(request, "genre", "Urdu Tareekh", 'audiobooks/Urdu/genre_tareekh.html', "archive_language_audiobooks", "Tareekh", language_for_genre_page="Urdu")
-def urdu_genre_safarnama(request): return _render_genre_or_language_page(request, "genre", "Urdu Safarnama", 'audiobooks/Urdu/genre_safarnama.html', "archive_language_audiobooks", "Safarnama", language_for_genre_page="Urdu")
-def urdu_genre_mazah(request): return _render_genre_or_language_page(request, "genre", "Urdu Mazah", 'audiobooks/Urdu/genre_mazah.html', "archive_language_audiobooks", "Mazah", language_for_genre_page="Urdu")
-def urdu_genre_bachon_ka_adab(request): return _render_genre_or_language_page(request, "genre", "Urdu Bachon ka Adab", 'audiobooks/Urdu/genre_bachon_ka_adab.html', "archive_language_audiobooks", "Bachon ka Adab", language_for_genre_page="Urdu")
-def urdu_genre_mazhabi_adab(request): return _render_genre_or_language_page(request, "genre", "Urdu Mazhabi Adab", 'audiobooks/Urdu/genre_mazhabi_adab.html', "archive_language_audiobooks", "Mazhabi Adab", language_for_genre_page="Urdu")
-def punjabi_genre_qissalok(request): return _render_genre_or_language_page(request, "genre", "Punjabi Qissa Lok", 'audiobooks/Punjabi/genre_qissalok.html', "archive_language_audiobooks", "Qissalok", language_for_genre_page="Punjabi")
-def punjabi_genre_geet(request): return _render_genre_or_language_page(request, "genre", "Punjabi Geet", 'audiobooks/Punjabi/genre_geet.html', "archive_language_audiobooks", "Geet", language_for_genre_page="Punjabi")
-def sindhi_genre_lok_adab(request): return _render_genre_or_language_page(request, "genre", "Sindhi Lok Adab", 'audiobooks/Sindhi/genre_lok_adab.html', "archive_language_audiobooks", "Lok Adab", language_for_genre_page="Sindhi")
-def sindhi_genre_shayari(request): return _render_genre_or_language_page(request, "genre", "Sindhi Shayari", 'audiobooks/Sindhi/genre_shayari.html', "archive_language_audiobooks", "Shayari", language_for_genre_page="Sindhi")
+# Genre page views
+def genre_fiction(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Fiction", 'audiobooks/English/genrefiction.html',
+        "archive_genre_audiobooks", "Fiction"
+    )
 
-# --- API and Streaming Views ---
+def genre_mystery(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Mystery", 'audiobooks/English/genremystery.html',
+        "archive_genre_audiobooks", "Mystery"
+    )
+
+def genre_thriller(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Thriller", 'audiobooks/English/genrethriller.html',
+        "archive_genre_audiobooks", "Thriller"
+    )
+
+def genre_scifi(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Science Fiction", 'audiobooks/English/genrescifi.html',
+        "archive_genre_audiobooks", "Science Fiction"
+    )
+
+def genre_fantasy(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Fantasy", 'audiobooks/English/genrefantasy.html',
+        "archive_genre_audiobooks", "Fantasy"
+    )
+
+def genre_romance(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Romance", 'audiobooks/English/genreromance.html',
+        "archive_genre_audiobooks", "Romance"
+    )
+
+def genre_biography(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Biography", 'audiobooks/English/genrebiography.html',
+        "archive_genre_audiobooks", "Biography"
+    )
+
+def genre_history(request):
+    return _render_genre_or_language_page(
+        request, "genre", "History", 'audiobooks/English/genrehistory.html',
+        "archive_genre_audiobooks", "History"
+    )
+
+def genre_selfhelp(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Self-Help", 'audiobooks/English/genreselfhelp.html',
+        "archive_genre_audiobooks", "Self-Help"
+    )
+
+def genre_business(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Business", 'audiobooks/English/genrebusiness.html',
+        "archive_genre_audiobooks", "Business"
+    )
+
+# Language page views
+def urdu_page(request):
+    return _render_genre_or_language_page(
+        request, "language", "Urdu", 'audiobooks/Urdu/Urdu_Home.html',
+        "archive_language_audiobooks", "Urdu"
+    )
+
+def punjabi_page(request):
+    return _render_genre_or_language_page(
+        request, "language", "Punjabi", 'audiobooks/Punjabi/Punjabi_Home.html',
+        "archive_language_audiobooks", "Punjabi"
+    )
+
+def sindhi_page(request):
+    return _render_genre_or_language_page(
+        request, "language", "Sindhi", 'audiobooks/Sindhi/Sindhi_Home.html',
+        "archive_language_audiobooks", "Sindhi"
+    )
+
+# Urdu genre pages
+def urdu_genre_novel_afsana(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Urdu Novel & Afsana", 'audiobooks/Urdu/genre_novel_afsana.html',
+        "archive_language_audiobooks", "Novel Afsana", language_for_genre_page="Urdu"
+    )
+
+def urdu_genre_shayari(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Urdu Shayari", 'audiobooks/Urdu/genre_shayari.html',
+        "archive_language_audiobooks", "Shayari", language_for_genre_page="Urdu"
+    )
+
+def urdu_genre_tareekh(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Urdu Tareekh", 'audiobooks/Urdu/genre_tareekh.html',
+        "archive_language_audiobooks", "Tareekh", language_for_genre_page="Urdu"
+    )
+
+def urdu_genre_safarnama(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Urdu Safarnama", 'audiobooks/Urdu/genre_safarnama.html',
+        "archive_language_audiobooks", "Safarnama", language_for_genre_page="Urdu"
+    )
+
+def urdu_genre_mazah(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Urdu Mazah", 'audiobooks/Urdu/genre_mazah.html',
+        "archive_language_audiobooks", "Mazah", language_for_genre_page="Urdu"
+    )
+
+def urdu_genre_bachon_ka_adab(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Urdu Bachon ka Adab", 'audiobooks/Urdu/genre_bachon_ka_adab.html',
+        "archive_language_audiobooks", "Bachon ka Adab", language_for_genre_page="Urdu"
+    )
+
+def urdu_genre_mazhabi_adab(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Urdu Mazhabi Adab", 'audiobooks/Urdu/genre_mazhabi_adab.html',
+        "archive_language_audiobooks", "Mazhabi Adab", language_for_genre_page="Urdu"
+    )
+
+# Punjabi genre pages
+def punjabi_genre_qissalok(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Punjabi Qissa Lok", 'audiobooks/Punjabi/genre_qissalok.html',
+        "archive_language_audiobooks", "Qissalok", language_for_genre_page="Punjabi"
+    )
+
+def punjabi_genre_geet(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Punjabi Geet", 'audiobooks/Punjabi/genre_geet.html',
+        "archive_language_audiobooks", "Geet", language_for_genre_page="Punjabi"
+    )
+
+# Sindhi genre pages
+def sindhi_genre_lok_adab(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Sindhi Lok Adab", 'audiobooks/Sindhi/genre_lok_adab.html',
+        "archive_language_audiobooks", "Lok Adab", language_for_genre_page="Sindhi"
+    )
+
+def sindhi_genre_shayari(request):
+    return _render_genre_or_language_page(
+        request, "genre", "Sindhi Shayari", 'audiobooks/Sindhi/genre_shayari.html',
+        "archive_language_audiobooks", "Shayari", language_for_genre_page="Sindhi"
+    )
+
+# ==========================================
+# REVIEW AND INTERACTION VIEWS
+# ==========================================
 
 @login_required
 @require_POST
 @csrf_protect
 def add_review(request, audiobook_slug):
+    """Add or update audiobook review"""
     try:
         audiobook = get_object_or_404(Audiobook, slug=audiobook_slug)
+
+        # Check if user can review
         can_review = False
         if not audiobook.is_paid:
             can_review = True
-        elif audiobook.is_paid:
-            if audiobook.is_creator_book:
-                if request.user.is_authenticated and hasattr(request.user, 'has_purchased_audiobook'):
-                    if request.user.has_purchased_audiobook(audiobook):
-                        can_review = True
-            else:
-                can_review = True 
+        elif audiobook.is_paid and audiobook.is_creator_book:
+            if request.user.is_authenticated and hasattr(request.user, 'has_purchased_audiobook'):
+                can_review = request.user.has_purchased_audiobook(audiobook)
+        else:
+            can_review = True
+
         if not can_review:
-            return JsonResponse({'status': 'error', 'message': 'You must purchase this audiobook or it must be free to leave a review.'}, status=403)
+            return JsonResponse({
+                'status': 'error',
+                'message': 'You must purchase this audiobook to leave a review.'
+            }, status=403)
+
+        # Parse request data
         try:
             data = json.loads(request.body)
             rating_str = data.get('rating')
             comment = data.get('comment', '').strip()
         except json.JSONDecodeError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON format in request body.'}, status=400)
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid JSON format in request body.'
+            }, status=400)
+
+        # Validate rating
         try:
             rating = int(rating_str)
             if not 1 <= rating <= 5:
                 raise ValueError("Rating must be between 1 and 5.")
         except (ValueError, TypeError):
-            return JsonResponse({'status': 'error', 'message': 'Invalid rating value. Please provide a whole number between 1 and 5.'}, status=400)
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid rating value. Please provide a number between 1 and 5.'
+            }, status=400)
+
+        # Create or update review
         with transaction.atomic():
-            review, created = Review.objects.update_or_create(audiobook=audiobook, user=request.user, defaults={'rating': rating, 'comment': comment})
-        audiobook.refresh_from_db() 
-        new_average_rating_val = audiobook.average_rating
+            review, created = Review.objects.update_or_create(
+                audiobook=audiobook,
+                user=request.user,
+                defaults={'rating': rating, 'comment': comment}
+            )
+
+        audiobook.refresh_from_db()
+        new_average_rating = audiobook.average_rating
         message = "Review updated successfully!" if not created else "Review added successfully!"
+
+        # Prepare user profile pic URL
         user_profile_pic_url = None
         if hasattr(review.user, 'profile_pic') and review.user.profile_pic:
-            try: user_profile_pic_url = review.user.profile_pic.url
-            except ValueError: pass 
-        review_data = {'review_id': review.review_id, 'rating': review.rating, 'comment': review.comment or "", 'user_id': review.user.user_id, 'user_name': review.user.full_name or review.user.username, 'user_profile_pic': user_profile_pic_url, 'created_at': review.created_at.isoformat(), 'timesince': timesince(review.created_at) + " ago"}
-        return JsonResponse({'status': 'success', 'message': message, 'created': created, 'new_average_rating': str(new_average_rating_val) if new_average_rating_val is not None else "0.0", 'review_data': review_data})
+            try:
+                user_profile_pic_url = review.user.profile_pic.url
+            except ValueError:
+                pass
+
+        # Prepare review data
+        review_data = {
+            'review_id': review.review_id,
+            'rating': review.rating,
+            'comment': review.comment or "",
+            'user_id': review.user.user_id,
+            'user_name': review.user.full_name or review.user.username,
+            'user_profile_pic': user_profile_pic_url,
+            'created_at': review.created_at.isoformat(),
+            'timesince': timesince(review.created_at) + " ago"
+        }
+
+        return JsonResponse({
+            'status': 'success',
+            'message': message,
+            'created': created,
+            'new_average_rating': str(new_average_rating) if new_average_rating is not None else "0.0",
+            'review_data': review_data
+        })
+
     except Audiobook.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Audiobook not found.'}, status=404)
     except Exception as e:
         logger.error(f"Error in add_review for {audiobook_slug}: {e}", exc_info=True)
-        return JsonResponse({'status': 'error', 'message': 'An unexpected server error occurred. Please try again.'}, status=500)
+        return JsonResponse({
+            'status': 'error',
+            'message': 'An unexpected server error occurred. Please try again.'
+        }, status=500)
+
+
+# ✅ NEW VIEW ADDED TO HANDLE CHAPTER UNLOCKING
+@login_required
+@require_POST
+@csrf_protect
+def unlock_chapter_with_coins(request):
+    """Unlock a single chapter for a FREE user using coins."""
+    try:
+        data = json.loads(request.body)
+        chapter_id = data.get('chapter_id')
+
+        if not chapter_id:
+            return JsonResponse({'status': 'error', 'message': 'Chapter ID is required.'}, status=400)
+
+        chapter_to_unlock = get_object_or_404(Chapter, pk=chapter_id)
+        user = request.user
+
+        # Security Checks
+        if user.subscription_type != 'FR':
+            return JsonResponse({'status': 'error', 'message': 'This feature is only for free-tier users.'}, status=403)
+        
+        if chapter_to_unlock.audiobook.is_paid:
+            return JsonResponse({'status': 'error', 'message': 'This chapter belongs to a paid audiobook and cannot be unlocked with coins.'}, status=403)
+
+        if ChapterUnlock.objects.filter(user=user, chapter=chapter_to_unlock).exists():
+            return JsonResponse({'status': 'success', 'message': 'Chapter already unlocked.'})
+
+        # Transaction Logic
+        with transaction.atomic():
+            # Re-fetch user with select_for_update to prevent race conditions
+            user_for_update = User.objects.select_for_update().get(pk=user.pk)
+            
+            if user_for_update.coins < CHAPTER_UNLOCK_COST:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Insufficient coins.'
+                }, status=400)
+            
+            user_for_update.coins -= CHAPTER_UNLOCK_COST
+            user_for_update.save()
+            
+            ChapterUnlock.objects.create(user=user_for_update, chapter=chapter_to_unlock)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Chapter unlocked successfully!',
+            'new_coin_balance': user.coins
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid request format.'}, status=400)
+    except Chapter.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Chapter not found.'}, status=404)
+    except Exception as e:
+        logger.error(f"Error unlocking chapter with coins for user {request.user.pk}: {e}", exc_info=True)
+        return JsonResponse({'status': 'error', 'message': 'An internal error occurred.'}, status=500)
+
+
+# ==========================================
+# STREAMING AND MEDIA VIEWS
+# ==========================================
 
 @require_GET
 def stream_audio(request):
+    """Stream audio with enhanced security and access control"""
     audio_url_param = request.GET.get("url")
     if not audio_url_param:
         return JsonResponse({"error": "No audio URL provided"}, status=400)
+
+    # Security check for paid audiobook chapters
+    chapter_id = request.GET.get("chapter_id")
+    audiobook_slug = request.GET.get("audiobook_slug")
+
+    if chapter_id and audiobook_slug:
+        try:
+            chapter = get_object_or_404(Chapter, pk=chapter_id)
+            audiobook = chapter.audiobook
+
+            # Verify audiobook slug matches
+            if audiobook.slug != audiobook_slug:
+                logger.warning(f"Audiobook slug mismatch in stream_audio: expected {audiobook.slug}, got {audiobook_slug}")
+                return JsonResponse({"error": "Invalid audiobook reference"}, status=400)
+            
+            # ✅ NEW: ADDED SECURITY CHECK using get_chapter_accessibility
+            # Determine chapter index for accessibility check
+            try:
+                # This is an approximation, for perfect accuracy an ordered list is needed.
+                chapter_index = list(audiobook.chapters.order_by('chapter_order').values_list('pk', flat=True)).index(chapter.pk)
+            except (ValueError, Chapter.DoesNotExist):
+                chapter_index = 0 # Fallback for safety
+
+            is_accessible, reason = get_chapter_accessibility(chapter, audiobook, request.user, chapter_index)
+
+            if not is_accessible:
+                logger.warning(f"Unauthorized stream attempt for chapter {chapter_id} by user {request.user.pk if request.user.is_authenticated else 'Anonymous'}. Reason: {reason}")
+                return JsonResponse({"error": "Access Denied", "message": "You do not have permission to stream this chapter."}, status=403)
+            # END OF NEW SECURITY CHECK
+
+
+            # Check access for paid creator audiobooks (This block is now partially redundant but kept for safety)
+            if audiobook.is_creator_book and audiobook.is_paid:
+                if not request.user.is_authenticated:
+                    return JsonResponse({"error": "Authentication required for paid content"}, status=401)
+
+                user_has_purchased = request.user.has_purchased_audiobook(audiobook)
+                is_preview_chapter = chapter.is_preview_eligible or (chapter.chapter_order < FREE_PREVIEW_CHAPTERS)
+
+                if not user_has_purchased and not is_preview_chapter:
+                    logger.warning(f"Unauthorized access attempt to paid chapter {chapter_id} by user {request.user.pk}")
+                    return JsonResponse({
+                        "error": "Purchase required",
+                        "message": f"This audiobook costs PKR {audiobook.price}. Please purchase to access this chapter.",
+                        "audiobook_slug": audiobook.slug,
+                        "is_paid": True,
+                        "price": str(audiobook.price)
+                    }, status=403)
+
+                logger.info(f"Authorized access to paid chapter {chapter_id} by user {request.user.pk}")
+
+        except Chapter.DoesNotExist:
+            logger.error(f"Chapter {chapter_id} not found in stream_audio")
+            return JsonResponse({"error": "Chapter not found"}, status=404)
+        except Exception as e:
+            logger.error(f"Error checking access permissions in stream_audio: {e}", exc_info=True)
+            return JsonResponse({"error": "Access verification failed"}, status=500)
+
     target_audio_url = audio_url_param
     parsed_url = urlparse(target_audio_url)
     is_local_media = False
+
+    # Check if it's a local media file
     if target_audio_url.startswith(settings.MEDIA_URL):
         if not parsed_url.scheme and not parsed_url.netloc:
             is_local_media = True
+
     if is_local_media:
+        # Handle local media files
         try:
-            relative_media_path = target_audio_url[len(settings.MEDIA_URL):] if target_audio_url.startswith(settings.MEDIA_URL) else target_audio_url
-            file_system_path = os.path.join(settings.MEDIA_ROOT, relative_media_path)
-            if not os.path.exists(file_system_path) or os.path.isdir(file_system_path):
-                logger.error(f"Local audio file not found or is directory: {file_system_path}")
+            relative_path = target_audio_url[len(settings.MEDIA_URL):] if target_audio_url.startswith(settings.MEDIA_URL) else target_audio_url
+            file_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+
+            if not os.path.exists(file_path) or os.path.isdir(file_path):
+                logger.error(f"Local audio file not found: {file_path}")
                 return HttpResponse("Audio file not found.", status=404)
-            logger.info(f"Streaming local file: {file_system_path}")
-            return FileResponse(open(file_system_path, 'rb'), as_attachment=False)
+
+            file_size = os.path.getsize(file_path)
+            content_type = mimetypes.guess_type(file_path)[0] or 'audio/mpeg'
+
+            # Handle range requests for seeking
+            range_header = request.headers.get('Range')
+            if range_header:
+                range_match = re.match(r'bytes=(\d+)-(\d*)', range_header)
+                if range_match:
+                    start = int(range_match.group(1))
+                    end = int(range_match.group(2)) if range_match.group(2) else file_size - 1
+
+                    if start >= file_size:
+                        return HttpResponse("Requested range not satisfiable", status=416)
+
+                    end = min(end, file_size - 1)
+                    content_length = end - start + 1
+
+                    def file_iterator():
+                        with open(file_path, 'rb') as f:
+                            f.seek(start)
+                            remaining = content_length
+                            while remaining > 0:
+                                chunk_size = min(8192, remaining)
+                                chunk = f.read(chunk_size)
+                                if not chunk:
+                                    break
+                                remaining -= len(chunk)
+                                yield chunk
+
+                    response = StreamingHttpResponse(file_iterator(), content_type=content_type, status=206)
+                    response['Content-Range'] = f'bytes {start}-{end}/{file_size}'
+                    response['Content-Length'] = str(content_length)
+                    response['Accept-Ranges'] = 'bytes'
+
+                    logger.info(f"Streaming local file with range: {file_path} (bytes {start}-{end})")
+                    return response
+
+            # Stream entire file
+            logger.info(f"Streaming local file: {file_path}")
+            response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+            response['Accept-Ranges'] = 'bytes'
+            response['Content-Length'] = str(file_size)
+            return response
+
         except Exception as e:
             logger.error(f"Error streaming local audio file {target_audio_url}: {e}", exc_info=True)
             return HttpResponse("Error streaming local audio file.", status=500)
+
     elif not all([parsed_url.scheme, parsed_url.netloc]):
         logger.error(f"Invalid external audio URL format: {audio_url_param}")
         return HttpResponse(f"Invalid audio URL provided: {audio_url_param}", status=400)
+
     else:
+        # Handle external audio URLs
         try:
             range_header = request.headers.get('Range', None)
             user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "audiox.com"
             proxy_headers = {'User-Agent': f'AudioXApp Audio Proxy/1.0 (+http://{user_agent_host})'}
+
             if range_header:
                 proxy_headers['Range'] = range_header
-            logger.info(f"Proxying external audio from: {target_audio_url} with headers: {proxy_headers}")
-            audio_stream_timeout = (10, 60)
-            response_ext = requests.get(target_audio_url, stream=True, headers=proxy_headers, timeout=audio_stream_timeout)
+
+            logger.info(f"Proxying external audio from: {target_audio_url}")
+            response_ext = requests.get(target_audio_url, stream=True, headers=proxy_headers, timeout=(10, 60))
             response_ext.raise_for_status()
+
             content_type = response_ext.headers.get('Content-Type', 'audio/mpeg')
             if not content_type.lower().startswith('audio/'):
                 guessed_type, _ = mimetypes.guess_type(target_audio_url)
                 content_type = guessed_type if guessed_type and guessed_type.startswith('audio/') else 'audio/mpeg'
+
             logger.info(f"Streaming external content with type: {content_type}, status: {response_ext.status_code}")
-            streaming_response = StreamingHttpResponse(response_ext.iter_content(chunk_size=8192), content_type=content_type, status=response_ext.status_code)
+            streaming_response = StreamingHttpResponse(
+                response_ext.iter_content(chunk_size=8192),
+                content_type=content_type,
+                status=response_ext.status_code
+            )
+
+            # Copy relevant headers
             if 'Content-Range' in response_ext.headers:
                 streaming_response['Content-Range'] = response_ext.headers['Content-Range']
             if 'Content-Length' in response_ext.headers:
                 streaming_response['Content-Length'] = response_ext.headers['Content-Length']
+
             streaming_response['Accept-Ranges'] = response_ext.headers.get('Accept-Ranges', 'bytes')
             return streaming_response
+
         except requests.exceptions.Timeout:
             logger.error(f"Timeout streaming external audio from: {target_audio_url}")
             return HttpResponse("Audio stream timed out from external source.", status=408)
-        except requests.exceptions.HTTPError as e_http:
-            logger.error(f"HTTPError streaming external audio from {target_audio_url}: {e_http.response.status_code} - {e_http.response.text[:200] if e_http.response else 'No body'}")
-            return HttpResponse(f"Error fetching audio from external source: Status {e_http.response.status_code}", status=e_http.response.status_code)
-        except requests.exceptions.RequestException as e_req:
-            logger.error(f"RequestException streaming external audio from {target_audio_url}: {e_req}")
-            return HttpResponse("Error processing audio stream (could not connect to external source).", status=502)
-        except SuspiciousOperation as e_susp:
-            logger.warning(f"SuspiciousOperation in stream_audio: {e_susp}")
-            return JsonResponse({"error": str(e_susp)}, status=400)
-        except Exception as e_gen:
-            logger.error(f"Generic error in stream_audio from {target_audio_url}: {e_gen}", exc_info=True)
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTPError streaming external audio from {target_audio_url}: {e.response.status_code if e.response else 'No response'}")
+            return HttpResponse(f"Error fetching audio from external source: Status {e.response.status_code if e.response else 'Unknown'}", status=e.response.status_code if e.response else 502)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"RequestException streaming external audio from {target_audio_url}: {e}")
+            return HttpResponse("Error processing audio stream.", status=502)
+        except SuspiciousOperation as e:
+            logger.warning(f"SuspiciousOperation in stream_audio: {e}")
+            return JsonResponse({"error": str(e)}, status=400)
+        except Exception as e:
+            logger.error(f"Generic error in stream_audio from {target_audio_url}: {e}", exc_info=True)
             return HttpResponse("Internal server error during audio streaming.", status=500)
+
 
 @csrf_exempt
 @require_GET
 def fetch_cover_image(request):
+    """Fetch and proxy cover images"""
     image_url = request.GET.get("url")
-    if not image_url: return JsonResponse({"error": "No image URL provided"}, status=400)
+    if not image_url:
+        return JsonResponse({"error": "No image URL provided"}, status=400)
+
     target_image_url = image_url
     parsed_url = urlparse(image_url)
-    is_local_media = image_url.startswith(settings.MEDIA_URL) and not parsed_url.scheme and not parsed_url.netloc
+    is_local_media = (image_url.startswith(settings.MEDIA_URL) and
+                      not parsed_url.scheme and not parsed_url.netloc)
+
     if is_local_media:
         try:
             if not target_image_url.startswith(('http://', 'https://')):
                 target_image_url = request.build_absolute_uri(target_image_url)
         except Exception as e:
-            logger.error(f"Error processing local image URL for proxy: {e}")
+            logger.error(f"Error processing local image URL: {e}")
             return HttpResponse("Error processing local image URL", status=500)
     elif not all([parsed_url.scheme, parsed_url.netloc]):
         return HttpResponse("Invalid image URL provided", status=400)
@@ -941,29 +2292,211 @@ def fetch_cover_image(request):
     try:
         user_agent_host = settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "AudioXApp.com"
         proxy_headers = {'User-Agent': f'AudioXApp Image Proxy/1.0 (+http://{user_agent_host})'}
-        image_fetch_timeout = 30
-        response = requests.get(target_image_url, stream=True, timeout=image_fetch_timeout, headers=proxy_headers)
+
+        response = requests.get(target_image_url, stream=True, timeout=30, headers=proxy_headers)
         response.raise_for_status()
+
         content_type = response.headers.get('Content-Type', 'image/jpeg')
         if not content_type.lower().startswith('image/'):
             guessed_type, _ = mimetypes.guess_type(target_image_url)
             content_type = guessed_type if guessed_type and guessed_type.startswith('image/') else 'image/jpeg'
-        streaming_response = StreamingHttpResponse(response.iter_content(chunk_size=8192), content_type=content_type)
-        if 'Content-Length' in response.headers: streaming_response['Content-Length'] = response.headers['Content-Length']
+
+        streaming_response = StreamingHttpResponse(
+            response.iter_content(chunk_size=8192),
+            content_type=content_type
+        )
+
+        if 'Content-Length' in response.headers:
+            streaming_response['Content-Length'] = response.headers['Content-Length']
+
         streaming_response.status_code = response.status_code
         return streaming_response
+
     except requests.exceptions.Timeout:
         logger.warning(f"Timeout fetching image from: {target_image_url}")
         return HttpResponse("Image fetch timed out", status=408)
-    except requests.exceptions.HTTPError as e_http:
-        logger.warning(f"HTTPError fetching image from {target_image_url}: {e_http.response.status_code}")
-        return HttpResponse(f"Error fetching image: {e_http.response.status_code}", status=e_http.response.status_code)
-    except requests.exceptions.RequestException as e_req:
-        logger.warning(f"RequestException fetching image from {target_image_url}: {e_req}")
+    except requests.exceptions.HTTPError as e:
+        logger.warning(f"HTTPError fetching image from {target_image_url}: {e.response.status_code if e.response else 'No response'}")
+        return HttpResponse(f"Error fetching image: {e.response.status_code if e.response else 'Unknown'}", status=e.response.status_code if e.response else 502)
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"RequestException fetching image from {target_image_url}: {e}")
         return HttpResponse("Failed to fetch image", status=502)
-    except SuspiciousOperation as e_susp:
-        logger.warning(f"SuspiciousOperation in fetch_cover_image: {e_susp}")
-        return JsonResponse({"error": str(e_susp)}, status=400)
-    except Exception as e_gen:
-        logger.error(f"Generic error in fetch_cover_image from {target_image_url}: {e_gen}", exc_info=True)
+    except SuspiciousOperation as e:
+        logger.warning(f"SuspiciousOperation in fetch_cover_image: {e}")
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception as e:
+        logger.error(f"Generic error in fetch_cover_image from {target_image_url}: {e}", exc_info=True)
         return HttpResponse("Internal server error", status=500)
+
+# ==========================================
+# CONTENT REPORTING
+# ==========================================
+
+@require_POST
+@login_required
+@csrf_protect
+def submit_content_report_view(request, audiobook_id):
+    """Submit content report for audiobook"""
+    audiobook = get_object_or_404(Audiobook, audiobook_id=audiobook_id)
+    reason = request.POST.get('reason')
+    details = request.POST.get('details', '').strip()
+
+    if not reason or reason not in [choice[0] for choice in ContentReport.ReportReason.choices]:
+        messages.error(request, "You must select a valid reason for the report.")
+        return redirect('AudioXApp:audiobook_detail', audiobook_slug=audiobook.slug)
+
+    try:
+        ContentReport.objects.create(
+            reported_by=request.user,
+            audiobook=audiobook,
+            reason=reason,
+            details=details
+        )
+        messages.success(request, "Thank you for your report. Our moderation team will review it.")
+
+    except IntegrityError:
+        messages.warning(request, "You have already submitted a report for this audiobook.")
+        return redirect('AudioXApp:audiobook_detail', audiobook_slug=audiobook.slug)
+    except Exception as e:
+        logger.error(f"Error saving content report for audiobook {audiobook_id} by user {request.user.pk}: {e}", exc_info=True)
+        messages.error(request, "An error occurred while submitting your report.")
+        return redirect('AudioXApp:audiobook_detail', audiobook_slug=audiobook.slug)
+
+    # Auto-moderation based on report threshold
+    report_threshold = 10
+
+    with transaction.atomic():
+        audiobook_locked = Audiobook.objects.select_for_update().get(pk=audiobook.pk)
+
+        if audiobook_locked.moderation_status == Audiobook.ModerationStatusChoices.APPROVED:
+            unique_reporter_count = ContentReport.objects.filter(
+                audiobook=audiobook_locked
+            ).values('reported_by').distinct().count()
+
+            if unique_reporter_count >= report_threshold:
+                audiobook_locked.moderation_status = Audiobook.ModerationStatusChoices.NEEDS_REVIEW
+                audiobook_locked.moderation_notes = f"Content automatically flagged for review after receiving {unique_reporter_count} unique user reports."
+                audiobook_locked.save()
+                logger.info(f"Audiobook ID {audiobook_locked.audiobook_id} ('{audiobook_locked.title}') flagged for moderation due to user reports.")
+
+    return redirect('AudioXApp:audiobook_detail', audiobook_slug=audiobook.slug)
+
+# ==========================================
+# DEBUG AND ADMIN VIEWS
+# ==========================================
+
+@require_GET
+def debug_external_audiobooks(request):
+    """Debug view to check external audiobook cache status"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Admin access required'}, status=403)
+
+    try:
+        cached_data = cache.get(CACHE_KEY)
+
+        if not cached_data:
+            return JsonResponse({
+                'success': False,
+                'message': 'No cached data found',
+                'cache_key': CACHE_KEY,
+                'suggestions': [
+                    'Run: python manage.py populate_audiobook_cache',
+                    'Check if cache backend is working',
+                    'Verify CACHE_KEY matches management command'
+                ]
+            })
+
+        # Analyze cached data
+        librivox_count = len(cached_data.get('librivox_audiobooks', []))
+        archive_genres = cached_data.get('archive_genre_audiobooks', {})
+        archive_languages = cached_data.get('archive_language_audiobooks', {})
+
+        genre_breakdown = {genre: len(books) for genre, books in archive_genres.items()}
+        language_breakdown = {lang: len(books) for lang, books in archive_languages.items()}
+
+        # Sample data for verification
+        sample_librivox = cached_data.get('librivox_audiobooks', [])[:2]
+        sample_archive = []
+        for genre, books in list(archive_genres.items())[:2]:
+            if books:
+                sample_archive.append({
+                    'genre': genre,
+                    'sample_book': books[0]
+                })
+
+        return JsonResponse({
+            'success': True,
+            'cache_key': CACHE_KEY,
+            'cache_status': 'ACTIVE',
+            'data_summary': {
+                'librivox_audiobooks': librivox_count,
+                'archive_genre_audiobooks': len(archive_genres),
+                'archive_language_audiobooks': len(archive_languages),
+                'total_external_books': librivox_count + sum(len(books) for books in archive_genres.values()) + sum(len(books) for books in archive_languages.values())
+            },
+            'genre_breakdown': genre_breakdown,
+            'language_breakdown': language_breakdown,
+            'sample_data': {
+                'librivox_sample': sample_librivox,
+                'archive_sample': sample_archive
+            },
+            'cache_duration_hours': CACHE_DURATION / 3600,
+            'last_updated': 'Available in cache'
+        })
+
+    except Exception as e:
+        logger.error(f"Error in debug_external_audiobooks: {e}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'message': 'Error checking cache status'
+        }, status=500)
+
+
+@require_POST
+@csrf_protect
+def refresh_external_audiobooks(request):
+    """Admin view to manually refresh external audiobook cache"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Admin access required'}, status=403)
+
+    try:
+        # Clear existing cache
+        cache.delete(CACHE_KEY)
+        logger.info(f"Cleared cache for key: {CACHE_KEY}")
+
+        # Fetch fresh data
+        start_time = time.time()
+        fresh_data = fetch_audiobooks_data()
+        fetch_duration = time.time() - start_time
+
+        if fresh_data:
+            librivox_count = len(fresh_data.get('librivox_audiobooks', []))
+            archive_genres = fresh_data.get('archive_genre_audiobooks', {})
+            archive_languages = fresh_data.get('archive_language_audiobooks', {})
+
+            return JsonResponse({
+                'success': True,
+                'message': 'External audiobook cache refreshed successfully',
+                'fetch_duration_seconds': round(fetch_duration, 2),
+                'data_summary': {
+                    'librivox_audiobooks': librivox_count,
+                    'archive_genre_audiobooks': len(archive_genres),
+                    'archive_language_audiobooks': len(archive_languages),
+                    'total_books': librivox_count + sum(len(books) for books in archive_genres.values()) + sum(len(books) for books in archive_languages.values())
+                }
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Failed to fetch fresh external audiobook data',
+                'fetch_duration_seconds': round(fetch_duration, 2)
+            })
+
+    except Exception as e:
+        logger.error(f"Error in refresh_external_audiobooks: {e}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'message': 'Error refreshing cache'
+        }, status=500)

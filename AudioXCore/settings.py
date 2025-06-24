@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_celery_beat',
 ]
 
 # --- Middleware Configuration ---
@@ -194,12 +195,33 @@ try:
 except OSError as e:
     logger.error(f"DJANGO CACHE: Could not create/access cache directory {CACHE_LOCATION_PATH}: {e}")
 
-# --- Channels Configuration ---
+# --- Channels Configuration (UPDATED FOR IN-MEMORY) ---
+# The following Redis settings are no longer needed if using InMemoryChannelLayer,
+# but are kept commented for reference if you switch back to Redis later.
+# REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+# REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels.layers.InMemoryChannelLayer', # Changed to in-memory
     },
 }
+
+# --- Celery Configuration ---
+# The EAGER setting forces Celery to run tasks locally and synchronously,
+# completely bypassing the need for Redis or a separate worker. This is for development and testing only.
+CELERY_TASK_ALWAYS_EAGER = True
+# If you are not using Redis for Channels, these Celery broker/backend URLs will also not use Redis
+# if CELERY_TASK_ALWAYS_EAGER is True. If you set CELERY_TASK_ALWAYS_EAGER to False,
+# and you don't have Redis running, you would need to change these to a different broker or backend,
+# or uncomment them only when Redis is active.
+# CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/0')
+# CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', f'redis://{REDIS_HOST}:{REDIS_PORT}/1')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # --- Stripe Configuration ---
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
@@ -293,6 +315,7 @@ logging.config.dictConfig({
         'allauth': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
         'stripe': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
         'channels': {'handlers': ['console'], 'level': 'DEBUG' if DEBUG else 'INFO', 'propagate': False},
+        'celery': {'handlers': ['console'], 'level': 'DEBUG' if DEBUG else 'INFO', 'propagate': True},
         'rest_framework': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
     },
     'root': {'handlers': ['console'], 'level': 'INFO'}
@@ -331,6 +354,16 @@ PLATFORM_FEE_PERCENTAGE_AUDIOBOOK = os.getenv('PLATFORM_FEE_PERCENTAGE_AUDIOBOOK
 # --- AI Service Keys ---
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+
+# Google Cloud credentials for STT and Language API
+GOOGLE_CREDENTIALS_FILE_NAME = os.getenv('GOOGLE_CREDENTIALS_FILE_NAME')
+if GOOGLE_CREDENTIALS_FILE_NAME:
+    GOOGLE_APPLICATION_CREDENTIALS = os.path.join(BASE_DIR, GOOGLE_CREDENTIALS_FILE_NAME)
+    if not Path(GOOGLE_APPLICATION_CREDENTIALS).exists():
+        logger.error(f"FATAL: Google credentials file '{GOOGLE_CREDENTIALS_FILE_NAME}' not found at '{GOOGLE_APPLICATION_CREDENTIALS}'.")
+else:
+    GOOGLE_APPLICATION_CREDENTIALS = None
+    logger.warning("Warning: GOOGLE_CREDENTIALS_FILE_NAME not set in .env. Google Cloud services for moderation will not work.")
 
 if not GEMINI_API_KEY and DEBUG:
     logger.warning("Warning (DEBUG): GEMINI_API_KEY is not set. AI features will be unavailable.")

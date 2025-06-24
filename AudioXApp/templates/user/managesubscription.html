@@ -1,207 +1,276 @@
 {% extends 'Homepage.html' %}
 {% load static %}
-{% load tz %} {# Load timezone for date formatting #}
+{% load tz %}
 
 {% block title %}Manage Subscription - AudioX{% endblock %}
 
 {% block content %}
-{# Dependencies are loaded in Homepage.html #}
+<!-- ============================================ -->
+<!-- MANAGE SUBSCRIPTION PAGE - CLEAN PROFESSIONAL DESIGN -->
+<!-- Brand Colors: #091e65 (Primary Blue) & Red -->
+<!-- Clean, Solid, Professional Layout -->
+<!-- ============================================ -->
 
-<div class="min-h-screen bg-white font-sans antialiased">
-
-    {# Header Section with Solid Theme Background #}
-    <div class="bg-theme-primary shadow-md">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-theme-primary-text tracking-tight mb-3 text-white">
-                My Subscription
-            </h1>
-            <p class="text-base sm:text-lg text-theme-primary-light max-w-2xl mx-auto">
-                Review your plan details and manage settings below.
-            </p>
+<div class="min-h-screen bg-gray-50">
+    <!-- ==================== HEADER SECTION ==================== -->
+    <div class="bg-white border-b-2 border-gray-200">
+        <div class="max-w-4xl mx-auto px-6 py-8 text-center">
+            <h1 class="text-3xl font-bold mb-2" style="color: #091e65;">My Subscription</h1>
+            <p class="text-lg text-gray-600">Review your plan details and manage settings below</p>
         </div>
     </div>
 
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
-
-        {# Display Django Messages #}
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="max-w-4xl mx-auto px-6 py-8">
+        
+        <!-- ==================== DJANGO MESSAGES ==================== -->
         {% if messages %}
-            <div class="max-w-2xl mx-auto mb-8 space-y-3"> {# Adjusted max-width #}
-                {% for message in messages %}
-                    <div class="rounded-md p-4 shadow-sm border
-                        {% if message.tags == 'success' %} bg-theme-green-lighter border-theme-green-light text-theme-green
-                        {% elif message.tags == 'error' %} bg-theme-error-light border-theme-error text-theme-error
-                        {% else %} bg-theme-primary-lighter border-theme-primary-light text-theme-primary {% endif %}">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% else %}fa-info-circle{% endif %} h-5 w-5
-                                {% if message.tags == 'success' %} text-theme-success
-                                {% elif message.tags == 'error' %} text-theme-error
-                                {% else %} text-theme-primary {% endif %}"></i>
-                            </div>
-                            <p class="ml-3 text-sm font-medium">
-                                {{ message }}
-                            </p>
-                        </div>
+        <div class="mb-8 space-y-4">
+            {% for message in messages %}
+            <div class="rounded-lg p-4 border-l-4 {% if message.tags == 'success' %}bg-green-50 border-green-500{% elif message.tags == 'error' %}bg-red-50 border-red-500{% else %}bg-blue-50 border-blue-500{% endif %}">
+                <div class="flex items-start">
+                    <div class="w-5 h-5 mt-0.5 mr-3 {% if message.tags == 'success' %}text-green-600{% elif message.tags == 'error' %}text-red-600{% else %}text-blue-600{% endif %}">
+                        {% if message.tags == 'success' %}
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        {% elif message.tags == 'error' %}
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        {% else %}
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                        {% endif %}
                     </div>
-                {% endfor %}
+                    <p class="text-sm font-medium {% if message.tags == 'success' %}text-green-800{% elif message.tags == 'error' %}text-red-800{% else %}text-blue-800{% endif %}">
+                        {{ message }}
+                    </p>
+                </div>
             </div>
+            {% endfor %}
+        </div>
         {% endif %}
 
-        {# Main Content - Centered Single Column Layout #}
-        <div class="max-w-2xl mx-auto space-y-8"> {# Centered container #}
+        <div class="space-y-8">
+            <!-- ==================== SUBSCRIPTION DETAILS SECTION ==================== -->
+            <div class="bg-white rounded-lg shadow-md border border-gray-200">
+                <!-- Section Header -->
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold flex items-center" style="color: #091e65;">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Plan Details
+                    </h2>
+                </div>
 
-            {# Section 1: Subscription Details #}
-            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                <h2 class="text-lg font-semibold text-theme-primary mb-4 flex items-center gap-2">
-                    <i class="fas fa-user-check text-theme-primary/80"></i>
-                    Plan Details
-                </h2>
-                {% if subscription %}
-                    <dl class="space-y-3 text-sm">
-                        <div class="flex justify-between items-center">
-                            <dt class="text-gray-500">Plan</dt>
-                            <dd class="font-medium text-gray-800">{{ subscription.get_plan_display }} Premium</dd>
+                <!-- Subscription Content -->
+                <div class="p-6">
+                    {% if subscription %}
+                    <dl class="space-y-4">
+                        <!-- Plan Type -->
+                        <div class="flex justify-between items-center py-2">
+                            <dt class="text-gray-600 font-medium">Plan</dt>
+                            <dd class="font-bold text-gray-900">{{ subscription.get_plan_display }} Premium</dd>
                         </div>
-                        <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <dt class="text-gray-500">Status</dt>
+                        
+                        <!-- Status -->
+                        <div class="flex justify-between items-center py-2 border-t border-gray-100">
+                            <dt class="text-gray-600 font-medium">Status</dt>
                             <dd>
-                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border
-                                    {% if subscription.is_active %} bg-theme-green-lighter text-theme-green border-theme-green-light
-                                    {% elif subscription.status == 'canceled' %} bg-theme-warning-light text-theme-warning border-amber-300
-                                    {% elif subscription.status == 'expired' %} bg-theme-error-light text-theme-error border-theme-error
-                                    {% elif subscription.status == 'pending' %} bg-theme-primary-lighter text-theme-primary border-theme-primary-light
-                                    {% else %} bg-gray-100 text-gray-600 border-gray-200 {% endif %}">
-                                    {% if subscription.is_active %} <i class="fas fa-check-circle text-xs"></i>Active
-                                    {% elif subscription.status == 'canceled' %} <i class="fas fa-ban text-xs"></i>Canceled
-                                    {% elif subscription.status == 'expired' %} <i class="fas fa-times-circle text-xs"></i>Expired
-                                    {% elif subscription.status == 'pending' %} <i class="fas fa-hourglass-half text-xs"></i>Pending
-                                    {% else %} {{ subscription.get_status_display }} {% endif %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold {% if subscription.is_active %}bg-green-100 text-green-800{% elif subscription.status == 'canceled' %}bg-yellow-100 text-yellow-800{% elif subscription.status == 'expired' %}bg-red-100 text-red-800{% elif subscription.status == 'pending' %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {% if subscription.is_active %}
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Active
+                                    {% elif subscription.status == 'canceled' %}
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Canceled
+                                    {% elif subscription.status == 'expired' %}
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Expired
+                                    {% elif subscription.status == 'pending' %}
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Pending
+                                    {% else %}
+                                    {{ subscription.get_status_display }}
+                                    {% endif %}
                                 </span>
                             </dd>
                         </div>
-                         <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <dt class="text-gray-500">Price</dt>
-                            <dd class="font-medium text-gray-800">
+                        
+                        <!-- Price -->
+                        <div class="flex justify-between items-center py-2 border-t border-gray-100">
+                            <dt class="text-gray-600 font-medium">Price</dt>
+                            <dd class="font-bold text-gray-900">
                                 {% if subscription.plan == 'monthly' %}PKR 350 / month
                                 {% elif subscription.plan == 'annual' %}PKR 3,500 / year
                                 {% else %}N/A{% endif %}
                             </dd>
                         </div>
-                         <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <dt class="text-gray-500">Started On</dt>
-                            <dd class="text-gray-600">{% timezone "Asia/Karachi" %}{{ subscription.start_date|date:"M d, Y" }}{% endtimezone %}</dd>
+                        
+                        <!-- Start Date -->
+                        <div class="flex justify-between items-center py-2 border-t border-gray-100">
+                            <dt class="text-gray-600 font-medium">Started On</dt>
+                            <dd class="text-gray-700">{% timezone "Asia/Karachi" %}{{ subscription.start_date|date:"M d, Y" }}{% endtimezone %}</dd>
                         </div>
+                        
+                        <!-- End Date -->
                         {% if subscription.is_active or subscription.status == 'canceled' %}
-                        <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <dt class="text-gray-500">
+                        <div class="flex justify-between items-center py-2 border-t border-gray-100">
+                            <dt class="text-gray-600 font-medium">
                                 {% if subscription.is_active %}Renews On{% else %}Expires On{% endif %}
                             </dt>
-                            <dd class="text-gray-600 {% if not subscription.is_active %}text-theme-warning font-medium{% endif %}">
+                            <dd class="text-gray-700 {% if not subscription.is_active %}text-yellow-600 font-bold{% endif %}">
                                 {% timezone "Asia/Karachi" %}{{ subscription.end_date|date:"M d, Y" }}{% endtimezone %}
                             </dd>
                         </div>
-                        <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <dt class="text-gray-500">Remaining</dt>
-                            <dd class="text-gray-600">{{ subscription.remaining_days }} days</dd>
+                        
+                        <!-- Remaining Days -->
+                        <div class="flex justify-between items-center py-2 border-t border-gray-100">
+                            <dt class="text-gray-600 font-medium">Remaining</dt>
+                            <dd class="text-gray-700 font-semibold">{{ subscription.remaining_days }} days</dd>
                         </div>
                         {% endif %}
-                         <div class="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <dt class="text-gray-500">Payment Method</dt>
-                            <dd class="text-gray-600 flex items-center gap-1.5">
-                                 {% if subscription.stripe_payment_method_brand and subscription.stripe_payment_method_last4 %}
-                                     <i class="fab fa-cc-{{ subscription.stripe_payment_method_brand|lower }} text-lg text-indigo-600"></i>
-                                     <span class="text-xs">**** {{ subscription.stripe_payment_method_last4 }}</span>
-                                 {% elif subscription.status == 'active' or subscription.status == 'canceled' %}
-                                     <i class="fas fa-credit-card text-base text-gray-400"></i>
-                                     <span class="text-xs">Card on File</span>
-                                 {% else %}
-                                     <i class="fas fa-credit-card text-base text-gray-400"></i>
-                                     <span class="text-xs">N/A</span>
-                                 {% endif %}
+                        
+                        <!-- Payment Method -->
+                        <div class="flex justify-between items-center py-2 border-t border-gray-100">
+                            <dt class="text-gray-600 font-medium">Payment Method</dt>
+                            <dd class="text-gray-700 flex items-center">
+                                {% if subscription.stripe_payment_method_brand and subscription.stripe_payment_method_last4 %}
+                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                </svg>
+                                **** {{ subscription.stripe_payment_method_last4 }}
+                                {% elif subscription.status == 'active' or subscription.status == 'canceled' %}
+                                <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                </svg>
+                                Card on File
+                                {% else %}
+                                <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                </svg>
+                                N/A
+                                {% endif %}
                             </dd>
                         </div>
                     </dl>
-                {% else %}
-                    {# No Active Subscription State #}
-                    <div class="text-center py-6">
-                         <svg class="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M11.412 15.655L9.75 21.75l3.745-4.012M9.257 7.5H2.066l3.23-6.291L7.5 5.25l2.513.167 2.688-5.197 2.688 5.197L17.934 7.5h-7.191m-1.488 8.155L11.412 15.655m0 0l1.588 1.702 1.588-1.702m-1.588 1.702V12.75m0 0L9.75 9.75l1.662 2.838m0 0l1.662-2.838 1.662 2.838m0 0L15.25 9.75l-1.662 2.838" />
-                         </svg>
-                         <h3 class="mt-2 text-sm font-semibold text-gray-600">No Active Subscription</h3>
-                         <p class="mt-1 text-xs text-gray-500">Upgrade to Premium to unlock features.</p>
-                         <div class="mt-4">
-                             <a href="{% url 'AudioXApp:subscribe' %}" class="inline-flex items-center rounded-md bg-theme-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-theme-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors duration-200">
-                                 <i class="fas fa-star mr-1.5 h-3 w-3"></i>
-                                 View Premium Plans
-                             </a>
-                         </div>
-                    </div>
-                {% endif %}
-            </div>
-
-            {# Section 2: Actions Section #}
-             {% if subscription %}
-             <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                 <h2 class="text-lg font-semibold text-theme-primary mb-4 flex items-center gap-2">
-                     <i class="fas fa-cog text-theme-primary/80"></i>
-                     Manage Plan
-                 </h2>
-                 <div class="space-y-3">
-                     {% if subscription.is_active %}
-                         <p class="text-xs text-gray-500 mb-3">If you no longer need Premium, you can cancel your subscription here. Access continues until the current period ends.</p>
-                         <button type="button" id="open-cancel-modal" class="w-full inline-flex justify-center items-center rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 shadow-sm ring-1 ring-inset ring-red-200 hover:bg-red-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 transition-colors duration-200 group">
-                             <i class="fas fa-ban mr-2 h-4 w-4 text-red-500 group-hover:text-red-600"></i>
-                             Cancel Subscription
-                         </button>
-                     {% elif subscription.status == 'canceled' or subscription.status == 'expired' %}
-                         <p class="text-xs text-gray-500 mb-3">Your subscription is not currently active. Resubscribe to regain access to Premium features.</p>
-                         <a href="{% url 'AudioXApp:subscribe' %}" class="w-full inline-flex justify-center items-center rounded-md bg-theme-primary px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-theme-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors duration-200 text-center group">
-                             <i class="fas fa-rocket mr-2 h-4 w-4 group-hover:translate-x-1 transition-transform"></i>
-                             Resubscribe to Premium
-                         </a>
-                     {% endif %}
-                 </div>
-             </div>
-             {% endif %}
-
-        </div> {# End Centered Container #}
-    </div> {# End Outer Container #}
-</div> {# End Min Height Screen #}
-
-{# Cancellation Confirmation Modal (Remains unchanged) #}
-<div id="cancel-modal-v9" class="fixed z-[100] inset-0 hidden overflow-y-auto transition-opacity duration-300 ease-out" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end sm:items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div id="modal-bg-overlay" class="fixed inset-0 bg-gray-600/75 backdrop-blur-sm transition-opacity duration-300 ease-out" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div id="cancel-modal-content-v9" class="relative inline-block align-bottom sm:align-middle bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all duration-300 ease-out sm:my-8 sm:max-w-lg sm:w-full scale-95 opacity-0">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <i class="fas fa-exclamation-triangle h-5 w-5 text-red-600"></i>
-                    </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-semibold text-gray-900" id="modal-title">
-                            Confirm Subscription Cancellation
-                        </h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-600">
-                                Are you sure you want to cancel your AudioX Premium subscription? You will lose access to premium features at the end of your current billing cycle (<span class="font-medium">{% if subscription %}{% timezone "Asia/Karachi" %}{{ subscription.end_date|date:"F d, Y" }}{% endtimezone %}{% else %}date unavailable{% endif %}</span>). This action cannot be undone.
-                            </p>
+                    
+                    {% else %}
+                    <!-- ==================== NO SUBSCRIPTION STATE ==================== -->
+                    <div class="text-center py-12">
+                        <div class="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-6">
+                            <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                            </svg>
                         </div>
+                        <h3 class="text-xl font-bold mb-3" style="color: #091e65;">No Active Subscription</h3>
+                        <p class="text-gray-600 mb-6">Upgrade to Premium to unlock features</p>
+                        <a href="{% url 'AudioXApp:subscribe' %}" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200 inline-flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                            </svg>
+                            View Premium Plans
+                        </a>
                     </div>
+                    {% endif %}
                 </div>
             </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-3">
-                <form action="{% url 'AudioXApp:cancel_subscription' %}" method="post" id="cancel-sub-form">
-                    {% csrf_token %}
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm transition-colors duration-200">
-                        Confirm Cancellation
+
+            <!-- ==================== MANAGE PLAN SECTION ==================== -->
+            {% if subscription %}
+            <div class="bg-white rounded-lg shadow-md border border-gray-200">
+                <!-- Section Header -->
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold flex items-center" style="color: #091e65;">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Manage Plan
+                    </h2>
+                </div>
+
+                <!-- Action Content -->
+                <div class="p-6">
+                    {% if subscription.is_active %}
+                    <p class="text-sm text-gray-600 mb-4">
+                        If you no longer need Premium, you can cancel your subscription here. Access continues until the current period ends.
+                    </p>
+                    <button type="button" id="open-cancel-modal" class="w-full bg-red-50 hover:bg-red-100 border-2 border-red-200 text-red-700 font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                        </svg>
+                        Cancel Subscription
                     </button>
-                </form>
-                <button type="button" id="close-cancel-modal" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary sm:mt-0 sm:w-auto sm:text-sm transition-colors duration-200">
-                    Keep Subscription
-                </button>
+                    
+                    {% elif subscription.status == 'canceled' or subscription.status == 'expired' %}
+                    <p class="text-sm text-gray-600 mb-4">
+                        Your subscription is not currently active. Resubscribe to regain access to Premium features.
+                    </p>
+                    <a href="{% url 'AudioXApp:subscribe' %}" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Resubscribe to Premium
+                    </a>
+                    {% endif %}
+                </div>
             </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ==================== CANCELLATION CONFIRMATION MODAL ==================== -->
+<div id="cancel-modal-v9" class="fixed inset-0 z-50 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center">
+                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mr-4">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Confirm Subscription Cancellation</h3>
+                    <p class="text-sm text-gray-500 mt-1">This action cannot be undone</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+            <p class="text-gray-700">
+                Are you sure you want to cancel your AudioX Premium subscription? You will lose access to premium features at the end of your current billing cycle 
+                <span class="font-semibold">
+                    ({% if subscription %}{% timezone "Asia/Karachi" %}{{ subscription.end_date|date:"F d, Y" }}{% endtimezone %}{% else %}date unavailable{% endif %})
+                </span>.
+            </p>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="p-6 bg-gray-50 border-t border-gray-200 rounded-b-lg flex justify-end gap-3">
+            <button type="button" id="close-cancel-modal" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors duration-200">
+                Keep Subscription
+            </button>
+            <form action="{% url 'AudioXApp:cancel_subscription' %}" method="post" id="cancel-sub-form" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200">
+                    Confirm Cancellation
+                </button>
+            </form>
         </div>
     </div>
 </div>
@@ -209,111 +278,94 @@
 {% endblock %}
 
 {% block javascript %}
-{# The JavaScript remains the same - no changes needed #}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Manage Subscription JS (No Billing History) Loaded.");
+    console.log("Manage Subscription JS Loaded.");
 
-    // --- Constants ---
-    const REFRESH_DELAY_MS = 5000;
-
-    // --- Modal Elements & Functions ---
+    // ==================== ELEMENT SELECTORS ====================
     const openModalBtn = document.getElementById('open-cancel-modal');
     const closeModalBtn = document.getElementById('close-cancel-modal');
     const modal = document.getElementById('cancel-modal-v9');
-    const modalContent = document.getElementById('cancel-modal-content-v9');
-    const modalOverlay = document.getElementById('modal-bg-overlay');
     const cancelSubForm = document.getElementById('cancel-sub-form');
 
+    // ==================== MODAL FUNCTIONS ====================
     function showCancelModal() {
-        if(modal && modalContent && modalOverlay) {
+        if (modal) {
             modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modal.classList.remove('opacity-0');
-                modalOverlay.classList.remove('opacity-0');
-                modalContent.classList.remove('opacity-0', 'scale-95');
-                modalContent.classList.add('opacity-100', 'scale-100');
-            });
-        } else { console.error("Cancel modal elements not found."); }
+        }
     }
 
     function hideCancelModal() {
-        if(modal && modalContent && modalOverlay) {
-            modalContent.classList.remove('opacity-100', 'scale-100');
-            modalContent.classList.add('opacity-0', 'scale-95');
-            modalOverlay.classList.add('opacity-0');
-            modal.classList.add('opacity-0');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
-        } else { console.error("Cancel modal elements not found."); }
+        if (modal) {
+            modal.classList.add('hidden');
+        }
     }
 
-    // --- Modal Event Listeners ---
-    if (openModalBtn) { openModalBtn.addEventListener('click', showCancelModal); }
-    if (closeModalBtn) { closeModalBtn.addEventListener('click', hideCancelModal); }
-    if (modal){
+    // ==================== MODAL EVENT LISTENERS ====================
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', showCancelModal);
+    }
+    
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', hideCancelModal);
+    }
+    
+    if (modal) {
         modal.addEventListener('click', (event) => {
-            if (event.target === modal || event.target === modalOverlay) { hideCancelModal(); }
+            if (event.target === modal) {
+                hideCancelModal();
+            }
         });
+        
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && !modal.classList.contains('hidden')) { hideCancelModal(); }
-        });
-    }
-
-    // --- Handle Redirect Status Messages & Auto-Refresh ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const stripeSessionId = urlParams.get('stripe_session_id');
-    const paymentStatus = urlParams.get('status');
-    let refreshTimeoutId = null;
-
-    function showStatusPopup(type, title, message, autoCloseDelay = null) {
-        Swal.fire({
-            icon: type,
-            title: title,
-            html: message,
-            timer: autoCloseDelay,
-            timerProgressBar: !!autoCloseDelay,
-            showConfirmButton: !autoCloseDelay,
-            confirmButtonText: 'Okay',
-            confirmButtonColor: '#091e65', // Theme primary
-            allowOutsideClick: !autoCloseDelay,
-            customClass: {
-                popup: 'rounded-lg shadow-lg font-sans border border-gray-100 bg-white',
-                title: 'text-lg sm:text-xl font-semibold text-gray-800 pt-5 px-5 pb-1 text-left',
-                htmlContainer: 'text-sm text-gray-600 text-left px-5 pb-5 leading-relaxed',
-                confirmButton: 'inline-flex items-center justify-center gap-2 rounded-md bg-theme-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-theme-primary focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
-                timerProgressBar: 'bg-theme-primary/50 h-1 rounded-full',
+            if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                hideCancelModal();
             }
         });
     }
 
+    // ==================== HANDLE REDIRECT STATUS MESSAGES ====================
+    const urlParams = new URLSearchParams(window.location.search);
+    const stripeSessionId = urlParams.get('stripe_session_id');
+    const paymentStatus = urlParams.get('status');
+
+    function showStatusPopup(type, title, message, autoCloseDelay = null) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: type,
+                title: title,
+                html: message,
+                timer: autoCloseDelay,
+                timerProgressBar: !!autoCloseDelay,
+                showConfirmButton: !autoCloseDelay,
+                confirmButtonText: 'Okay',
+                confirmButtonColor: '#091e65',
+                allowOutsideClick: !autoCloseDelay
+            });
+        } else {
+            alert(title + ': ' + message.replace(/<br>/g, '\n'));
+        }
+    }
+
     if (paymentStatus === 'success' && stripeSessionId) {
-        showStatusPopup('success', 'Payment Successful!', 'Thank you! Your subscription is being updated.<br>This page will refresh automatically.', REFRESH_DELAY_MS);
+        showStatusPopup('success', 'Payment Successful!', 'Thank you! Your subscription is being updated.<br>This page will refresh automatically.', 5000);
         window.history.replaceState(null, null, window.location.pathname);
-        if (refreshTimeoutId) clearTimeout(refreshTimeoutId);
-        refreshTimeoutId = setTimeout(() => { window.location.reload(true); }, REFRESH_DELAY_MS);
+        setTimeout(() => {
+            window.location.reload(true);
+        }, 5000);
     } else if (paymentStatus === 'cancel') {
         showStatusPopup('warning', 'Subscription Incomplete', 'The subscription process was cancelled or timed out. You have not been charged.');
         window.history.replaceState(null, null, window.location.pathname);
     }
 
-    // --- Optional: Animation ---
-    const animatedElements = document.querySelectorAll('.max-w-2xl > div'); // Select the main content blocks in the centered container
-    animatedElements.forEach((el, index) => {
-        el.classList.add('opacity-0', 'translate-y-3', 'transition-all', 'duration-500', 'ease-out');
-        el.style.transitionDelay = `${index * 100}ms`;
-        setTimeout(() => {
-            el.classList.remove('opacity-0', 'translate-y-3');
-        }, 50);
-    });
-
-    // --- DEBUG: Log form info & Add Spinner ---
+    // ==================== FORM SUBMISSION HANDLING ====================
     const forms = document.querySelectorAll('form');
     forms.forEach((form) => {
         form.addEventListener('submit', (e) => {
             console.log(`Form submitted: ID=${form.id || 'N/A'}, Action=${form.action}, Method=${form.method}`);
             const submitButton = form.querySelector('button[type="submit"]');
             if (submitButton) {
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+                submitButton.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing...';
                 submitButton.disabled = true;
             }
         });

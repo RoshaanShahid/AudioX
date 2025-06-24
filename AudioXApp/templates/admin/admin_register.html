@@ -1,7 +1,9 @@
+<!-- File Path: AudioXApp/templates/admin/admin_register.html -->
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Meta and Links -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Registration - AudioX Portal</title>
@@ -11,7 +13,10 @@
 </head>
 <body class="min-h-screen bg-theme-bg-subtle font-inter">
 
+    <!-- Main Layout Container -->
     <div class="flex flex-col md:flex-row min-h-screen">
+        
+        <!-- Left Informational Panel -->
         <div class="w-full md:w-2/5 lg:w-1/3 bg-theme-primary text-white p-8 md:p-12 flex flex-col justify-between">
             <div>
                 <div class="flex items-center text-3xl font-extrabold tracking-tight mb-8">
@@ -33,35 +38,32 @@
             </div>
         </div>
 
+        <!-- Right Form Panel -->
         <div class="w-full md:w-3/5 lg:w-2/3 bg-white p-8 md:p-12 lg:p-16 flex items-center justify-center overflow-y-auto relative">
             <div class="w-full max-w-xl">
                 <h2 class="text-2xl font-bold text-theme-text-primary mb-8 text-center">Create Admin Account</h2>
 
+                <!-- Registration Form -->
                 <form id="admin-register-form" class="space-y-8" method="POST" action="{% url 'AudioXApp:adminsignup' %}" novalidate>
                     {% csrf_token %}
 
-                    <div id="form-error"
-                         class="hidden text-red-800 bg-red-100 border-l-4 border-red-500 p-4 rounded-md text-sm font-semibold items-center gap-3"
-                         role="alert">
+                    <!-- General Form Error Message Display -->
+                    <div id="form-error" class="hidden text-red-800 bg-red-100 border-l-4 border-red-500 p-4 rounded-md text-sm font-semibold items-center gap-3" role="alert">
                         <i class="fas fa-times-circle fa-lg"></i>
                         <span id="form-error-text"></span>
                     </div>
 
+                    <!-- User Information Fieldset -->
                     <fieldset class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                         <legend class="sr-only">Account Information</legend>
 
+                        <!-- Email Input -->
                         <div>
-                            <label for="email_prefix" class="block text-sm font-medium text-theme-text-secondary mb-1">
-                                Email Address <span class="text-red-500">*</span>
-                            </label>
+                            <label for="email_prefix" class="block text-sm font-medium text-theme-text-secondary mb-1">Email Address <span class="text-red-500">*</span></label>
                             <div class="flex mt-1 rounded-md shadow-sm input-group">
                                 <div class="relative flex-grow focus-within:z-10">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-envelope text-gray-400 w-5 h-5"></i>
-                                    </div>
-                                    <input id="email_prefix" name="email_prefix" type="text" required
-                                           class="form-input block w-full pl-10 pr-3 py-2.5 border-gray-300 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary rounded-none rounded-l-md"
-                                           placeholder="Enter email prefix (e.g. kashif)">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-envelope text-gray-400 w-5 h-5"></i></div>
+                                    <input id="email_prefix" name="email_prefix" type="text" required class="form-input block w-full pl-10 pr-3 py-2.5 border-gray-300 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary rounded-none rounded-l-md" placeholder="Enter email prefix (e.g. kashif)">
                                 </div>
                                 <span class="inline-flex items-center px-3 text-sm font-medium text-theme-text-secondary bg-gray-100 border border-l-0 border-gray-300 rounded-r-md whitespace-nowrap">@audiox.com</span>
                             </div>
@@ -69,18 +71,13 @@
                             <p id="email_prefix-error" class="text-red-600 text-xs mt-1.5 text-left font-medium hidden"></p>
                         </div>
 
+                        <!-- Username Input -->
                         <div>
-                            <label for="username_prefix" class="block text-sm font-medium text-theme-text-secondary mb-1">
-                                Username <span class="text-red-500">*</span>
-                            </label>
+                            <label for="username_prefix" class="block text-sm font-medium text-theme-text-secondary mb-1">Username <span class="text-red-500">*</span></label>
                             <div class="flex mt-1 rounded-md shadow-sm input-group">
                                 <div class="relative flex-grow focus-within:z-10">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-user text-gray-400 w-5 h-5"></i>
-                                    </div>
-                                    <input id="username_prefix" name="username_prefix" type="text" required
-                                           class="form-input block w-full pl-10 pr-3 py-2.5 border-gray-300 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary rounded-none rounded-l-md"
-                                           placeholder="Enter username prefix">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-user text-gray-400 w-5 h-5"></i></div>
+                                    <input id="username_prefix" name="username_prefix" type="text" required class="form-input block w-full pl-10 pr-3 py-2.5 border-gray-300 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary rounded-none rounded-l-md" placeholder="Enter username prefix">
                                 </div>
                                 <span class="inline-flex items-center px-3 text-sm font-medium text-theme-text-secondary bg-gray-100 border border-l-0 border-gray-300 rounded-r-md whitespace-nowrap">_audiox</span>
                             </div>
@@ -88,50 +85,36 @@
                             <p id="username_prefix-error" class="text-red-600 text-xs mt-1.5 text-left font-medium hidden"></p>
                         </div>
 
+                        <!-- Password Input -->
                         <div>
-                            <label for="password" class="block text-sm font-medium text-theme-text-secondary mb-1">
-                                Password <span class="text-red-500">*</span>
-                            </label>
+                            <label for="password" class="block text-sm font-medium text-theme-text-secondary mb-1">Password <span class="text-red-500">*</span></label>
                             <div class="relative mt-1">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i class="fas fa-lock text-gray-400 w-5 h-5"></i>
-                                </div>
-                                <input id="password" name="password" type="password" autocomplete="new-password" required
-                                       class="form-input block w-full pl-10 pr-4 py-2.5 border-gray-300 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary rounded-md shadow-sm"
-                                       placeholder="••••••••">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-lock text-gray-400 w-5 h-5"></i></div>
+                                <input id="password" name="password" type="password" autocomplete="new-password" required class="form-input block w-full pl-10 pr-4 py-2.5 border-gray-300 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary rounded-md shadow-sm" placeholder="••••••••">
                             </div>
                             <p id="password-error" class="text-red-600 text-xs mt-1.5 text-left font-medium hidden"></p>
                         </div>
 
+                        <!-- Confirm Password Input -->
                         <div>
-                            <label for="confirm-password" class="block text-sm font-medium text-theme-text-secondary mb-1">
-                                Confirm Password <span class="text-red-500">*</span>
-                            </label>
+                            <label for="confirm-password" class="block text-sm font-medium text-theme-text-secondary mb-1">Confirm Password <span class="text-red-500">*</span></label>
                             <div class="relative mt-1">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i class="fas fa-check-circle text-gray-400 w-5 h-5"></i>
-                                </div>
-                                <input id="confirm-password" name="confirm_password" type="password" autocomplete="new-password" required
-                                       class="form-input block w-full pl-10 pr-4 py-2.5 border-gray-300 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary rounded-md shadow-sm"
-                                       placeholder="••••••••">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-check-circle text-gray-400 w-5 h-5"></i></div>
+                                <input id="confirm-password" name="confirm_password" type="password" autocomplete="new-password" required class="form-input block w-full pl-10 pr-4 py-2.5 border-gray-300 focus:border-theme-primary focus:ring-1 focus:ring-theme-primary rounded-md shadow-sm" placeholder="••••••••">
                             </div>
                             <p id="confirm-password-error" class="text-red-600 text-xs mt-1.5 text-left font-medium hidden"></p>
                         </div>
                     </fieldset>
 
+                    <!-- Role Assignment Fieldset -->
                     <fieldset class="pt-4">
-                        <legend class="block text-base font-semibold text-theme-text-primary mb-3">
-                            Assign Roles <span class="text-red-500">*</span>
-                        </legend>
+                        <legend class="block text-base font-semibold text-theme-text-primary mb-3">Assign Roles <span class="text-red-500">*</span></legend>
                         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 border border-gray-200 rounded-lg p-5 bg-gray-50/50">
                             {% if role_choices %}
                                 {% for value, display_name in role_choices %}
                                 <div class="flex items-center relative">
-                                    <input id="role_{{ value }}" name="roles" type="checkbox" value="{{ value }}"
-                                           class="form-checkbox h-5 w-5 text-theme-primary border-gray-300 rounded focus:ring-theme-primary focus:ring-offset-0 cursor-pointer peer flex-shrink-0">
-                                    <label for="role_{{ value }}" class="ml-3 block text-sm font-medium text-gray-700 cursor-pointer peer-checked:text-theme-primary peer-checked:font-semibold">
-                                        {{ display_name }}
-                                    </label>
+                                    <input id="role_{{ value }}" name="roles" type="checkbox" value="{{ value }}" class="form-checkbox h-5 w-5 text-theme-primary border-gray-300 rounded focus:ring-theme-primary focus:ring-offset-0 cursor-pointer peer flex-shrink-0">
+                                    <label for="role_{{ value }}" class="ml-3 block text-sm font-medium text-gray-700 cursor-pointer peer-checked:text-theme-primary peer-checked:font-semibold">{{ display_name }}</label>
                                 </div>
                                 {% endfor %}
                             {% else %}
@@ -141,29 +124,27 @@
                         <p id="roles-error" class="text-red-600 text-xs mt-2 text-left font-medium hidden"></p>
                     </fieldset>
 
+                    <!-- Submit Button -->
                     <div class="pt-6 border-t border-gray-200 mt-8">
-                        <button type="submit"
-                                class="w-full flex items-center justify-center py-3 px-8 border border-transparent rounded-md shadow-md text-lg font-semibold text-white bg-theme-primary hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-light transition-all duration-300 ease-in-out transform hover:scale-[1.01] hover:shadow-lg">
+                        <button type="submit" class="w-full flex items-center justify-center py-3 px-8 border border-transparent rounded-md shadow-md text-lg font-semibold text-white bg-theme-primary hover:bg-theme-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-primary-light transition-all duration-300 ease-in-out transform hover:scale-[1.01] hover:shadow-lg">
                             <i class="fas fa-user-shield mr-3"></i>
                             Create Admin Account
                         </button>
                     </div>
                 </form>
 
+                <!-- Alternative Links -->
                 <div class="text-sm text-center text-theme-text-secondary pt-8 mt-8">
                     Already registered?
-                    <a href="{% url 'AudioXApp:adminlogin' %}" class="font-medium text-theme-primary hover:text-theme-primary-hover hover:underline">
-                        Login Instead
-                    </a>
+                    <a href="{% url 'AudioXApp:adminlogin' %}" class="font-medium text-theme-primary hover:text-theme-primary-hover hover:underline">Login Instead</a>
                     <span class="mx-2 text-gray-300">|</span>
-                    <a href="{% url 'AudioXApp:admin_welcome' %}" class="font-medium text-gray-600 hover:text-gray-800 hover:underline">
-                        Back to Welcome
-                    </a>
+                    <a href="{% url 'AudioXApp:admin_welcome' %}" class="font-medium text-gray-600 hover:text-gray-800 hover:underline">Back to Welcome</a>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Success Popup Modal -->
     <div id="success-popup" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm transition-opacity duration-300 ease-in-out">
         <div class="w-full max-w-md p-8 bg-white rounded-xl shadow-2xl text-center border border-gray-200 transition-all duration-300 ease-out transform scale-95 opacity-0" id="success-popup-box">
             <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-theme-primary to-theme-primary-hover mb-5">
@@ -180,274 +161,206 @@
         </div>
     </div>
 
+    <!-- JavaScript for Form Handling -->
     <script>
-    // Get DOM elements
-    const form = document.getElementById('admin-register-form');
-    const generalErrorDiv = document.getElementById('form-error');
-    const generalErrorText = document.getElementById('form-error-text');
-    const emailPrefixInput = document.getElementById('email_prefix');
-    const emailHiddenInput = document.getElementById('email');
-    const usernamePrefixInput = document.getElementById('username_prefix');
-    const usernameHiddenInput = document.getElementById('username');
-    const successPopup = document.getElementById('success-popup');
-    const successPopupBox = document.getElementById('success-popup-box');
+        // Get DOM elements
+        const form = document.getElementById('admin-register-form');
+        const generalErrorDiv = document.getElementById('form-error');
+        const generalErrorText = document.getElementById('form-error-text');
+        const emailPrefixInput = document.getElementById('email_prefix');
+        const emailHiddenInput = document.getElementById('email');
+        const usernamePrefixInput = document.getElementById('username_prefix');
+        const usernameHiddenInput = document.getElementById('username');
+        const successPopup = document.getElementById('success-popup');
+        const successPopupBox = document.getElementById('success-popup-box');
 
-    /**
-     * Updates hidden email and username fields by combining prefix with domain/suffix.
-     */
-    function updateHiddenFields() {
-        emailHiddenInput.value = (emailPrefixInput.value.trim() ? emailPrefixInput.value.trim() + '@audiox.com' : '');
-        usernameHiddenInput.value = (usernamePrefixInput.value.trim() ? usernamePrefixInput.value.trim() + '_audiox' : '');
-    }
-
-    // Add event listeners for input fields to update hidden fields dynamically
-    emailPrefixInput.addEventListener('input', updateHiddenFields);
-    usernamePrefixInput.addEventListener('input', updateHiddenFields);
-
-    // Form submission event listener
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent default form submission
-        updateHiddenFields(); // Ensure hidden fields are up-to-date
-        let isValid = true; // Flag to track form validity
-
-        // Reset general and field-specific error messages and styles
-        generalErrorDiv.classList.add('hidden');
-        generalErrorText.textContent = '';
-        document.querySelectorAll('p[id$="-error"]').forEach(el => {
-            el.textContent = '';
-            el.classList.add('hidden');
-        });
-        document.querySelectorAll('.form-input, .form-checkbox').forEach(el => {
-            el.classList.remove('border-red-500');
-            // Reset label color for non-input-group elements
-            el.closest('div:not(.input-group)')?.querySelector('label')?.classList.remove('text-red-600');
-        });
-        // Reset styles for input groups (email_prefix, username_prefix)
-        document.querySelectorAll('.input-group').forEach(el => {
-            el.classList.remove('border-red-500'); // Remove border from the group div
-            el.querySelectorAll('input, span').forEach(child => child.classList.remove('border-red-500')); // Ensure children are also reset
-            el.closest('div').querySelector('label')?.classList.remove('text-red-600'); // Reset label color for the group
-        });
-
-        // Reset styles for roles fieldset
-        const rolesFieldset = form.querySelector('fieldset:has(input[name="roles"])');
-        if (rolesFieldset) {
-            rolesFieldset.querySelector('legend')?.classList.remove('text-red-600');
-            rolesFieldset.querySelector('.grid')?.classList.remove('ring-2', 'ring-red-500');
+        /**
+         * Updates hidden email and username fields by combining prefix with domain/suffix.
+         */
+        function updateHiddenFields() {
+            emailHiddenInput.value = (emailPrefixInput.value.trim() ? emailPrefixInput.value.trim() + '@audiox.com' : '');
+            usernameHiddenInput.value = (usernamePrefixInput.value.trim() ? usernamePrefixInput.value.trim() + '_audiox' : '');
         }
 
-        // Get form field values for validation
-        const passwordInput = document.getElementById('password');
-        const confirmPasswordInput = document.getElementById('confirm-password');
-        const rolesChecked = form.querySelectorAll('input[name="roles"]:checked').length;
+        // Add event listeners for input fields to update hidden fields dynamically
+        emailPrefixInput.addEventListener('input', updateHiddenFields);
+        usernamePrefixInput.addEventListener('input', updateHiddenFields);
 
-        // --- Client-side Validation ---
+        // Form submission event listener
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent default form submission
+            updateHiddenFields(); // Ensure hidden fields are up-to-date
+            let isValid = true; // Flag to track form validity
 
-        // Validate Email Prefix
-        if (!emailPrefixInput.value.trim()) {
-            document.getElementById('email_prefix-error').textContent = 'Email prefix is required.';
-            document.getElementById('email_prefix-error').classList.remove('hidden');
-            // Highlight the input group for email
-            emailPrefixInput.closest('.input-group').classList.add('border-red-500'); // Add red border to the group
-            emailPrefixInput.classList.add('border-red-500'); // Also highlight the input itself for consistency
-            isValid = false;
-        }
-
-        // Validate Username Prefix
-        if (!usernamePrefixInput.value.trim()) {
-            document.getElementById('username_prefix-error').textContent = 'Username prefix is required.';
-            document.getElementById('username_prefix-error').classList.remove('hidden');
-            // Highlight the input group for username
-            usernamePrefixInput.closest('.input-group').classList.add('border-red-500'); // Add red border to the group
-            usernamePrefixInput.classList.add('border-red-500'); // Also highlight the input itself
-            isValid = false;
-        }
-
-        // Validate Password
-        if (!passwordInput.value) {
-            document.getElementById('password-error').textContent = 'Password is required.';
-            document.getElementById('password-error').classList.remove('hidden');
-            passwordInput.classList.add('border-red-500');
-            isValid = false;
-        } else if (passwordInput.value.length < 8) {
-            document.getElementById('password-error').textContent = 'Password must be at least 8 characters.';
-            document.getElementById('password-error').classList.remove('hidden');
-            passwordInput.classList.add('border-red-500');
-            isValid = false;
-        }
-
-        // Validate Confirm Password
-        const password = passwordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
-        const confirmPasswordError = document.getElementById('confirm-password-error');
-        if (!confirmPassword) {
-            confirmPasswordError.textContent = 'Please confirm your password.';
-            confirmPasswordError.classList.remove('hidden');
-            confirmPasswordInput.classList.add('border-red-500');
-            isValid = false;
-        } else if (password && password !== confirmPassword) {
-            confirmPasswordError.textContent = 'Passwords do not match.';
-            confirmPasswordError.classList.remove('hidden');
-            confirmPasswordInput.classList.add('border-red-500');
-            passwordInput.classList.add('border-red-500'); // Also highlight original password if mismatch
-            isValid = false;
-        }
-
-        // Validate Roles
-        const rolesError = document.getElementById('roles-error');
-        const rolesGrid = rolesFieldset?.querySelector('.grid');
-        if (rolesChecked === 0) {
-            rolesError.textContent = 'Please select at least one role.';
-            rolesError.classList.remove('hidden');
-            if (rolesGrid) rolesGrid.classList.add('ring-2', 'ring-red-500', 'rounded-lg'); // Add ring to the grid container
-            rolesFieldset?.querySelector('legend')?.classList.add('text-red-600'); // Highlight legend
-            isValid = false;
-        }
-
-        // If form is not valid, display general error and stop submission
-        if (!isValid) {
-            generalErrorText.textContent = 'Please correct the errors highlighted below.';
-            generalErrorDiv.classList.remove('hidden'); // Show general error message
-            return; // Stop form submission
-        }
-
-        // --- Prepare FormData for Submission ---
-        const formData = new FormData(form);
-        // Remove prefix fields as full email/username are in hidden fields
-        formData.delete('email_prefix');
-        formData.delete('username_prefix');
-        // *** IMPORTANT FIX: DO NOT DELETE confirm_password from FormData ***
-        // The backend needs it for validation.
-        // formData.delete('confirm_password'); // This line was causing the issue.
-
-        const url = form.action;
-        const submitButton = form.querySelector('button[type="submit"]');
-        const originalButtonText = submitButton.innerHTML;
-
-        // Disable button and show loading state
-        submitButton.disabled = true;
-        submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Creating Account...`;
-
-        // --- Asynchronous Form Submission ---
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }, // For Django to identify AJAX
+            // Reset all previous error messages and styles
+            generalErrorDiv.classList.add('hidden');
+            generalErrorText.textContent = '';
+            document.querySelectorAll('p[id$="-error"]').forEach(el => {
+                el.textContent = '';
+                el.classList.add('hidden');
             });
-            const data = await response.json(); // Expect JSON response
+            document.querySelectorAll('.form-input, .form-checkbox').forEach(el => el.classList.remove('border-red-500'));
+            document.querySelectorAll('.input-group').forEach(el => el.classList.remove('border-red-500'));
+            
+            const rolesFieldset = form.querySelector('fieldset:has(input[name="roles"])');
+            if (rolesFieldset) {
+                rolesFieldset.querySelector('legend')?.classList.remove('text-red-600');
+                rolesFieldset.querySelector('.grid')?.classList.remove('ring-2', 'ring-red-500');
+            }
 
-            if (data.status === 'success') {
-                // Show success popup
-                successPopup.classList.remove('hidden');
-                successPopup.classList.add('flex'); // Use flex to center content
-                // Trigger animation for popup box
-                requestAnimationFrame(() => { // Ensures the 'hidden' class is removed before animation starts
-                    successPopupBox.classList.remove('scale-95', 'opacity-0');
-                    successPopupBox.classList.add('scale-100', 'opacity-100');
-                });
+            // Get form field values for validation
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirm-password');
+            const rolesChecked = form.querySelectorAll('input[name="roles"]:checked').length;
+            
+            // --- Client-side Validation ---
+            if (!emailPrefixInput.value.trim()) {
+                document.getElementById('email_prefix-error').textContent = 'Email prefix is required.';
+                document.getElementById('email_prefix-error').classList.remove('hidden');
+                emailPrefixInput.closest('.input-group').classList.add('border-red-500');
+                isValid = false;
+            }
 
-                // Redirect after a delay
-                setTimeout(() => {
-                    if (data.redirect_url) {
-                        window.location.href = data.redirect_url;
-                    } else {
-                        // Fallback redirect URL if not provided
-                        window.location.href = "{% url 'AudioXApp:adminlogin' %}";
-                    }
-                }, 3000); // 3-second delay
-            } else {
-                // Handle registration failure (e.g., validation errors from backend)
-                generalErrorText.textContent = data.message || 'Registration failed. Please review the form.';
+            if (!usernamePrefixInput.value.trim()) {
+                document.getElementById('username_prefix-error').textContent = 'Username prefix is required.';
+                document.getElementById('username_prefix-error').classList.remove('hidden');
+                usernamePrefixInput.closest('.input-group').classList.add('border-red-500');
+                isValid = false;
+            }
+
+            if (!passwordInput.value) {
+                document.getElementById('password-error').textContent = 'Password is required.';
+                document.getElementById('password-error').classList.remove('hidden');
+                passwordInput.classList.add('border-red-500');
+                isValid = false;
+            } else if (passwordInput.value.length < 8) {
+                document.getElementById('password-error').textContent = 'Password must be at least 8 characters.';
+                document.getElementById('password-error').classList.remove('hidden');
+                passwordInput.classList.add('border-red-500');
+                isValid = false;
+            }
+
+            if (!confirmPasswordInput.value) {
+                document.getElementById('confirm-password-error').textContent = 'Please confirm your password.';
+                document.getElementById('confirm-password-error').classList.remove('hidden');
+                confirmPasswordInput.classList.add('border-red-500');
+                isValid = false;
+            } else if (passwordInput.value && passwordInput.value !== confirmPasswordInput.value) {
+                document.getElementById('confirm-password-error').textContent = 'Passwords do not match.';
+                document.getElementById('confirm-password-error').classList.remove('hidden');
+                confirmPasswordInput.classList.add('border-red-500');
+                passwordInput.classList.add('border-red-500');
+                isValid = false;
+            }
+
+            if (rolesChecked === 0) {
+                document.getElementById('roles-error').textContent = 'Please select at least one role.';
+                document.getElementById('roles-error').classList.remove('hidden');
+                if (rolesFieldset) {
+                    rolesFieldset.querySelector('.grid')?.classList.add('ring-2', 'ring-red-500', 'rounded-lg');
+                    rolesFieldset.querySelector('legend')?.classList.add('text-red-600');
+                }
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                generalErrorText.textContent = 'Please correct the errors highlighted below.';
                 generalErrorDiv.classList.remove('hidden');
+                return;
+            }
 
-                if (data.errors) {
-                    for (const field in data.errors) {
-                        // Map backend field names (email, username) to frontend prefix field names for error display
-                        const frontendFieldName = (field === 'email') ? 'email_prefix' : (field === 'username') ? 'username_prefix' : field;
-                        const errorElement = document.getElementById(`${frontendFieldName}-error`);
-                        const inputElement = document.getElementById(frontendFieldName) || document.getElementsByName(frontendFieldName)[0];
+            // --- Asynchronous Form Submission ---
+            const formData = new FormData(form);
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.innerHTML;
 
+            submitButton.disabled = true;
+            submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Creating Account...`;
 
-                        if (errorElement) {
-                            errorElement.textContent = data.errors[field].join ? data.errors[field].join(' ') : data.errors[field];
-                            errorElement.classList.remove('hidden');
-                        }
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const data = await response.json();
 
-                        if (inputElement) {
-                            inputElement.classList.add('border-red-500');
-                            // Special handling for input groups
-                            if (inputElement.closest('.input-group')) {
-                                inputElement.closest('.input-group').classList.add('border-red-500');
-                            } else if (inputElement.type === 'checkbox' && field === 'roles' && rolesFieldset) {
-                                // Handle roles error styling
-                                rolesFieldset.querySelector('.grid')?.classList.add('ring-2', 'ring-red-500', 'rounded-lg');
-                                rolesFieldset.querySelector('legend')?.classList.add('text-red-600');
-                            } else {
-                                // For other inputs, highlight their labels if applicable
-                                inputElement.closest('div:not(.input-group)')?.querySelector('label')?.classList.add('text-red-600');
-                            }
-                        } else if (field === 'roles' && rolesFieldset) { // Explicitly handle roles field if inputElement is not found directly
-                            rolesFieldset.querySelector('.grid')?.classList.add('ring-2', 'ring-red-500', 'rounded-lg');
-                            rolesFieldset.querySelector('legend')?.classList.add('text-red-600');
-                             if (errorElement) { // Ensure roles-error p tag is also populated
+                if (data.status === 'success') {
+                    // Show success popup and trigger animation
+                    successPopup.classList.remove('hidden');
+                    successPopup.classList.add('flex');
+                    requestAnimationFrame(() => {
+                        successPopupBox.classList.remove('scale-95', 'opacity-0');
+                        successPopupBox.classList.add('scale-100', 'opacity-100');
+                    });
+
+                    // Redirect after a delay
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || "{% url 'AudioXApp:adminlogin' %}";
+                    }, 3000);
+                } else {
+                    // Handle backend errors
+                    generalErrorText.textContent = data.message || 'Registration failed. Please review the form.';
+                    generalErrorDiv.classList.remove('hidden');
+
+                    if (data.errors) {
+                        for (const field in data.errors) {
+                            const frontendFieldName = (field === 'email') ? 'email_prefix' : (field === 'username') ? 'username_prefix' : field;
+                            const errorElement = document.getElementById(`${frontendFieldName}-error`);
+                            const inputElement = document.getElementById(frontendFieldName) || document.getElementsByName(frontendFieldName)[0];
+                            
+                            if (errorElement) {
                                 errorElement.textContent = data.errors[field].join ? data.errors[field].join(' ') : data.errors[field];
                                 errorElement.classList.remove('hidden');
                             }
-                        } else if (field === '__all__') { // Handle general non-field errors
-                            generalErrorText.textContent = data.errors[field].join ? data.errors[field].join(' ') : data.errors[field];
-                            generalErrorDiv.classList.remove('hidden');
+                            
+                            if (inputElement) {
+                                inputElement.classList.add('border-red-500');
+                                if (inputElement.closest('.input-group')) {
+                                    inputElement.closest('.input-group').classList.add('border-red-500');
+                                }
+                            } else if (field === 'roles' && rolesFieldset) {
+                                rolesFieldset.querySelector('.grid')?.classList.add('ring-2', 'ring-red-500', 'rounded-lg');
+                                rolesFieldset.querySelector('legend')?.classList.add('text-red-600');
+                            } else if (field === '__all__') {
+                                generalErrorText.textContent = data.errors[field].join ? data.errors[field].join(' ') : data.errors[field];
+                            }
                         }
                     }
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
                 }
-                // Re-enable button and restore original text
+            } catch (error) {
+                console.error('Registration Error:', error);
+                generalErrorText.textContent = 'A network or server error occurred. Please try again.';
+                generalErrorDiv.classList.remove('hidden');
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalButtonText;
             }
-        } catch (error) {
-            // Handle network or unexpected server errors
-            console.error('Registration Error:', error);
-            generalErrorText.textContent = 'A network or server error occurred. Please try again.';
-            generalErrorDiv.classList.remove('hidden');
-            // Re-enable button and restore original text
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalButtonText;
-        }
-    });
-
-    // Add event listeners to input fields to clear errors on input
-    form.querySelectorAll('input[type="text"], input[type="password"]').forEach(input => {
-        input.addEventListener('input', () => {
-            input.classList.remove('border-red-500');
-            const inputGroup = input.closest('.input-group');
-            if (inputGroup) {
-                inputGroup.classList.remove('border-red-500'); // Remove border from group
-            }
-            // Reset label color for non-input-group elements
-            input.closest('div:not(.input-group)')?.querySelector('label')?.classList.remove('text-red-600');
-            const errorP = document.getElementById(`${input.id}-error`);
-            if (errorP) {
-                errorP.classList.add('hidden');
-                errorP.textContent = '';
-            }
         });
-    });
-
-    // Add event listener to role checkboxes to clear roles error on change
-    form.querySelectorAll('input[type="checkbox"][name="roles"]').forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-            const rolesError = document.getElementById('roles-error');
-            const rolesFieldset = form.querySelector('fieldset:has(input[name="roles"])');
-            if (rolesError) {
-                 rolesError.classList.add('hidden'); rolesError.textContent = '';
-            }
-            if(rolesFieldset) {
-                rolesFieldset.querySelector('.grid')?.classList.remove('ring-2', 'ring-red-500');
-                rolesFieldset.querySelector('legend')?.classList.remove('text-red-600');
-            }
+        
+        // --- Event Listeners to Clear Errors on Input ---
+        form.querySelectorAll('input[type="text"], input[type="password"]').forEach(input => {
+            input.addEventListener('input', () => {
+                input.classList.remove('border-red-500');
+                const inputGroup = input.closest('.input-group');
+                if (inputGroup) inputGroup.classList.remove('border-red-500');
+                const errorP = document.getElementById(`${input.id}-error`);
+                if (errorP) errorP.classList.add('hidden');
+            });
         });
-    });
+
+        form.querySelectorAll('input[type="checkbox"][name="roles"]').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const rolesError = document.getElementById('roles-error');
+                const rolesFieldset = form.querySelector('fieldset:has(input[name="roles"])');
+                if (rolesError) rolesError.classList.add('hidden');
+                if (rolesFieldset) {
+                    rolesFieldset.querySelector('.grid')?.classList.remove('ring-2', 'ring-red-500');
+                    rolesFieldset.querySelector('legend')?.classList.remove('text-red-600');
+                }
+            });
+        });
     </script>
-
 </body>
 </html>

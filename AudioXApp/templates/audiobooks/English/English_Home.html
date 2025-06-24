@@ -4,387 +4,341 @@
 {% load mathfilters %}
 
 {% block content %}
-<div class="bg-gray-50 min-h-screen font-sans antialiased pb-28">
-
-    {# Hero Section #}
-    <div class="relative overflow-hidden">
-        <div class="absolute inset-0">
-            <video autoplay muted loop class="w-full h-full object-cover">
-                <source src="{% static 'img/english_home/hero-section.mp4' %}" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-            <div class="absolute inset-0 bg-gradient-to-r from-gray-900/80 via-[#091e65]/70 to-[#091e65]/20"></div>
-        </div>
-        <div class="relative flex flex-col items-center justify-center h-[700px] md:h-[800px] px-6 md:px-12 text-center">
-            <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold text-white mb-6 leading-tight tracking-tighter" style="text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);">
-                Your World of Audiobooks Awaits
+<div class="bg-white min-h-screen">
+    
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <!-- Background Video -->
+        <video autoplay muted loop class="absolute inset-0 w-full h-full object-cover z-0">
+            <source src="{% static 'img/english_home/hero-section.mp4' %}" type="video/mp4">
+        </video>
+        
+        <!-- Content -->
+        <div class="relative z-20 max-w-6xl mx-auto px-6 text-center">
+            <!-- Main Heading -->
+            <h1 class="text-6xl md:text-8xl lg:text-9xl font-black text-white mb-8 leading-tight">
+                <span class="block">Your World of</span>
+                <span class="block text-red-600">Audiobooks</span>
+                <span class="block text-4xl md:text-6xl lg:text-7xl">Awaits You</span>
             </h1>
-            <p class="text-xl md:text-2xl lg:text-3xl text-white mb-10 max-w-4xl mx-auto leading-relaxed" style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);">
-                Discover captivating stories, narrated by masters of the craft.
+            
+            <!-- Subtitle -->
+            <p class="text-xl md:text-2xl text-white mb-12 max-w-4xl mx-auto">
+                Discover captivating stories, narrated by masters of the craft
             </p>
-            <a href="{% url 'AudioXApp:subscribe' %}" class="inline-block bg-[#091e65] hover:bg-[#071e65] text-white font-bold py-4 px-12 rounded-full text-lg tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl text-center border-2 border-white hover:scale-105">
-                Subscribe Now
-            </a>
-            <div class="mt-12 w-full overflow-hidden">
-                <div class="marquee-container">
-                    <div class="marquee-genre flex items-center whitespace-nowrap space-x-8 justify-center">
-                        <a href="{% url 'AudioXApp:genre_fiction' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fiction</a>
-                        <a href="{% url 'AudioXApp:genre_mystery' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Mystery</a>
-                        <a href="{% url 'AudioXApp:genre_thriller' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Thriller</a>
-                        <a href="{% url 'AudioXApp:genre_scifi' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Sci-Fi</a>
-                        <a href="{% url 'AudioXApp:genre_fantasy' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Fantasy</a>
-                        <a href="{% url 'AudioXApp:genre_romance' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Romance</a>
-                        <a href="{% url 'AudioXApp:genre_biography' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Biography</a>
-                        <a href="{% url 'AudioXApp:genre_history' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">History</a>
-                        <a href="{% url 'AudioXApp:genre_selfhelp' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Self-Help</a>
-                        <a href="{% url 'AudioXApp:genre_business' %}" class="text-lg md:text-xl font-bold text-white flex-shrink-0">Business</a>
-                    </div>
-                </div>
+            
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
+                <a href="{% url 'AudioXApp:subscribe' %}" 
+                   class="px-12 py-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xl rounded-lg transition-colors duration-300">
+                    <i class="fas fa-play mr-3"></i>
+                    Start Listening Now
+                </a>
+                
+                <a href="{% url 'AudioXApp:trending_audiobooks' %}" 
+                   class="px-12 py-4 bg-white text-[#091e65] font-bold text-xl rounded-lg hover:bg-gray-100 transition-colors duration-300">
+                    <i class="fas fa-book-open mr-3"></i>
+                    Browse Library
+                </a>
+            </div>
+            
+            <!-- Genre Tags -->
+            <div class="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">
+                <a href="{% url 'AudioXApp:genre_fiction' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">Fiction</a>
+                <a href="{% url 'AudioXApp:genre_mystery' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">Mystery</a>
+                <a href="{% url 'AudioXApp:genre_thriller' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">Thriller</a>
+                <a href="{% url 'AudioXApp:genre_scifi' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">Sci-Fi</a>
+                <a href="{% url 'AudioXApp:genre_fantasy' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">Fantasy</a>
+                <a href="{% url 'AudioXApp:genre_romance' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">Romance</a>
+                <a href="{% url 'AudioXApp:genre_biography' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">Biography</a>
+                <a href="{% url 'AudioXApp:genre_history' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">History</a>
+                <a href="{% url 'AudioXApp:genre_selfhelp' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">Self-Help</a>
+                <a href="{% url 'AudioXApp:genre_business' %}" class="px-6 py-2 bg-white text-[#091e65] rounded-full font-medium hover:bg-gray-100 transition-colors">Business</a>
             </div>
         </div>
-    </div>
+    </section>
 
-    {# --- Main Content Area for Audiobooks --- #}
-    <div class="container mx-auto px-4 py-16 sm:py-24">
-        <h2 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-12 sm:mb-16">Discover New Favorites</h2>
+    <!-- Featured Creator Content -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <!-- Section Header -->
+            <div class="text-center mb-12">
+                <div class="w-16 h-16 bg-[#091e65] rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-star text-white text-2xl"></i>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-black text-[#091e65] mb-4">
+                    Featured <span class="text-red-600">Creations</span>
+                </h2>
+                <p class="text-xl text-gray-700 max-w-3xl mx-auto">
+                    Handpicked audiobooks from our talented community of creators
+                </p>
+                <div class="w-24 h-1 bg-[#091e65] mx-auto mt-6"></div>
+            </div>
 
-        {# --- Section 1: e.g., LibriVox sourced Audiobooks --- #}
-        <div class="mb-16">
-            {% if librivox_audiobooks %}
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12">
-                    {% for book in librivox_audiobooks %}
-                    <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" class="block group relative">
-                        <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl h-full flex flex-col">
-                            <div class="relative h-80 w-full">
-                                <img src="{{ book.cover_image|default:'https://placehold.co/300x320/eeeeee/999999?text=Cover+Not+Found' }}"
-                                     alt="{{ book.title }}"
-                                     class="w-full h-full object-cover rounded-t-3xl"
-                                     loading="lazy" width="300" height="320"
-                                     onerror="this.onerror=null; this.src='https://placehold.co/300x320/eeeeee/999999?text=Cover+Error';">
-                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
-                                    <button type="button" title="View Details" class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="p-4 flex-grow flex flex-col">
-                                <h3 class="font-semibold text-lg text-gray-800 truncate" title="{{ book.title }}">{{ book.title }}</h3>
-                                <p class="text-sm text-gray-600 truncate mb-1" title="AudioX">By AudioX</p> {# Changed Author #}
+            {% if creator_audiobooks %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    {% for book in creator_audiobooks %}
+                        <div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:border-[#091e65] transition-colors duration-300">
+                            <div class="relative h-64">
+                                {% if book.cover_image %}
+                                    <img src="{{ book.cover_image.url }}" 
+                                         alt="{{ book.title }}" 
+                                         class="w-full h-full object-cover"
+                                         onerror="this.src='https://via.placeholder.com/300x400/091e65/white?text=AudioX'">
+                                {% else %}
+                                    <div class="w-full h-full bg-[#091e65] flex items-center justify-center">
+                                        <div class="text-center text-white">
+                                            <i class="fas fa-book text-4xl mb-2"></i>
+                                            <p class="text-sm font-medium">AudioX</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
                                 
-                                <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500">
+                                <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" 
+                                   class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                                    <div class="bg-white text-[#091e65] rounded-full p-4">
+                                        <i class="fas fa-play text-xl"></i>
+                                    </div>
+                                </a>
+
+                                {% if book.is_paid %}
+                                    <span class="absolute top-4 right-4 bg-[#091e65] text-white px-3 py-1 rounded-full text-sm font-bold">
+                                        ${{ book.price|floatformat:2 }}
+                                    </span>
+                                {% else %}
+                                    <span class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                                        Free
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="p-6">
+                                <h3 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                                    {{ book.title }}
+                                </h3>
+                                <p class="text-red-600 font-semibold mb-4 text-sm">By AudioX</p>
+                                
+                                <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-1">
                                         {% with rating=book.average_rating %}
-                                            {% if rating is not None and rating > 0 %}
-                                                {% with full_stars=rating|floatformat:0|add:"0" %}
-                                                {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                                {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                                    {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endfor %}
-                                                    {% if decimal_part_int >= 3 and decimal_part_int <= 7 %} {# Handle .3 to .7 as half star #}
-                                                        <i class="fas fa-star-half-alt text-yellow-400 text-sm mr-px"></i>
-                                                        {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
-                                                            {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                        {% endwith %}
-                                                    {% elif decimal_part_int > 7 %} {# Handle .8, .9 as next full star if not already 5 full #}
-                                                        {% with effective_full_stars=full_stars|add:1 %}
-                                                            {% if effective_full_stars > full_stars and full_stars < 5 %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endif %}
-                                                            {% with empty_stars=5|sub:effective_full_stars %}
-                                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                            {% endwith %}
-                                                        {% endwith %}
-                                                    {% else %} {# Handle .0, .1, .2 as just full_stars, then empty #}
-                                                        {% with empty_stars=5|sub:full_stars %}
-                                                            {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                        {% endwith %}
+                                            {% if rating and rating > 0 %}
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= rating %}
+                                                        <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-gray-300 text-sm"></i>
                                                     {% endif %}
-                                                {% endwith %}{% endwith %}{% endwith %}
-                                                <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
+                                                {% endfor %}
+                                                <span class="text-sm text-gray-600 ml-2">{{ rating|floatformat:1 }}</span>
                                             {% else %}
-                                                <span class="text-gray-400 italic text-xs">No ratings</span>
+                                                <span class="text-sm text-gray-400">No ratings yet</span>
                                             {% endif %}
                                         {% endwith %}
                                     </div>
-                                    <div class="flex items-center space-x-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
-                                        <span>{{ book.total_views|intcomma|default:"0" }}</span>
+                                    
+                                    <div class="flex items-center text-gray-500 text-sm">
+                                        <i class="fas fa-eye mr-1"></i>
+                                        {{ book.total_views|intcomma|default:"0" }}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </a>
                     {% endfor %}
                 </div>
             {% else %}
-                {% if error_message %}
-                    <div class="text-center text-gray-600 bg-gray-100 p-6 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold mb-2 text-gray-700">Loading Audiobooks...</h3>
-                        <p class="text-sm">{{ error_message }}</p>
+                <div class="text-center py-16">
+                    <div class="bg-gray-100 rounded-lg p-12 max-w-2xl mx-auto">
+                        <div class="w-20 h-20 bg-[#091e65] rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-microphone text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">No Creator Content Yet</h3>
+                        <p class="text-gray-600">Our creators are working on amazing content. Check back soon!</p>
                     </div>
-                {% else %}
-                    <p class="text-center text-gray-500 py-8">No audiobooks found in this section at the moment.</p>
-                {% endif %}
+                </div>
             {% endif %}
         </div>
+    </section>
 
-        {# --- Section 2: Archive.org Sourced Genre Books --- #}
-        <div class="bg-gray-100 py-16 sm:py-24 -mx-4 px-4 rounded-2xl mb-16">
-            <div class="container mx-auto">
-                <h2 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-12 sm:mb-16">Explore by Genre</h2>
-                {% if archive_genre_audiobooks %}
-                    {% for genre_name, audiobooks_list in archive_genre_audiobooks.items %}
-                        {% if audiobooks_list %}
-                            <div class="mb-16">
-                                <h3 class="text-2xl font-semibold text-gray-700 mb-8">{{ genre_name }}</h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12">
-                                    {% for book in audiobooks_list %}
-                                    <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" class="block group relative">
-                                        <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl h-full flex flex-col">
-                                            <div class="relative h-80 w-full">
-                                                <img src="{{ book.cover_image|default:'https://placehold.co/300x320/eeeeee/999999?text=Cover+Not+Found' }}"
-                                                     alt="{{ book.title }}"
-                                                     class="w-full h-full object-cover rounded-t-3xl"
-                                                     loading="lazy" width="300" height="320"
-                                                     onerror="this.onerror=null; this.src='https://placehold.co/300x320/eeeeee/999999?text=Cover+Error';">
-                                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
-                                                    <button type="button" title="View Details" class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div class="p-4 flex-grow flex flex-col">
-                                                <h3 class="font-semibold text-lg text-gray-800 truncate" title="{{ book.title }}">{{ book.title }}</h3>
-                                                <p class="text-sm text-gray-600 truncate mb-1" title="AudioX">By AudioX</p> {# Changed Author #}
-                                                
-                                                <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500">
-                                                    <div class="flex items-center space-x-1">
-                                                        {% with rating=book.average_rating %}
-                                                            {% if rating is not None and rating > 0 %}
-                                                                {% with full_stars=rating|floatformat:0|add:"0" %}
-                                                                {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                                                {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                                                    {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endfor %}
-                                                                    {% if decimal_part_int >= 3 and decimal_part_int <= 7 %}
-                                                                        <i class="fas fa-star-half-alt text-yellow-400 text-sm mr-px"></i>
-                                                                        {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
-                                                                            {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                                        {% endwith %}
-                                                                    {% elif decimal_part_int > 7 %}
-                                                                        {% with effective_full_stars=full_stars|add:1 %}
-                                                                            {% if effective_full_stars > full_stars and full_stars < 5 %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endif %}
-                                                                            {% with empty_stars=5|sub:effective_full_stars %}
-                                                                                {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                                            {% endwith %}
-                                                                        {% endwith %}
-                                                                    {% else %}
-                                                                        {% with empty_stars=5|sub:full_stars %}
-                                                                            {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                                        {% endwith %}
-                                                                    {% endif %}
-                                                                {% endwith %}{% endwith %}{% endwith %}
-                                                                <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
-                                                            {% else %}
-                                                                <span class="text-gray-400 italic text-xs">No ratings</span>
-                                                            {% endif %}
-                                                        {% endwith %}
-                                                    </div>
-                                                    <div class="flex items-center space-x-1">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
-                                                        <span>{{ book.total_views|intcomma|default:"0" }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </a>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% empty %}
-                        {% if error_message %}
-                            <div class="text-center text-gray-600 bg-white p-6 rounded-xl shadow-sm">
-                                <h3 class="text-lg font-semibold mb-2 text-gray-700">Loading Genre Audiobooks...</h3>
-                                <p class="text-sm">{{ error_message }}</p>
-                            </div>
-                        {% else %}
-                            <p class="text-center text-gray-500 py-8">No genre-specific audiobooks available at the moment.</p>
-                        {% endif %}
-                    {% endfor %}
-                {% else %}
-                    {% if error_message %}
-                        <div class="text-center text-gray-600 bg-white p-6 rounded-xl shadow-sm">
-                            <h3 class="text-lg font-semibold mb-2 text-gray-700">Loading Genre Audiobooks...</h3>
-                            <p class="text-sm">{{ error_message }}</p>
-                        </div>
-                    {% else %}
-                        <p class="text-center text-gray-500 py-8">No genre-specific audiobooks available at the moment.</p>
-                    {% endif %}
-                {% endif %}
-            </div>
-        </div>
-
-        {# --- Section 3: Creator Uploads --- #}
-        <div class="bg-gradient-to-b from-gray-50 to-[#eef2ff] py-16 sm:py-24 -mx-4 px-4 rounded-2xl">
-            <div class="container mx-auto">
-                <h2 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-12 sm:mb-16">From Our Creators</h2>
-                {% if creator_audiobooks %}
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12">
-                        {% for book in creator_audiobooks %} {# Changed from creator_book to book for consistency #}
-                            {% if book.status == 'PUBLISHED' %}
-                            <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" class="block group relative">
-                                <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl h-full flex flex-col">
-                                    <div class="relative h-80 w-full">
-                                        {% if book.cover_image %} {# Assumes book.cover_image is already the URL from the view context #}
-                                        <img src="{{ book.cover_image }}" 
-                                             alt="{{ book.title }}"
-                                             class="w-full h-full object-cover rounded-t-3xl"
-                                             loading="lazy" width="300" height="320"
-                                             onerror="this.onerror=null; this.src='https://placehold.co/300x320/eeeeee/999999?text=Cover+Not+Found';">
-                                        {% else %}
-                                        <img src="https://placehold.co/300x320/eeeeee/999999?text=No+Cover"
-                                             alt="No Cover Available"
-                                             class="w-full h-full object-cover rounded-t-3xl bg-gray-200"
-                                             width="300" height="320">
-                                        {% endif %}
-                                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
-                                            <button type="button" title="View Details" class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="p-4 flex-grow flex flex-col">
-                                        <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ book.title }}">{{ book.title }}</h3>
-                                        {% if book.author %}
-                                            <p class="text-sm text-gray-600 truncate" title="{{ book.author }}">By {{ book.author }}</p>
-                                        {% endif %}
-                                        {% if book.creator.creator_name %} {# Specific to creator books #}
-                                            <p class="text-xs text-[#091e65] mt-1">By: {{ book.creator.creator_name }}</p>
-                                        {% endif %}
-                                        <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500">
-                                            <div class="flex items-center space-x-1"> 
-                                                {% with rating=book.average_rating %}
-                                                    {% if rating is not None and rating > 0 %}
-                                                        {% with full_stars=rating|floatformat:0|add:"0" %}
-                                                        {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                                        {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                                            {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endfor %}
-                                                            {% if decimal_part_int >= 3 and decimal_part_int <= 7 %}
-                                                                <i class="fas fa-star-half-alt text-yellow-400 text-sm mr-px"></i>
-                                                                {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}
-                                                                    {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                                {% endwith %}
-                                                            {% elif decimal_part_int > 7 %}
-                                                                {% with effective_full_stars=full_stars|add:1 %}
-                                                                    {% if effective_full_stars > full_stars and full_stars < 5 %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endif %}
-                                                                    {% with empty_stars=5|sub:effective_full_stars %}
-                                                                        {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                                    {% endwith %}
-                                                                {% endwith %}
-                                                            {% else %}
-                                                                {% with empty_stars=5|sub:full_stars %}
-                                                                    {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                                {% endwith %}
-                                                            {% endif %}
-                                                        {% endwith %}{% endwith %}{% endwith %}
-                                                        <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
-                                                    {% else %}
-                                                        <span class="text-gray-400 italic text-xs">No ratings</span>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            </div>
-                                            <div class="flex items-center space-x-1">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
-                                                <span>{{ book.total_views|intcomma|default:"0" }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-center text-gray-500 py-8">No audiobooks uploaded by creators yet.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    {# --- Elegant Bottom Audio Player Bar (Keep as is) --- #}
-    <div id="bottom-player-bar" class="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-gray-50 border-t border-gray-200/80 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.05)] p-3 z-50 transform translate-y-full transition-transform duration-300 ease-in-out">
-        {# ... player bar HTML ... #}
-        <audio id="audioPlayer" class="hidden" preload="metadata"></audio>
-        <div class="max-w-7xl mx-auto flex items-center space-x-3 sm:space-x-4">
-            <div class="flex items-center space-x-3 flex-shrink-0 min-w-0 max-w-[150px] sm:max-w-[250px] md:max-w-xs">
-                <img id="player-cover-image" src="https://placehold.co/100x75/e5e7eb/4b5563?text=N/A" alt="Now Playing" class="flex-shrink-0 w-12 h-12 rounded-md object-cover shadow-sm border border-gray-100">
-                <div class="overflow-hidden">
-                    <p id="player-episode-title" class="text-sm font-semibold text-gray-800 truncate" title="Select an episode">Select an episode</p>
-                    <p id="player-book-title" class="text-xs text-gray-500 truncate">Book Title</p>
+    <!-- Discover New Favorites -->
+    <section class="py-16 bg-gray-100">
+        <div class="max-w-7xl mx-auto px-6">
+            <!-- Section Header -->
+            <div class="text-center mb-12">
+                <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-compass text-white text-2xl"></i>
                 </div>
+                <h2 class="text-4xl md:text-5xl font-black text-[#091e65] mb-4">
+                    Discover New <span class="text-red-600">Favorites</span>
+                </h2>
+                <p class="text-xl text-gray-700 max-w-3xl mx-auto">
+                    Curated collection from public archives and literary classics
+                </p>
+                <div class="w-24 h-1 bg-red-600 mx-auto mt-6"></div>
             </div>
-            <div class="flex-grow flex justify-center items-center space-x-3 sm:space-x-4">
-                <button id="player-prev-button" disabled title="Previous Episode" class="p-2 text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 3.5A.5.5 0 0 1 1 4v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m3.5 0a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-1 0V4a.5.5 0 0 1 .5-.5m4.904 8.697l-6-4.5a.5.5 0 0 1 0-.894l6-4.5a.5.5 0 0 1 .796.447v9a.5.5 0 0 1-.796.447"/></svg></button>
-                <button id="player-play-pause-button" onclick="togglePlayPause()" title="Play/Pause" class="p-2.5 bg-[#091e65] text-white rounded-full shadow-lg hover:bg-[#071e65] transition transform active:scale-90 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-white">
-                    <svg id="player-play-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7" fill="currentColor" viewBox="0 0 16 16"><path d="M10.804 8 5 4.633v6.734zm.792-.696a.803.803 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/></svg>
-                    <svg id="player-pause-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 hidden" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/></svg>
-                </button>
-                <button id="player-next-button" disabled title="Next Episode" class="p-2 text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed transition rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 16 16"><path d="M12.5 4a.5.5 0 0 0-1 0v8a.5.5 0 0 0 1 0zM15.5 3.5a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 1 0V4a.5.5 0 0 0-.5-.5M4.904 3.303l6 4.5a.5.5 0 0 1 0 .894l-6 4.5a.5.5 0 0 1-.796-.447v-9a.5.5 0 0 1 .796-.447"/></svg></button>
-            </div>
-            <div class="flex-grow flex items-center space-x-2 sm:space-x-3 min-w-0 max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg">
-                <span id="player-current-time" class="text-xs text-gray-500 font-mono w-10 text-right">0:00</span>
-                <input type="range" id="player-seek-bar" value="0" max="100" step="0.1" class="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer range-sm hover:opacity-90">
-                <span id="player-duration" class="text-xs text-gray-500 font-mono w-10 text-left">0:00</span>
-            </div>
-            <div class="flex items-center space-x-2 sm:space-x-3">
-                <button id="player-speed-button" onclick="cyclePlaybackSpeed()" title="Playback Speed" class="p-1.5 text-gray-500 hover:text-[#091e65] hover:bg-[#eef2ff] rounded-full transition text-xs font-semibold w-8 h-8 flex items-center justify-center">1x</button>
-                <button onclick="closePlayer()" title="Close Player" class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
+
+            {% if librivox_audiobooks %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    {% for book in librivox_audiobooks %}
+                        <div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:border-red-600 transition-colors duration-300">
+                            <div class="relative h-64">
+                                <img src="{{ book.cover_image|default:'https://via.placeholder.com/300x400/091e65/white?text=AudioX' }}" 
+                                     alt="{{ book.title }}" 
+                                     class="w-full h-full object-cover"
+                                     onerror="this.src='https://via.placeholder.com/300x400/091e65/white?text=AudioX'">
+                                
+                                <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" 
+                                   class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                                    <div class="bg-white text-[#091e65] rounded-full p-4">
+                                        <i class="fas fa-play text-xl"></i>
+                                    </div>
+                                </a>
+
+                                <span class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                                    Free
+                                </span>
+                            </div>
+                            
+                            <div class="p-6">
+                                <h3 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                                    {{ book.title }}
+                                </h3>
+                                <p class="text-red-600 font-semibold mb-4 text-sm">By AudioX</p>
+                                
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-1">
+                                        {% with rating=book.average_rating %}
+                                            {% if rating and rating > 0 %}
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= rating %}
+                                                        <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-gray-300 text-sm"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                <span class="text-sm text-gray-600 ml-2">{{ rating|floatformat:1 }}</span>
+                                            {% else %}
+                                                <span class="text-sm text-gray-400">No ratings yet</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    
+                                    <div class="flex items-center text-gray-500 text-sm">
+                                        <i class="fas fa-eye mr-1"></i>
+                                        {{ book.total_views|intcomma|default:"0" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-16">
+                    <div class="bg-white rounded-lg p-12 max-w-2xl mx-auto">
+                        <div class="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-book-open text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-700 mb-4">Loading Content</h3>
+                        <p class="text-gray-600">We're fetching the latest audiobooks for you...</p>
+                    </div>
+                </div>
+            {% endif %}
         </div>
-    </div>
+    </section>
+
+    <!-- Explore by Genre -->
+    {% if archive_genre_audiobooks %}
+        <section class="py-16 bg-white">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-12">
+                    <div class="w-16 h-16 bg-[#091e65] rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-th-large text-white text-2xl"></i>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-black text-[#091e65] mb-4">
+                        Explore by <span class="text-red-600">Genre</span>
+                    </h2>
+                    <p class="text-xl text-gray-700 max-w-3xl mx-auto">
+                        Find your perfect audiobook in your favorite category
+                    </p>
+                    <div class="w-24 h-1 bg-[#091e65] mx-auto mt-6"></div>
+                </div>
+
+                {% for genre_name, audiobooks_list in archive_genre_audiobooks.items %}
+                    {% if audiobooks_list %}
+                        <div class="mb-16">
+                            <h3 class="text-3xl font-bold text-[#091e65] mb-8 flex items-center">
+                                <span class="w-2 h-8 bg-red-600 mr-4"></span>
+                                {{ genre_name }}
+                                <span class="ml-4 text-sm font-normal text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                                    {{ audiobooks_list|length }} book{{ audiobooks_list|length|pluralize }}
+                                </span>
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                                {% for book in audiobooks_list %}
+                                    <div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:border-[#091e65] transition-colors duration-300">
+                                        <div class="relative h-64">
+                                            <img src="{{ book.cover_image|default:'https://via.placeholder.com/300x400/091e65/white?text=AudioX' }}" 
+                                                 alt="{{ book.title }}" 
+                                                 class="w-full h-full object-cover"
+                                                 onerror="this.src='https://via.placeholder.com/300x400/091e65/white?text=AudioX'">
+                                            
+                                            <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" 
+                                               class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                                                <div class="bg-white text-[#091e65] rounded-full p-4">
+                                                    <i class="fas fa-play text-xl"></i>
+                                                </div>
+                                            </a>
+
+                                            <span class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                                                Free
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="p-6">
+                                            <h4 class="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                                                {{ book.title }}
+                                            </h4>
+                                            <p class="text-red-600 font-semibold mb-4 text-sm">By AudioX</p>
+                                            
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center space-x-1">
+                                                    {% with rating=book.average_rating %}
+                                                        {% if rating and rating > 0 %}
+                                                            {% for i in "12345" %}
+                                                                {% if forloop.counter <= rating %}
+                                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                                {% else %}
+                                                                    <i class="far fa-star text-gray-300 text-sm"></i>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                            <span class="text-sm text-gray-600 ml-2">{{ rating|floatformat:1 }}</span>
+                                                        {% else %}
+                                                            <span class="text-sm text-gray-400">No ratings yet</span>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                </div>
+                                                
+                                                <div class="flex items-center text-gray-500 text-sm">
+                                                    <i class="fas fa-eye mr-1"></i>
+                                                    {{ book.total_views|intcomma|default:"0" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{# Link to your JS file that includes the player logic if it's separate #}
-{# e.g., <script src="{% static 'js/audiobook_player_and_home_logic.js' %}"></script> #}
-
 <script>
-    // Player and Marquee JS as provided in your original template
-    // Ensure functions like togglePlayPause, cyclePlaybackSpeed, closePlayer are defined
-    // if they are not in a separate linked JS file.
-    // For brevity, I'm assuming these are either here or in an included file.
-
-    // Marquee animation setup (will not animate without @keyframes in your CSS)
-    window.addEventListener('load', () => {
-        const marqueeGenreContainer = document.querySelector('.marquee-container');
-        const marqueeGenreContent = document.querySelector('.marquee-genre');
-        if (marqueeGenreContainer && marqueeGenreContent) {
-            if (marqueeGenreContent.scrollWidth > marqueeGenreContainer.clientWidth) {
-                marqueeGenreContent.style.justifyContent = 'flex-start';
-            } else {
-                marqueeGenreContent.style.justifyContent = 'center';
-            }
-        }
-    });
-    window.addEventListener('resize', () => {
-        const marqueeGenreContainer = document.querySelector('.marquee-container');
-        const marqueeGenreContent = document.querySelector('.marquee-genre');
-        if (marqueeGenreContainer && marqueeGenreContent) {
-            if (marqueeGenreContent.scrollWidth > marqueeGenreContainer.clientWidth) {
-                marqueeGenreContent.style.justifyContent = 'flex-start';
-            } else {
-                marqueeGenreContent.style.justifyContent = 'center';
-            }
-        }
-    });
-
-    // Player related JS (minimal example if not fully included above)
-    const audioPlayer = document.getElementById("audioPlayer");
-    // ... other player elements and functions if they were in the original HTML's script block
-    // and not in an external JS file.
-    function togglePlayPause() { /* ... */ }
-    function cyclePlaybackSpeed() { /* ... */ }
-    function closePlayer() { /* ... */ }
-    // And event listeners for the player if they are not in a separate file.
-
+// Player functions placeholder
+function togglePlayPause() { /* Implementation */ }
+function cyclePlaybackSpeed() { /* Implementation */ }
+function closePlayer() { /* Implementation */ }
 </script>
-
-<div class="py-8"></div>
 {% endblock %}

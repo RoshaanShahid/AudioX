@@ -3,23 +3,25 @@
 {% load humanize %}
 {% load l10n %}
 
-{% block title %}Manage Audiobook: {{ audiobook.title|default:"Untitled" }} - Creator Area{% endblock %}
+{% block title %}Manage Audiobook: {{ audiobook.title|default:"Untitled" }} - AudioX Creator Platform{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{# Tailwind is already included via creator_base.html or globally, if not, uncomment the line below #}
+{# <script src="https://cdn.tailwindcss.com"></script> #}
 <style>
-    /* General styling for input type toggle buttons */
-    .input-type-toggle-btn-base.active {
+    /* General styling for input type toggle buttons (from creator_upload_audiobooks.html) */
+    .input-type-toggle-btn.active {
         background-color: #091e65; /* theme-primary */
         color: white;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .input-type-toggle-btn-base {
+    .input-type-toggle-btn {
         background-color: #e2e8f0; /* slate-200 */
         color: #475569; /* slate-600 */
     }
-    .input-type-toggle-btn-base:hover:not(.active) {
+    .input-type-toggle-btn:hover:not(.active) {
         background-color: #cbd5e1; /* slate-300 */
     }
 
@@ -27,68 +29,78 @@
     .chapter-card .tts-generation-controls,
     .chapter-card .file-upload-controls,
     .chapter-card .document-tts-controls,
-    .chapter-card .locked-generated-audio-display,
-    #addChapterFormContainer .tts-generation-controls,
-    #addChapterFormContainer .file-upload-controls,
-    #addChapterFormContainer .document-tts-controls,
-    #addChapterFormContainer .locked-generated-audio-display {
-        transition: opacity 0.3s ease-in-out, max-height 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    .chapter-card .locked-generated-audio-display {
+        transition: all 0.3s ease-in-out;
     }
-    .hidden-area { 
+
+    .hidden-area {
         max-height: 0;
         opacity: 0;
         overflow: hidden;
         visibility: hidden;
     }
-    .visible-area { 
-        max-height: 1500px; 
+    .visible-area {
+        max-height: 1500px; /* Ensure this is large enough for content */
         opacity: 1;
         visibility: visible;
     }
 
-
-    .chapter-tts-preview-player, .document-tts-preview-player { /* Added .document-tts-preview-player */
+    /* Styling for TTS preview player */
+    .chapter-card .chapter-tts-preview-player,
+    .chapter-card .document-tts-preview-player {
         width: 100%;
         margin-top: 0.75rem;
         border-radius: 0.5rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .chapter-tts-preview-player-container.hidden, 
-    .document-tts-preview-player-container.hidden, /* Added */
-    .confirm-use-generated-audio-btn.hidden,
-    .confirm-use-document-audio-btn.hidden, /* Added */
-    .locked-generated-audio-display.hidden { 
+    .chapter-card .chapter-tts-preview-player-container.hidden,
+    .chapter-card .document-tts-preview-player-container.hidden,
+    .chapter-card .confirm-use-generated-audio-btn.hidden,
+    .chapter-card .confirm-use-document-audio-btn.hidden {
         display: none;
     }
-    .generate-chapter-tts-preview-btn, .generate-document-tts-preview-btn { /* Added .generate-document-tts-preview-btn */
-        background-color: #091e65;
-        padding-top: 0.5rem; padding-bottom: 0.5rem;
-        padding-left: 1rem; padding-right: 1rem;
-        font-size: 0.75rem; /* text-xs */
-        border-radius: 0.5rem; /* rounded-lg */
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+
+    /* Styling for TTS generation buttons */
+    .generate-chapter-tts-preview-btn,
+    .generate-document-tts-preview-btn,
+    .generate-new-chapter-tts-preview-btn, /* For Add New Chapter form */
+    .generate-new-chapter-document-tts-preview-btn, /* For Add New Chapter form */
+    .generate-edit-chapter-document-tts-preview-btn /* For Edit Chapter form */
+     {
+        background-color: #091e65; /* theme-primary */
     }
-    .generate-chapter-tts-preview-btn:hover, .generate-document-tts-preview-btn:hover {
-        background-color: #071852;
+    .generate-chapter-tts-preview-btn:hover,
+    .generate-document-tts-preview-btn:hover,
+    .generate-new-chapter-tts-preview-btn:hover,
+    .generate-new-chapter-document-tts-preview-btn:hover,
+    .generate-edit-chapter-document-tts-preview-btn:hover {
+        background-color: #071852; /* theme-primary-darker */
     }
-    .generate-chapter-tts-preview-btn:disabled, .generate-document-tts-preview-btn:disabled {
+    .generate-chapter-tts-preview-btn:disabled,
+    .generate-document-tts-preview-btn:disabled,
+    .generate-new-chapter-tts-preview-btn:disabled,
+    .generate-new-chapter-document-tts-preview-btn:disabled,
+    .generate-edit-chapter-document-tts-preview-btn:disabled {
         background-color: #94a3b8; /* slate-400 */
         cursor: not-allowed;
     }
-     .generate-chapter-tts-preview-btn:disabled:hover, .generate-document-tts-preview-btn:disabled:hover {
+    .generate-chapter-tts-preview-btn:disabled:hover,
+    .generate-document-tts-preview-btn:disabled:hover,
+    .generate-new-chapter-tts-preview-btn:disabled:hover,
+    .generate-new-chapter-document-tts-preview-btn:disabled:hover,
+    .generate-edit-chapter-document-tts-preview-btn:disabled:hover {
         background-color: #94a3b8; /* slate-400 */
     }
 
+
+    /* Styling for locked generated audio display */
     .locked-generated-audio-display .info-box {
         background-color: #e0f2fe; /* sky-100 */
         border-color: #7dd3fc; /* sky-300 */
         color: #0c4a6e; /* sky-800 */
     }
-    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+    /* Style for select dropdown arrow */
     select {
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
         background-position: right 0.5rem center;
@@ -97,14 +109,14 @@
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
-        padding-right: 2.5rem; 
+        padding-right: 2.5rem; /* Ensure space for arrow */
     }
     select:disabled {
         background-color: #f1f5f9; /* slate-100 */
         cursor: not-allowed;
         opacity: 0.7;
     }
-    /* Styling for file input labels to look like buttons */
+     /* Styling for file input labels to look like buttons */
     .file-input-styled-label {
         display: inline-block;
         padding: 0.5rem 1rem;
@@ -128,613 +140,628 @@
         font-size: 0.75rem; /* text-xs */
         color: #64748b; /* slate-500 */
     }
-    /* Style for disabled text-like display */
-    .disabled-text-display {
-        display: block;
-        width: 100%;
-        padding: 0.625rem 1rem; /* Equivalent to py-2.5 px-4 */
-        border: 1px solid #e5e7eb; /* slate-300 */
-        border-radius: 0.5rem; /* rounded-lg */
-        background-color: #f3f4f6; /* slate-100/bg-gray-100 */
-        color: #4b5563; /* slate-700/text-gray-700 */
-        box-shadow: inset 0 1px 2px 0 rgba(0,0,0,0.05); /* shadow-sm */
-        font-size: 0.875rem; /* sm:text-sm */
-        cursor: not-allowed;
-    }
 </style>
 {% endblock %}
 
-{% block page_title %}Manage Audiobook{% endblock %}
-
-{% block page_subtitle %}
-<p class="mt-1 text-sm text-[#091e65]/80">Edit details and manage chapters for "<span class="font-semibold">{{ audiobook.title|default:"Untitled Audiobook" }}</span>".</p>
-{% endblock %}
-
 {% block content %}
-<div class="w-full py-8">
+<div class="mb-10 md:mb-14 text-center">
+    <i class="fas fa-edit text-5xl text-[#091e65] mb-4"></i>
+    <h1 class="text-4xl sm:text-5xl font-bold text-gray-800 tracking-tight">Manage Your Audiobook</h1>
+    <p class="mt-3 text-lg text-gray-600 max-w-2xl mx-auto">
+        Edit details, update chapters, and manage the status of "<span class="font-semibold">{{ audiobook.title|default:"Untitled Audiobook" }}</span>".
+    </p>
+</div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-10">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-x-8 gap-y-10">
 
-        <div class="lg:col-span-1 space-y-8">
-            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
-                <h2 class="text-lg font-semibold text-[#091e65] mb-4 pb-3 border-b border-slate-200 flex items-center">
-                    <i class="fas fa-image mr-3 text-[#091e65]/70 text-xl"></i> Cover Art
-                </h2>
-                <div class="flex-grow flex flex-col justify-center">
-                    <div class="relative group aspect-[4/3] rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center text-center bg-slate-50 overflow-hidden hover:border-[#091e65]/60 transition-colors duration-200 {% if audiobook.cover_image %}border-solid border-[#091e65]/80{% endif %}">
-                        <img id="coverImagePreview"
-                             src="{% if submitted_values.current_cover_image_url %}{{ submitted_values.current_cover_image_url }}{% elif audiobook.cover_image and audiobook.cover_image.url %}{{ audiobook.cover_image.url }}{% else %}https://placehold.co/400x300/e2e8f0/64748b?text=No+Cover{% endif %}"
-                             alt="Cover Preview"
-                             class="absolute inset-0 h-full w-full object-cover z-0 transition-opacity duration-300">
-                        <label for="cover_image_input_main_form" class="absolute inset-0 cursor-pointer z-20 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/50 rounded-xl transition-opacity duration-300">
-                            <div class="text-white text-center">
-                                <svg class="mx-auto h-10 w-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
-                                <span class="mt-2 block text-xs font-semibold">Change Cover</span>
-                            </div>
-                        </label>
-                    </div>
-                    <div id="coverImageNameDisplay" class="mt-1.5 text-xs text-slate-500 font-medium truncate max-w-full text-center">
-                        {% if audiobook.cover_image and audiobook.cover_image.name %}{{ audiobook.cover_image.name|cut:"audiobook_covers/" }}{% else %}No image uploaded{% endif %}
-                    </div>
-                    {% if form_errors.cover_image %}<p class="text-red-500 text-sm mt-1 text-center">{{ form_errors.cover_image }}</p>{% endif %}
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
-                <h2 class="text-lg font-semibold text-[#091e65] mb-4 pb-3 border-b border-slate-200 flex items-center">
-                   <i class="fas fa-tags mr-3 text-[#091e65]/70 text-xl"></i> Pricing
-                </h2>
-                <div class="space-y-2">
-                    <p class="text-sm text-slate-600">Pricing Type:</p>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold {% if audiobook.is_paid %}bg-blue-100 text-[#091e65]{% else %}bg-green-100 text-green-800{% endif %}">
-                        <i class="fas mr-2 {% if audiobook.is_paid %}fa-dollar-sign{% else %}fa-gift{% endif %}"></i>
-                        {% if audiobook.is_paid %}Paid{% else %}Free{% endif %}
-                    </span>
-                    {% if audiobook.is_paid %}
-                    <div>
-                        <p class="text-sm text-slate-600 mt-3">Price:</p>
-                        <p class="text-lg font-bold text-slate-800">PKR {{ audiobook.price|floatformat:2|intcomma }}</p>
-                    </div>
-                    {% endif %}
-                    <p class="text-xs text-slate-400 pt-2">Pricing cannot be changed after creation.</p>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
-                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-200">
-                    <h2 class="text-lg font-semibold text-[#091e65] flex items-center">
-                        <i class="fas fa-sliders-h mr-3 text-[#091e65]/70 text-xl"></i> Audiobook Status
-                    </h2>
-                    {% with status_val=audiobook.status %}
-                        {% if status_val == 'PUBLISHED' %}<span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 items-center"><i class="fas fa-check-circle mr-1.5"></i> Published</span>
-                        {% elif status_val == 'PENDING' %}<span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 items-center"><i class="fas fa-clock mr-1.5"></i> Pending Review</span>
-                        {% elif status_val == 'INACTIVE' %}<span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800 items-center"><i class="fas fa-pause-circle mr-1.5"></i> Inactive</span>
-                        {% elif status_val == 'REJECTED' %}<span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 items-center"><i class="fas fa-times-circle mr-1.5"></i> Rejected</span>
-                        {% elif status_val == 'PAUSED_BY_ADMIN' %}<span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 items-center"><i class="fas fa-exclamation-triangle mr-1.5"></i> Paused by Admin</span>
-                        {% else %}<span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-700 items-center"><i class="fas fa-question-circle mr-1.5"></i> {{ audiobook.get_status_display }}</span>
-                        {% endif %}
-                    {% endwith %}
-                </div>
-                <div class="space-y-3">
-                    {% if audiobook.status == 'PAUSED_BY_ADMIN' or audiobook.status == 'REJECTED' %}
-                        <div class="p-3.5 rounded-lg {% if audiobook.status == 'REJECTED' %}bg-red-50 border border-red-200{% else %}bg-orange-50 border border-orange-200{% endif %}">
-                            <p class="text-sm {% if audiobook.status == 'REJECTED' %}text-red-700{% else %}text-orange-700{% endif %}">
-                                This audiobook's status ({{ audiobook.get_status_display|lower }}) was set by an administrator.
-                                {% if audiobook.status == 'PAUSED_BY_ADMIN' %}Please <a href="{% url 'AudioXApp:contactus' %}" class="font-medium underline hover:text-orange-800">contact support</a> if you have questions.{% endif %}
-                                {% if audiobook.status == 'REJECTED' %}It cannot be changed by you.{% endif %}
-                            </p>
+    <div class="lg:col-span-4 space-y-10">
+        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-transparent hover:border-[#091e65]/30 transition-all duration-300">
+            <h2 class="text-xl font-semibold text-[#091e65] mb-6 pb-4 border-b border-slate-200 flex items-center">
+                <i class="fas fa-image mr-3 text-2xl text-[#091e65]/80"></i> Cover Art
+            </h2>
+            <div class="flex-grow flex flex-col justify-center">
+                <div id="coverPreviewContainerManage" class="relative group aspect-[4/3] rounded-xl border-2 border-dashed border-slate-300 hover:border-[#091e65] flex items-center justify-center text-center bg-slate-50 hover:bg-slate-100 overflow-hidden transition-all duration-300 ease-in-out {% if audiobook.cover_image %}border-solid border-[#091e65]/80 ring-2 ring-[#091e65]/20{% endif %}">
+                    <img id="coverImagePreview"
+                         src="{% if submitted_values.current_cover_image_url %}{{ submitted_values.current_cover_image_url }}{% elif audiobook.cover_image and audiobook.cover_image.url %}{{ audiobook.cover_image.url }}{% else %}https://placehold.co/400x300/e2e8f0/64748b?text=No+Cover{% endif %}"
+                         alt="Cover Preview"
+                         class="absolute inset-0 h-full w-full object-cover z-0 transition-opacity duration-300">
+                    <div id="coverUploadPlaceholderManage" class="relative z-10 p-5 transition-opacity duration-300 flex flex-col items-center justify-center text-slate-400 group-hover:text-[#091e65] {% if audiobook.cover_image %}opacity-0 group-hover:opacity-100 bg-black/70 rounded-xl text-white{% endif %}">
+                        <div id="coverChangeTextManage" class="text-center">
+                             <i class="fas fa-sync-alt text-4xl"></i>
+                             <span class="mt-1.5 block text-sm font-medium">Change Cover</span>
                         </div>
-                    {% endif %}
-                    {% if can_creator_change_status %}
-                        <form method="post" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" id="statusUpdateFormHtml" class="manage-audiobook-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="update_status_only">
-                            <div>
-                                <label for="status_only_select_html" class="block text-sm font-medium text-slate-700 mb-1.5">Change Status to:</label>
-                                <div class="relative">
-                                    <select name="status_only_select" id="status_only_select_html" data-initial-status="{{ audiobook.status|escapejs }}"
-                                            class="block w-full pl-3 pr-10 py-2.5 text-base border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm rounded-lg shadow-sm appearance-none transition duration-150 ease-in-out">
-                                        {% for value, display_name in creator_allowed_status_choices_for_toggle %}
-                                        <option value="{{ value }}" {% if submitted_values.status_only_select|default:audiobook.status == value %}selected{% endif %}>
-                                            {{ display_name }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                {% if form_errors.status_update_status %}
-                                    <p class="text-red-500 text-sm mt-1">{{ form_errors.status_update_status }}</p>
-                                {% endif %}
-                            </div>
-                            <div class="mt-5 flex justify-end">
-                                <button type="submit"
-                                        class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-md text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed">
-                                    <i class="fas fa-check-circle mr-2"></i>Update Status
-                                </button>
-                            </div>
-                        </form>
-                    {% else %}
-                        <p class="text-sm text-slate-500 bg-slate-50 p-3 rounded-md border border-slate-200">
-                            The current status (<span class="font-semibold">{{ audiobook.get_status_display }}</span>) does not allow for changes from your end.
-                        </p>
-                    {% endif %}
+                    </div>
+                    <label for="cover_image_input_main_form" class="absolute inset-0 cursor-pointer z-20"><span class="sr-only">Change cover image</span></label>
                 </div>
+                <div id="coverImageNameDisplay" class="mt-3 text-xs text-slate-500 font-medium truncate max-w-full text-center">
+                    {% if audiobook.cover_image and audiobook.cover_image.name %}{{ audiobook.cover_image.name|cut:"audiobook_covers/" }}{% else %}No image uploaded{% endif %}
+                </div>
+                {% if form_errors.cover_image %}<p class="text-red-500 text-sm mt-1 text-center">{{ form_errors.cover_image }}</p>{% endif %}
             </div>
         </div>
 
-        <div class="lg:col-span-2 space-y-8">
-            <form method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" id="detailsForm" class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-100 manage-audiobook-form">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="edit_audiobook_details">
-                <input type="file" name="cover_image" id="cover_image_input_main_form" class="hidden" accept="image/jpeg, image/png, image/jpg">
+        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-transparent hover:border-[#091e65]/30 transition-all duration-300">
+            <h2 class="text-xl font-semibold text-[#091e65] mb-6 pb-4 border-b border-slate-200 flex items-center">
+               <i class="fas fa-tags mr-3 text-2xl text-[#091e65]/80"></i> Pricing
+            </h2>
+            <div class="space-y-3">
+                <p class="text-sm font-medium text-slate-700">Pricing Type:</p>
+                <span class="inline-flex items-center px-3.5 py-1.5 rounded-full text-sm font-semibold {% if audiobook.is_paid %}bg-blue-100 text-[#091e65]{% else %}bg-green-100 text-green-800{% endif %} shadow-sm">
+                    <i class="fas mr-2 {% if audiobook.is_paid %}fa-dollar-sign{% else %}fa-gift{% endif %}"></i>
+                    {% if audiobook.is_paid %}Paid Audiobook{% else %}Free Audiobook{% endif %}
+                </span>
+                {% if audiobook.is_paid %}
+                <div class="pt-2">
+                    <p class="text-sm font-medium text-slate-700 mt-3">Price:</p>
+                    <p class="text-2xl font-bold text-slate-800">PKR {{ audiobook.price|floatformat:2|intcomma }}</p>
+                </div>
+                {% endif %}
+                <p class="text-xs text-slate-400 pt-3">Note: Pricing type and price cannot be changed after initial creation.</p>
+            </div>
+        </div>
 
-                <h2 class="text-lg font-semibold text-[#091e65] mb-6 pb-4 border-b border-slate-200 flex items-center">
-                    <i class="fas fa-info-circle mr-3 text-[#091e65]/70 text-xl"></i> Audiobook Information
+        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-transparent hover:border-[#091e65]/30 transition-all duration-300">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-200">
+                <h2 class="text-xl font-semibold text-[#091e65] flex items-center">
+                    <i class="fas fa-sliders-h mr-3 text-2xl text-[#091e65]/80"></i> Status
                 </h2>
-                <div class="space-y-5">
-                    <div>
-                        <label for="title-edit" class="block text-sm font-medium text-slate-700 mb-1">Audiobook Title <span class="text-red-600">*</span></label>
-                        <input type="text" name="title" id="title-edit" required value="{{ submitted_values.title|default:audiobook.title|default_if_none:'' }}" class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out">
-                        {% if form_errors.title %}<p class="text-red-500 text-sm mt-1">{{ form_errors.title }}</p>{% endif %}
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {% with status_val=audiobook.status %}
+                    {% if status_val == 'PUBLISHED' %}
+                        <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 items-center shadow-sm"><i class="fas fa-check-circle mr-1.5"></i> Published</span>
+                    {% elif status_val == 'UNDER_REVIEW' %}
+                        <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 items-center shadow-sm"><i class="fas fa-search mr-1.5"></i> Under Review</span>
+                    {% elif status_val == 'INACTIVE' %}
+                        <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-800 items-center shadow-sm"><i class="fas fa-pause-circle mr-1.5"></i> Inactive</span>
+                    {% elif status_val == 'REJECTED' %}
+                        <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 items-center shadow-sm"><i class="fas fa-times-circle mr-1.5"></i> Rejected</span>
+                    {% elif status_val == 'PAUSED_BY_ADMIN' %}
+                        <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 items-center shadow-sm"><i class="fas fa-exclamation-triangle mr-1.5"></i> Paused by Admin</span>
+                    {% else %}
+                        <span class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-700 items-center shadow-sm"><i class="fas fa-question-circle mr-1.5"></i> {{ audiobook.get_status_display }}</span>
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <div class="space-y-4">
+                {% if can_creator_change_status %}
+                    <form method="post" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" id="statusUpdateFormHtml" class="manage-audiobook-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_status_only">
                         <div>
-                            <label for="author-edit" class="block text-sm font-medium text-slate-700 mb-1">Author Name <span class="text-red-600">*</span></label>
-                            <input type="text" name="author" id="author-edit" required value="{{ submitted_values.author|default:audiobook.author|default_if_none:'' }}" class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out">
-                           {% if form_errors.author %}<p class="text-red-500 text-sm mt-1">{{ form_errors.author }}</p>{% endif %}
-                        </div>
-                        <div>
-                            <label for="narrator-edit" class="block text-sm font-medium text-slate-700 mb-1">Narrator Name <span class="text-red-600">*</span></label>
-                            <input type="text" name="narrator" id="narrator-edit" required value="{{ submitted_values.narrator|default:audiobook.narrator|default_if_none:'' }}" class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out">
-                            {% if form_errors.narrator %}<p class="text-red-500 text-sm mt-1">{{ form_errors.narrator }}</p>{% endif %}
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Genre <span class="text-xs text-slate-500">(Cannot be changed)</span></label>
-                            <p class="disabled-text-display">
-                                {# The submitted_values.genre from the view now correctly reflects GENRE_OTHER_VALUE if it's a custom genre #}
-                                {% if submitted_values.genre == GENRE_OTHER_VALUE %}
-                                    {{ submitted_values.genre_other_text|default:audiobook.genre|default_if_none:"Not set" }}
-                                {% else %}
-                                    {{ submitted_values.genre|default:audiobook.genre|default_if_none:"Not set" }}
-                                {% endif %}
-                            </p>
-                            {# No error display needed here as it's not an input for submission #}
-                        </div>
-                        <div>
-                            <label for="language-edit" class="block text-sm font-medium text-slate-700 mb-1">Language <span class="text-xs text-slate-500">(Cannot be changed)</span></label>
+                            <label for="status_only_select_html" class="block text-sm font-medium text-slate-700 mb-1.5">Change Status to:</label>
                             <div class="relative">
-                                {# This select is disabled, so its value isn't submitted by default. The hidden input below handles value submission. #}
-                                <select name="language_disabled" id="language-edit" disabled class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm appearance-none pr-10 bg-no-repeat transition duration-150 ease-in-out text-slate-700 bg-slate-100 cursor-not-allowed">
-                                    {% with current_lang_edit=audiobook.language %}
-                                    <option value="English" {% if current_lang_edit == "English" %}selected{% endif %}>English</option>
-                                    <option value="Urdu" {% if current_lang_edit == "Urdu" %}selected{% endif %}>Urdu (اردو)</option>
-                                    <option value="Punjabi" {% if current_lang_edit == "Punjabi" %}selected{% endif %}>Punjabi (پنجابی)</option>
-                                    <option value="Sindhi" {% if current_lang_edit == "Sindhi" %}selected{% endif %}>Sindhi (سنڌي)</option>
-                                    {% endwith %}
+                                <select name="status_only_select" id="status_only_select_html"
+                                        class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm">
+                                    {% for value, display_name in creator_allowed_status_choices_for_toggle %}
+                                    <option value="{{ value }}" {% if submitted_values.status_only_select|default:audiobook.status == value %}selected{% endif %}>
+                                        {{ display_name }}
+                                    </option>
+                                    {% endfor %}
                                 </select>
                             </div>
-                           {% if form_errors.language %}<p class="text-red-500 text-sm mt-1">{{ form_errors.language }}</p>{% endif %}
+                            {% if form_errors.status_update_status %}
+                                <p class="text-red-500 text-sm mt-1">{{ form_errors.status_update_status }}</p>
+                            {% endif %}
                         </div>
+                        <div class="mt-6 flex justify-end">
+                            <button type="submit"
+                                    class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg shadow-md text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed group transform hover:scale-105">
+                                <i class="fas fa-check-circle mr-2 opacity-90 transition-transform duration-300 group-hover:rotate-12"></i>Update Status
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="p-4 rounded-xl text-sm
+                        {% if audiobook.status == 'REJECTED' %}bg-red-50 border border-red-200 text-red-700
+                        {% elif audiobook.status == 'PAUSED_BY_ADMIN' %}bg-orange-50 border border-orange-200 text-orange-700
+                        {% elif audiobook.status == 'UNDER_REVIEW' %}bg-yellow-50 border border-yellow-200 text-yellow-700
+                        {% else %}bg-slate-50 border border-slate-200 text-slate-700
+                        {% endif %}">
+                        <p class="font-medium flex items-center">
+                            <i class="fas fa-lock mr-2.5"></i>
+                            This audiobook's status is currently "{{ audiobook.get_status_display }}" and cannot be changed by you.
+                        </p>
+                        {% if audiobook.status == 'UNDER_REVIEW' %}
+                        <p class="text-xs mt-1.5 pl-6">Our team is reviewing the content. You will be notified of the outcome.</p>
+                        {% elif audiobook.status == 'PAUSED_BY_ADMIN' %}
+                        <p class="text-xs mt-1.5 pl-6">Please <a href="{% url 'AudioXApp:contactus' %}" class="font-semibold underline hover:text-orange-800">contact support</a> for details.</p>
+                        {% elif audiobook.status == 'REJECTED' %}
+                        <p class="text-xs mt-1.5 pl-6">This status is final. If you believe this is an error, please contact support.</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="lg:col-span-8 space-y-10">
+        <form method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" id="detailsForm" class="bg-white p-7 sm:p-8 rounded-2xl shadow-xl border border-transparent hover:border-[#091e65]/30 transition-all duration-300 manage-audiobook-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_audiobook_details">
+            <input type="file" name="cover_image" id="cover_image_input_main_form" class="hidden" accept="image/jpeg, image/png, image/jpg">
+
+            <h2 class="text-2xl font-semibold text-[#091e65] mb-7 pb-5 border-b border-slate-200 flex items-center">
+                <i class="fas fa-clipboard-list mr-3.5 text-3xl text-[#091e65]/80"></i> Audiobook Information
+            </h2>
+            <div class="space-y-6">
+                <div>
+                    <label for="title-edit" class="block text-sm font-medium text-slate-700 mb-1.5">Audiobook Title <span class="text-red-600">*</span></label>
+                    <input type="text" name="title" id="title-edit" required value="{{ submitted_values.title|default:audiobook.title|default_if_none:'' }}"
+                           class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm">
+                    {% if form_errors.title %}<p class="text-red-500 text-sm mt-1">{{ form_errors.title }}</p>{% endif %}
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label for="author-edit" class="block text-sm font-medium text-slate-700 mb-1.5">Author Name <span class="text-red-600">*</span></label>
+                        <input type="text" name="author" id="author-edit" required value="{{ submitted_values.author|default:audiobook.author|default_if_none:'' }}"
+                               class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm">
+                       {% if form_errors.author %}<p class="text-red-500 text-sm mt-1">{{ form_errors.author }}</p>{% endif %}
                     </div>
                     <div>
-                        <label for="description-edit" class="block text-sm font-medium text-slate-700 mb-1">Description <span class="text-red-600">*</span></label>
-                        <textarea name="description" id="description-edit" rows="6" required class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out">{{ submitted_values.description|default:audiobook.description|default_if_none:'' }}</textarea>
-                        {% if form_errors.description %}<p class="text-red-500 text-sm mt-1">{{ form_errors.description }}</p>{% endif %}
-                    </div>
-                    {% if form_errors.general_error %}<div class="mt-3 p-3 bg-red-50 border-l-4 border-red-500 rounded-md"><p class="text-sm text-red-700 font-medium">{{ form_errors.general_error }}</p></div>{% endif %}
-                    <div class="pt-5 border-t border-slate-200 flex justify-end">
-                        <button type="submit" class="inline-flex justify-center items-center py-2.5 px-6 border border-transparent rounded-lg shadow-md text-sm font-semibold text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition duration-150 ease-in-out">
-                            <i class="fas fa-save w-4 h-4 mr-2 -ml-1"></i> Save Details
-                        </button>
+                        <label for="narrator-edit" class="block text-sm font-medium text-slate-700 mb-1.5">Narrator Name <span class="text-red-600">*</span></label>
+                        <input type="text" name="narrator" id="narrator-edit" required value="{{ submitted_values.narrator|default:audiobook.narrator|default_if_none:'' }}"
+                               class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm">
+                        {% if form_errors.narrator %}<p class="text-red-500 text-sm mt-1">{{ form_errors.narrator }}</p>{% endif %}
                     </div>
                 </div>
-            </form>
-
-            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-100">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-slate-200">
-                    <h2 class="text-lg font-semibold text-[#091e65] flex items-center">
-                       <i class="fas fa-list-ol mr-3 text-[#091e65]/70 text-xl"></i> Chapters
-                    </h2>
-                    <button type="button" id="toggleAddChapterFormBtn"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-md text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition duration-150 ease-in-out whitespace-nowrap">
-                        <i id="addChapterIcon" class="fas {% if form_errors.add_chapter_active_with_errors %}fa-times{% else %}fa-plus{% endif %} transition-transform duration-300 ease-in-out"></i>
-                        <span id="addChapterText" class="ml-2">{% if form_errors.add_chapter_active_with_errors %}Cancel Adding{% else %}Add New Chapter{% endif %}</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Genre <span class="text-xs text-slate-500">(Cannot be changed)</span></label>
+                        <p class="block w-full px-4 py-3 border border-slate-300 rounded-xl bg-slate-100 text-slate-700 shadow-sm text-sm cursor-not-allowed">
+                            {% if submitted_values.genre == GENRE_OTHER_VALUE %}
+                                {{ submitted_values.genre_other_text|default:audiobook.genre|default_if_none:"Not set" }}
+                            {% else %}
+                                {{ submitted_values.genre|default:audiobook.genre|default_if_none:"Not set" }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <label for="language-edit" class="block text-sm font-medium text-slate-700 mb-1.5">Language <span class="text-xs text-slate-500">(Cannot be changed)</span></label>
+                        <div class="relative">
+                            <select name="language_disabled" id="language-edit" disabled
+                                    class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm bg-slate-100 cursor-not-allowed">
+                                {% with current_lang_edit=audiobook.language %}
+                                <option value="English" {% if current_lang_edit == "English" %}selected{% endif %}>English</option>
+                                <option value="Urdu" {% if current_lang_edit == "Urdu" %}selected{% endif %}>Urdu (اردو)</option>
+                                <option value="Punjabi" {% if current_lang_edit == "Punjabi" %}selected{% endif %}>Punjabi (پنجابی)</option>
+                                <option value="Sindhi" {% if current_lang_edit == "Sindhi" %}selected{% endif %}>Sindhi (سنڌي)</option>
+                                {% endwith %}
+                            </select>
+                        </div>
+                       {% if form_errors.language %}<p class="text-red-500 text-sm mt-1">{{ form_errors.language }}</p>{% endif %}
+                    </div>
+                </div>
+                <div>
+                    <label for="description-edit" class="block text-sm font-medium text-slate-700 mb-1.5">Description <span class="text-red-600">*</span></label>
+                    <textarea name="description" id="description-edit" rows="5" required
+                              class="block w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm">{{ submitted_values.description|default:audiobook.description|default_if_none:'' }}</textarea>
+                    {% if form_errors.description %}<p class="text-red-500 text-sm mt-1">{{ form_errors.description }}</p>{% endif %}
+                </div>
+                {% if form_errors.general_error %}<div class="mt-4 p-3.5 bg-red-50 border-l-4 border-red-500 rounded-md"><p class="text-sm text-red-700 font-medium flex items-center"><i class="fas fa-exclamation-circle mr-2"></i>{{ form_errors.general_error }}</p></div>{% endif %}
+                <div class="pt-6 border-t border-slate-200 flex justify-end">
+                    <button type="submit"
+                            class="w-full sm:w-auto inline-flex justify-center items-center py-3.5 px-10 border border-transparent rounded-lg shadow-lg text-base font-semibold text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-[#091e65]/50 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 ease-in-out transform hover:scale-105 group">
+                        <i class="fas fa-save mr-2.5 opacity-90 transition-transform duration-300 group-hover:rotate-6"></i> Save Details
                     </button>
                 </div>
+            </div>
+        </form>
 
-                <div id="addChapterFormContainer" class="border border-blue-300 bg-blue-50 p-5 rounded-xl mb-6 {% if not form_errors.add_chapter_active_with_errors %}hidden-area{% else %}visible-area{% endif %}">
-                    <h4 class="text-md font-semibold text-blue-800 mb-4 border-b border-blue-200 pb-2">Add New Chapter Details</h4>
-                    <form method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" id="addChapterForm" class="manage-audiobook-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="add_chapter">
-                        <input type="hidden" name="new_chapter_input_type_hidden" value="{{ submitted_values.new_chapter_input_type_hidden|default:'file' }}" class="new-chapter-input-type-hidden-js">
-                        <input type="hidden" name="new_chapter_generated_tts_url" value="{{ submitted_values.new_chapter_generated_tts_url|default:'' }}" class="new-chapter-generated-tts-url-input-js">
-                        <input type="hidden" name="new_chapter_generated_document_tts_url" value="{{ submitted_values.new_chapter_generated_document_tts_url|default:'' }}" class="new-chapter-generated-document-tts-url-input-js">
-                        <input type="hidden" name="new_chapter_document_filename" value="{{ submitted_values.new_chapter_document_filename|default:'' }}" class="new-chapter-document-filename-hidden-js"> {# Added to persist filename for doc TTS #}
-                        <div class="space-y-4">
-                            <div>
-                                <label for="new_chapter_title" class="block text-sm font-medium text-slate-700 mb-1">Chapter Title <span class="text-red-600">*</span></label>
-                                <input type="text" name="new_chapter_title" id="new_chapter_title" required
-                                        value="{{ submitted_values.new_chapter_title|default:'' }}"
-                                        class="block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-1 focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out bg-white">
-                                {% if form_errors.add_chapter_errors.new_chapter_title %}
-                                    <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_title }}</p>
-                                {% endif %}
+        <div class="bg-white p-7 sm:p-8 rounded-2xl shadow-xl border border-transparent hover:border-[#091e65]/30 transition-all duration-300">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-7 pb-5 border-b border-slate-200">
+                <h2 class="text-2xl font-semibold text-[#091e65] flex items-center">
+                   <i class="fas fa-list-ol mr-3.5 text-3xl text-[#091e65]/80"></i> Chapters
+                </h2>
+                <button type="button" id="toggleAddChapterFormBtn"
+                        class="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-md text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition-all duration-150 ease-in-out whitespace-nowrap group transform hover:scale-105">
+                    <i id="addChapterIcon" class="fas {% if form_errors.add_chapter_active_with_errors %}fa-times{% else %}fa-plus{% endif %} mr-2 text-xs group-hover:rotate-90 transition-transform duration-200"></i>
+                    <span id="addChapterText">{% if form_errors.add_chapter_active_with_errors %}Cancel Adding{% else %}Add New Chapter{% endif %}</span>
+                </button>
+            </div>
+
+            <div id="addChapterFormContainer" class="chapter-card border border-blue-300 bg-blue-50 p-5 rounded-xl mb-6 shadow-lg transition-all duration-300 ease-in-out {% if not form_errors.add_chapter_active_with_errors %}hidden-area{% else %}visible-area{% endif %}">
+                <h4 class="text-lg font-medium text-blue-800 mb-4 border-b border-blue-200 pb-3 flex items-center">
+                    <span class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#091e65]/10 text-[#091e65] rounded-full text-sm font-semibold mr-3.5">
+                        <i class="fas fa-plus"></i>
+                    </span>
+                    Add New Chapter Details
+                </h4>
+                <form method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" id="addChapterForm" class="manage-audiobook-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_chapter">
+                    <input type="hidden" name="new_chapter_input_type_hidden" value="{{ submitted_values.new_chapter_input_type_hidden|default:'file' }}" class="new-chapter-input-type-hidden-js chapter-input-type-hidden-js">
+                    <input type="hidden" name="new_chapter_generated_tts_url" value="{{ submitted_values.new_chapter_generated_tts_url|default:'' }}" class="new-chapter-generated-tts-url-input-js chapter-generated-tts-url-input-js">
+                    <input type="hidden" name="new_chapter_generated_document_tts_url" value="{{ submitted_values.new_chapter_generated_document_tts_url|default:'' }}" class="new-chapter-generated-document-tts-url-input-js chapter-generated-document-tts-url-input-js">
+                    <input type="hidden" name="new_chapter_document_filename" value="{{ submitted_values.new_chapter_document_filename|default:'' }}" class="new-chapter-document-filename-hidden-js">
+
+                    <div class="space-y-5">
+                        <div class="mb-4">
+                            <label class="block text-xs font-medium text-slate-600 mb-1.5">Chapter Audio Source:</label>
+                            <div class="flex rounded-lg p-0.5 bg-slate-200 border border-slate-300">
+                                <button type="button" class="new-chapter-input-type-toggle-btn input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if submitted_values.new_chapter_input_type_hidden|default:'file' == 'file' %}active{% endif %}" data-type="file">Upload Audio</button>
+                                <button type="button" class="new-chapter-input-type-toggle-btn input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if submitted_values.new_chapter_input_type_hidden == 'tts' or submitted_values.new_chapter_input_type_hidden == 'generated_tts' %}active{% endif %}" data-type="tts">Text-to-Speech</button>
+                                <button type="button" class="new-chapter-input-type-toggle-btn input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if submitted_values.new_chapter_input_type_hidden == 'document_tts' or submitted_values.new_chapter_input_type_hidden == 'generated_document_tts' %}active{% endif %}" data-type="document_tts">From Document</button>
                             </div>
+                            {% if form_errors.add_chapter_errors.new_chapter_input_type %}
+                                <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_input_type }}</p>
+                            {% endif %}
+                        </div>
 
+                        <div>
+                            <label for="new_chapter_title" class="block text-xs font-medium text-slate-600 mb-1">Chapter Title <span class="text-red-600">*</span></label>
+                            <input type="text" name="new_chapter_title" id="new_chapter_title" required
+                                    value="{{ submitted_values.new_chapter_title|default:'' }}"
+                                    class="chapter-title-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-white">
+                            {% if form_errors.add_chapter_errors.new_chapter_title %}
+                                <p class="text-red-500 text-xs mt-1 chapter-title-error-js">{{ form_errors.add_chapter_errors.new_chapter_title }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="new-chapter-file-upload-controls file-upload-controls mt-4 transition-all duration-300 ease-in-out {% if submitted_values.new_chapter_input_type_hidden == 'tts' or submitted_values.new_chapter_input_type_hidden == 'generated_tts' or submitted_values.new_chapter_input_type_hidden == 'document_tts' or submitted_values.new_chapter_input_type_hidden == 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
+                            <label for="new_chapter_audio" class="block text-xs font-medium text-slate-600 mb-1">Audio File <span class="text-red-600">*</span></label>
+                            <label class="block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg bg-white hover:border-[#091e65]/50 transition duration-150 ease-in-out cursor-pointer group/file shadow-sm">
+                                <input type="file" name="new_chapter_audio" id="new_chapter_audio" accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg, audio/x-m4a, audio/m4a" class="chapter-audio-input-js hidden">
+                                <div class="flex items-center justify-between text-xs text-slate-500 group-hover/file:text-[#091e65]">
+                                    <span class="chapter-filename-js truncate pr-2">Choose audio file...</span>
+                                    <i class="fas fa-upload opacity-60"></i>
+                                </div>
+                            </label>
+                            <p class="text-xs text-slate-500/80 mt-1">MP3, WAV, OGG, M4A (Max 50MB)</p>
+                            {% if form_errors.add_chapter_errors.new_chapter_audio %}
+                                <p class="text-red-500 text-xs mt-1 chapter-audio-error-js">{{ form_errors.add_chapter_errors.new_chapter_audio }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="new-chapter-tts-generation-controls tts-generation-controls mt-4 transition-all duration-300 ease-in-out {% if submitted_values.new_chapter_input_type_hidden == 'file' or submitted_values.new_chapter_input_type_hidden == 'document_tts' or submitted_values.new_chapter_input_type_hidden == 'generated_document_tts' or not submitted_values.new_chapter_input_type_hidden %}hidden-area{% else %}visible-area{% endif %}">
                             <div class="mb-3">
-                                <label class="block text-xs font-medium text-slate-600 mb-1.5">Audio Source:</label>
-                                <div class="flex rounded-lg p-0.5 bg-slate-200 border border-slate-300">
-                                    <button type="button" class="new-chapter-input-type-toggle-btn input-type-toggle-btn-base flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors {% if submitted_values.new_chapter_input_type_hidden|default:'file' == 'file' %}active{% endif %}" data-type="file">Upload File</button>
-                                    <button type="button" class="new-chapter-input-type-toggle-btn input-type-toggle-btn-base flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors {% if submitted_values.new_chapter_input_type_hidden == 'tts' or submitted_values.new_chapter_input_type_hidden == 'generated_tts' %}active{% endif %}" data-type="tts">Text-to-Speech</button>
-                                    <button type="button" class="new-chapter-input-type-toggle-btn input-type-toggle-btn-base flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors {% if submitted_values.new_chapter_input_type_hidden == 'document_tts' or submitted_values.new_chapter_input_type_hidden == 'generated_document_tts' %}active{% endif %}" data-type="document_tts">From Document</button>
-                                </div>
-                                {% if form_errors.add_chapter_errors.new_chapter_input_type %}
-                                    <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_input_type }}</p>
+                                <label for="new_chapter_text_content" class="block text-xs font-medium text-slate-600 mb-1">Text for TTS <span class="text-red-600">*</span></label>
+                                <textarea name="new_chapter_text_content" id="new_chapter_text_content" rows="4" class="chapter-text-content-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-white">{{ submitted_values.new_chapter_text_content|default:'' }}</textarea>
+                                {% if form_errors.add_chapter_errors.new_chapter_text_content %}
+                                    <p class="text-red-500 text-xs mt-1 chapter-text-error-js">{{ form_errors.add_chapter_errors.new_chapter_text_content }}</p>
                                 {% endif %}
                             </div>
-
-                            <div class="new-chapter-file-upload-controls {% if submitted_values.new_chapter_input_type_hidden == 'tts' or submitted_values.new_chapter_input_type_hidden == 'generated_tts' or submitted_values.new_chapter_input_type_hidden == 'document_tts' or submitted_values.new_chapter_input_type_hidden == 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
-                                <label for="new_chapter_audio" class="block text-sm font-medium text-slate-700 mb-1">Audio File <span class="text-red-600">*</span> <span class="text-slate-400 text-xs">(MP3, WAV, OGG, M4A - Max 50MB)</span></label>
-                                <input type="file" name="new_chapter_audio" id="new_chapter_audio" accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg, audio/x-m4a, audio/m4a" class="block w-full text-sm text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#091e65]/10 file:text-[#091e65] hover:file:bg-[#091e65]/20 cursor-pointer transition duration-150 ease-in-out"/>
-                                {% if form_errors.add_chapter_errors.new_chapter_audio %}
-                                    <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_audio }}</p>
-                                {% endif %}
-                            </div>
-
-                            <div class="new-chapter-tts-generation-controls {% if submitted_values.new_chapter_input_type_hidden == 'file' or submitted_values.new_chapter_input_type_hidden == 'document_tts' or submitted_values.new_chapter_input_type_hidden == 'generated_document_tts' or not submitted_values.new_chapter_input_type_hidden %}hidden-area{% else %}visible-area{% endif %}">
-                                <div class="mb-2">
-                                    <label for="new_chapter_text_content" class="block text-sm font-medium text-slate-700 mb-1">Text for TTS <span class="text-red-600">*</span></label>
-                                    <textarea name="new_chapter_text_content" id="new_chapter_text_content" rows="3" class="block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-1 focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm placeholder-slate-400 bg-white">{{ submitted_values.new_chapter_text_content|default:'' }}</textarea>
-                                    {% if form_errors.add_chapter_errors.new_chapter_text_content %}
-                                        <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_text_content }}</p>
-                                    {% endif %}
-                                </div>
-                                <div class="mb-2">
-                                    <label for="new_chapter_tts_voice" class="block text-sm font-medium text-slate-700 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
-                                    <select name="new_chapter_tts_voice" id="new_chapter_tts_voice" class="block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-1 focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm bg-white" disabled>
-                                        <option value="" selected>Select Narrator...</option> 
+                            <div class="mb-3">
+                                <label for="new_chapter_tts_voice" class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
+                                <div class="relative">
+                                    <select name="new_chapter_tts_voice" id="new_chapter_tts_voice" class="chapter-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm bg-white" disabled>
+                                        <option value="" selected>Select Narrator...</option>
                                         {% if submitted_values.new_chapter_tts_voice and submitted_values.new_chapter_tts_voice_display_name %}
                                             <option value="{{ submitted_values.new_chapter_tts_voice }}" selected>{{ submitted_values.new_chapter_tts_voice_display_name }}</option>
                                         {% endif %}
                                     </select>
-                                    {% if form_errors.add_chapter_errors.new_chapter_tts_voice %}
-                                        <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_tts_voice }}</p>
-                                    {% endif %}
-                                    <p class="text-sm text-orange-600 mt-1 new-chapter-tts-unavailable-message-js hidden">We are currently working to bring TTS for this language.</p>
                                 </div>
-                                <div class="new-chapter-tts-preview-player-container hidden my-2">
-                                    <audio controls class="chapter-tts-preview-player w-full"></audio>
+                                {% if form_errors.add_chapter_errors.new_chapter_tts_voice %}
+                                    <p class="text-red-500 text-xs mt-1 chapter-voice-error-js">{{ form_errors.add_chapter_errors.new_chapter_tts_voice }}</p>
+                                {% endif %}
+                                <p class="text-sm text-orange-600 mt-1 new-chapter-tts-unavailable-message-js chapter-tts-unavailable-message-js hidden">We are currently working to bring TTS for this language.</p>
+                            </div>
+                            <div class="new-chapter-tts-preview-player-container chapter-tts-preview-player-container hidden my-3">
+                                <audio controls class="chapter-tts-preview-player w-full"></audio>
+                            </div>
+                            <div class="new-chapter-tts-message chapter-tts-message text-xs my-2 min-h-[16px]"></div>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <button type="button" class="generate-new-chapter-tts-preview-btn text-xs py-2 px-4 rounded-lg text-white shadow-md transition-colors flex items-center gap-1.5">
+                                    <span class="btn-text"><i class="fas fa-magic mr-1.5"></i>Generate & Preview Audio</span>
+                                    <span class="spinner hidden"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
+                                </button>
+                                <button type="button" class="confirm-use-new-chapter-generated-audio-btn confirm-use-generated-audio-btn hidden text-xs py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow-md transition-colors flex items-center gap-1.5">
+                                    <i class="fas fa-check-circle mr-1.5"></i>Use This Audio
+                                </button>
+                            </div>
+                            {% if form_errors.add_chapter_errors.new_chapter_tts_general %}
+                                <p class="text-red-500 text-xs mt-1 chapter-tts-general-error-js">{{ form_errors.add_chapter_errors.new_chapter_tts_general }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="new-chapter-document-tts-controls document-tts-controls mt-4 transition-all duration-300 ease-in-out {% if submitted_values.new_chapter_input_type_hidden != 'document_tts' and submitted_values.new_chapter_input_type_hidden != 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
+                            <div class="mb-3">
+                                <label for="new_chapter_document_file" class="block text-xs font-medium text-slate-600 mb-1">Document (PDF/Word) <span class="text-red-600">*</span></label>
+                                <label class="file-input-styled-label">
+                                    <input type="file" name="new_chapter_document_file" id="new_chapter_document_file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="new-chapter-document-input-js chapter-document-input-js hidden">
+                                    <i class="fas fa-file-alt mr-1.5"></i> Choose Document
+                                </label>
+                                <div class="file-name-display new-chapter-document-filename-js chapter-document-filename-js">
+                                    {{ submitted_values.new_chapter_document_filename|default:"No document chosen" }}
                                 </div>
-                                <div class="new-chapter-tts-message text-xs my-1.5 min-h-[16px]"></div>
-                                <div class="flex flex-wrap gap-2 items-center">
-                                    <button type="button" class="generate-new-chapter-tts-preview-btn generate-chapter-tts-preview-btn text-xs text-white transition-colors flex items-center gap-1.5" disabled>
-                                        <span class="btn-text"><i class="fas fa-magic mr-1"></i>Generate & Preview</span>
-                                        <span class="spinner hidden"><svg class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
-                                    </button>
-                                    <button type="button" class="confirm-use-new-chapter-generated-audio-btn confirm-use-generated-audio-btn hidden text-xs py-1.5 px-3 rounded-md bg-green-600 hover:bg-green-700 text-white shadow-sm transition-colors flex items-center gap-1.5">
-                                        <i class="fas fa-check-circle mr-1"></i>Use This Audio
-                                    </button>
-                                </div>
-                                {% if form_errors.add_chapter_errors.new_chapter_tts_general %}
-                                    <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_tts_general }}</p>
+                                <p class="text-xs text-slate-500/80 mt-1">PDF, DOC, DOCX (Max 10MB)</p>
+                                {% if form_errors.add_chapter_errors.new_chapter_document_file %}
+                                    <p class="text-red-500 text-xs mt-1 chapter-document-error-js">{{ form_errors.add_chapter_errors.new_chapter_document_file }}</p>
                                 {% endif %}
                             </div>
-
-                            <div class="new-chapter-document-tts-controls document-tts-controls {% if submitted_values.new_chapter_input_type_hidden != 'document_tts' and submitted_values.new_chapter_input_type_hidden != 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
-                                <div class="mb-2">
-                                    <label for="new_chapter_document_file" class="block text-sm font-medium text-slate-700 mb-1">Document (PDF/Word) <span class="text-red-600">*</span></label>
-                                    <label class="file-input-styled-label">
-                                        <input type="file" name="new_chapter_document_file" id="new_chapter_document_file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="new-chapter-document-input-js">
-                                        <i class="fas fa-file-upload mr-1.5"></i> Choose Document
-                                    </label>
-                                    <div class="file-name-display new-chapter-document-filename-js">
-                                        {{ submitted_values.new_chapter_document_filename|default:"No document chosen" }}
-                                    </div>
-                                    <p class="text-xs text-slate-500/80 mt-1">PDF, DOC, DOCX (Max 10MB)</p>
-                                    {% if form_errors.add_chapter_errors.new_chapter_document_file %}
-                                        <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_document_file }}</p>
-                                    {% endif %}
-                                </div>
-                                <div class="mb-2">
-                                    <label for="new_chapter_doc_tts_voice" class="block text-sm font-medium text-slate-700 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
-                                    <select name="new_chapter_doc_tts_voice" id="new_chapter_doc_tts_voice" class="block w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-1 focus:ring-[#091e65] focus:border-[#091e65] sm:text-sm bg-white" disabled>
+                            <div class="mb-3">
+                                <label for="new_chapter_doc_tts_voice" class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
+                                <div class="relative">
+                                    <select name="new_chapter_doc_tts_voice" id="new_chapter_doc_tts_voice" class="chapter-doc-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm bg-white" disabled>
                                         <option value="" selected>Select Narrator...</option>
                                         {% if submitted_values.new_chapter_doc_tts_voice and submitted_values.new_chapter_doc_tts_voice_display_name %}
                                             <option value="{{ submitted_values.new_chapter_doc_tts_voice }}" selected>{{ submitted_values.new_chapter_doc_tts_voice_display_name }}</option>
                                         {% endif %}
                                     </select>
-                                   {% if form_errors.add_chapter_errors.new_chapter_doc_tts_voice %}
-                                        <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_doc_tts_voice }}</p>
-                                    {% endif %}
-                                    <p class="text-sm text-orange-600 mt-1 new-chapter-doc-tts-unavailable-message-js hidden">TTS for document language may not be available.</p>
                                 </div>
-                                <div class="new-chapter-document-tts-preview-player-container document-tts-preview-player-container hidden my-2">
-                                    <audio controls class="document-tts-preview-player w-full"></audio>
-                                </div>
-                                <div class="new-chapter-document-tts-message text-xs my-1.5 min-h-[16px]"></div>
-                                <div class="flex flex-wrap gap-2 items-center">
-                                    <button type="button" class="generate-new-chapter-document-tts-preview-btn generate-document-tts-preview-btn text-xs text-white transition-colors flex items-center gap-1.5" disabled>
-                                        <span class="btn-text"><i class="fas fa-file-audio mr-1"></i>Generate & Preview from Document</span>
-                                        <span class="spinner hidden"><svg class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
-                                    </button>
-                                    <button type="button" class="confirm-use-new-chapter-document-audio-btn confirm-use-document-audio-btn hidden text-xs py-1.5 px-3 rounded-md bg-green-600 hover:bg-green-700 text-white shadow-sm transition-colors flex items-center gap-1.5">
-                                        <i class="fas fa-check-circle mr-1"></i>Use This Document Audio
-                                    </button>
-                                </div>
-                                   {% if form_errors.add_chapter_errors.new_chapter_document_tts_general %}
-                                    <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_document_tts_general }}</p>
+                               {% if form_errors.add_chapter_errors.new_chapter_doc_tts_voice %}
+                                    <p class="text-red-500 text-xs mt-1 chapter-doc-voice-error-js">{{ form_errors.add_chapter_errors.new_chapter_doc_tts_voice }}</p>
                                 {% endif %}
+                                <p class="text-sm text-orange-600 mt-1 new-chapter-doc-tts-unavailable-message-js chapter-doc-tts-unavailable-message-js hidden">TTS for document language may not be available.</p>
                             </div>
-
-
-                            <div class="new-chapter-locked-generated-audio-display locked-generated-audio-display mt-3 {% if not submitted_values.new_chapter_generated_tts_url and not submitted_values.new_chapter_generated_document_tts_url %}hidden-area{% else %}visible-area{% endif %}">
-                                <p class="text-xs font-medium text-slate-700 mb-0.5">Selected Audio for New Chapter:</p>
-                                <div class="info-box p-2.5 border rounded-lg text-sm">
-                                    <i class="fas fa-volume-up mr-1.5 text-blue-600"></i>
-                                    <span class="new-chapter-generated-tts-filename-js font-medium">
-                                        {% if submitted_values.new_chapter_generated_tts_url %}
-                                            Generated Audio (from Text)
-                                            {% if submitted_values.new_chapter_tts_voice_display_name %} (Voice: {{ submitted_values.new_chapter_tts_voice_display_name }}){% endif %}
-                                        {% elif submitted_values.new_chapter_generated_document_tts_url %}
-                                            Generated Audio (from Document: {{ submitted_values.new_chapter_document_filename|default:'Unknown Document' }})
-                                            {% if submitted_values.new_chapter_doc_tts_voice_display_name %} (Voice: {{ submitted_values.new_chapter_doc_tts_voice_display_name }}){% endif %}
-                                        {% else %}
-                                            Generated Audio
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                   {% if form_errors.add_chapter_errors.new_chapter_generated_tts_url %}
-                                    <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_generated_tts_url }}</p>
-                                {% endif %}
-                                   {% if form_errors.add_chapter_errors.new_chapter_generated_document_tts_url %}
-                                    <p class="text-red-500 text-xs mt-1">{{ form_errors.add_chapter_errors.new_chapter_generated_document_tts_url }}</p>
-                                {% endif %}
+                            <div class="new-chapter-document-tts-preview-player-container document-tts-preview-player-container hidden my-3">
+                                <audio controls class="document-tts-preview-player w-full"></audio>
                             </div>
-
-                            {% if form_errors.add_chapter_errors.add_chapter_general %}
-                                <p class="text-red-500 text-sm mt-2 text-center">{{ form_errors.add_chapter_errors.add_chapter_general }}</p>
-                            {% endif %}
-                            <div class="flex justify-end pt-3">
-                                <button type="submit" class="inline-flex items-center px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                    <i class="fas fa-plus-circle mr-1.5"></i> Confirm Add Chapter
+                            <div class="new-chapter-document-tts-message chapter-document-tts-message text-xs my-2 min-h-[16px]"></div>
+                            <div class="flex flex-wrap gap-2 items-center">
+                                <button type="button" class="generate-new-chapter-document-tts-preview-btn text-xs py-2 px-4 rounded-lg text-white shadow-md transition-colors flex items-center gap-1.5">
+                                    <span class="btn-text"><i class="fas fa-file-audio mr-1.5"></i>Generate & Preview</span>
+                                    <span class="spinner hidden"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
+                                </button>
+                                <button type="button" class="confirm-use-new-chapter-document-audio-btn confirm-use-document-audio-btn hidden text-xs py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow-md transition-colors flex items-center gap-1.5">
+                                    <i class="fas fa-check-circle mr-1.5"></i>Use This Document Audio
                                 </button>
                             </div>
+                               {% if form_errors.add_chapter_errors.new_chapter_document_tts_general %}
+                                    <p class="text-red-500 text-xs mt-1 chapter-document-tts-general-error-js">{{ form_errors.add_chapter_errors.new_chapter_document_tts_general }}</p>
+                                {% endif %}
                         </div>
-                    </form>
-                </div>
 
-                {% if chapters_context_list %}
-                    <div class="space-y-6 max-h-[90vh] overflow-y-auto pr-2 -mr-2 custom-scrollbar">
-                        {% for chapter_item in chapters_context_list %}
-                        {% with chapter=chapter_item.instance chapter_errors=chapter_item.errors initial_input_type=chapter_item.input_type_for_template existing_audio_url=chapter_item.existing_audio_file_url file_size_display=chapter_item.file_size_display %}
-                        <div class="chapter-card border border-slate-200 p-5 rounded-xl bg-slate-50 shadow-lg relative"
-                             data-chapter-id="{{ chapter.chapter_id }}"
-                             data-existing-document-filename="{{ chapter_item.document_filename|default:'' }}" {# Added for JS #}
-                             data-existing-doc-tts-voice-id="{{ chapter_item.doc_tts_voice_id|default:'' }}"> {# Added for JS #}
-                            <div class="flex justify-between items-start mb-4">
-                                <div class="flex items-center">
-                                    <span class="chapter-number-js flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#091e65]/10 text-[#091e65] rounded-full text-sm font-semibold mr-3.5">{{ chapter.chapter_order }}</span>
-                                    <h3 class="chapter-title-display-js text-lg font-medium text-gray-800 flex-grow">{{ chapter.chapter_name }}</h3>
-                                </div>
-                                <div class="flex-shrink-0 flex items-center space-x-1">
-                                    <button type="button" onclick="toggleEditChapterForm('{{ chapter.chapter_id }}')" class="edit-chapter-btn p-2 rounded-full text-slate-500 hover:text-[#091e65] hover:bg-[#091e65]/10 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]/50 transition-colors duration-150" title="Edit Chapter">
-                                        <i class="fas fa-edit fa-fw text-sm"></i>
-                                    </button>
-                                    <form method="post" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" style="display:inline;" onsubmit="return confirmDeleteChapter('{{ chapter.chapter_name|escapejs }}');" class="manage-audiobook-form">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="action" value="delete_chapter_{{ chapter.chapter_id }}">
-                                        <button type="submit" class="p-2 rounded-full text-red-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 transition-colors duration-150" title="Delete Chapter">
-                                            <i class="fas fa-trash-alt fa-fw text-sm"></i>
-                                        </button>
-                                    </form>
-                                </div>
+                        <div class="new-chapter-locked-generated-audio-display locked-generated-audio-display mt-4 transition-all duration-300 ease-in-out {% if not submitted_values.new_chapter_generated_tts_url and not submitted_values.new_chapter_generated_document_tts_url %}hidden-area{% else %}visible-area{% endif %}">
+                            <p class="text-xs font-medium text-slate-700 mb-1">Selected Audio for New Chapter:</p>
+                            <div class="info-box p-3 border rounded-lg text-sm">
+                                <i class="fas fa-volume-up mr-2 text-blue-600"></i>
+                                <span class="new-chapter-generated-tts-filename-js chapter-generated-tts-filename-js font-medium">
+                                    {% if submitted_values.new_chapter_generated_tts_url %}
+                                        Generated Audio (from Text)
+                                        {% if submitted_values.new_chapter_tts_voice_display_name %} (Voice: {{ submitted_values.new_chapter_tts_voice_display_name }}){% endif %}
+                                    {% elif submitted_values.new_chapter_generated_document_tts_url %}
+                                        Generated Audio (from Document: {{ submitted_values.new_chapter_document_filename|default:'Unknown Document' }})
+                                        {% if submitted_values.new_chapter_doc_tts_voice_display_name %} (Voice: {{ submitted_values.new_chapter_doc_tts_voice_display_name }}){% endif %}
+                                    {% else %}
+                                        Generated Audio
+                                    {% endif %}
+                                </span>
                             </div>
+                               {% if form_errors.add_chapter_errors.new_chapter_generated_tts_url %}
+                                    <p class="text-red-500 text-xs mt-1 chapter-generated-tts-error-js">{{ form_errors.add_chapter_errors.new_chapter_generated_tts_url }}</p>
+                                {% endif %}
+                               {% if form_errors.add_chapter_errors.new_chapter_generated_document_tts_url %}
+                                    <p class="text-red-500 text-xs mt-1 chapter-generated-document-tts-error-js">{{ form_errors.add_chapter_errors.new_chapter_generated_document_tts_url }}</p>
+                                {% endif %}
+                        </div>
 
-                            <div class="px-0 py-1 text-xs text-slate-600 truncate mb-3">
-                                <i class="fas fa-file-audio mr-1.5 opacity-70 text-slate-500"></i>
-                                <span class="font-medium">Current Audio:</span>
-                                {% if chapter.audio_file and chapter.audio_file.name %}{{ chapter.audio_file.name|cut:"chapters_audio/"|cut:audiobook.slug|cut:"/" }}{% if file_size_display %} <span class="ml-1 opacity-80">({{ file_size_display }})</span>{% endif %}{% else %}No audio file.{% endif %}
-                                {% if chapter.is_tts_generated and chapter_item.tts_voice_display_name %}
-                                    <span class="ml-2 px-1.5 py-0.5 bg-sky-100 text-sky-700 text-[10px] font-medium rounded-full">TTS: {{ chapter_item.tts_voice_display_name }}</span>
-                                {% endif %}
-                                {% if chapter_item.source_document_filename %}
-                                    <span class="ml-2 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-medium rounded-full">Doc: {{ chapter_item.source_document_filename }}</span>
-                                {% endif %}
+                        {% if form_errors.add_chapter_errors.add_chapter_general %}
+                            <p class="text-red-500 text-sm mt-2 text-center">{{ form_errors.add_chapter_errors.add_chapter_general }}</p>
+                        {% endif %}
+                        <div class="flex justify-end pt-4 mt-4 border-t border-blue-200">
+                            <button type="submit" class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 group transform hover:scale-105">
+                                <i class="fas fa-plus-circle mr-2 opacity-90 transition-transform duration-300 group-hover:rotate-12"></i> Confirm Add Chapter
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {% if chapters_context_list %}
+                <div class="space-y-6 max-h-[90vh] overflow-y-auto pr-2 -mr-2">
+                    {% for chapter_item in chapters_context_list %}
+                    {% with chapter=chapter_item.instance chapter_errors=chapter_item.errors initial_input_type=chapter_item.input_type_for_template existing_audio_url=chapter_item.existing_audio_file_url file_size_display=chapter_item.file_size_display %}
+                    <div class="chapter-card border border-slate-200 p-5 rounded-xl bg-slate-50 shadow-lg relative"
+                         data-chapter-id="{{ chapter.chapter_id }}"
+                         data-existing-document-filename="{{ chapter_item.document_filename|default:'' }}"
+                         data-existing-doc-tts-voice-id="{{ chapter_item.doc_tts_voice_id|default:'' }}">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center">
+                                <span class="chapter-number-js flex-shrink-0 w-8 h-8 flex items-center justify-center bg-[#091e65]/10 text-[#091e65] rounded-full text-sm font-semibold mr-3.5">{{ chapter.chapter_order }}</span>
+                                <h3 class="chapter-title-display-js text-lg font-medium text-gray-800 flex-grow">{{ chapter.chapter_name }}</h3>
                             </div>
-
-                            <div id="editChapterFormContainer_{{ chapter.chapter_id }}" class="border-t border-slate-300 pt-5 {% if not chapter_errors %}hidden-area{% else %}visible-area{% endif %}">
-                                <form method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" class="space-y-4 manage-audiobook-form edit-chapter-form-js" data-chapter-id="{{ chapter.chapter_id }}">
+                            <div class="flex-shrink-0 flex items-center space-x-1">
+                                <button type="button" onclick="toggleEditChapterForm('{{ chapter.chapter_id }}')" class="edit-chapter-btn p-2 rounded-full text-slate-500 hover:text-[#091e65] hover:bg-[#091e65]/10 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#091e65]/50 transition-colors duration-150" title="Edit Chapter">
+                                    <i class="fas fa-edit fa-fw text-sm"></i>
+                                </button>
+                                <form method="post" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" class="inline manage-audiobook-form" onsubmit="return confirmDeleteChapter('{{ chapter.chapter_name|escapejs }}');">
                                     {% csrf_token %}
-                                    <input type="hidden" name="action" value="edit_chapter_{{ chapter.chapter_id }}">
-                                    <input type="hidden" name="edit_chapter_input_type_hidden_{{ chapter.chapter_id }}" value="{{ initial_input_type }}" class="edit-chapter-input-type-hidden-js">
-                                    <input type="hidden" name="edit_chapter_generated_tts_url_{{ chapter.chapter_id }}" value="{% if chapter.is_tts_generated and existing_audio_url and initial_input_type == 'generated_tts' %}{{ existing_audio_url }}{% endif %}" class="edit-chapter-generated-tts-url-input-js">
-                                    <input type="hidden" name="edit_chapter_generated_document_tts_url_{{ chapter.chapter_id }}" value="{% if chapter.is_tts_generated and existing_audio_url and initial_input_type == 'generated_document_tts' %}{{ existing_audio_url }}{% endif %}" class="edit-chapter-generated-document-tts-url-input-js">
-                                    <input type="hidden" name="edit_chapter_source_document_filename_{{ chapter.chapter_id }}" value="{% if initial_input_type == 'generated_document_tts' %}{{ chapter_item.document_filename|default:'' }}{% endif %}" class="edit-chapter-source-document-filename-hidden-js"> {# Added to persist filename for doc TTS #}
-                                    <input type="hidden" name="chapter_tts_voice_id_orig_{{ chapter.chapter_id }}" value="{{ chapter.tts_voice_id|default:'' }}">
-
-
-                                    <div>
-                                        <label for="chapter_title_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">New Chapter Title <span class="text-red-600">*</span></label>
-                                        <input type="text" name="chapter_title_{{ chapter.chapter_id }}" id="chapter_title_{{ chapter.chapter_id }}" required
-                                               value="{{ chapter_errors.title.0|default:chapter.chapter_name }}"
-                                               class="block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-white">
-                                        {% if chapter_errors.title %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.title.0 }}</p>{% endif %}
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="block text-xs font-medium text-slate-600 mb-1.5">Update Audio Source:</label>
-                                        <div class="flex rounded-lg p-0.5 bg-slate-200 border border-slate-300">
-                                            <button type="button" class="edit-chapter-input-type-toggle-btn input-type-toggle-btn-base flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors {% if initial_input_type == 'file' %}active{% endif %}" data-type="file">Replace with File</button>
-                                            <button type="button" class="edit-chapter-input-type-toggle-btn input-type-toggle-btn-base flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors {% if initial_input_type == 'tts' or initial_input_type == 'generated_tts' %}active{% endif %}" data-type="tts">Remake with TTS</button>
-                                            <button type="button" class="edit-chapter-input-type-toggle-btn input-type-toggle-btn-base flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors {% if initial_input_type == 'document_tts' or initial_input_type == 'generated_document_tts' %}active{% endif %}" data-type="document_tts">Replace with Document</button>
-                                        </div>
-                                        {% if chapter_errors.input_type %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.input_type.0 }}</p>{% endif %}
-                                    </div>
-
-                                    <div class="edit-chapter-file-upload-controls mt-4 {% if initial_input_type == 'tts' or initial_input_type == 'generated_tts' or initial_input_type == 'document_tts' or initial_input_type == 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
-                                        <label for="chapter_audio_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">New Audio File <span class="text-slate-400 text-[10px]">(Optional, Max 50MB)</span></label>
-                                        <label class="block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg bg-white hover:border-[#091e65]/50 transition duration-150 ease-in-out cursor-pointer group/file shadow-sm">
-                                            <input type="file" name="chapter_audio_{{ chapter.chapter_id }}" id="chapter_audio_edit_{{ chapter.chapter_id }}" accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg, audio/x-m4a, audio/m4a"
-                                                   class="chapter-audio-input-js hidden"
-                                                   data-has-existing-file="{% if chapter.audio_file %}true{% else %}false{% endif %}"> {# Added data attribute #}
-                                            <div class="flex items-center justify-between text-xs text-slate-500 group-hover/file:text-[#091e65]">
-                                                <span class="chapter-filename-js truncate pr-2">Choose new audio file...</span>
-                                                <i class="fas fa-upload opacity-60"></i>
-                                            </div>
-                                        </label>
-                                        <p class="text-xs text-slate-500/80 mt-1">MP3, WAV, OGG, M4A (Max 50MB)</p>
-                                        {% if chapter_errors.audio %}<p class="text-red-500 text-sm mt-1 chapter-audio-error-js">{{ chapter_errors.audio.0 }}</p>{% endif %}
-                                    </div>
-
-                                    <div class="edit-chapter-tts-generation-controls tts-generation-controls mt-4 {% if initial_input_type == 'file' or initial_input_type == 'document_tts' or initial_input_type == 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
-                                        <div class="mb-3">
-                                            <label for="chapter_text_content_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">Text for TTS <span class="text-red-600">*</span></label>
-                                            <textarea name="chapter_text_content_{{ chapter.chapter_id }}" id="chapter_text_content_edit_{{ chapter.chapter_id }}" rows="4"
-                                                                class="chapter-text-content-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-white"
-                                                                placeholder="Enter text for this chapter's audio...">{{ chapter_errors.text.0|default:chapter.text_content|default:'' }}</textarea>
-                                            {% if chapter_errors.text %}<p class="text-red-500 text-sm mt-1 chapter-text-error-js">{{ chapter_errors.text.0 }}</p>{% endif %}
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="chapter_tts_voice_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
-                                            <div class="relative">
-                                                <select name="chapter_tts_voice_{{ chapter.chapter_id }}" id="chapter_tts_voice_edit_{{ chapter.chapter_id }}" class="chapter-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none pr-10 bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm bg-white" disabled>
-                                                    <option value="" selected>Select Narrator...</option>
-                                                    {% if chapter.is_tts_generated and chapter.tts_voice_id %}
-                                                        <option value="{{ chapter.tts_voice_id }}" selected>{{ chapter_item.tts_voice_display_name|default:chapter.tts_voice_id }}</option>
-                                                    {% endif %}
-                                                </select>
-                                            </div>
-                                            {% if chapter_errors.voice %}<p class="text-red-500 text-sm mt-1 chapter-voice-error-js">{{ chapter_errors.voice.0 }}</p>{% endif %}
-                                            <p class="text-sm text-orange-600 mt-1 chapter-tts-unavailable-message-js hidden">We are currently working to bring TTS for this language.</p>
-                                        </div>
-
-                                        <div class="chapter-tts-preview-player-container hidden my-3">
-                                            <audio controls class="chapter-tts-preview-player w-full"></audio>
-                                        </div>
-                                        <div class="chapter-tts-message text-xs my-2 min-h-[16px]"></div>
-                                        <div class="flex flex-wrap gap-2 items-center">
-                                            <button type="button" class="generate-chapter-tts-preview-btn text-xs text-white transition-colors flex items-center gap-1.5" disabled>
-                                                <span class="btn-text"><i class="fas fa-magic mr-1.5"></i>Generate & Preview Audio</span>
-                                                <span class="spinner hidden"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
-                                            </button>
-                                            <button type="button" class="confirm-use-generated-audio-btn hidden text-xs py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow-md transition-colors flex items-center gap-1.5">
-                                                <i class="fas fa-check-circle mr-1.5"></i>Use This Audio for Chapter
-                                            </button>
-                                        </div>
-                                        {% if chapter_errors.general %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.general.0 }}</p>{% endif %}
-                                        {% if chapter_errors.tts_general %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.tts_general.0 }}</p>{% endif %}
-                                    </div>
-
-                                    <div class="edit-chapter-document-tts-controls document-tts-controls mt-4 {% if initial_input_type != 'document_tts' and initial_input_type != 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
-                                        <div class="mb-3">
-                                            <label for="chapter_document_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">New Document (PDF/Word) <span class="text-slate-400 text-[10px]">(Optional)</span></label>
-                                            <label class="file-input-styled-label">
-                                                <input type="file" name="chapter_document_edit_{{ chapter.chapter_id }}" id="chapter_document_edit_{{ chapter.chapter_id }}" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="chapter-document-input-js">
-                                                <i class="fas fa-file-alt mr-1.5"></i> Choose New Document
-                                            </label>
-                                            <div class="file-name-display chapter-document-filename-js">
-                                                {% if chapter_item.document_filename %}{{ chapter_item.document_filename }}{% else %}No document chosen{% endif %}
-                                            </div>
-                                            <p class="text-xs text-slate-500/80 mt-1">PDF, DOC, DOCX (Max 10MB)</p>
-                                            {% if chapter_errors.document_file_edit %}<p class="text-red-500 text-sm mt-1 chapter-document-error-js">{{ chapter_errors.document_file_edit.0 }}</p>{% endif %}
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="chapter_doc_tts_voice_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
-                                            <div class="relative">
-                                                <select name="chapter_doc_tts_voice_edit_{{ chapter.chapter_id }}" id="chapter_doc_tts_voice_edit_{{ chapter.chapter_id }}" class="chapter-doc-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm bg-white" disabled>
-                                                    <option value="" selected>Select Narrator...</option>
-                                                    {% if chapter_item.doc_tts_voice_id %} {# This ensures previous doc TTS voice is selected #}
-                                                        <option value="{{ chapter_item.doc_tts_voice_id }}" selected>{{ chapter_item.tts_voice_display_name|default:chapter_item.doc_tts_voice_id }}</option>
-                                                    {% elif chapter.is_tts_generated and chapter.tts_voice_id and initial_input_type == 'document_tts' %} {# Fallback if doc_tts_voice_id is not specifically set on chapter_item, but it's a document TTS #}
-                                                        <option value="{{ chapter.tts_voice_id }}" selected>{{ chapter_item.tts_voice_display_name|default:chapter.tts_voice_id }}</option>
-                                                    {% endif %}
-                                                </select>
-                                            </div>
-                                            {% if chapter_errors.doc_voice %}<p class="text-red-500 text-sm mt-1 chapter-doc-voice-error-js">{{ chapter_errors.doc_voice.0 }}</p>{% endif %}
-                                            <p class="text-sm text-orange-600 mt-1 chapter-doc-tts-unavailable-message-js hidden">TTS for document language may not be available.</p>
-                                        </div>
-                                        <div class="edit-chapter-document-tts-preview-player-container document-tts-preview-player-container hidden my-2">
-                                            <audio controls class="document-tts-preview-player w-full"></audio>
-                                        </div>
-                                        <div class="edit-chapter-document-tts-message text-xs my-1.5 min-h-[16px]"></div>
-                                        <div class="flex flex-wrap gap-2 items-center">
-                                            <button type="button" class="generate-edit-chapter-document-tts-preview-btn generate-document-tts-preview-btn text-xs text-white transition-colors flex items-center gap-1.5" disabled>
-                                                <span class="btn-text"><i class="fas fa-file-audio mr-1"></i>Generate & Preview from Document</span>
-                                                <span class="spinner hidden"><svg class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
-                                            </button>
-                                            <button type="button" class="confirm-use-edit-chapter-document-audio-btn confirm-use-document-audio-btn hidden text-xs py-1.5 px-3 rounded-md bg-green-600 hover:bg-green-700 text-white shadow-sm transition-colors flex items-center gap-1.5">
-                                                <i class="fas fa-check-circle mr-1"></i>Use This Document Audio
-                                            </button>
-                                        </div>
-                                        {% if chapter_errors.document_tts_general %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.document_tts_general.0 }}</p>{% endif %}
-                                    </div>
-
-                                    <div class="locked-generated-audio-display mt-4 {% if initial_input_type != 'generated_tts' and initial_input_type != 'generated_document_tts' or not existing_audio_url %}hidden-area{% else %}visible-area{% endif %}">
-                                        <p class="text-xs font-medium text-slate-700 mb-1">Selected Audio for this Chapter:</p>
-                                        <div class="info-box p-3 border rounded-lg text-sm">
-                                                   <i class="fas fa-volume-up mr-2 text-blue-600"></i>
-                                            <span class="chapter-generated-tts-filename-js font-medium">
-                                                   {% if initial_input_type == 'generated_tts' %}
-                                                       Generated Audio (from Text){% if chapter_item.tts_voice_display_name %} (Voice: {{ chapter_item.tts_voice_display_name }}){% endif %}
-                                                   {% elif initial_input_type == 'generated_document_tts' %}
-                                                       Generated Audio (from Document: {{ chapter_item.document_filename|default:'Unknown Document' }}){% if chapter_item.tts_voice_display_name %} (Voice: {{ chapter_item.tts_voice_display_name }}){% endif %}
-                                                   {% else %}
-                                                       Generated Audio
-                                                   {% endif %}
-                                            </span>
-                                        </div>
-                                        {% if chapter_errors.generated_tts %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.generated_tts.0 }}</p>{% endif %}
-                                    </div>
-
-                                    <div class="flex justify-end space-x-3 pt-4 mt-4 border-t border-slate-300">
-                                        <button type="button" onclick="toggleEditChapterForm('{{ chapter.chapter_id }}', true)" class="px-5 py-2.5 border border-slate-300 rounded-lg shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition duration-150 ease-in-out">Cancel</button>
-                                        <button type="submit" class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-md text-sm font-medium text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition duration-150 ease-in-out">
-                                            <i class="fas fa-save mr-1.5"></i> Save Chapter Changes
-                                        </button>
-                                    </div>
+                                    <input type="hidden" name="action" value="delete_chapter_{{ chapter.chapter_id }}">
+                                    <button type="submit" class="p-2 rounded-full text-red-400 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 transition-colors duration-150" title="Delete Chapter">
+                                        <i class="fas fa-trash-alt fa-fw text-sm"></i>
+                                    </button>
                                 </form>
                             </div>
                         </div>
-                        {% endwith %}
-                        {% endfor %}
+
+                        <div class="px-0 py-1 text-xs text-slate-600 truncate mb-3">
+                            <i class="fas fa-file-audio mr-1.5 opacity-70 text-slate-500"></i>
+                            <span class="font-medium">Current Audio:</span>
+                            {% if chapter.audio_file and chapter.audio_file.name %}{{ chapter.audio_file.name|cut:"chapters_audio/"|cut:audiobook.slug|cut:"/" }}{% if file_size_display %} <span class="ml-1 opacity-80">({{ file_size_display }})</span>{% endif %}{% else %}No audio file.{% endif %}
+                            {% if chapter.is_tts_generated and chapter_item.tts_voice_display_name %}
+                                <span class="ml-2 px-1.5 py-0.5 bg-sky-100 text-sky-700 text-[10px] font-medium rounded-full">TTS: {{ chapter_item.tts_voice_display_name }}</span>
+                            {% endif %}
+                            {% if chapter_item.source_document_filename %}
+                                <span class="ml-2 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-medium rounded-full">Doc: {{ chapter_item.source_document_filename }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div id="editChapterFormContainer_{{ chapter.chapter_id }}" class="border-t border-slate-300 pt-5 transition-all duration-300 ease-in-out {% if not chapter_errors %}hidden-area{% else %}visible-area{% endif %}">
+                            <form method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_manage_upload_detail' audiobook_slug=audiobook.slug %}" class="space-y-5 manage-audiobook-form edit-chapter-form-js" data-chapter-id="{{ chapter.chapter_id }}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="edit_chapter_{{ chapter.chapter_id }}">
+                                <input type="hidden" name="edit_chapter_input_type_hidden_{{ chapter.chapter_id }}" value="{{ initial_input_type }}" class="edit-chapter-input-type-hidden-js chapter-input-type-hidden-js">
+                                <input type="hidden" name="edit_chapter_generated_tts_url_{{ chapter.chapter_id }}" value="{% if chapter.is_tts_generated and existing_audio_url and initial_input_type == 'generated_tts' %}{{ existing_audio_url }}{% endif %}" class="edit-chapter-generated-tts-url-input-js chapter-generated-tts-url-input-js">
+                                <input type="hidden" name="edit_chapter_generated_document_tts_url_{{ chapter.chapter_id }}" value="{% if chapter.is_tts_generated and existing_audio_url and initial_input_type == 'generated_document_tts' %}{{ existing_audio_url }}{% endif %}" class="edit-chapter-generated-document-tts-url-input-js chapter-generated-document-tts-url-input-js">
+                                <input type="hidden" name="edit_chapter_source_document_filename_{{ chapter.chapter_id }}" value="{% if initial_input_type == 'generated_document_tts' %}{{ chapter_item.document_filename|default:'' }}{% endif %}" class="edit-chapter-source-document-filename-hidden-js">
+                                <input type="hidden" name="chapter_tts_voice_id_orig_{{ chapter.chapter_id }}" value="{{ chapter.tts_voice_id|default:'' }}">
+
+                                <div class="mb-4">
+                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">Update Audio Source:</label>
+                                    <div class="flex rounded-lg p-0.5 bg-slate-200 border border-slate-300">
+                                        <button type="button" class="edit-chapter-input-type-toggle-btn input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if initial_input_type == 'file' %}active{% endif %}" data-type="file">Replace with File</button>
+                                        <button type="button" class="edit-chapter-input-type-toggle-btn input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if initial_input_type == 'tts' or initial_input_type == 'generated_tts' %}active{% endif %}" data-type="tts">Remake with TTS</button>
+                                        <button type="button" class="edit-chapter-input-type-toggle-btn input-type-toggle-btn flex-1 py-2 px-3 text-xs font-medium rounded-md transition-colors {% if initial_input_type == 'document_tts' or initial_input_type == 'generated_document_tts' %}active{% endif %}" data-type="document_tts">Replace with Document</button>
+                                    </div>
+                                    {% if chapter_errors.input_type %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.input_type.0 }}</p>{% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="chapter_title_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">New Chapter Title <span class="text-red-600">*</span></label>
+                                    <input type="text" name="chapter_title_{{ chapter.chapter_id }}" id="chapter_title_{{ chapter.chapter_id }}" required
+                                           value="{{ chapter_errors.title.0|default:chapter.chapter_name }}"
+                                           class="chapter-title-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-white">
+                                    {% if chapter_errors.title %}<p class="text-red-500 text-sm mt-1 chapter-title-error-js">{{ chapter_errors.title.0 }}</p>{% endif %}
+                                </div>
+
+                                <div class="edit-chapter-file-upload-controls file-upload-controls mt-4 transition-all duration-300 ease-in-out {% if initial_input_type == 'tts' or initial_input_type == 'generated_tts' or initial_input_type == 'document_tts' or initial_input_type == 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
+                                    <label for="chapter_audio_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">New Audio File <span class="text-slate-400 text-[10px]">(Optional, Max 50MB)</span></label>
+                                    <label class="block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg bg-white hover:border-[#091e65]/50 transition duration-150 ease-in-out cursor-pointer group/file shadow-sm">
+                                        <input type="file" name="chapter_audio_{{ chapter.chapter_id }}" id="chapter_audio_edit_{{ chapter.chapter_id }}" accept="audio/mpeg, audio/mp3, audio/wav, audio/ogg, audio/x-m4a, audio/m4a"
+                                               class="chapter-audio-input-js hidden"
+                                               data-has-existing-file="{% if chapter.audio_file %}true{% else %}false{% endif %}">
+                                        <div class="flex items-center justify-between text-xs text-slate-500 group-hover/file:text-[#091e65]">
+                                            <span class="chapter-filename-js truncate pr-2">Choose new audio file...</span>
+                                            <i class="fas fa-upload opacity-60"></i>
+                                        </div>
+                                    </label>
+                                    <p class="text-xs text-slate-500/80 mt-1">MP3, WAV, OGG, M4A (Max 50MB)</p>
+                                    {% if chapter_errors.audio %}<p class="text-red-500 text-sm mt-1 chapter-audio-error-js">{{ chapter_errors.audio.0 }}</p>{% endif %}
+                                </div>
+
+                                <div class="edit-chapter-tts-generation-controls tts-generation-controls mt-4 transition-all duration-300 ease-in-out {% if initial_input_type == 'file' or initial_input_type == 'document_tts' or initial_input_type == 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
+                                    <div class="mb-3">
+                                        <label for="chapter_text_content_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">Text for TTS <span class="text-red-600">*</span></label>
+                                        <textarea name="chapter_text_content_{{ chapter.chapter_id }}" id="chapter_text_content_edit_{{ chapter.chapter_id }}" rows="4"
+                                                  class="chapter-text-content-input-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm placeholder-slate-400 transition duration-150 ease-in-out shadow-sm bg-white"
+                                                  placeholder="Enter text for this chapter's audio...">{{ chapter_errors.text.0|default:chapter.text_content|default:'' }}</textarea>
+                                        {% if chapter_errors.text %}<p class="text-red-500 text-sm mt-1 chapter-text-error-js">{{ chapter_errors.text.0 }}</p>{% endif %}
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="chapter_tts_voice_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
+                                        <div class="relative">
+                                            <select name="chapter_tts_voice_{{ chapter.chapter_id }}" id="chapter_tts_voice_edit_{{ chapter.chapter_id }}" class="chapter-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm bg-white" disabled>
+                                                <option value="" selected>Select Narrator...</option>
+                                                {% if chapter.is_tts_generated and chapter.tts_voice_id %}
+                                                    <option value="{{ chapter.tts_voice_id }}" selected>{{ chapter_item.tts_voice_display_name|default:chapter.tts_voice_id }}</option>
+                                                {% endif %}
+                                            </select>
+                                        </div>
+                                        {% if chapter_errors.voice %}<p class="text-red-500 text-sm mt-1 chapter-voice-error-js">{{ chapter_errors.voice.0 }}</p>{% endif %}
+                                        <p class="text-sm text-orange-600 mt-1 chapter-tts-unavailable-message-js hidden">We are currently working to bring TTS for this language.</p>
+                                    </div>
+
+                                    <div class="chapter-tts-preview-player-container hidden my-3">
+                                        <audio controls class="chapter-tts-preview-player w-full"></audio>
+                                    </div>
+                                    <div class="chapter-tts-message text-xs my-2 min-h-[16px]"></div>
+                                    <div class="flex flex-wrap gap-2 items-center">
+                                        <button type="button" class="generate-chapter-tts-preview-btn text-xs py-2 px-4 rounded-lg text-white shadow-md transition-colors flex items-center gap-1.5">
+                                            <span class="btn-text"><i class="fas fa-magic mr-1.5"></i>Generate & Preview Audio</span>
+                                            <span class="spinner hidden"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
+                                        </button>
+                                        <button type="button" class="confirm-use-generated-audio-btn hidden text-xs py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow-md transition-colors flex items-center gap-1.5">
+                                            <i class="fas fa-check-circle mr-1.5"></i>Use This Audio
+                                        </button>
+                                    </div>
+                                    {% if chapter_errors.general %}<p class="text-red-500 text-sm mt-1">{{ chapter_errors.general.0 }}</p>{% endif %}
+                                    {% if chapter_errors.tts_general %}<p class="text-red-500 text-sm mt-1 chapter-tts-general-error-js">{{ chapter_errors.tts_general.0 }}</p>{% endif %}
+                                </div>
+
+                                <div class="edit-chapter-document-tts-controls document-tts-controls mt-4 transition-all duration-300 ease-in-out {% if initial_input_type != 'document_tts' and initial_input_type != 'generated_document_tts' %}hidden-area{% else %}visible-area{% endif %}">
+                                    <div class="mb-3">
+                                        <label for="chapter_document_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">New Document (PDF/Word) <span class="text-slate-400 text-[10px]">(Optional)</span></label>
+                                        <label class="file-input-styled-label">
+                                            <input type="file" name="chapter_document_edit_{{ chapter.chapter_id }}" id="chapter_document_edit_{{ chapter.chapter_id }}" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="chapter-document-input-js hidden">
+                                            <i class="fas fa-file-alt mr-1.5"></i> Choose New Document
+                                        </label>
+                                        <div class="file-name-display chapter-document-filename-js mt-2">
+                                            {% if chapter_item.document_filename %}{{ chapter_item.document_filename }}{% else %}No document chosen{% endif %}
+                                        </div>
+                                        <p class="text-xs text-slate-500/80 mt-1">PDF, DOC, DOCX (Max 10MB)</p>
+                                        {% if chapter_errors.document_file_edit %}<p class="text-red-500 text-sm mt-1 chapter-document-error-js">{{ chapter_errors.document_file_edit.0 }}</p>{% endif %}
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="chapter_doc_tts_voice_edit_{{ chapter.chapter_id }}" class="block text-xs font-medium text-slate-600 mb-1">Narrator Voice <span class="text-red-600">*</span></label>
+                                        <div class="relative">
+                                            <select name="chapter_doc_tts_voice_edit_{{ chapter.chapter_id }}" id="chapter_doc_tts_voice_edit_{{ chapter.chapter_id }}" class="chapter-doc-tts-voice-select-js block w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/70 focus:border-[#091e65] sm:text-sm appearance-none bg-no-repeat transition duration-150 ease-in-out text-slate-700 shadow-sm bg-white" disabled>
+                                                <option value="" selected>Select Narrator...</option>
+                                                {% if chapter_item.doc_tts_voice_id %}
+                                                    <option value="{{ chapter_item.doc_tts_voice_id }}" selected>{{ chapter_item.tts_voice_display_name|default:chapter_item.doc_tts_voice_id }}</option>
+                                                {% elif chapter.is_tts_generated and chapter.tts_voice_id and initial_input_type == 'document_tts' %}
+                                                    <option value="{{ chapter.tts_voice_id }}" selected>{{ chapter_item.tts_voice_display_name|default:chapter.tts_voice_id }}</option>
+                                                {% endif %}
+                                            </select>
+                                        </div>
+                                        {% if chapter_errors.doc_voice %}<p class="text-red-500 text-sm mt-1 chapter-doc-voice-error-js">{{ chapter_errors.doc_voice.0 }}</p>{% endif %}
+                                        <p class="text-sm text-orange-600 mt-1 chapter-doc-tts-unavailable-message-js hidden">TTS for document language may not be available.</p>
+                                    </div>
+                                    <div class="edit-chapter-document-tts-preview-player-container document-tts-preview-player-container hidden my-3">
+                                        <audio controls class="document-tts-preview-player w-full"></audio>
+                                    </div>
+                                    <div class="edit-chapter-document-tts-message chapter-document-tts-message text-xs my-2 min-h-[16px]"></div>
+                                    <div class="flex flex-wrap gap-2 items-center">
+                                        <button type="button" class="generate-edit-chapter-document-tts-preview-btn text-xs py-2 px-4 rounded-lg text-white shadow-md transition-colors flex items-center gap-1.5">
+                                            <span class="btn-text"><i class="fas fa-file-audio mr-1.5"></i>Generate & Preview</span>
+                                            <span class="spinner hidden"><svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></span>
+                                        </button>
+                                        <button type="button" class="confirm-use-edit-chapter-document-audio-btn confirm-use-document-audio-btn hidden text-xs py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow-md transition-colors flex items-center gap-1.5">
+                                            <i class="fas fa-check-circle mr-1.5"></i>Use This Document Audio
+                                        </button>
+                                    </div>
+                                    {% if chapter_errors.document_tts_general %}<p class="text-red-500 text-sm mt-1 chapter-document-tts-general-error-js">{{ chapter_errors.document_tts_general.0 }}</p>{% endif %}
+                                </div>
+
+                                <div class="locked-generated-audio-display mt-4 transition-all duration-300 ease-in-out {% if initial_input_type != 'generated_tts' and initial_input_type != 'generated_document_tts' or not existing_audio_url %}hidden-area{% else %}visible-area{% endif %}">
+                                    <p class="text-xs font-medium text-slate-700 mb-1">Selected Audio for this Chapter:</p>
+                                    <div class="info-box p-3 border rounded-lg text-sm">
+                                        <i class="fas fa-volume-up mr-2 text-blue-600"></i>
+                                        <span class="chapter-generated-tts-filename-js font-medium">
+                                            {% if initial_input_type == 'generated_tts' %}
+                                                Generated Audio (from Text){% if chapter_item.tts_voice_display_name %} (Voice: {{ chapter_item.tts_voice_display_name }}){% endif %}
+                                            {% elif initial_input_type == 'generated_document_tts' %}
+                                                Generated Audio (from Document: {{ chapter_item.document_filename|default:'Unknown Document' }}){% if chapter_item.tts_voice_display_name %} (Voice: {{ chapter_item.tts_voice_display_name }}){% endif %}
+                                            {% else %}
+                                                Generated Audio
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% if chapter_errors.generated_tts %}<p class="text-red-500 text-sm mt-1 chapter-generated-tts-error-js">{{ chapter_errors.generated_tts.0 }}</p>{% endif %}
+                                </div>
+
+                                <div class="flex justify-end space-x-3 pt-5 mt-5 border-t border-slate-300">
+                                    <button type="button" onclick="toggleEditChapterForm('{{ chapter.chapter_id }}', true)" class="px-6 py-3 text-sm font-medium text-slate-700 hover:text-[#091e65] hover:bg-slate-200 rounded-lg transition-colors duration-150 border border-slate-300 hover:border-slate-400">Cancel</button>
+                                    <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-md text-sm font-semibold text-white bg-[#091e65] hover:bg-[#071852] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] transition duration-150 ease-in-out group transform hover:scale-105">
+                                        <i class="fas fa-save mr-2 opacity-90 transition-transform duration-300 group-hover:rotate-6"></i> Save Chapter Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                {% else %}
-                    <div class="text-center py-12 px-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
-                        <i class="fas fa-folder-open text-5xl text-slate-300"></i>
-                        <p class="mt-4 text-sm font-semibold text-slate-700">No chapters added yet.</p>
-                        <p class="mt-1 text-xs text-slate-500">Click 'Add New Chapter' above to get started.</p>
-                    </div>
-                {% endif %}
-                {% if form_errors.general_error_chapters %}<div class="mt-4 p-3 bg-red-50 border-l-4 border-red-500 rounded-md"><p class="text-sm text-red-700 font-medium">{{ form_errors.general_error_chapters.0|default:form_errors.general_error_chapters }}</p></div>{% endif %}
-            </div>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div id="noChaptersMessageManage" class="text-center py-16 px-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                    <i class="fas fa-folder-open text-5xl text-slate-300"></i>
+                    <p class="mt-4 text-base font-medium text-slate-600">No chapters added yet.</p>
+                    <p class="mt-1 text-sm text-slate-500">Click 'Add New Chapter' above to get started.</p>
+                </div>
+            {% endif %}
+            {% if form_errors.general_error_chapters %}<div class="mt-5 p-3.5 bg-red-50 border-l-4 border-red-500 rounded-md"><p class="text-sm text-red-700 font-medium flex items-center"><i class="fas fa-exclamation-circle mr-2"></i>{{ form_errors.general_error_chapters.0|default:form_errors.general_error_chapters }}</p></div>{% endif %}
         </div>
     </div>
 </div>
 
 <div id="loadingOverlayManage" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/75 backdrop-blur-sm hidden">
-    <div class="bg-white p-10 rounded-2xl shadow-2xl text-center max-w-sm w-full">
+    <div class="bg-white p-10 rounded-2xl shadow-2xl text-center max-w-md w-full">
         <div class="mb-6">
-            <svg class="animate-spin h-12 w-12 text-[#091e65] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg class="animate-spin h-16 w-16 text-[#091e65] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
         </div>
-        <h2 id="loaderMessageManage" class="text-xl font-semibold text-[#091e65] mb-2">Processing Request...</h2>
-        <p class="text-slate-500 text-sm">Please wait a moment.</p>
+        <h2 id="loaderMessageManage" class="text-2xl font-semibold text-[#091e65] mb-3">Processing Request...</h2>
+        <p class="text-slate-600 text-base">Please wait, this may take a moment...</p>
     </div>
 </div>
 
 {{ django_messages_json|json_script:"django_messages_json" }}
 {{ form_errors|json_script:"django-form-errors-data" }}
 <script id="generate-tts-preview-url-manage" type="text/plain">{% url 'AudioXApp:generate_tts_preview_audio' %}</script>
-<script id="generate-document-tts-preview-url-manage" type="text/plain">{% url 'AudioXApp:generate_document_tts_preview_audio' %}</script> 
+<script id="generate-document-tts-preview-url-manage" type="text/plain">{% url 'AudioXApp:generate_document_tts_preview_audio' %}</script>
 <script id="edge-tts-voices-data-manage" type="application/json">{{ EDGE_TTS_VOICES_BY_LANGUAGE_JSON|safe }}</script>
 <script id="current-audiobook-language-manage" type="text/plain">{{ audiobook.language|default:""|escapejs }}</script>
-{# Ensure GENRE_OTHER_VALUE is available if your JS specifically needs it from a script tag, though it's better defined in JS #}
 <script id="genre-other-value-manage" type="text/plain">{{ GENRE_OTHER_VALUE|default:'_OTHER_'|escapejs }}</script>
-
 
 {% endblock %}
 

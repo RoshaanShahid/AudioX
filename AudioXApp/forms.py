@@ -2,7 +2,7 @@
 
 from django import forms
 import os
-from .models import Admin
+from .models import Admin, Audiobook  # <--- UPDATED: Audiobook model is now imported
 
 LANGUAGE_CHOICES = [
     ('', 'Select Language...'),
@@ -145,3 +145,28 @@ class AdminManagementForm(forms.ModelForm):
         if commit:
             admin.save()
         return admin
+    
+# --- Audiobook Form ---
+
+class AudiobookForm(forms.ModelForm):
+    """
+    Form for creating and updating Audiobook instances.
+    """
+    class Meta:
+        model = Audiobook
+        fields = [
+            'title', 'author', 'description', 'cover_image', 'language', 'genre', 'status'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-input'}),
+            'author': forms.TextInput(attrs={'class': 'form-input'}),
+            'description': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 4}),
+            'cover_image': forms.ClearableFileInput(attrs={'class': 'form-input'}),
+            'language': forms.Select(attrs={'class': 'form-select'}),
+            'genre': forms.Select(attrs={'class': 'form-select'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+        help_texts = {
+            'cover_image': 'Upload a cover image for the audiobook.',
+            'status': 'Set the initial status. "Published" will make it live immediately.',
+        }

@@ -4,227 +4,365 @@
 
 {% block title %}{{ page_title|default:"My Library" }} - AudioX{% endblock %}
 
-{% block head_extra %}
-    {{ block.super }}
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {# Custom CSS removed, rely on Tailwind for styling and JS for dynamic states #}
-{% endblock %}
-
 {% block content %}
-<div class="bg-white min-h-screen font-sans antialiased text-[#09065] selection:bg-red-100 selection:text-red-700">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
-        <header class="mb-10 md:mb-12 pb-8 border-b-2 border-[#09065]/10">
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#09065] tracking-tight text-center sm:text-left">
-                {{ page_title|default:"My Library" }}
-            </h1>
-            {# Optional: Add a button to sort or filter library items here if needed #}
-        </header>
+<!-- ============================================ -->
+<!-- MY LIBRARY PAGE - CLEAN PROFESSIONAL DESIGN -->
+<!-- Brand Colors: #091e65 (Primary Blue) & Red -->
+<!-- Clean, Solid, Professional Layout -->
+<!-- ============================================ -->
 
-        {% if error_message %}
-            <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-md mb-8" role="alert">
-                <div class="flex">
-                    <div class="py-1"><svg class="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM11 14a1 1 0 1 0-2 0 1 1 0 0 0 2 0zm0-7a1 1 0 0 0-1-1H9a1 1 0 0 0 0 2v3a1 1 0 0 0 1 1h1a1 1 0 1 0 0-2V7z"/></svg></div>
-                    <div>
-                        <p class="font-bold">Error</p>
-                        <p class="text-sm">{{ error_message }}</p>
+<div class="min-h-screen bg-gray-50">
+    <!-- ==================== HEADER SECTION ==================== -->
+    <div class="bg-white border-b-2 border-gray-200">
+        <div class="max-w-6xl mx-auto px-6 py-8">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2" style="color: #091e65;">My Library</h1>
+                    <p class="text-gray-600 text-lg">Your saved audiobook collection</p>
+                    {% if saved_audiobooks %}
+                    <div class="mt-3">
+                        <span class="bg-red-600 text-white text-sm font-semibold px-3 py-1 rounded">
+                            {{ saved_audiobooks|length }} Book{{ saved_audiobooks|length|pluralize }} Saved
+                        </span>
                     </div>
+                    {% endif %}
                 </div>
-            </div>
-        {% endif %}
-
-        {% if saved_audiobooks %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8" id="library-grid-container">
-                {% for audiobook_item in saved_audiobooks %}
-                <div class="library-item-card bg-white rounded-xl shadow-lg hover:shadow-2xl shadow-[#09065]/[0.06] hover:shadow-[#09065]/10 border border-[#09065]/10 flex flex-col group transition-all duration-300 ease-in-out transform hover:-translate-y-1" data-audiobook-card-id="{{ audiobook_item.audiobook_id }}">
-                    <a href="{% url 'AudioXApp:audiobook_detail' audiobook_item.slug %}" class="block aspect-[3/4] overflow-hidden rounded-t-xl">
-                        {% if audiobook_item.cover_image %}
-                            <img src="{{ audiobook_item.cover_image.url }}" alt="{{ audiobook_item.title }} Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out">
-                        {% else %}
-                            <div class="w-full h-full bg-[#09065]/5 flex items-center justify-center p-4">
-                                <img src="https://placehold.co/300x400/09065/FFFFFF?text={{ audiobook_item.title|slice:':15'|urlencode|default:'No%20Cover' }}&font=sans"
-                                     alt="{{ audiobook_item.title }} - No Cover Available"
-                                     class="w-auto h-auto max-w-full max-h-full object-contain opacity-70">
-                            </div>
-                        {% endif %}
-                    </a>
-                    <div class="p-5 flex-grow flex flex-col">
-                        <h2 class="text-lg font-bold text-[#09065] mb-1 line-clamp-2 group-hover:text-red-600 transition-colors duration-150" title="{{ audiobook_item.title }}">
-                            <a href="{% url 'AudioXApp:audiobook_detail' audiobook_item.slug %}">
-                                {{ audiobook_item.title }}
-                            </a>
-                        </h2>
-                        {% if audiobook_item.author %}
-                            <p class="text-sm text-[#09065]/70 mb-3 line-clamp-1">By: {{ audiobook_item.author }}</p>
-                        {% endif %}
-                        
-                        <div class="mt-auto pt-3">
-                            <button 
-                                onclick="toggleLibraryStatus(this, '{{ audiobook_item.audiobook_id }}')"
-                                data-audiobook-id="{{ audiobook_item.audiobook_id }}"
-                                class="remove-from-library-btn w-full flex items-center justify-center space-x-2 text-center bg-red-100 hover:bg-red-600 text-red-700 hover:text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-200 ease-in-out text-sm focus:outline-none focus:ring-2 focus:ring-red-500/70 focus:ring-offset-2">
-                                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.58.194-2.357.366A3.001 3.001 0 00.5 7.5v1.5a3 3 0 003 3V16.5a3 3 0 003 3h8a3 3 0 003-3v-4.5a3 3 0 003-3V7.5a3.001 3.001 0 00-3.143-2.941A48.643 48.643 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.532.045 2.205.123A3.501 3.501 0 0014.5 3.5V3.25a.75.75 0 00-.75-.75h-2.5a.75.75 0 00-.75.75V3.5c.943.001 1.657.02 2.205.123zM16.5 7.5v1.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 014.5 9V7.5a1.5 1.5 0 011.5-1.5h9a1.5 1.5 0 011.5 1.5z" clip-rule="evenodd" />
-                                </svg>
-                                <span>Remove</span>
-                            </button>
+                
+                <!-- Search Input -->
+                {% if saved_audiobooks %}
+                <div class="w-full lg:w-auto">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="library-search" 
+                            placeholder="Search your library..." 
+                            class="w-full lg:w-80 pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                        >
+                        <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
+                {% endif %}
             </div>
-        {% else %}
-            <div class="text-center py-16" id="empty-library-message">
-                <svg class="mx-auto h-20 w-20 text-[#09065]/20 mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 9h6M9 12h6M9 15h6" />
-                </svg>
-                <h3 class="mt-4 text-2xl font-semibold text-[#09065] mb-3">Your Library is Looking a Bit Empty</h3>
-                <p class="mt-1 text-base text-[#09065]/70 mb-8 max-w-md mx-auto">Start adding your favorite audiobooks to build your personal collection and access them here anytime.</p>
-                <div class="mt-6">
-                   <a href="{% url 'AudioXApp:home' %}" 
-                      class="inline-flex items-center px-8 py-3.5 border border-transparent shadow-md text-base font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500/70 transition-all duration-150 ease-in-out transform hover:scale-105">
-                      <svg class="w-5 h-5 mr-2.5 -ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                      Browse Audiobooks
-                   </a>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="max-w-6xl mx-auto px-6 py-8">
+        
+        <!-- Error Message Display -->
+        {% if error_message %}
+        <div class="mb-8">
+            <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg">
+                <div class="flex items-start">
+                    <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-4 mt-1">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-red-800 mb-2">Error</h3>
+                        <p class="text-red-700">{{ error_message }}</p>
+                    </div>
                 </div>
-           </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if saved_audiobooks %}
+        <!-- ==================== AUDIOBOOKS GRID ==================== -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="library-grid-container">
+            {% for audiobook_item in saved_audiobooks %}
+            <div class="library-item-card bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden border border-gray-200" 
+                 data-audiobook-card-id="{{ audiobook_item.audiobook_id }}"
+                 data-title="{{ audiobook_item.title|lower }}"
+                 data-author="{{ audiobook_item.author|lower|default:'' }}">
+                
+                <!-- Cover Image Section -->
+                <div class="relative aspect-[3/4]">
+                    <a href="{% url 'AudioXApp:audiobook_detail' audiobook_item.slug %}" class="block h-full">
+                        {% if audiobook_item.cover_image %}
+                        <img src="{{ audiobook_item.cover_image.url }}" 
+                             alt="{{ audiobook_item.title }}" 
+                             class="w-full h-full object-cover">
+                        {% else %}
+                        <!-- Default Cover Design -->
+                        <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <div class="text-center p-6">
+                                <div class="w-16 h-16 bg-gray-300 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                                    </svg>
+                                </div>
+                                <p class="font-semibold text-sm text-gray-700">{{ audiobook_item.title|truncatechars:15 }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </a>
+                    
+                    <!-- Saved Badge -->
+                    <div class="absolute top-3 right-3">
+                        <span class="bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded flex items-center">
+                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path>
+                            </svg>
+                            Saved
+                        </span>
+                    </div>
+                    
+                    <!-- Remove Button -->
+                    <div class="absolute top-3 left-3">
+                        <button 
+                            onclick="toggleLibraryStatus(this, '{{ audiobook_item.audiobook_id }}')"
+                            data-audiobook-id="{{ audiobook_item.audiobook_id }}"
+                            class="remove-from-library-btn w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center transition-colors duration-200"
+                            title="Remove from Library">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Content Section -->
+                <div class="p-4">
+                    <!-- Title and Author -->
+                    <div class="mb-4">
+                        <h3 class="font-bold text-lg mb-1 line-clamp-2" style="color: #091e65;">
+                            <a href="{% url 'AudioXApp:audiobook_detail' audiobook_item.slug %}" class="hover:underline">
+                                {{ audiobook_item.title }}
+                            </a>
+                        </h3>
+                        {% if audiobook_item.author %}
+                        <p class="text-gray-600 text-sm">by {{ audiobook_item.author }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Listen Now Button -->
+                    <a href="{% url 'AudioXApp:audiobook_detail' audiobook_item.slug %}"
+                       class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Listen Now
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% else %}
+        <!-- ==================== EMPTY STATE ==================== -->
+        <div class="text-center py-16">
+            <div class="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-6">
+                <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
+                </svg>
+            </div>
+            
+            <h3 class="text-2xl font-bold mb-4" style="color: #091e65;">Your Library is Empty</h3>
+            <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                Start building your personal audiobook collection. Save your favorite titles to access them anytime.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <a href="{% url 'AudioXApp:home' %}" 
+                   class="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Explore Audiobooks
+                </a>
+                
+                <a href="#" 
+                   class="border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-semibold px-8 py-3 rounded-lg transition-colors duration-200 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Learn More
+                </a>
+            </div>
+        </div>
         {% endif %}
     </div>
 </div>
 
-<script>
-    // Store the Django-generated URL in a JavaScript variable when the page loads
-    const BROWSE_AUDIOBOOKS_URL = "{% url 'AudioXApp:home' %}";
+<!-- ==================== NOTIFICATION SYSTEM ==================== -->
+<div id="notification-container" class="fixed top-4 right-4 z-50 space-y-3"></div>
 
-    function getCSRFTokenForLibrary() {
-        // Attempt to find CSRF token from the standard Django input field first
-        let csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
-        if (csrfInput && csrfInput.value) {
-            return csrfInput.value;
-        }
-        // Fallback to meta tag if the input isn't present on this specific page
-        let metaTag = document.querySelector('meta[name="csrf-token"]');
-        if (metaTag && metaTag.getAttribute('content')) {
-            return metaTag.getAttribute('content');
-        }
-        console.error('CSRF token could not be retrieved. Ensure {% csrf_token %} is in a form or a meta tag is present.');
-        return null;
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+// Library Management
+document.addEventListener('DOMContentLoaded', function() {
+    // Search Functionality
+    const searchInput = document.getElementById('library-search');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', filterLibrary);
+    }
+    
+    function filterLibrary() {
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        const cards = document.querySelectorAll('.library-item-card');
+        
+        cards.forEach(card => {
+            const title = card.dataset.title || '';
+            const author = card.dataset.author || '';
+            const isVisible = title.includes(searchTerm) || author.includes(searchTerm);
+            
+            card.style.display = isVisible ? 'block' : 'none';
+        });
+    }
+});
+
+// CSRF Token Helper
+function getCSRFTokenForLibrary() {
+    let csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (csrfInput && csrfInput.value) {
+        return csrfInput.value;
+    }
+    let metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag && metaTag.getAttribute('content')) {
+        return metaTag.getAttribute('content');
+    }
+    console.error('CSRF token could not be retrieved.');
+    return null;
+}
+
+// Toggle Library Status Function
+async function toggleLibraryStatus(buttonElement, audiobookId) {
+    const csrfToken = getCSRFTokenForLibrary();
+    if (!csrfToken) {
+        showNotification('Error: Could not perform action. Security token missing. Please refresh the page.', 'error');
+        return;
     }
 
-    async function toggleLibraryStatus(buttonElement, audiobookId) {
-        const csrfToken = getCSRFTokenForLibrary();
-        if (!csrfToken) {
-            const message = 'Error: Could not perform action. Security token missing. Please refresh the page.';
-            // Simple alert if Swal is not available on this page
-            alert(message);
-            console.error('CSRF token missing for toggleLibraryStatus action.');
-            return;
+    const payload = { audiobook_id: String(audiobookId) };
+    const originalButtonHTML = buttonElement.innerHTML;
+
+    // Show loading state
+    buttonElement.innerHTML = `
+        <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+    `;
+    buttonElement.disabled = true;
+
+    try {
+        const response = await fetch("{% url 'AudioXApp:toggle_library_item' %}", {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        });
+        
+        let data;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            data = await response.json();
+        } else {
+            const errorText = await response.text();
+            console.error('Non-JSON response from server:', response.status, errorText);
+            throw new Error(`Server error (Status: ${response.status}). Please try again.`);
         }
 
-        const payload = { audiobook_id: String(audiobookId) };
-        const originalButtonHTML = buttonElement.innerHTML; // Store full HTML to preserve icon + text
-
-        // Indicate loading state on the button
-        buttonElement.innerHTML = `
-            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-currentColor" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Processing...`;
-        buttonElement.disabled = true;
-
-        try {
-            const response = await fetch("{% url 'AudioXApp:toggle_library_item' %}", {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                }
-            });
-            
-            let data;
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                data = await response.json();
-            } else {
-                const errorText = await response.text();
-                console.error('Non-JSON response from server:', response.status, errorText);
-                throw new Error(`Server error (Status: ${response.status}). Please try again.`);
-            }
-
-            if (data.status === 'success') {
-                // Use a simple, non-library dependent notification for broader compatibility
-                const notification = document.createElement('div');
-                notification.style.position = 'fixed';
-                notification.style.top = '20px';
-                notification.style.right = '20px';
-                notification.style.padding = '12px 20px';
-                notification.style.borderRadius = '8px';
-                notification.style.color = 'white';
-                notification.style.zIndex = '10000';
-                notification.style.opacity = '0';
-                notification.style.transition = 'opacity 0.3s ease';
+        if (data.status === 'success') {
+            if (data.action === 'removed') {
+                showNotification(data.message || 'Removed from library', 'success');
                 
-                if (data.action === 'removed') {
-                    notification.style.backgroundColor = '#09065'; // Dark theme color
-                    notification.textContent = data.message || 'Removed from library.';
-                } else { // 'added' or other success
-                    notification.style.backgroundColor = 'red'; // Red for "added" (as per theme)
-                    notification.textContent = data.message || 'Added to library.';
-                }
-                document.body.appendChild(notification);
-                void notification.offsetWidth; // Trigger reflow for transition
-                notification.style.opacity = '1';
-                setTimeout(() => {
-                    notification.style.opacity = '0';
-                    setTimeout(() => notification.remove(), 300);
-                }, 2800);
+                const libraryItemCard = buttonElement.closest('.library-item-card');
+                if (libraryItemCard) {
+                    libraryItemCard.style.transition = 'opacity 0.3s ease-out';
+                    libraryItemCard.style.opacity = '0';
 
-
-                if (data.action === 'removed') {
-                    const libraryItemCard = buttonElement.closest('.library-item-card');
-                    if (libraryItemCard) {
-                        libraryItemCard.style.transition = 'opacity 0.4s ease, transform 0.4s ease, max-height 0.5s ease, margin 0.4s ease, padding 0.4s ease';
-                        libraryItemCard.style.opacity = '0';
-                        libraryItemCard.style.transform = 'scale(0.95)';
-                        libraryItemCard.style.maxHeight = '0px';
-                        libraryItemCard.style.setProperty('padding', '0', 'important');
-                        libraryItemCard.style.setProperty('margin-bottom', '0', 'important');
-                        libraryItemCard.style.overflow = 'hidden';
-
-
-                        setTimeout(() => {
-                            libraryItemCard.remove();
-                            const libraryGridContainer = document.getElementById('library-grid-container');
-                            const emptyLibraryMessage = document.getElementById('empty-library-message');
-                            if (libraryGridContainer && libraryGridContainer.children.length === 0 && emptyLibraryMessage) {
-                                if (libraryGridContainer.parentNode) { 
-                                    libraryGridContainer.classList.add('hidden'); // Hide grid instead of removing
-                                }
-                                emptyLibraryMessage.classList.remove('hidden');
-                                // Ensure the link in empty message is correct
-                                const browseLink = emptyLibraryMessage.querySelector('a');
-                                if (browseLink) browseLink.href = BROWSE_AUDIOBOOKS_URL;
-                            }
-                        }, 500); // Match animation duration
-                    }
-                } else { // Item was added (though this page is for showing saved items, so removal is primary action)
-                    // Restore button text if item was re-added (unlikely from "Remove" button)
-                    buttonElement.innerHTML = originalButtonHTML; // Or update to "Remove" state
-                    buttonElement.disabled = false;
+                    setTimeout(() => {
+                        libraryItemCard.remove();
+                        const libraryGridContainer = document.getElementById('library-grid-container');
+                        
+                        if (libraryGridContainer && libraryGridContainer.children.length === 0) {
+                            location.reload();
+                        }
+                    }, 300);
                 }
             } else {
+                showNotification(data.message || 'Added to library', 'success');
                 buttonElement.innerHTML = originalButtonHTML;
                 buttonElement.disabled = false;
-                alert('Error: ' + (data.message || 'Could not update library status.'));
             }
-        } catch (error) {
-            console.error('Error toggling library item:', error);
+        } else {
             buttonElement.innerHTML = originalButtonHTML;
             buttonElement.disabled = false;
-            alert('Request Failed: ' + (error.message || 'An unexpected error occurred.'));
+            showNotification('Error: ' + (data.message || 'Could not update library status.'), 'error');
         }
+    } catch (error) {
+        console.error('Error toggling library item:', error);
+        buttonElement.innerHTML = originalButtonHTML;
+        buttonElement.disabled = false;
+        showNotification('Request Failed: ' + (error.message || 'An unexpected error occurred.'), 'error');
     }
+}
+
+// Notification System
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+    
+    const notification = document.createElement('div');
+    const isSuccess = type === 'success';
+    
+    notification.className = `
+        max-w-sm w-full bg-white rounded-lg shadow-lg border-l-4 overflow-hidden
+        ${isSuccess ? 'border-green-500' : 'border-red-500'}
+    `;
+    
+    notification.innerHTML = `
+        <div class="p-4">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center ${isSuccess ? 'bg-green-100' : 'bg-red-100'}">
+                        ${isSuccess ? 
+                            '<svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>' :
+                            '<svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>'
+                        }
+                    </div>
+                </div>
+                <div class="ml-3 flex-1">
+                    <p class="text-sm font-semibold ${isSuccess ? 'text-green-800' : 'text-red-800'}">
+                        ${isSuccess ? 'Success!' : 'Error'}
+                    </p>
+                    <p class="text-sm text-gray-600 mt-1">${message}</p>
+                </div>
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" class="ml-4 text-gray-400 hover:text-gray-600">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Auto remove
+    setTimeout(() => {
+        notification.style.transition = 'opacity 0.3s ease-out';
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
+}
+
+// Add CSS utilities
+const style = document.createElement('style');
+style.textContent = `
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}

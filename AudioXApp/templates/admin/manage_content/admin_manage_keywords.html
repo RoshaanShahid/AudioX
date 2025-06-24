@@ -1,0 +1,113 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block title %}Manage Banned Keywords{% endblock %}
+
+{% block extra_head %}
+    {# Alpine.js is used for the interactive tabs. Ensure it's loaded, e.g., in admin_base.html #}
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <div class="mb-6 pb-4">
+        <h1 class="text-3xl font-bold text-[#091e65]">Automated Content Filtering</h1>
+        <p class="mt-1 text-gray-500">Manage the list of banned keywords used to automatically flag content across different languages.</p>
+    </div>
+
+    {% if messages %}
+        <div class="mb-6 space-y-3">
+            {% for message in messages %}
+                <div class="p-4 rounded-lg border {% if message.tags == 'success' %} bg-green-50 text-green-800 border-green-200 {% elif message.tags == 'error' %} bg-red-50 text-red-800 border-red-200 {% else %} bg-blue-50 text-blue-800 border-blue-200 {% endif %}" role="alert">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <div class="lg:col-span-1">
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 sticky top-8">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-4 flex items-center">
+                    <i class="fas fa-plus-circle mr-3 text-[#091e65]"></i> Add New Keyword
+                </h2>
+                <form action="{% url 'AudioXApp:admin_manage_keywords' %}" method="post">
+                    {% csrf_token %}
+                    <div class="space-y-5">
+                        <div>
+                            <label for="keyword" class="block text-sm font-medium text-gray-700 mb-1">Keyword</label>
+                            <input type="text" name="keyword" id="keyword" required class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm" placeholder="e.g., inappropriate_word">
+                            <p class="text-xs text-gray-500 mt-1.5">This word will be used for case-insensitive matching.</p>
+                        </div>
+                        <div>
+                            <label for="language" class="block text-sm font-medium text-gray-700 mb-1">Language</label>
+                            <select name="language" id="language" required class="block w-full px-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] sm:text-sm rounded-lg">
+                                <option value="" disabled selected>Select language...</option>
+                                {% for code, name in language_choices %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full flex justify-center items-center bg-[#091e65] hover:bg-[#071852] text-white font-bold py-2.5 px-4 rounded-lg shadow-md hover:shadow-lg transition-colors duration-150 ease-in-out">
+                                <i class="fas fa-plus mr-2"></i> Add Keyword
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2" x-data="{ activeTab: '{{ active_tab|escapejs|default:'English' }}' }">
+            <div class="bg-white rounded-xl shadow-md border border-gray-200">
+                <div class="px-6 pt-4">
+                    <nav class="flex flex-wrap border-b border-gray-200" aria-label="Tabs">
+                        {% for lang, keywords in keywords_by_language.items %}
+                            <button @click="activeTab = '{{ lang|escapejs }}'" 
+                                    :class="{ 'border-[#091e65] text-[#091e65] bg-blue-50/50': activeTab === '{{ lang|escapejs }}', 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50': activeTab !== '{{ lang|escapejs }}' }"
+                                    class="whitespace-nowrap py-3 px-4 text-sm font-medium rounded-t-lg transition-colors duration-150 focus:outline-none">
+                                {{ lang }} <span class="ml-1.5 bg-gray-200 text-gray-700 text-xs font-bold py-0.5 px-2 rounded-full">{{ keywords|length }}</span>
+                            </button>
+                        {% empty %}
+                            <p class="py-3 text-sm text-gray-500">No keywords have been added yet.</p>
+                        {% endfor %}
+                    </nav>
+                </div>
+                
+                <div class="p-6">
+                {% for lang, keywords in keywords_by_language.items %}
+                    <div x-show="activeTab === '{{ lang|escapejs }}'" x-transition class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {% for kw in keywords %}
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col justify-between hover:border-[#091e65]/50 transition-all">
+                            <div>
+                                <p class="text-lg font-mono font-semibold text-[#091e65]">{{ kw.keyword }}</p>
+                                <div class="text-xs text-gray-400 mt-2">
+                                    <p>Added by: <strong class="text-gray-500">{{ kw.added_by.username|default:"N/A" }}</strong></p>
+                                    <p>Date: <strong class="text-gray-500">{{ kw.created_at|date:"M d, Y" }}</strong></p>
+                                </div>
+                            </div>
+                            <div class="text-right mt-3">
+                                <form action="{% url 'AudioXApp:admin_delete_keyword' kw.id %}" method="post" onsubmit="return confirm('Are you sure you want to delete this keyword?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-red-500 hover:text-red-700 h-8 w-8 rounded-full hover:bg-red-50 flex items-center justify-center transition-colors duration-150">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% empty %}
+                    <div class="p-8 text-center">
+                       <p class="text-gray-500">No banned keywords have been added yet.</p>
+                   </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

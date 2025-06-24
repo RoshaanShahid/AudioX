@@ -1,0 +1,182 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}All Content - Manage Content{% endblock %}
+
+{% block header_title %}All Platform & Creator Content{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-2xl shadow-lg border border-gray-200/80 overflow-hidden">
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div>
+                <h3 class="text-xl font-bold text-[#091e65]">All Audiobooks</h3>
+                <p class="text-sm text-gray-500 mt-1">A complete list of all audiobooks on the platform.</p>
+            </div>
+        </div>
+        <form method="GET" class="mt-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                <div class="sm:col-span-2 lg:col-span-2">
+                    <label for="search_query" class="sr-only">Search</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" name="q" id="search_query" value="{{ search_query }}" class="w-full rounded-lg border-gray-300 shadow-sm pl-10 focus:border-red-500 focus:ring-2 focus:ring-red-500/50 transition" placeholder="Search by title, author, creator...">
+                    </div>
+                </div>
+                <div>
+                    <label for="source_filter" class="sr-only">Source</label>
+                    <select name="source" id="source_filter" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-500/50 transition">
+                        <option value="">All Sources</option>
+                        <option value="platform" {% if 'platform' == selected_source %}selected{% endif %}>Platform Content</option>
+                        <option value="creator" {% if 'creator' == selected_source %}selected{% endif %}>Creator Uploads</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="language_filter" class="sr-only">Language</label>
+                    <select name="language" id="language_filter" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-500/50 transition">
+                        <option value="">All Languages</option>
+                        {% for lang in language_choices %}
+                            {% if lang %}<option value="{{ lang }}" {% if lang == selected_language %}selected{% endif %}>{{ lang }}</option>{% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                 <div>
+                    <label for="status_filter" class="sr-only">Status</label>
+                    <select name="status" id="status_filter" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-500/50 transition">
+                        <option value="">All Statuses</option>
+                        {% for value, name in status_choices %}
+                            <option value="{{ value }}" {% if value == selected_status %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="w-full flex items-center justify-center gap-2 bg-[#091e65] text-white font-semibold rounded-lg px-5 py-2.5 hover:bg-opacity-90 transition shadow-md">
+                        <i class="fas fa-filter"></i>
+                        <span>Filter</span>
+                    </button>
+                    <a href="{% url 'AudioXApp:admin_all_audiobooks_list' %}" class="w-full flex items-center justify-center text-sm font-medium text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-lg py-2.5 transition" title="Clear Filters">
+                        Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-600">
+            <thead class="text-xs text-[#091e65] uppercase bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th scope="col" class="px-6 py-4 font-bold">Audiobook</th>
+                    <th scope="col" class="px-6 py-4 font-bold">Source / Creator</th>
+                    <th scope="col" class="px-6 py-4 font-bold">Language</th>
+                    <th scope="col" class="px-6 py-4 font-bold">Genre</th>
+                    <th scope="col" class="px-6 py-4 font-bold text-center">Views</th>
+                    <th scope="col" class="px-6 py-4 font-bold">Date Uploaded</th>
+                    <th scope="col" class="px-6 py-4 font-bold text-center">Status</th>
+                    <th scope="col" class="px-6 py-4 font-bold text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for audiobook in audiobooks %}
+                <tr class="bg-white border-b border-gray-200 hover:bg-red-50/50 transition-colors duration-150">
+                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                        <div class="flex items-center gap-4">
+                            {# FIX APPLIED HERE: Check if cover_image exists before accessing .url #}
+                            {% if audiobook.cover_image %}
+                                <img class="w-12 h-16 object-cover rounded-md shadow-sm border border-gray-200" src="{{ audiobook.cover_image.url }}" alt="{{ audiobook.title }} cover">
+                            {% else %}
+                                <img class="w-12 h-16 object-cover rounded-md shadow-sm border border-gray-200" src="{% static 'img/default_avatar.png' %}" alt="Default cover">
+                            {% endif %}
+                            <div>
+                                <div class="font-bold text-base text-[#091e65]">{{ audiobook.title }}</div>
+                                <div class="font-normal text-gray-500">{{ audiobook.author }}</div>
+                            </div>
+                        </div>
+                    </th>
+                    <td class="px-6 py-4">
+                        {% if audiobook.creator %}
+                            <a href="{% url 'AudioXApp:admin_view_creator_detail' audiobook.creator.pk %}" class="font-medium text-gray-700 hover:text-red-600 hover:underline">
+                                {{ audiobook.creator.user.username }}
+                            </a>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                Platform
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">{{ audiobook.language }}</td>
+                    <td class="px-6 py-4">{{ audiobook.genre }}</td>
+                    <td class="px-6 py-4 text-center font-medium">{{ audiobook.total_views|intcomma }}</td>
+                    <td class="px-6 py-4">{{ audiobook.created_at|date:"d M, Y" }}</td>
+                    <td class="px-6 py-4 text-center">
+                        {% if audiobook.status == 'PUBLISHED' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                <i class="fas fa-circle text-green-500 mr-1.5 text-[0.5rem]"></i> Published
+                            </span>
+                        {% elif audiobook.status == 'TAKEDOWN' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                <i class="fas fa-circle text-red-500 mr-1.5 text-[0.5rem]"></i> Takedown
+                            </span>
+                        {% else %}
+                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                                 <i class="fas fa-circle text-gray-500 mr-1.5 text-[0.5rem]"></i> {{ audiobook.get_status_display }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center justify-center gap-4 text-lg">
+                            {% if audiobook.creator %}
+                                <a href="{% url 'AudioXApp:admin_creator_audiobook_detail' audiobook.audiobook_id %}" class="text-gray-500 hover:text-[#091e65] transition-colors" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if audiobook.status == 'TAKEDOWN' %}
+                                    <form action="{% url 'AudioXApp:admin_reinstate_audiobook' audiobook.audiobook_id %}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to reinstate this audiobook?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-gray-500 hover:text-green-600 transition-colors" title="Reinstate Audiobook">
+                                            <i class="fas fa-undo-alt"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <form action="{% url 'AudioXApp:admin_takedown_audiobook' audiobook.audiobook_id %}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to takedown this audiobook?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-gray-500 hover:text-red-600 transition-colors" title="Takedown Audiobook">
+                                            <i class="fas fa-gavel"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <a href="{% url 'AudioXApp:admin_edit_platform_audiobook' audiobook.audiobook_id %}" class="text-gray-500 hover:text-[#091e65] transition-colors" title="Edit Audiobook">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <form action="{% url 'AudioXApp:admin_delete_platform_audiobook' audiobook.audiobook_id %}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to permanently delete \'{{ audiobook.title|escapejs }}\'? This action cannot be undone.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-gray-500 hover:text-red-600 transition-colors" title="Delete Audiobook">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-16">
+                        <div class="text-gray-500">
+                            <i class="fas fa-search-minus fa-4x mb-4"></i>
+                            <p class="text-xl font-semibold text-gray-700">No Audiobooks Found</p>
+                            <p class="text-base mt-1">Your search and filter criteria did not match any audiobooks.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="px-6 py-4 border-t border-gray-200">
+        {# Pagination would go here if implemented #}
+    </div>
+</div>
+{% endblock %}

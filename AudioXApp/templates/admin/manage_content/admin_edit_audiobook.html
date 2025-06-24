@@ -1,0 +1,295 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block title %}Edit {{ audiobook.title }} - Admin Dashboard{% endblock %}
+
+{% block header_title %}Edit Audiobook{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 p-4 sm:p-6 lg:p-8 -m-4 sm:-m-6 lg:-m-8 h-[calc(100vh-4.75rem)] overflow-y-auto">
+    <form method="post" enctype="multipart/form-data" id="premiumAudiobookForm" class="max-w-7xl mx-auto space-y-12">
+        {% csrf_token %}
+        <input type="hidden" name="chapters_to_delete" id="chapters_to_delete" value="">
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div class="lg:col-span-1 lg:sticky top-8 space-y-6">
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200/80">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-xl font-bold text-[#091e65] flex items-center gap-3">
+                            <i class="fas fa-image text-[#091e65]"></i>
+                            <span>Cover Art</span>
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="aspect-[4/3] rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-center bg-gray-50 hover:border-[#091e65] transition-all duration-300 ease-in-out relative group overflow-hidden" id="cover-uploader-container">
+                            {% if audiobook.cover_image %}
+                                <img id="cover-preview" src="{{ audiobook.cover_image.url }}" alt="Cover Preview" class="absolute inset-0 h-full w-full object-cover z-0 opacity-100 transition-opacity duration-300">
+                                <div id="cover-prompt" class="absolute inset-0 z-10 p-5 flex flex-col items-center justify-center bg-[#091e65]/80 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+                                    <i class="fas fa-cloud-upload-alt text-5xl mb-3"></i>
+                                    <p class="block text-sm font-semibold">Change Cover</p>
+                                    <p class="mt-0.5 block text-xs">Click or Drag & Drop</p>
+                                </div>
+                            {% else %}
+                                <img id="cover-preview" src="" alt="Cover Preview" class="absolute hidden inset-0 h-full w-full object-cover z-0 opacity-100 transition-opacity duration-300">
+                                <div id="cover-prompt" class="absolute inset-0 z-10 p-5 flex flex-col items-center justify-center bg-transparent text-gray-500 opacity-100 group-hover:bg-[#091e65]/5 group-hover:text-[#091e65] transition-all duration-300 cursor-pointer">
+                                    <i class="fas fa-cloud-upload-alt text-5xl mb-3"></i>
+                                    <p class="block text-sm font-semibold">Upload Cover</p>
+                                    <p class="mt-0.5 block text-xs">Click or Drag & Drop</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <input type="file" name="cover_image" id="cover_image_input" accept="image/*" class="hidden">
+                        <div id="cover-filename" class="mt-4 text-sm text-gray-500 font-medium truncate text-center">
+                            {% if audiobook.cover_image %}
+                                Current: {{ audiobook.cover_image.name|cut:"audiobook_covers/" }}
+                            {% else %}
+                                No cover image uploaded.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-8">
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200/80">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-xl font-bold text-[#091e65] flex items-center gap-3">
+                            <i class="fas fa-book-open text-[#091e65]"></i>
+                            <span>Audiobook Details</span>
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <label for="title" class="block text-sm font-bold text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
+                            <input type="text" name="title" id="title" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/50 transition" value="{{ audiobook.title }}" required>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="author" class="block text-sm font-bold text-gray-700 mb-1">Author <span class="text-red-500">*</span></label>
+                                <input type="text" name="author" id="author" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/50 transition" value="{{ audiobook.author }}" required>
+                            </div>
+                            <div>
+                                <label for="narrator" class="block text-sm font-bold text-gray-700 mb-1">Narrator <span class="text-red-500">*</span></label>
+                                <input type="text" name="narrator" id="narrator" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/50 transition" value="{{ audiobook.narrator }}" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="language" class="block text-sm font-bold text-gray-700 mb-1">Language <span class="text-red-500">*</span></label>
+                                <select name="language" id="language" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/50 transition" required>
+                                    <option value="English" {% if audiobook.language == 'English' %}selected{% endif %}>English</option>
+                                    <option value="Urdu" {% if audiobook.language == 'Urdu' %}selected{% endif %}>Urdu</option>
+                                    <option value="Punjabi" {% if audiobook.language == 'Punjabi' %}selected{% endif %}>Punjabi</option>
+                                    <option value="Sindhi" {% if audiobook.language == 'Sindhi' %}selected{% endif %}>Sindhi</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="genre" class="block text-sm font-bold text-gray-700 mb-1">Genre <span class="text-red-500">*</span></label>
+                                <select name="genre" id="genre" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/50 transition" required></select>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="description" class="block text-sm font-bold text-gray-700 mb-1">Description <span class="text-red-500">*</span></label>
+                            <textarea name="description" id="description" rows="5" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/50 transition" required>{{ audiobook.description }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200/80">
+                    <div class="p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                        <h3 class="text-xl font-bold text-[#091e65] flex items-center gap-3">
+                            <i class="fas fa-list-ol text-[#091e65]"></i>
+                            <span>Chapters</span>
+                        </h3>
+                        <button type="button" id="add-chapter-btn" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#091e65] text-white font-semibold rounded-lg px-5 py-2.5 hover:opacity-90 transition shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65]">
+                            <i class="fas fa-plus"></i> Add New Chapter
+                        </button>
+                    </div>
+                    <div id="chapters-container" class="p-6 space-y-5">
+                        {% for chapter in audiobook.chapters.all %}
+                        <div class="chapter-card bg-gray-50/70 border border-gray-200 rounded-xl p-4 transition-shadow hover:shadow-md" data-index="{{ forloop.counter0 }}" data-id="{{ chapter.chapter_id }}">
+                            <div class="flex items-start gap-4">
+                                <span class="chapter-number flex-shrink-0 w-10 h-10 flex items-center justify-center bg-[#091e65] text-white rounded-full font-bold text-lg shadow">{{ forloop.counter }}</span>
+                                <div class="flex-grow space-y-4">
+                                    <input type="hidden" name="chapters[{{ forloop.counter0 }}][id]" value="{{ chapter.chapter_id }}">
+                                    <div>
+                                        <label for="chapter_title_{{ forloop.counter0 }}" class="block text-xs font-bold text-gray-500 mb-1">CHAPTER TITLE</label>
+                                        <input type="text" name="chapters[{{ forloop.counter0 }}][title]" id="chapter_title_{{ forloop.counter0 }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-1 focus:ring-[#091e65]/80 transition text-base" value="{{ chapter.chapter_name }}" required>
+                                    </div>
+                                    <div>
+                                        <label for="chapter_audio_{{ forloop.counter0 }}" class="block text-xs font-bold text-gray-500 mb-1">AUDIO FILE</label>
+                                        <div class="text-sm text-gray-600 mb-1.5"><i class="fas fa-music mr-2 text-[#091e65]/70"></i>Current: <span class="font-medium">{{ chapter.audio_file.name|cut:"chapters_audio/" }}</span></div>
+                                        <label for="chapter_audio_{{ forloop.counter0 }}" class="relative w-full text-sm text-gray-500 bg-white rounded-md border border-gray-300 shadow-sm cursor-pointer hover:border-[#091e65] transition group">
+                                            <input type="file" name="chapters[{{ forloop.counter0 }}][audio_file]" id="chapter_audio_{{ forloop.counter0 }}" class="hidden chapter-audio-input" accept="audio/*">
+                                            <span class="chapter-filename block w-full pl-3 pr-10 py-2 truncate">Change audio file...</span>
+                                            <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-hover:text-[#091e65]"><i class="fas fa-upload"></i></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="button" class="remove-chapter-btn flex-shrink-0 p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 rounded-full transition" title="Remove Chapter">
+                                    <i class="fas fa-trash-alt text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div id="no-chapters-prompt" class="text-center py-12 px-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50 {% if audiobook.chapters.all %}hidden{% endif %}">
+                            <i class="fas fa-folder-open text-5xl text-gray-300"></i>
+                            <p class="mt-4 text-base font-medium text-gray-600">No chapters yet.</p>
+                            <p class="mt-1 text-sm text-gray-500">Click 'Add New Chapter' to get started.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-12 pt-8 border-t border-gray-200 flex justify-end">
+            <button type="submit" class="flex items-center justify-center gap-2 bg-[#091e65] text-white font-semibold rounded-lg px-8 py-3 hover:opacity-90 transition shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65]">
+                <i class="fas fa-save"></i>
+                <span>Save Changes</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<template id="chapter-template">
+    <div class="chapter-card bg-blue-50/30 border border-blue-300 rounded-xl p-4 transition-shadow hover:shadow-md" data-index="{index}">
+        <div class="flex items-start gap-4">
+            <span class="chapter-number flex-shrink-0 w-10 h-10 flex items-center justify-center bg-[#091e65] text-white rounded-full font-bold text-lg shadow"></span>
+            <div class="flex-grow space-y-4">
+                <input type="hidden" name="chapters[{index}][id]" value="">
+                <div>
+                    <label for="chapter_title_{index}" class="block text-xs font-bold text-gray-500 mb-1">CHAPTER TITLE</label>
+                    <input type="text" name="chapters[{index}][title]" id="chapter_title_{index}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#091e65] focus:ring-1 focus:ring-[#091e65]/80 transition text-base" placeholder="e.g., A New Discovery" required>
+                </div>
+                <div>
+                    <label for="chapter_audio_{index}" class="block text-xs font-bold text-gray-500 mb-1">AUDIO FILE <span class="text-red-500">*</span></label>
+                    <label for="chapter_audio_{index}" class="relative w-full text-sm text-gray-500 bg-white rounded-md border border-gray-300 shadow-sm cursor-pointer hover:border-[#091e65] transition group">
+                        <input type="file" name="chapters[{index}][audio_file]" id="chapter_audio_{index}" class="hidden chapter-audio-input" accept="audio/*" required>
+                        <span class="chapter-filename block w-full pl-3 pr-10 py-2 truncate">Choose file...</span>
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 group-hover:text-[#091e65]"><i class="fas fa-upload"></i></span>
+                    </label>
+                </div>
+            </div>
+            <button type="button" class="remove-chapter-btn flex-shrink-0 p-2 text-gray-400 hover:bg-red-100 hover:text-red-600 rounded-full transition" title="Remove Chapter">
+                <i class="fas fa-trash-alt text-lg"></i>
+            </button>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const uploaderContainer = document.getElementById('cover-uploader-container');
+    const fileInput = document.getElementById('cover_image_input');
+    const preview = document.getElementById('cover-preview');
+    const filenameDisplay = document.getElementById('cover-filename');
+
+    if (uploaderContainer) {
+        uploaderContainer.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => uploaderContainer.addEventListener(eventName, preventDefaults, false));
+        ['dragenter', 'dragover'].forEach(eventName => uploaderContainer.addEventListener(eventName, () => uploaderContainer.classList.add('border-[#091e65]'), false));
+        ['dragleave', 'drop'].forEach(eventName => uploaderContainer.addEventListener(eventName, () => uploaderContainer.classList.remove('border-[#091e65]'), false));
+        uploaderContainer.addEventListener('drop', handleDrop, false);
+    }
+
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+    function handleDrop(e) { fileInput.files = e.dataTransfer.files; handleFileSelect(); }
+    function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) { alert('File is too large. Maximum size is 5MB.'); return; }
+            preview.src = URL.createObjectURL(file);
+            preview.classList.remove('hidden');
+            filenameDisplay.textContent = `New: ${file.name}`;
+        }
+    }
+
+    const languageSelect = document.getElementById('language');
+    const genreSelect = document.getElementById('genre');
+    const currentGenre = "{{ audiobook.genre|escapejs }}";
+    const genreMap = {
+        'English': ['Fiction', 'Mystery', 'Thriller', 'Science Fiction', 'Fantasy', 'Romance', 'Biography', 'History', 'Self-Help', 'Business', 'Other'],
+        'Urdu': ['Novel-Afsana', 'Shayari', 'Tareekh', 'Safarnama', 'Mazah', 'Bachon ka Adab', 'Mazhabi Adab', 'Other'],
+        'Punjabi': ['Qissa-Lok', 'Geet', 'Other'],
+        'Sindhi': ['Lok Adab', 'Shayari', 'Other']
+    };
+    
+    function populateGenres() {
+        const selectedLanguage = languageSelect.value;
+        const genres = genreMap[selectedLanguage] || [];
+        genreSelect.innerHTML = '';
+        genres.forEach(g => {
+            const option = document.createElement('option');
+            option.value = g;
+            option.textContent = g;
+            if (g === currentGenre) {
+                option.selected = true;
+            }
+            genreSelect.appendChild(option);
+        });
+        genreSelect.disabled = genres.length === 0;
+    }
+
+    languageSelect.addEventListener('change', populateGenres);
+    populateGenres();
+
+    const addChapterBtn = document.getElementById('add-chapter-btn');
+    const chaptersContainer = document.getElementById('chapters-container');
+    const chapterTemplate = document.getElementById('chapter-template').innerHTML;
+    const noChaptersPrompt = document.getElementById('no-chapters-prompt');
+    const chaptersToDeleteInput = document.getElementById('chapters_to_delete');
+    let chaptersToDelete = [];
+
+    function reindexChapters() {
+        const cards = chaptersContainer.querySelectorAll('.chapter-card');
+        cards.forEach((card, index) => {
+            card.dataset.index = index;
+            card.querySelector('.chapter-number').textContent = index + 1;
+            card.querySelectorAll('[name*="chapters["], [id*="chapter_"], [for*="chapter_"]').forEach(el => {
+                if (el.name) el.name = el.name.replace(/chapters\[(\d+|{index})\]/, `chapters[${index}]`);
+                if (el.id) el.id = el.id.replace(/(_\d+|{index})$/, `_${index}`);
+                if (el.htmlFor) el.htmlFor = el.htmlFor.replace(/(_\d+|{index})$/, `_${index}`);
+            });
+        });
+        
+        noChaptersPrompt.classList.toggle('hidden', cards.length > 0);
+    }
+
+    addChapterBtn.addEventListener('click', () => {
+        const newIndex = chaptersContainer.querySelectorAll('.chapter-card').length;
+        const newChapterHTML = chapterTemplate.replace(/\{index\}/g, newIndex);
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newChapterHTML;
+        const newCard = tempDiv.firstElementChild;
+        chaptersContainer.insertBefore(newCard, noChaptersPrompt);
+        reindexChapters();
+    });
+
+    chaptersContainer.addEventListener('click', e => {
+        const removeBtn = e.target.closest('.remove-chapter-btn');
+        if (removeBtn) {
+            const chapterCard = removeBtn.closest('.chapter-card');
+            const chapterId = chapterCard.dataset.id;
+            if (chapterId) {
+                chaptersToDelete.push(chapterId);
+                chaptersToDeleteInput.value = chaptersToDelete.join(',');
+            }
+            chapterCard.remove();
+            reindexChapters();
+        }
+    });
+
+    chaptersContainer.addEventListener('change', e => {
+        if (e.target.classList.contains('chapter-audio-input')) {
+            const filenameSpan = e.target.closest('label').querySelector('.chapter-filename');
+            filenameSpan.textContent = e.target.files[0] ? `New: ${e.target.files[0].name}` : 'Change audio file...';
+        }
+    });
+    
+    reindexChapters();
+});
+</script>
+{% endblock %}

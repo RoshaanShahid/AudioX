@@ -1,5 +1,3 @@
-# AudioXApp/admin.py
-
 from django.contrib import admin
 from .models import (
     User, Admin, CoinTransaction, AudiobookPurchase, CreatorEarning,
@@ -7,13 +5,12 @@ from .models import (
     Audiobook, Chapter, Review, Subscription, AudiobookViewLog,
     TicketCategory, Ticket, TicketMessage,
     ListeningHistory, UserLibraryItem,
-    UserDownloadedAudiobook
+    UserDownloadedAudiobook, CoinPurchase
 )
 from django.utils.translation import gettext_lazy as _
 from django.utils.html import format_html
 from django.urls import reverse
 
-# --- User Admin ---
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('email', 'username', 'full_name', 'subscription_type', 'is_active', 'is_staff', 'is_creator')
@@ -21,7 +18,6 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'is_staff', 'subscription_type', 'date_joined')
     ordering = ('-date_joined',)
 
-# --- Custom Admin ---
 @admin.register(Admin)
 class CustomAdminAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'get_display_roles_list_admin', 'is_active', 'last_login')
@@ -33,7 +29,6 @@ class CustomAdminAdmin(admin.ModelAdmin):
         return ", ".join(obj.get_display_roles_list())
     get_display_roles_list_admin.short_description = 'Roles'
 
-# --- Audiobook Admin ---
 @admin.register(Audiobook)
 class AudiobookAdmin(admin.ModelAdmin):
     list_display = ('title', 'author', 'creator_link', 'status', 'is_paid', 'price', 'total_views', 'total_sales', 'created_at', 'updated_at')
@@ -70,7 +65,6 @@ class AudiobookAdmin(admin.ModelAdmin):
     creator_link.short_description = 'Creator'
     creator_link.admin_order_field = 'creator'
 
-# --- Chapter Admin ---
 @admin.register(Chapter)
 class ChapterAdmin(admin.ModelAdmin):
     list_display = ('chapter_name', 'audiobook_title_link', 'chapter_order', 'is_tts_generated', 'created_at')
@@ -85,7 +79,6 @@ class ChapterAdmin(admin.ModelAdmin):
     audiobook_title_link.short_description = 'Audiobook'
     audiobook_title_link.admin_order_field = 'audiobook__title'
 
-# --- Creator Admin ---
 @admin.register(Creator)
 class CreatorAdmin(admin.ModelAdmin):
     list_display = ('user_email', 'creator_name', 'creator_unique_name', 'cid', 'verification_status', 'is_banned', 'available_balance', 'approved_at')
@@ -100,7 +93,6 @@ class CreatorAdmin(admin.ModelAdmin):
     user_email.short_description = 'User Email'
     user_email.admin_order_field = 'user__email'
 
-# --- User Downloaded Audiobook Admin ---
 @admin.register(UserDownloadedAudiobook)
 class UserDownloadedAudiobookAdmin(admin.ModelAdmin):
     list_display = (
@@ -159,3 +151,97 @@ class UserDownloadedAudiobookAdmin(admin.ModelAdmin):
         return "-"
     audiobook_title.short_description = 'Audiobook Title'
     audiobook_title.admin_order_field = 'audiobook__title'
+
+@admin.register(CoinPurchase)
+class CoinPurchaseAdmin(admin.ModelAdmin):
+    list_display = ('user_email', 'audiobook_title_link', 'coins_spent', 'creator_earning', 'platform_commission', 'purchase_date')
+    search_fields = ('user__username', 'user__email', 'audiobook__title')
+    list_filter = ('purchase_date', 'audiobook__creator')
+    ordering = ('-purchase_date',)
+    readonly_fields = ('purchase_date',)
+    
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'audiobook', 'coins_spent')
+        }),
+        ('Financial Details', {
+            'fields': ('creator_earning', 'platform_commission')
+        }),
+        ('Timestamps', {
+            'fields': ('purchase_date',)
+        }),
+    )
+
+    def user_email(self, obj):
+        if obj.user:
+            try:
+                user_admin_url = reverse(f"admin:{obj.user._meta.app_label}_user_change", args=[obj.user.pk])
+                return format_html('<a href="{}">{}</a>', user_admin_url, obj.user.email)
+            except Exception:
+                return obj.user.email
+        return "-"
+    user_email.short_description = 'User Email'
+    user_email.admin_order_field = 'user__email'
+
+    def audiobook_title_link(self, obj):
+        if obj.audiobook:
+            try:
+                audiobook_admin_url = reverse(f"admin:{obj.audiobook._meta.app_label}_audiobook_change", args=[obj.audiobook.pk])
+                return format_html('<a href="{}">{}</a>', audiobook_admin_url, obj.audiobook.title)
+            except Exception:
+                return obj.audiobook.title
+        return "-"
+    audiobook_title_link.short_description = 'Audiobook'
+    audiobook_title_link.admin_order_field = 'audiobook__title'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'audiobook', 'audiobook__creator')
+
+@admin.register(CoinTransaction)
+class CoinTransactionAdmin(admin.ModelAdmin):
+    list_display = ('user_email', 'transaction_type', 'amount', 'status', 'related_audiobook_link', 'transaction_date')
+    search_fields = ('user__username', 'user__email', 'description', 'pack_name')
+    list_filter = ('transaction_type', 'status', 'transaction_date')
+    ordering = ('-transaction_date',)
+    readonly_fields = ('transaction_date',)
+    
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'transaction_type', 'amount', 'status')
+        }),
+        ('Transaction Details', {
+            'fields': ('pack_name', 'price', 'description', 'related_audiobook')
+        }),
+        ('Gift Details', {
+            'fields': ('sender', 'recipient'),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('transaction_date',)
+        }),
+    )
+
+    def user_email(self, obj):
+        if obj.user:
+            try:
+                user_admin_url = reverse(f"admin:{obj.user._meta.app_label}_user_change", args=[obj.user.pk])
+                return format_html('<a href="{}">{}</a>', user_admin_url, obj.user.email)
+            except Exception:
+                return obj.user.email
+        return "-"
+    user_email.short_description = 'User Email'
+    user_email.admin_order_field = 'user__email'
+
+    def related_audiobook_link(self, obj):
+        if obj.related_audiobook:
+            try:
+                audiobook_admin_url = reverse(f"admin:{obj.related_audiobook._meta.app_label}_audiobook_change", args=[obj.related_audiobook.pk])
+                return format_html('<a href="{}">{}</a>', audiobook_admin_url, obj.related_audiobook.title)
+            except Exception:
+                return obj.related_audiobook.title
+        return "-"
+    related_audiobook_link.short_description = 'Related Audiobook'
+    related_audiobook_link.admin_order_field = 'related_audiobook__title'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'related_audiobook', 'sender', 'recipient')

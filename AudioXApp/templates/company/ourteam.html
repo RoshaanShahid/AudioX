@@ -4,8 +4,215 @@
 {% block title %}Our Team - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-[#091e65] mb-6">Our Team</h1>
-    <p>Meet the dedicated team behind AudioX.</p>
+<!-- ==================== OUR TEAM PAGE CONTENT ==================== -->
+<div class="min-h-screen bg-white">
+    
+    <!-- Hero Section -->
+    <section class="bg-[#091e65] text-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-5xl md:text-6xl font-bold mb-6">
+                    Meet Our <span class="text-red-500">Team</span>
+                </h1>
+                <p class="text-xl text-white leading-relaxed">
+                    The passionate minds behind AudioX - your favorite audiobook platform
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-16">
+        
+        <!-- Team Introduction -->
+        <section class="mb-20">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-4xl font-bold text-[#091e65] mb-6">Our Story</h2>
+                <div class="w-24 h-1 bg-red-500 mx-auto mb-8"></div>
+                <p class="text-lg text-gray-700 leading-relaxed mb-8">
+                    AudioX was born from the collaborative effort of two passionate computer science students who shared a vision of making literature accessible to everyone in Pakistan. What started as a Final Year Project has grown into a platform that serves thousands of users across the country.
+                </p>
+                <div class="bg-white border-l-4 border-[#091e65] p-6 shadow-lg text-left">
+                    <p class="text-gray-700 leading-relaxed">
+                        <strong class="text-[#091e65]">Our Mission:</strong> To bridge the gap between traditional literature and modern technology, making audiobooks accessible in multiple Pakistani languages while fostering a love for reading and learning.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Team Members -->
+        <section class="mb-20">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl font-bold text-[#091e65] mb-4">The Founders</h2>
+                    <div class="w-24 h-1 bg-red-500 mx-auto mb-8"></div>
+                    <p class="text-lg text-gray-700">
+                        Meet the two computer science students who brought AudioX to life
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-12">
+                    
+                    <!-- Burhan's Profile -->
+                    <div class="bg-white shadow-xl overflow-hidden border-2 border-[#091e65]">
+                        <div class="relative">
+                            <!-- Profile Image -->
+                            <div class="h-80 bg-[#091e65] flex items-center justify-center">
+                                <img src="{% static 'img/ourteam/burhan.png' %}" alt="Burhan - Co-Founder" 
+                                     class="w-48 h-48 object-cover border-4 border-white shadow-2xl">
+                            </div>
+                            <!-- Role Badge -->
+                            <div class="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 text-sm font-bold">
+                                Co-Founder
+                            </div>
+                        </div>
+                        
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold text-[#091e65] mb-2">Burhan Aqeel</h3>
+                            <p class="text-red-500 font-bold mb-4">Computer Science Student & Co-Founder</p>
+                            
+                            <div class="space-y-4 text-gray-700">
+                                <p class="leading-relaxed">
+                                    A passionate developer and literature enthusiast who envisioned AudioX as a bridge between technology and Pakistani culture. Burhan specializes in backend development and system architecture.
+                                </p>
+                                
+                                <div class="bg-gray-50 p-4 border-l-4 border-[#091e65]">
+                                    <h4 class="font-bold text-[#091e65] mb-2">Key Contributions:</h4>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Platform Architecture & Backend Development</li>
+                                        <li>• Database Design & Optimization</li>
+                                        <li>• Audio Processing & Streaming Systems</li>
+                                        <li>• User Authentication & Security</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="border-t pt-4">
+                                    <p class="text-sm italic text-gray-600">
+                                        "AudioX represents our commitment to making Pakistani literature accessible to everyone, regardless of their reading abilities or time constraints."
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Roshan's Profile -->
+                    <div class="bg-white shadow-xl overflow-hidden border-2 border-red-500">
+                        <div class="relative">
+                            <!-- Profile Image -->
+                            <div class="h-80 bg-red-500 flex items-center justify-center">
+                                <img src="{% static 'img/ourteam/roshan.png' %}" alt="Roshan - Co-Founder" 
+                                     class="w-48 h-48 object-cover border-4 border-white shadow-2xl">
+                            </div>
+                            <!-- Role Badge -->
+                            <div class="absolute top-4 right-4 bg-[#091e65] text-white px-4 py-2 text-sm font-bold">
+                                Co-Founder
+                            </div>
+                        </div>
+                        
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold text-red-500 mb-2">Roshaan Shahid</h3>
+                            <p class="text-[#091e65] font-bold mb-4">Computer Science Student & Co-Founder</p>
+                            
+                            <div class="space-y-4 text-gray-700">
+                                <p class="leading-relaxed">
+                                    A creative problem-solver with a keen eye for user experience and design. Roshan focuses on frontend development and ensuring AudioX provides an intuitive, beautiful interface for all users.
+                                </p>
+                                
+                                <div class="bg-gray-50 p-4 border-l-4 border-red-500">
+                                    <h4 class="font-bold text-red-500 mb-2">Key Contributions:</h4>
+                                    <ul class="text-sm space-y-1">
+                                        <li>• Frontend Development & UI/UX Design</li>
+                                        <li>• Responsive Web Design</li>
+                                        <li>• User Interface Optimization</li>
+                                        <li>• Cross-platform Compatibility</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="border-t pt-4">
+                                    <p class="text-sm italic text-gray-600">
+                                        "Our goal was to create a platform that feels familiar to Pakistani users while introducing them to the wonderful world of audiobooks."
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Project Journey -->
+        <section class="mb-20">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl font-bold text-[#091e65] mb-4">Our FYP Journey</h2>
+                    <div class="w-24 h-1 bg-red-500 mx-auto mb-8"></div>
+                    <p class="text-lg text-gray-700">
+                        From concept to reality - the story of how AudioX came to life
+                    </p>
+                </div>
+
+                <div class="space-y-8">
+                    <!-- Phase 1 -->
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-12 h-12 bg-[#091e65] flex items-center justify-center text-white font-bold">
+                            1
+                        </div>
+                        <div class="bg-white border-l-4 border-[#091e65] p-6 flex-grow shadow-lg">
+                            <h3 class="text-xl font-bold text-[#091e65] mb-2">Research & Planning</h3>
+                            <p class="text-gray-700">
+                                We identified the lack of multilingual audiobook platforms in Pakistan and conducted extensive research on user needs, technical requirements, and market gaps.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Phase 2 -->
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-12 h-12 bg-red-500 flex items-center justify-center text-white font-bold">
+                            2
+                        </div>
+                        <div class="bg-white border-l-4 border-red-500 p-6 flex-grow shadow-lg">
+                            <h3 class="text-xl font-bold text-red-500 mb-2">Development & Design</h3>
+                            <p class="text-gray-700">
+                                Months of coding, designing, and testing resulted in a robust platform that supports multiple languages and provides an excellent user experience.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Phase 3 -->
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-12 h-12 bg-[#091e65] flex items-center justify-center text-white font-bold">
+                            3
+                        </div>
+                        <div class="bg-white border-l-4 border-[#091e65] p-6 flex-grow shadow-lg">
+                            <h3 class="text-xl font-bold text-[#091e65] mb-2">Launch & Growth</h3>
+                            <p class="text-gray-700">
+                                AudioX launched successfully and continues to grow, serving users across Pakistan with quality audiobook content in multiple languages.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action -->
+        <section class="text-center">
+            <div class="bg-[#091e65] p-12 text-white">
+                <h2 class="text-3xl font-bold mb-6">Join Our Community</h2>
+                <p class="text-xl text-white mb-8 leading-relaxed">
+                    Be part of the AudioX family and help us grow Pakistan's digital literature ecosystem
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{% url 'AudioXApp:signup' %}" class="bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-4 transition-colors duration-300 shadow-lg">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Start Your Journey
+                    </a>
+                    <a href="{% url 'AudioXApp:contact_us' %}" class="bg-white text-[#091e65] font-bold px-8 py-4 transition-colors duration-300 shadow-lg hover:bg-gray-100">
+                        <i class="fas fa-envelope mr-2"></i>
+                        Get in Touch
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
 {% endblock %}

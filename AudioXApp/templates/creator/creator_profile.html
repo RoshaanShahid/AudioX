@@ -7,146 +7,353 @@
 {% block page_title %}Update Creator Profile{% endblock %}
 
 {% block page_subtitle %}
-    <p class="text-base text-gray-500 mt-1">Shape your public creator identity.</p>
+    <p class="text-lg text-slate-600 mt-2">Shape your public creator identity and manage your profile settings</p>
 {% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<!-- External Dependencies -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 {% endblock %}
 
-
 {% block content %}
-<div class="bg-white w-full">
-    <form id="update-profile-form" action="{% url 'AudioXApp:update_creator_profile' %}" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="hidden" name="remove_profile_pic" id="remove_profile_pic" value="0">
-
-        <div class="px-6 py-5 sm:px-8 lg:px-10 bg-gray-50/80 border-b border-gray-200/90">
-             <h2 class="text-xl font-semibold text-gray-800">
-                 Edit Your Profile
-             </h2>
-             <p class="text-sm text-gray-500 mt-0.5">Keep your public information current.</p>
-        </div>
-
-        <div class="p-6 sm:p-8 lg:p-10 space-y-10">
-
-            <div class="grid grid-cols-1 md:grid-cols-3 md:gap-8 lg:gap-12 items-start">
-                <div class="md:col-span-1 flex flex-col items-center mb-6 md:mb-0">
-                    <label class="block text-sm font-medium text-gray-600 mb-2 text-center">Profile Picture</label>
-                    <div class="relative group" id="profile-pic-preview-container">
-                        {% if creator.creator_profile_pic %}
-                            <img id="profile-pic-preview" src="{{ creator.creator_profile_pic.url }}" alt="Current Profile Picture" class="h-32 w-32 rounded-full object-cover ring-2 ring-offset-2 ring-offset-white ring-[#091e65]/50 shadow-md">
-                        {% else %}
-                            <span id="profile-pic-placeholder" class="inline-flex items-center justify-center h-32 w-32 rounded-full bg-gray-200 ring-2 ring-offset-2 ring-offset-white ring-gray-300 shadow-sm">
-                                <span class="text-4xl font-medium leading-none text-gray-400">{{ creator.creator_name|slice:":1"|upper|default:"?" }}</span>
-                            </span>
-                            <img id="profile-pic-preview" src="" alt="Profile Picture Preview" class="h-32 w-32 rounded-full object-cover ring-2 ring-offset-2 ring-offset-white ring-[#091e65]/50 shadow-md hidden">
-                        {% endif %}
-
-                        <label for="creator_profile_pic_input"
-                               class="absolute inset-0 rounded-full bg-black/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
-                            <i class="fas fa-camera text-2xl mb-1 pointer-events-none"></i>
-                            <span class="text-xs font-semibold pointer-events-none">{% if creator.creator_profile_pic %}Change{% else %}Upload{% endif %}</span>
-                            <input type="file" name="creator_profile_pic" id="creator_profile_pic_input" accept="image/png, image/jpeg, image/jpg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                        </label>
-
-                         <button type="button" id="remove-pic-btn"
-                                class="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-1/4 bg-red-600 hover:bg-red-700 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs shadow-md transition z-10
-                                {% if not creator.creator_profile_pic %} hidden {% endif %}"
-                                title="Remove Picture">
-                            <i class="fas fa-times"></i>
-                        </button>
+<div class="min-h-screen bg-slate-50">
+    
+    <!-- Main Content Container -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <!-- Profile Update Form -->
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+            
+            <!-- Form Header -->
+            <div class="bg-[#091e65] px-8 py-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-user-edit text-2xl text-white"></i>
                     </div>
-                    <p class="mt-3 text-xs text-gray-500 text-center">Max 2MB (PNG, JPG)</p>
-                     {% if form_errors.creator_profile_pic %}
-                        <p class="mt-1.5 text-xs text-red-600 bg-red-50 p-1.5 rounded border border-red-200 w-full text-center max-w-xs">{{ form_errors.creator_profile_pic }}</p>
-                    {% endif %}
-                </div>
-
-                <div class="md:col-span-2 space-y-6">
                     <div>
-                        <label for="creator_name" class="block text-sm font-medium leading-6 text-gray-700 mb-1.5">Display Name</label>
-                        <input type="text" name="creator_name" id="creator_name" value="{{ form_values.creator_name|default:creator.creator_name|default:'' }}" required maxlength="100"
-                               data-initial-value="{{ creator.creator_name|default:'' }}"
-                               class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-[#091e65] focus:ring focus:ring-[#091e65] focus:ring-opacity-40 sm:text-sm transition duration-150 ease-in-out py-2 px-3
-                               {% if not can_change_name %} bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500 focus:ring-gray-300/50 {% else %} placeholder:text-gray-400/90 {% endif %}"
-                               {% if not can_change_name %} readonly title="You can change your display name again on {{ next_name_change_date|date:'M d, Y' }}" {% else %} placeholder="Your public display name" {% endif %}>
-                        <div class="mt-2 text-xs {% if not can_change_name %} bg-blue-50 text-blue-800 p-2 rounded-md border border-blue-200 flex items-start {% else %} text-gray-500 pl-1 {% endif %}">
-                            {% if not can_change_name %}
-                                <i class="fas fa-lock text-blue-600 mr-2 mt-0.5 flex-shrink-0"></i>
-                                <span>Locked until <b>{{ next_name_change_date|date:"M d, Y" }}</b>.</span>
-                            {% else %}
-                                <i class="fas fa-info-circle mr-1.5 text-[#091e65]/80"></i> Name changes are locked for 60 days.
-                            {% endif %}
-                        </div>
-                        {% if form_errors.creator_name %}
-                            <p class="mt-1 text-xs text-red-600 font-medium">{{ form_errors.creator_name }}</p>
-                        {% endif %}
-                    </div>
-
-                    <div>
-                        <label for="creator_unique_name" class="block text-sm font-medium leading-6 text-gray-700 mb-1.5">Unique Handle <span class="text-gray-400 font-normal">(used in URLs)</span></label>
-                         <div class="relative flex items-center">
-                            <span class="absolute left-0 pl-3 flex items-center pointer-events-none text-gray-400">@</span>
-                            <input type="text" name="creator_unique_name" id="creator_unique_name" value="{{ form_values.creator_unique_name|default:creator.creator_unique_name|default:'' }}" required maxlength="50" pattern="^[a-zA-Z0-9_]+$" title="Only letters, numbers, and underscores allowed."
-                                   data-initial-value="{{ creator.creator_unique_name|default:'' }}"
-                                   class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-[#091e65] focus:ring focus:ring-[#091e65] focus:ring-opacity-40 sm:text-sm transition duration-150 ease-in-out py-2 pl-7 pr-3 font-mono
-                                   {% if not can_change_unique_name %} bg-gray-100 border-gray-200 cursor-not-allowed text-gray-500 focus:ring-gray-300/50 {% else %} placeholder:text-gray-400/90 {% endif %}"
-                                   {% if not can_change_unique_name %} readonly title="You can change your unique handle again on {{ next_unique_name_change_date|date:'M d, Y' }}" {% else %} placeholder="your_unique_handle" {% endif %}>
-                        </div>
-                         <div class="mt-2 text-xs {% if not can_change_unique_name %} bg-blue-50 text-blue-800 p-2 rounded-md border border-blue-200 flex items-start {% else %} text-gray-500 pl-1 {% endif %}">
-                            {% if not can_change_unique_name %}
-                                <i class="fas fa-lock text-blue-600 mr-2 mt-0.5 flex-shrink-0"></i>
-                                <span>Locked until <b>{{ next_unique_name_change_date|date:"M d, Y" }}</b>.</span>
-                            {% else %}
-                                <i class="fas fa-info-circle mr-1.5 text-[#091e65]/80"></i> Letters, numbers, underscores only. Locked for 60 days after change.
-                            {% endif %}
-                        </div>
-                        {% if form_errors.creator_unique_name %}
-                            <p class="mt-1 text-xs text-red-600 font-medium">{{ form_errors.creator_unique_name }}</p>
-                        {% endif %}
+                        <h2 class="text-2xl font-bold text-white">Edit Your Profile</h2>
+                        <p class="text-white/80 mt-1">Keep your public information current and professional</p>
                     </div>
                 </div>
             </div>
 
-            <hr class="border-gray-200/80">
+            <!-- Form Content -->
+            <form id="update-profile-form" action="{% url 'AudioXApp:update_creator_profile' %}" method="post" enctype="multipart/form-data" class="p-8">
+                {% csrf_token %}
+                <input type="hidden" name="remove_profile_pic" id="remove_profile_pic" value="0">
 
-            <div class="flex justify-end">
-                <button type="submit"
-                        class="inline-flex items-center justify-center rounded-lg bg-[#091e65] px-7 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-[#071852] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#091e65] transition duration-200 ease-in-out transform hover:shadow-lg active:scale-[0.98]">
-                    <i class="fas fa-save mr-2"></i> Save Changes
-                </button>
-            </div>
+                <!-- Profile Picture Section -->
+                <div class="mb-12">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-camera text-blue-600"></i>
+                        </div>
+                        Profile Picture
+                    </h3>
+                    
+                    <div class="flex flex-col md:flex-row md:items-start gap-8">
+                        <!-- Picture Upload Area -->
+                        <div class="flex flex-col items-center">
+                            <div class="relative group" id="profile-pic-preview-container">
+                                {% if creator.creator_profile_pic %}
+                                    <img id="profile-pic-preview" 
+                                         src="{{ creator.creator_profile_pic.url }}" 
+                                         alt="Current Profile Picture" 
+                                         class="w-40 h-40 rounded-2xl object-cover border-4 border-white shadow-2xl">
+                                {% else %}
+                                    <div id="profile-pic-placeholder" 
+                                         class="w-40 h-40 rounded-2xl bg-slate-200 border-4 border-white shadow-2xl flex items-center justify-center">
+                                        <span class="text-5xl font-bold text-slate-400">
+                                            {{ creator.creator_name|slice:":1"|upper|default:"?" }}
+                                        </span>
+                                    </div>
+                                    <img id="profile-pic-preview" 
+                                         src="/placeholder.svg" 
+                                         alt="Profile Picture Preview" 
+                                         class="w-40 h-40 rounded-2xl object-cover border-4 border-white shadow-2xl hidden">
+                                {% endif %}
+
+                                <!-- Upload Overlay -->
+                                <label for="creator_profile_pic_input"
+                                       class="absolute inset-0 rounded-2xl bg-black/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer">
+                                    <i class="fas fa-camera text-3xl mb-2"></i>
+                                    <span class="text-sm font-semibold">
+                                        {% if creator.creator_profile_pic %}Change Photo{% else %}Upload Photo{% endif %}
+                                    </span>
+                                    <input type="file" 
+                                           name="creator_profile_pic" 
+                                           id="creator_profile_pic_input" 
+                                           accept="image/png, image/jpeg, image/jpg" 
+                                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                </label>
+
+                                <!-- Remove Button -->
+                                <button type="button" 
+                                        id="remove-pic-btn"
+                                        class="absolute -top-2 -right-2 w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center justify-center shadow-lg transition-all transform hover:scale-110 z-10
+                                        {% if not creator.creator_profile_pic %} hidden {% endif %}"
+                                        title="Remove Picture">
+                                    <i class="fas fa-times text-lg"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Upload Instructions -->
+                            <div class="mt-4 text-center">
+                                <p class="text-sm text-slate-600 font-medium">Maximum 2MB</p>
+                                <p class="text-xs text-slate-500">PNG, JPG, JPEG formats</p>
+                            </div>
+                            
+                            <!-- Error Message -->
+                            {% if form_errors.creator_profile_pic %}
+                                <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                                    <p class="text-sm text-red-700 font-medium text-center">
+                                        <i class="fas fa-exclamation-circle mr-2"></i>
+                                        {{ form_errors.creator_profile_pic }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Picture Guidelines -->
+                        <div class="flex-1">
+                            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                                <h4 class="text-lg font-bold text-slate-900 mb-4">Photo Guidelines</h4>
+                                <ul class="space-y-3 text-sm text-slate-700">
+                                    <li class="flex items-start gap-3">
+                                        <div class="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <i class="fas fa-check text-green-600 text-xs"></i>
+                                        </div>
+                                        <span>Use a clear, professional headshot</span>
+                                    </li>
+                                    <li class="flex items-start gap-3">
+                                        <div class="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <i class="fas fa-check text-green-600 text-xs"></i>
+                                        </div>
+                                        <span>Square aspect ratio works best</span>
+                                    </li>
+                                    <li class="flex items-start gap-3">
+                                        <div class="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <i class="fas fa-check text-green-600 text-xs"></i>
+                                        </div>
+                                        <span>Good lighting and high resolution</span>
+                                    </li>
+                                    <li class="flex items-start gap-3">
+                                        <div class="w-6 h-6 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <i class="fas fa-times text-red-600 text-xs"></i>
+                                        </div>
+                                        <span>Avoid blurry or inappropriate images</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Identity Information Section -->
+                <div class="mb-12">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-id-card text-purple-600"></i>
+                        </div>
+                        Identity Information
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Display Name Field -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="creator_name" class="block text-sm font-bold text-slate-700 mb-3">
+                                    Display Name
+                                </label>
+                                <input type="text" 
+                                       name="creator_name" 
+                                       id="creator_name" 
+                                       value="{{ form_values.creator_name|default:creator.creator_name|default:'' }}" 
+                                       required 
+                                       maxlength="100"
+                                       data-initial-value="{{ creator.creator_name|default:'' }}"
+                                       class="block w-full rounded-xl border-2 border-slate-300 shadow-sm focus:border-[#091e65] focus:ring-4 focus:ring-[#091e65]/20 text-lg font-medium py-4 px-4 transition-all duration-200
+                                       {% if not can_change_name %} bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500 {% else %} bg-white hover:border-slate-400 {% endif %}"
+                                       {% if not can_change_name %} 
+                                           readonly 
+                                           title="You can change your display name again on {{ next_name_change_date|date:'M d, Y' }}" 
+                                       {% else %} 
+                                           placeholder="Your public display name" 
+                                       {% endif %}>
+                            </div>
+                            
+                            <!-- Name Status Info -->
+                            <div class="{% if not can_change_name %} bg-blue-50 border-2 border-blue-200 text-blue-800 {% else %} bg-slate-50 border-2 border-slate-200 text-slate-700 {% endif %} p-4 rounded-xl">
+                                <div class="flex items-start gap-3">
+                                    {% if not can_change_name %}
+                                        <div class="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-lock text-blue-600 text-xs"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-sm">Name Change Locked</p>
+                                            <p class="text-sm mt-1">Available again on <strong>{{ next_name_change_date|date:"M d, Y" }}</strong></p>
+                                        </div>
+                                    {% else %}
+                                        <div class="w-6 h-6 bg-slate-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-info-circle text-slate-600 text-xs"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-sm">Name Change Policy</p>
+                                            <p class="text-sm mt-1">Changes are locked for 60 days after modification</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Name Error -->
+                            {% if form_errors.creator_name %}
+                                <div class="p-3 bg-red-50 border-2 border-red-200 rounded-xl">
+                                    <p class="text-sm text-red-700 font-medium">
+                                        <i class="fas fa-exclamation-circle mr-2"></i>
+                                        {{ form_errors.creator_name }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Unique Handle Field -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="creator_unique_name" class="block text-sm font-bold text-slate-700 mb-3">
+                                    Unique Handle
+                                    <span class="text-slate-500 font-normal text-sm">(used in URLs)</span>
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 text-lg font-bold pointer-events-none">
+                                        @
+                                    </div>
+                                    <input type="text" 
+                                           name="creator_unique_name" 
+                                           id="creator_unique_name" 
+                                           value="{{ form_values.creator_unique_name|default:creator.creator_unique_name|default:'' }}" 
+                                           required 
+                                           maxlength="50" 
+                                           pattern="^[a-zA-Z0-9_]+$" 
+                                           title="Only letters, numbers, and underscores allowed."
+                                           data-initial-value="{{ creator.creator_unique_name|default:'' }}"
+                                           class="block w-full rounded-xl border-2 border-slate-300 shadow-sm focus:border-[#091e65] focus:ring-4 focus:ring-[#091e65]/20 text-lg font-mono py-4 pl-12 pr-4 transition-all duration-200
+                                           {% if not can_change_unique_name %} bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500 {% else %} bg-white hover:border-slate-400 {% endif %}"
+                                           {% if not can_change_unique_name %} 
+                                               readonly 
+                                               title="You can change your unique handle again on {{ next_unique_name_change_date|date:'M d, Y' }}" 
+                                           {% else %} 
+                                               placeholder="your_unique_handle" 
+                                           {% endif %}>
+                                </div>
+                            </div>
+                            
+                            <!-- Handle Status Info -->
+                            <div class="{% if not can_change_unique_name %} bg-blue-50 border-2 border-blue-200 text-blue-800 {% else %} bg-slate-50 border-2 border-slate-200 text-slate-700 {% endif %} p-4 rounded-xl">
+                                <div class="flex items-start gap-3">
+                                    {% if not can_change_unique_name %}
+                                        <div class="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-lock text-blue-600 text-xs"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-sm">Handle Change Locked</p>
+                                            <p class="text-sm mt-1">Available again on <strong>{{ next_unique_name_change_date|date:"M d, Y" }}</strong></p>
+                                        </div>
+                                    {% else %}
+                                        <div class="w-6 h-6 bg-slate-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-info-circle text-slate-600 text-xs"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-sm">Handle Requirements</p>
+                                            <p class="text-sm mt-1">Letters, numbers, underscores only. Locked for 60 days after change</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Handle Error -->
+                            {% if form_errors.creator_unique_name %}
+                                <div class="p-3 bg-red-50 border-2 border-red-200 rounded-xl">
+                                    <p class="text-sm text-red-700 font-medium">
+                                        <i class="fas fa-exclamation-circle mr-2"></i>
+                                        {{ form_errors.creator_unique_name }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex justify-end pt-8 border-t-2 border-slate-200">
+                    <button type="submit"
+                            class="inline-flex items-center gap-3 px-8 py-4 bg-[#091e65] hover:bg-[#071852] text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 active:scale-95">
+                        <i class="fas fa-save text-lg"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
 
-<div id="confirmation-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity duration-300 ease-out" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg scale-95 opacity-0 duration-300 ease-out data-[active]:scale-100 data-[active]:opacity-100">
-        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-                <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10 border border-blue-200">
-                    <i class="fas fa-shield-alt text-xl text-[#091e65]/80"></i>
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" 
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm transition-all duration-300" 
+     aria-labelledby="modal-title" 
+     role="dialog" 
+     aria-modal="true">
+    
+    <div class="relative transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 scale-95 opacity-0 data-[active]:scale-100 data-[active]:opacity-100 max-w-2xl w-full mx-4">
+        
+        <!-- Modal Header -->
+        <div class="bg-[#091e65] px-8 py-6">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-2xl text-white"></i>
                 </div>
-                <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                    <h3 class="text-lg font-semibold leading-6 text-gray-900" id="modal-title">Confirm Identity Change</h3>
-                    <div class="mt-3">
-                        <div class="text-sm text-gray-700 space-y-2 mb-4" id="modal-message">
-                        </div>
-                        <p class="text-sm font-medium text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-200/80 flex items-center">
-                            <i class="fas fa-lock mr-2 flex-shrink-0"></i>
-                            <span>This change will be locked for <b>60 days</b>.</span>
+                <div>
+                    <h3 class="text-2xl font-bold text-white" id="modal-title">Confirm Identity Change</h3>
+                    <p class="text-white/80 mt-1">Review your changes before saving</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal Content -->
+        <div class="p-8">
+            <div class="mb-6">
+                <div class="text-slate-700 space-y-4" id="modal-message">
+                    <!-- Dynamic content will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Warning Notice -->
+            <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-lock text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-blue-900 mb-2">Important Notice</h4>
+                        <p class="text-blue-800">
+                            This change will be <strong>locked for 60 days</strong> after confirmation. 
+                            You won't be able to modify it again until the lock period expires.
                         </p>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 rounded-b-xl border-t border-gray-200">
-            <button type="button" id="confirm-button" class="inline-flex w-full justify-center rounded-md bg-[#091e65] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#071852] sm:ml-3 sm:w-auto transition duration-150 ease-in-out">
-                Confirm & Save Change
+        
+        <!-- Modal Actions -->
+        <div class="bg-slate-50 px-8 py-6 border-t-2 border-slate-200 flex flex-col sm:flex-row gap-4 sm:justify-end">
+            <button type="button" 
+                    id="cancel-button" 
+                    class="px-6 py-3 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded-xl border-2 border-slate-300 hover:border-slate-400 transition-all duration-200">
+                Cancel Changes
             </button>
-            <button type="button" id="cancel-button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-100 sm:mt-0 sm:w-auto transition duration-150 ease-in-out">
-                Cancel
+            <button type="button" 
+                    id="confirm-button" 
+                    class="px-8 py-3 bg-[#091e65] hover:bg-[#071852] text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
+                Confirm & Save Changes
             </button>
         </div>
     </div>

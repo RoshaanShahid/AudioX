@@ -1,201 +1,584 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Modal elements
-    const modal = document.getElementById('customModal');
-    const modalTitleEl = document.getElementById('modalTitle');
-    const modalBodyEl = document.getElementById('modalBody');
-    const modalIconContainerEl = document.getElementById('modalIconContainer');
-    const modalFooterEl = document.getElementById('modalFooter');
-    const modalCloseBtnEl = document.getElementById('modalCloseBtn');
-    const modalContentWrapper = modal ? modal.querySelector('.modal-content-wrapper') : null;
+/**
+ * ============================================================================
+ * AUDIOX CREATOR WITHDRAWAL REQUEST - JAVASCRIPT MODULE
+ * ============================================================================
+ *
+ * This module handles all frontend functionality for withdrawal requests:
+ * - Form validation for withdrawal amounts and account selection
+ * - Confirmation dialogs using SweetAlert2
+ * - Real-time validation feedback
+ * - Loading states and user feedback
+ * - Error handling and display
+ *
+ * Dependencies:
+ * - SweetAlert2 for notifications and confirmations
+ * - Font Awesome for icons
+ * - Django CSRF token handling
+ *
+ * Author: AudioX Development Team
+ * Last Updated: 2024
+ * ============================================================================
+ */
 
-    /**
-     * Shows the custom modal.
-     * @param {string} title - The title of the modal.
-     * @param {string} htmlContent - The HTML content for the modal body.
-     * @param {string} [type='info'] - Type of modal (success, error, warning, question, info).
-     * @param {Array<Object>} [buttons=[]] - Array of button configurations.
-     * Each button object: { text: 'Button Text', class: 'confirm'|'danger'|'cancel', onClick: function }
-     */
-    window.showModal = function(title, htmlContent, type = 'info', buttons = []) {
-        if (!modal || !modalTitleEl || !modalBodyEl || !modalIconContainerEl || !modalFooterEl || !modalContentWrapper) {
-            // Fallback if modal elements are not found
-            alert(title + "\n" + htmlContent.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, ""));
-            return;
-        }
-        modalTitleEl.textContent = title;
-        modalBodyEl.innerHTML = htmlContent; 
-        
-        modalIconContainerEl.innerHTML = ''; 
-        let iconClass = '';
-        let iconColor = 'text-slate-100';
+// ============================================================================
+// GLOBAL VARIABLES AND CONFIGURATION
+// ============================================================================
 
-        if (type === 'success') { iconClass = 'fas fa-check-circle'; iconColor = 'text-green-300'; }
-        else if (type === 'error') { iconClass = 'fas fa-times-circle'; iconColor = 'text-red-300'; }
-        else if (type === 'warning') { iconClass = 'fas fa-exclamation-triangle'; iconColor = 'text-amber-300'; }
-        else if (type === 'question') { iconClass = 'fas fa-question-circle'; iconColor = 'text-blue-300'; }
-        else { iconClass = 'fas fa-info-circle'; iconColor = 'text-sky-300';}
-        
-        if (iconClass) {
-            const i = document.createElement('i');
-            i.className = `${iconClass} ${iconColor}`;
-            modalIconContainerEl.appendChild(i);
-        }
+let isProcessing = false
+let isFormSubmitting = false // New flag to track form submissions
 
-        modalFooterEl.innerHTML = ''; 
-        buttons.forEach(btnConfig => {
-            const button = document.createElement('button');
-            button.textContent = btnConfig.text;
-            button.className = 'px-5 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all duration-150 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
-            
-            if (btnConfig.class === 'confirm') {
-                button.classList.add('bg-[#091e65]', 'text-white', 'hover:bg-[#071852]', 'focus-visible:ring-[#091e65]');
-            } else if (btnConfig.class === 'danger') {
-                button.classList.add('bg-red-600', 'text-white', 'hover:bg-red-700', 'focus-visible:ring-red-600');
-            } else { 
-                button.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300', 'focus-visible:ring-slate-400');
-            }
-            
-            button.addEventListener('click', () => {
-                if (btnConfig.onClick) btnConfig.onClick();
-                closeModal(); 
-            });
-            modalFooterEl.appendChild(button);
-        });
-        
-        modal.classList.remove('opacity-0', 'invisible');
-        modal.classList.add('opacity-100', 'visible');
-        modalContentWrapper.classList.remove('scale-95');
-        modalContentWrapper.classList.add('scale-100');
+// ============================================================================
+// DOCUMENT READY INITIALIZATION
+// ============================================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 AudioX Creator Withdrawal Request - Initializing...")
+
+  // Initialize all components
+  initializeWithdrawalForm()
+  initializeFormValidation()
+  initializeKeyboardShortcuts()
+
+  console.log("✅ AudioX Creator Withdrawal Request - Initialization complete")
+})
+
+// ============================================================================
+// WITHDRAWAL FORM INITIALIZATION
+// ============================================================================
+
+/**
+ * Initializes the withdrawal request form
+ */
+function initializeWithdrawalForm() {
+  const withdrawalForm = document.getElementById("requestWithdrawalForm")
+
+  if (!withdrawalForm) {
+    console.log("ℹ️ Withdrawal form not found - user may not have permission to request withdrawals")
+    return
+  }
+
+  // Add form submission handler
+  withdrawalForm.addEventListener("submit", handleFormSubmission)
+
+  // Add real-time validation
+  const amountInput = document.getElementById("amount")
+  const accountSelect = document.getElementById("withdrawal_account_id")
+
+  if (amountInput) {
+    amountInput.addEventListener("input", validateAmountInput)
+    amountInput.addEventListener("blur", validateAmountInput)
+  }
+
+  if (accountSelect) {
+    accountSelect.addEventListener("change", validateAccountSelection)
+  }
+
+  console.log("📝 Withdrawal form initialized")
+}
+
+// ============================================================================
+// FORM VALIDATION
+// ============================================================================
+
+/**
+ * Initializes form validation helpers
+ */
+function initializeFormValidation() {
+  // Clear any existing errors on page load
+  clearAllErrors()
+}
+
+/**
+ * Handles form submission with validation and confirmation
+ * @param {Event} event - Form submission event
+ */
+function handleFormSubmission(event) {
+  event.preventDefault()
+
+  if (isProcessing) {
+    showNotification("Please wait for the current request to complete", "warning")
+    return
+  }
+
+  // Clear previous errors
+  clearAllErrors()
+
+  // Validate form
+  if (!validateForm()) {
+    return
+  }
+
+  // Show confirmation dialog
+  showWithdrawalConfirmation()
+}
+
+/**
+ * Validates the entire form
+ * @returns {boolean} True if form is valid
+ */
+function validateForm() {
+  const amountInput = document.getElementById("amount")
+  const accountSelect = document.getElementById("withdrawal_account_id")
+
+  let isValid = true
+  let amountErrors = []
+  const accountErrors = []
+
+  // Validate amount
+  const amountValidation = validateAmount(amountInput.value)
+  if (!amountValidation.isValid) {
+    amountErrors = amountValidation.errors
+    isValid = false
+  }
+
+  // Validate account selection
+  if (!accountSelect.value) {
+    accountErrors.push("Please select a payout account.")
+    isValid = false
+  }
+
+  // Display errors
+  if (amountErrors.length > 0) {
+    showFieldError("amount", amountErrors)
+    amountInput.focus()
+  }
+
+  if (accountErrors.length > 0) {
+    showFieldError("account", accountErrors)
+    if (amountErrors.length === 0) {
+      accountSelect.focus()
+    }
+  }
+
+  return isValid
+}
+
+/**
+ * Validates withdrawal amount
+ * @param {string} value - Amount value to validate
+ * @returns {object} Validation result with isValid and errors
+ */
+function validateAmount(value) {
+  const errors = []
+  const amount = Number.parseFloat(value)
+
+  // Check if amount is provided and valid
+  if (!value || isNaN(amount) || amount <= 0) {
+    errors.push("Please enter a valid withdrawal amount.")
+    return { isValid: false, errors }
+  }
+
+  // Check minimum amount
+  if (
+    typeof DJANGO_MIN_WITHDRAWAL_AMOUNT !== "undefined" &&
+    DJANGO_MIN_WITHDRAWAL_AMOUNT > 0 &&
+    amount < DJANGO_MIN_WITHDRAWAL_AMOUNT
+  ) {
+    errors.push(`Withdrawal amount must be at least Rs. ${DJANGO_MIN_WITHDRAWAL_AMOUNT.toFixed(2)}.`)
+  }
+
+  // Check maximum amount (available balance)
+  if (
+    typeof DJANGO_AVAILABLE_BALANCE !== "undefined" &&
+    DJANGO_AVAILABLE_BALANCE >= 0 &&
+    amount > DJANGO_AVAILABLE_BALANCE
+  ) {
+    errors.push(`Withdrawal amount cannot exceed your available balance of Rs. ${DJANGO_AVAILABLE_BALANCE.toFixed(2)}.`)
+  }
+
+  return { isValid: errors.length === 0, errors }
+}
+
+/**
+ * Real-time validation for amount input
+ */
+function validateAmountInput() {
+  const amountInput = document.getElementById("amount")
+  const validation = validateAmount(amountInput.value)
+
+  if (amountInput.value && !validation.isValid) {
+    showFieldError("amount", validation.errors)
+  } else {
+    clearFieldError("amount")
+  }
+}
+
+/**
+ * Validation for account selection
+ */
+function validateAccountSelection() {
+  const accountSelect = document.getElementById("withdrawal_account_id")
+
+  if (accountSelect.value) {
+    clearFieldError("account")
+  }
+}
+
+// ============================================================================
+// ERROR HANDLING AND DISPLAY
+// ============================================================================
+
+/**
+ * Shows field-specific error messages
+ * @param {string} fieldType - Type of field ('amount' or 'account')
+ * @param {Array} errors - Array of error messages
+ */
+function showFieldError(fieldType, errors) {
+  const errorDiv = document.getElementById(`${fieldType}Error`)
+  const inputElement =
+    fieldType === "amount" ? document.getElementById("amount") : document.getElementById("withdrawal_account_id")
+
+  if (!errorDiv || !inputElement) return
+
+  // Show error messages
+  if (errors && errors.length > 0) {
+    errorDiv.innerHTML =
+      '<ul class="list-none p-0 m-0">' +
+      errors
+        .map(
+          (msg) =>
+            `<li class="mb-1 last:mb-0 flex items-start"><i class="fas fa-exclamation-circle mr-2 mt-0.5 text-red-500"></i>${msg}</li>`,
+        )
+        .join("") +
+      "</ul>"
+    errorDiv.classList.remove("hidden")
+
+    // Add error styling to input
+    inputElement.classList.remove("border-gray-300", "focus:border-audiox-blue", "focus:ring-audiox-blue")
+    inputElement.classList.add("border-red-500", "focus:border-red-500", "focus:ring-red-500")
+  }
+}
+
+/**
+ * Clears field-specific error messages
+ * @param {string} fieldType - Type of field ('amount' or 'account')
+ */
+function clearFieldError(fieldType) {
+  const errorDiv = document.getElementById(`${fieldType}Error`)
+  const inputElement =
+    fieldType === "amount" ? document.getElementById("amount") : document.getElementById("withdrawal_account_id")
+
+  if (!errorDiv || !inputElement) return
+
+  // Hide error messages
+  errorDiv.innerHTML = ""
+  errorDiv.classList.add("hidden")
+
+  // Remove error styling from input
+  inputElement.classList.remove("border-red-500", "focus:border-red-500", "focus:ring-red-500")
+  inputElement.classList.add("border-gray-300", "focus:border-audiox-blue", "focus:ring-audiox-blue")
+}
+
+/**
+ * Clears all form errors
+ */
+function clearAllErrors() {
+  clearFieldError("amount")
+  clearFieldError("account")
+}
+
+// ============================================================================
+// CONFIRMATION DIALOG
+// ============================================================================
+
+/**
+ * Shows withdrawal confirmation dialog
+ */
+function showWithdrawalConfirmation() {
+  const amountInput = document.getElementById("amount")
+  const accountSelect = document.getElementById("withdrawal_account_id")
+
+  const amount = Number.parseFloat(amountInput.value).toFixed(2)
+  const accountText = accountSelect.options[accountSelect.selectedIndex].text
+
+  const confirmationHtml = `
+       <div class="text-center">
+           <div class="mb-6">
+               <div class="mx-auto w-16 h-16 bg-audiox-blue/10 rounded-full flex items-center justify-center mb-4">
+                   <i class="fas fa-money-bill-wave text-2xl text-audiox-blue"></i>
+               </div>
+               <p class="text-lg text-gray-700 mb-4">
+                   You are about to request a withdrawal of 
+                   <strong class="text-audiox-blue font-bold text-xl">Rs. ${Number.parseFloat(amount).toLocaleString()}</strong>
+               </p>
+           </div>
+           
+           <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-left">
+               <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+                   <i class="fas fa-info-circle mr-2 text-audiox-blue"></i>
+                   Withdrawal Details
+               </h4>
+               <div class="space-y-2 text-sm">
+                   <div class="flex justify-between">
+                       <span class="text-gray-600">Amount:</span>
+                       <span class="font-semibold text-gray-900">Rs. ${Number.parseFloat(amount).toLocaleString()}</span>
+                   </div>
+                   <div class="flex justify-between">
+                       <span class="text-gray-600">Payout to:</span>
+                       <span class="font-medium text-gray-900 text-right max-w-xs truncate">${accountText}</span>
+                   </div>
+               </div>
+           </div>
+           
+           <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-left">
+               <div class="flex items-start">
+                   <i class="fas fa-exclamation-triangle text-yellow-600 mr-2 mt-0.5"></i>
+                   <div class="text-sm text-yellow-800">
+                       <p class="font-semibold mb-1">Important Notice:</p>
+                       <ul class="text-xs space-y-1">
+                           <li>• This action cannot be undone once submitted</li>
+                           <li>• Processing may take 1-3 business days</li>
+                           <li>• Ensure your account details are correct</li>
+                       </ul>
+                   </div>
+               </div>
+           </div>
+       </div>
+   `
+
+  if (typeof Swal !== "undefined") {
+    Swal.fire({
+      title: "Confirm Withdrawal Request",
+      html: confirmationHtml,
+      icon: "question",
+      iconColor: "#091e65",
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i>Submit Request',
+      cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancel',
+      reverseButtons: true,
+      customClass: {
+        popup: "bg-white text-gray-700 rounded-2xl border border-gray-200 shadow-2xl",
+        title: "text-gray-900 text-xl font-bold mb-4",
+        htmlContainer: "text-sm mb-6",
+        confirmButton:
+          "bg-audiox-blue text-white rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-150 ease-in-out shadow-lg hover:bg-audiox-blue/90 transform hover:scale-105",
+        cancelButton:
+          "bg-white text-gray-700 border border-gray-300 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-150 ease-in-out shadow-md hover:bg-gray-50 transform hover:scale-105",
+        actions: "space-x-4 mt-6",
+      },
+      buttonsStyling: false,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        submitWithdrawalRequest()
+      }
+    })
+  } else {
+    console.error("SweetAlert2 is not loaded.")
+  }
+}
+
+// ============================================================================
+// FORM SUBMISSION
+// ============================================================================
+
+/**
+ * Submits the withdrawal request
+ */
+function submitWithdrawalRequest() {
+  const form = document.getElementById("requestWithdrawalForm")
+  const submitButton = document.getElementById("submitWithdrawalBtn")
+
+  if (!form) return
+
+  isProcessing = true
+  isFormSubmitting = true // Set form submission flag
+
+  // Show loading state
+  showLoadingOverlay("Processing withdrawal request...")
+
+  // Update submit button
+  if (submitButton) {
+    submitButton.disabled = true
+    submitButton.innerHTML = `
+           <svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+           </svg>
+           Processing Request...
+       `
+  }
+
+  // Submit form
+  form.submit()
+}
+
+// ============================================================================
+// KEYBOARD SHORTCUTS
+// ============================================================================
+
+/**
+ * Initializes keyboard shortcuts
+ */
+function initializeKeyboardShortcuts() {
+  document.addEventListener("keydown", (e) => {
+    // Escape key to close any open modals
+    if (e.key === "Escape" && Swal.isVisible()) {
+      Swal.close()
     }
 
-    /**
-     * Closes the custom modal.
-     */
-    window.closeModal = function() {
-        if (modal && modalContentWrapper) {
-            modal.classList.add('opacity-0'); 
-            modalContentWrapper.classList.add('scale-95'); 
-            modalContentWrapper.classList.remove('scale-100');
-            
-            setTimeout(() => {
-                modal.classList.add('invisible');
-                modal.classList.remove('opacity-100', 'visible');
-            }, 300); 
-        }
+    // Ctrl/Cmd + Enter to submit form (if valid)
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      const form = document.getElementById("requestWithdrawalForm")
+      if (form && !isProcessing) {
+        e.preventDefault()
+        form.dispatchEvent(new Event("submit"))
+      }
     }
-    
-    if (modalCloseBtnEl) modalCloseBtnEl.addEventListener('click', closeModal);
+  })
+}
 
-    if (modal) {
-        modal.addEventListener('click', function(event) {
-            if (event.target === modal) { 
-                closeModal();
-            }
-        });
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Shows loading overlay with message
+ * @param {string} message - Loading message
+ */
+function showLoadingOverlay(message = "Processing...") {
+  const overlay = document.getElementById("loadingOverlay")
+  const messageElement = document.getElementById("loaderMessage")
+
+  if (overlay) {
+    if (messageElement) {
+      messageElement.textContent = message
     }
+    overlay.classList.remove("hidden")
+  }
+}
 
-    const withdrawalForm = document.getElementById('requestWithdrawalForm');
-    const amountErrorDiv = document.getElementById('amountError');
-    const accountErrorDiv = document.getElementById('accountError'); 
+/**
+ * Hides loading overlay
+ */
+function hideLoadingOverlay() {
+  const overlay = document.getElementById("loadingOverlay")
+  if (overlay) {
+    overlay.classList.add("hidden")
+  }
+}
 
-    function showInlineError(element, messages) {
-        if (!element) return;
-        if (messages && messages.length > 0) {
-            element.innerHTML = '<ul class="list-none p-0 m-0">' + messages.map(msg => `<li class="mb-1 last:mb-0">${msg}</li>`).join('') + '</ul>';
-            element.classList.remove('hidden');
-        } else {
-            element.innerHTML = '';
-            element.classList.add('hidden');
-        }
+/**
+ * Shows notification using SweetAlert2
+ * @param {string} message - Notification message
+ * @param {string} type - Notification type (success, error, warning, info)
+ */
+function showNotification(message, type = "info") {
+  const config = {
+    text: message,
+    timer: 5000,
+    timerProgressBar: true,
+    showConfirmButton: false,
+    toast: true,
+    position: "top-end",
+    showClass: {
+      popup: "animate__animated animate__fadeInRight",
+    },
+    hideClass: {
+      popup: "animate__animated animate__fadeOutRight",
+    },
+  }
+
+  switch (type) {
+    case "success":
+      config.icon = "success"
+      config.iconColor = "#091e65"
+      config.background = "#f0fdf4"
+      config.color = "#15803d"
+      break
+    case "error":
+      config.icon = "error"
+      config.iconColor = "#E53E3E"
+      config.background = "#fef2f2"
+      config.color = "#b91c1c"
+      break
+    case "warning":
+      config.icon = "warning"
+      config.iconColor = "#f97316"
+      config.background = "#fffbeb"
+      config.color = "#d97706"
+      break
+    default:
+      config.icon = "info"
+      config.iconColor = "#091e65"
+      config.background = "#eff6ff"
+      config.color = "#1d4ed8"
+  }
+
+  Swal.fire(config)
+}
+
+/**
+ * Gets CSRF token from the page
+ * @returns {string} CSRF token
+ */
+function getCsrfToken() {
+  const csrfInput = document.querySelector("[name=csrfmiddlewaretoken]")
+  if (csrfInput) {
+    return csrfInput.value
+  }
+
+  console.warn("⚠️ CSRF token not found")
+  return ""
+}
+
+// ============================================================================
+// ERROR HANDLING AND CLEANUP
+// ============================================================================
+
+// FIXED: Modified beforeunload event to not interfere with form submissions
+window.addEventListener("beforeunload", (e) => {
+  // Only show warning if processing but NOT submitting a form
+  if (isProcessing && !isFormSubmitting) {
+    e.preventDefault()
+    e.returnValue = "A withdrawal request is being processed. Are you sure you want to leave?"
+    return e.returnValue
+  }
+})
+
+// Handle page visibility changes
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && isProcessing) {
+    console.log("⚠️ Page hidden during withdrawal processing")
+  }
+})
+
+// Global error handler
+window.addEventListener("error", (e) => {
+  console.error("💥 Global error caught:", e.error)
+
+  if (isProcessing) {
+    showNotification("An unexpected error occurred. Please try again.", "error")
+    isProcessing = false
+    isFormSubmitting = false // Reset form submission flag
+    hideLoadingOverlay()
+
+    // Reset submit button
+    const submitButton = document.getElementById("submitWithdrawalBtn")
+    if (submitButton) {
+      submitButton.disabled = false
+      submitButton.innerHTML = `
+               <i class="fas fa-paper-plane text-lg"></i>
+               Submit Withdrawal Request
+           `
     }
+  }
+})
 
-    if (withdrawalForm) {
-        withdrawalForm.addEventListener('submit', function(event) {
-            event.preventDefault(); 
+// Handle network status
+window.addEventListener("online", () => {
+  console.log("🌐 Network connection restored")
+})
 
-            const amountInput = document.getElementById('amount');
-            const accountSelect = document.getElementById('withdrawal_account_id');
-            const submitButton = document.getElementById('submitWithdrawalBtn');
+window.addEventListener("offline", () => {
+  console.log("📡 Network connection lost")
+  showNotification("Network connection lost. Please check your internet connection.", "warning")
+})
 
-            let isValid = true;
-            let amountErrorMessages = [];
-            let accountErrorMessages = [];
+// Reset flags when page loads (in case of redirect back)
+window.addEventListener("pageshow", () => {
+  isProcessing = false
+  isFormSubmitting = false
+  hideLoadingOverlay()
+})
 
-            showInlineError(amountErrorDiv, []);
-            showInlineError(accountErrorDiv, []);
-            amountInput.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/40');
-            accountSelect.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/40');
-            amountInput.classList.add('border-slate-300', 'focus:border-[#091e65]', 'focus:ring-[#091e65]/40');
-            accountSelect.classList.add('border-slate-300', 'focus:border-[#091e65]', 'focus:ring-[#091e65]/40');
-
-            const amountValue = parseFloat(amountInput.value);
-            const minAmount = DJANGO_MIN_WITHDRAWAL_AMOUNT; 
-            const maxAmount = DJANGO_AVAILABLE_BALANCE;
-
-            if (!amountInput.value || isNaN(amountValue) || amountValue <= 0) {
-                amountErrorMessages.push("Please enter a valid withdrawal amount.");
-                isValid = false;
-            } else {
-                if (minAmount > 0 && amountValue < minAmount) {
-                    amountErrorMessages.push(`Withdrawal amount must be at least Rs. ${minAmount.toFixed(2)}.`);
-                    isValid = false;
-                }
-                if (maxAmount >= 0 && amountValue > maxAmount) { 
-                    amountErrorMessages.push(`Withdrawal amount cannot exceed your available balance of Rs. ${maxAmount.toFixed(2)}.`);
-                    isValid = false;
-                }
-            }
-            
-            if (!accountSelect.value) {
-                accountErrorMessages.push("Please select a payout account.");
-                isValid = false;
-            }
-
-            if (!isValid) {
-                showInlineError(amountErrorDiv, amountErrorMessages);
-                showInlineError(accountErrorDiv, accountErrorMessages);
-                if (amountErrorMessages.length > 0 && amountInput) {
-                    amountInput.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/40');
-                    amountInput.classList.remove('border-slate-300', 'focus:border-[#091e65]', 'focus:ring-[#091e65]/40');
-                    amountInput.focus();
-                } else if (accountErrorMessages.length > 0 && accountSelect) {
-                    accountSelect.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/40');
-                    accountSelect.classList.remove('border-slate-300', 'focus:border-[#091e65]', 'focus:ring-[#091e65]/40');
-                    accountSelect.focus();
-                }
-                return;
-            }
-            
-            const amount = parseFloat(amountInput.value).toFixed(2);
-            const accountText = accountSelect.options[accountSelect.selectedIndex].text;
-            
-            showModal(
-                'Confirm Withdrawal',
-                `You are about to request a withdrawal of <strong class="text-[#091e65] font-semibold">Rs. ${amount}</strong> to the account:<br/><p class="mt-2 p-2 bg-slate-100 rounded-md text-sm text-slate-700">${accountText}</p><p class="mt-3 text-xs text-slate-500">This action cannot be undone once submitted. Please ensure the details are correct.</p>`,
-                'question', 
-                [
-                    { 
-                        text: 'Yes, Request Withdrawal!', 
-                        class: 'confirm', 
-                        onClick: () => {
-                            if(submitButton) {
-                                submitButton.disabled = true; 
-                                submitButton.innerHTML = `
-                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Processing...`;
-                            }
-                            withdrawalForm.submit(); 
-                        }
-                    },
-                    { text: 'Cancel', class: 'cancel' } 
-                ]
-            );
-        });
-    }
-
-    // Removed CANCELLATION_WINDOW_MS, formatTime, initializeCountdownTimers functions
-    // as the cancellation feature by creator is removed.
-}); 
+console.log("💰 AudioX Creator Withdrawal Request - JavaScript loaded successfully")

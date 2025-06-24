@@ -2,132 +2,393 @@
 {% load static %}
 {% load humanize %} 
 {% load mathfilters %}
+{% load audio_filters %}
 
 {% block title %}
     {% if query %}
         Search Results for "{{ query }}" - AudioX
+    {% elif current_language_filter or current_genre_filter or current_creator_filter %}
+        {% if current_language_filter %}{{ current_language_filter }} {% endif %}
+        {% if current_genre_filter %}{{ current_genre_filter }} {% endif %}
+        {% if current_creator_filter %}by {{ current_creator_filter }} {% endif %}
+        Audiobooks - AudioX
     {% else %}
-        Search - AudioX
+        Browse Audiobooks - AudioX
     {% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="bg-gray-50 min-h-screen font-sans antialiased pb-16">
-    <div class="container mx-auto px-4 py-12 sm:py-16">
+    <div class="container mx-auto px-4 py-8 sm:py-12">
         
-        {% if query %}
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
-                Search Results for "<span class="text-[#091e65]">{{ query }}</span>"
-            </h1>
-            <p class="text-gray-600 mb-10 text-lg">
-                Found {{ results|length }} audiobook{{ results|length|pluralize }} matching your search.
-            </p>
-        {% else %}
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-10 text-center">
-                Search Audiobooks
-            </h1>
-            <p class="text-gray-600 mb-10 text-lg text-center">
-                Enter a term in the search bar above to find audiobooks by title, author, or creator.
-            </p>
-        {% endif %}
+        <!-- Search Header -->
+        <div class="mb-8">
+            {% if query %}
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
+                    Search Results for "<span class="text-[#091e65]">{{ query }}</span>"
+                </h1>
+            {% elif has_filters %}
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
+                    {% if current_language_filter %}{{ current_language_filter }} {% endif %}
+                    {% if current_genre_filter %}{{ current_genre_filter }} {% endif %}
+                    Audiobooks
+                    {% if current_creator_filter %} by {{ current_creator_filter }}{% endif %}
+                </h1>
+            {% else %}
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 text-center">
+                    Browse Audiobooks
+                </h1>
+            {% endif %}
 
+            <!-- Filter Summary -->
+            {% if has_filters %}
+                <div class="flex flex-wrap items-center gap-2 mb-4">
+                    <span class="text-sm text-gray-600 font-medium">Filters:</span>
+                    {% if current_language_filter %}
+                        <span class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium bg-[#091e65] text-white rounded-full">
+                            <i class="fas fa-globe text-xs"></i>
+                            {{ current_language_filter }}
+                        </span>
+                    {% endif %}
+                    {% if current_genre_filter %}
+                        <span class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium bg-green-600 text-white rounded-full">
+                            <i class="fas fa-tags text-xs"></i>
+                            {{ current_genre_filter }}
+                        </span>
+                    {% endif %}
+                    {% if current_creator_filter %}
+                        <span class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium bg-purple-600 text-white rounded-full">
+                            <i class="fas fa-microphone text-xs"></i>
+                            {{ current_creator_filter }}
+                        </span>
+                    {% endif %}
+                    <a href="{% url 'AudioXApp:search_results' %}" 
+                       class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors">
+                        <i class="fas fa-times text-xs"></i>
+                        Clear All
+                    </a>
+                </div>
+            {% endif %}
+
+            <!-- Results Count -->
+            {% if search_performed %}
+                <p class="text-gray-600 mb-6 text-lg">
+                    {% if total_results > 0 %}
+                        Found {{ total_results }} audiobook{{ total_results|pluralize }} 
+                        {% if query %}matching your search{% endif %}
+                        {% if has_filters and not query %}with selected filters{% endif %}.
+                        {% if page_obj.paginator.num_pages > 1 %}
+                            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_results }}.
+                        {% endif %}
+                    {% else %}
+                        No audiobooks found 
+                        {% if query %}for "{{ query }}"{% endif %}
+                        {% if has_filters %}with the selected filters{% endif %}.
+                    {% endif %}
+                </p>
+            {% else %}
+                <p class="text-gray-600 mb-8 text-lg text-center">
+                    Use the search bar above to find audiobooks by title, description, or use the filter buttons to browse by language, genre, or creator.
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Search Results -->
         {% if results %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 md:gap-12">
-                {% for book_item in results %} {# Changed book to book_item to avoid conflict with any block context #}
-                <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book_item.slug %}" class="block group relative">
-                    <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl h-full flex flex-col">
-                        <div class="relative h-80 w-full">
-                            <img src="{% if book_item.cover_image_url %}{{ book_item.cover_image_url }}{% else %}https://placehold.co/300x320/eeeeee/999999?text=No+Cover{% endif %}"
-                                 alt="{{ book_item.title }}"
-                                 class="w-full h-full object-cover rounded-t-3xl"
-                                 loading="lazy"
-                                 width="300" height="320"
-                                 onerror="this.onerror=null; this.src='https://placehold.co/300x320/eeeeee/999999?text=Cover+Error';">
-                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
-                                <button
-                                    type="button"
-                                    title="View Details"
-                                    class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                         stroke="currentColor" class="w-8 h-8">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                              d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="p-4 flex-grow flex flex-col">
-                            <h3 class="font-semibold text-lg text-gray-800 truncate mb-1" title="{{ book_item.title }}">{{ book_item.title }}</h3>
-                            {% if book_item.author %}
-                                <p class="text-sm text-gray-600 truncate" title="{{ book_item.author }}">By {{ book_item.author }}</p>
-                            {% endif %}
-                            
-                            {% if book_item.creator_name %}
-                                <p class="text-xs text-[#091e65] mt-1">Creator: {{ book_item.creator_name }}</p>
-                            {% elif book_item.source_type == 'librivox' %}
-                                <p class="text-xs text-gray-500 mt-1">Source: LibriVox</p>
-                            {% elif book_item.source_type == 'archive.org' %}
-                                <p class="text-xs text-gray-500 mt-1">Source: Archive.org</p>
-                            {% endif %}
-
-                            {% if book_item.average_rating is not None or book_item.total_views is not None %}
-                            <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500">
-                                {% if book_item.average_rating is not None %}
-                                <div class="flex items-center space-x-1"> 
-                                    {% with rating=book_item.average_rating %}
-                                        {% with full_stars=rating|floatformat:0|add:"0" %}
-                                        {% with decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
-                                        {% with decimal_part_int=decimal_part_str|add:"0" %}
-                                            {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endfor %}
-                                            {% if decimal_part_int >= 5 %}
-                                                <i class="fas fa-star-half-alt text-yellow-400 text-sm mr-px"></i>
-                                                {% with current_stars=full_stars|add:1 %}
-                                                {% with empty_stars=5|sub:current_stars %}
-                                                    {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                {% endwith %}
-                                                {% endwith %}
-                                            {% else %}
-                                                {% with empty_stars=5|sub:full_stars %}
-                                                    {% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}
-                                                {% endwith %}
-                                            {% endif %}
-                                        {% endwith %}{# end decimal_part_int #}
-                                        {% endwith %}{# end decimal_part_str #}
-                                        {% endwith %}{# end full_stars #}
-                                        <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
-                                    {% endwith %}
-                                </div>
-                                {% elif book_item.is_creator_book %} {# Only show "No ratings" for DB books if they truly have none #}
-                                 <span class="text-gray-400 italic text-xs">No ratings</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-12">
+                {% for book_item in results %}
+                <div class="group relative">
+                    <a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book_item.slug %}" class="block">
+                        <div class="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 h-full flex flex-col">
+                            <!-- Cover Image -->
+                            <div class="relative h-64 w-full overflow-hidden">
+                                {% if book_item.cover_image_url %}
+                                    <img src="{{ book_item.cover_image_url }}"
+                                         alt="{{ book_item.title }}"
+                                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                         loading="lazy"
+                                         onerror="this.onerror=null; this.src='https://placehold.co/300x256/eeeeee/999999?text=No+Cover';">
+                                {% else %}
+                                    <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                        <div class="text-center">
+                                            <i class="fas fa-book text-4xl text-gray-400 mb-2"></i>
+                                            <p class="text-xs text-gray-500">No Cover</p>
+                                        </div>
+                                    </div>
                                 {% endif %}
                                 
-                                {% if book_item.total_views is not None %}
-                                <div class="flex items-center space-x-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                    </svg>
-                                    <span>{{ book_item.total_views|intcomma }}</span>
+                                <!-- Play Button Overlay -->
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
+                                    <div class="bg-white/90 text-[#091e65] rounded-full p-3 transition-transform duration-200 hover:scale-110">
+                                        <i class="fas fa-play text-xl"></i>
+                                    </div>
                                 </div>
+
+                                <!-- Source Badge -->
+                                {% if book_item.source_type %}
+                                    <div class="absolute top-2 right-2">
+                                        {% if book_item.source_type == 'creator' %}
+                                            <span class="bg-[#091e65] text-white text-xs px-2 py-1 rounded-full font-medium">
+                                                <i class="fas fa-star text-xs mr-1"></i>Creator
+                                            </span>
+                                        {% elif book_item.source_type == 'librivox' %}
+                                            <span class="bg-green-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                                LibriVox
+                                            </span>
+                                        {% elif book_item.source_type == 'archive.org' %}
+                                            <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                                Archive
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                <!-- Paid Badge -->
+                                {% if book_item.is_paid %}
+                                    <div class="absolute top-2 left-2">
+                                        <span class="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                            <i class="fas fa-crown text-xs mr-1"></i>PKR {{ book_item.price }}
+                                        </span>
+                                    </div>
                                 {% endif %}
                             </div>
-                            {% endif %} 
+
+                            <!-- Content -->
+                            <div class="p-4 flex-grow flex flex-col">
+                                <!-- Title -->
+                                <h3 class="font-semibold text-lg text-gray-800 mb-2 line-clamp-2 group-hover:text-[#091e65] transition-colors" 
+                                    title="{{ book_item.title }}">
+                                    {{ book_item.title }}
+                                </h3>
+
+                                <!-- Author/Creator -->
+                                {% if book_item.creator_name %}
+                                    <p class="text-sm text-[#091e65] font-medium mb-1" title="Creator: {{ book_item.creator_name }}">
+                                        <i class="fas fa-microphone text-xs mr-1"></i>{{ book_item.creator_name }}
+                                    </p>
+                                {% elif book_item.author %}
+                                    <p class="text-sm text-gray-600 mb-1" title="Author: {{ book_item.author }}">
+                                        <i class="fas fa-user text-xs mr-1"></i>{{ book_item.author }}
+                                    </p>
+                                {% endif %}
+
+                                <!-- Genre and Language -->
+                                <div class="flex flex-wrap gap-1 mb-3">
+                                    {% if book_item.genre %}
+                                        <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                                            {{ book_item.genre }}
+                                        </span>
+                                    {% endif %}
+                                    {% if book_item.language %}
+                                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                            {{ book_item.language }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Description -->
+                                {% if book_item.description %}
+                                    <p class="text-xs text-gray-500 mb-3 line-clamp-2">
+                                        {{ book_item.description }}
+                                    </p>
+                                {% endif %}
+
+                                <!-- Stats -->
+                                <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500">
+                                    <!-- Rating -->
+                                    {% if book_item.average_rating %}
+                                        <div class="flex items-center space-x-1">
+                                            {% with rating=book_item.average_rating %}
+                                                {% with full_stars=rating|floatformat:0|add:"0" %}
+                                                    {% for i in ""|center:full_stars %}
+                                                        <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                                    {% endfor %}
+                                                    {% with remaining=5|sub:full_stars %}
+                                                        {% if rating|floatformat:1|slice:"-1:" >= "5" and full_stars < 5 %}
+                                                            <i class="fas fa-star-half-alt text-yellow-400 text-xs"></i>
+                                                            {% with remaining=remaining|sub:1 %}
+                                                                {% for i in ""|center:remaining %}
+                                                                    <i class="far fa-star text-gray-300 text-xs"></i>
+                                                                {% endfor %}
+                                                            {% endwith %}
+                                                        {% else %}
+                                                            {% for i in ""|center:remaining %}
+                                                                <i class="far fa-star text-gray-300 text-xs"></i>
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                {% endwith %}
+                                                <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
+                                            {% endwith %}
+                                        </div>
+                                    {% elif book_item.is_creator_book %}
+                                        <span class="text-gray-400 italic text-xs">No ratings yet</span>
+                                    {% else %}
+                                        <span></span>
+                                    {% endif %}
+
+                                    <!-- Views -->
+                                    {% if book_item.total_views %}
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-eye text-gray-400 text-xs"></i>
+                                            <span>{{ book_item.total_views|intcomma }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Review Count -->
+                                {% if book_item.review_count %}
+                                    <div class="mt-1 text-xs text-gray-500">
+                                        {{ book_item.review_count }} review{{ book_item.review_count|pluralize }}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                </a>
+                    </a>
+                </div>
                 {% endfor %}
             </div>
-        {% elif query %}
-            <div class="text-center py-10">
-                <img src="{% static 'img/audiox-favicon.png' %}" alt="No results" class="mx-auto h-24 w-24 opacity-50 mb-6">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-3">No Audiobooks Found</h2>
-                <p class="text-gray-500">We couldn't find any audiobooks matching "<span class="font-medium">{{ query }}</span>".</p>
-                <p class="text-gray-500 mt-1">Try searching for a different term or check your spelling.</p>
-                <a href="{% url 'AudioXApp:home' %}" class="mt-8 inline-block bg-[#091e65] hover:bg-blue-900 text-white font-semibold py-2.5 px-6 rounded-lg shadow hover:shadow-md transition duration-150 ease-in-out">
-                    Back to Home
-                </a>
+
+            <!-- Pagination -->
+            {% if page_obj.paginator.num_pages > 1 %}
+                <div class="flex justify-center items-center space-x-2 mt-12">
+                    {% if page_obj.has_previous %}
+                        <a href="?{% if query %}q={{ query }}&{% endif %}{% if current_language_filter %}language={{ current_language_filter }}&{% endif %}{% if current_genre_filter %}genre={{ current_genre_filter }}&{% endif %}{% if current_creator_filter %}creator={{ current_creator_filter }}&{% endif %}page={{ page_obj.previous_page_number }}" 
+                           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-chevron-left mr-1"></i>Previous
+                        </a>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <span class="px-4 py-2 text-sm font-medium text-white bg-[#091e65] border border-[#091e65] rounded-lg">
+                                {{ num }}
+                            </span>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <a href="?{% if query %}q={{ query }}&{% endif %}{% if current_language_filter %}language={{ current_language_filter }}&{% endif %}{% if current_genre_filter %}genre={{ current_genre_filter }}&{% endif %}{% if current_creator_filter %}creator={{ current_creator_filter }}&{% endif %}page={{ num }}" 
+                               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <a href="?{% if query %}q={{ query }}&{% endif %}{% if current_language_filter %}language={{ current_language_filter }}&{% endif %}{% if current_genre_filter %}genre={{ current_genre_filter }}&{% endif %}{% if current_creator_filter %}creator={{ current_creator_filter }}&{% endif %}page={{ page_obj.next_page_number }}" 
+                           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Next<i class="fas fa-chevron-right ml-1"></i>
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="text-center mt-4 text-sm text-gray-600">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </div>
+            {% endif %}
+
+        {% elif search_performed %}
+            <!-- No Results Found -->
+            <div class="text-center py-16">
+                <div class="mb-8">
+                    <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-3">No Audiobooks Found</h2>
+                    {% if query %}
+                        <p class="text-gray-500 mb-2">
+                            We couldn't find any audiobooks matching "<span class="font-medium text-gray-700">{{ query }}</span>"
+                            {% if has_filters %}with the selected filters{% endif %}.
+                        </p>
+                    {% elif has_filters %}
+                        <p class="text-gray-500 mb-2">
+                            No audiobooks match the selected filters.
+                        </p>
+                    {% endif %}
+                    
+                    <div class="mt-6 space-y-2">
+                        <p class="text-gray-500 text-sm">Try:</p>
+                        <ul class="text-gray-500 text-sm space-y-1">
+                            <li>• Checking your spelling</li>
+                            <li>• Using different keywords</li>
+                            <li>• Removing some filters</li>
+                            <li>• Browsing by language or genre</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    {% if has_filters %}
+                        <a href="{% url 'AudioXApp:search_results' %}" 
+                           class="inline-flex items-center justify-center px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow hover:shadow-md transition duration-150 ease-in-out">
+                            <i class="fas fa-times mr-2"></i>Clear All Filters
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'AudioXApp:home' %}" 
+                       class="inline-flex items-center justify-center px-6 py-3 bg-[#091e65] hover:bg-blue-900 text-white font-semibold rounded-lg shadow hover:shadow-md transition duration-150 ease-in-out">
+                        <i class="fas fa-home mr-2"></i>Back to Home
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <!-- Browse Mode - No Search Performed -->
+            <div class="text-center py-16">
+                <div class="mb-8">
+                    <i class="fas fa-headphones text-6xl text-[#091e65] mb-6"></i>
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Discover Amazing Audiobooks</h2>
+                    <p class="text-gray-500 mb-6 max-w-2xl mx-auto">
+                        Search for audiobooks by title, author, or description. Use the filter buttons above to browse by language, genre, or creator.
+                    </p>
+                </div>
+
+                <!-- Quick Browse Options -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                    <a href="?language=English" 
+                       class="p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-2 border-transparent hover:border-[#091e65] group">
+                        <i class="fas fa-globe text-2xl text-[#091e65] mb-2 group-hover:scale-110 transition-transform"></i>
+                        <h3 class="font-semibold text-gray-800">English</h3>
+                        <p class="text-xs text-gray-500">Browse English audiobooks</p>
+                    </a>
+                    <a href="?language=Urdu" 
+                       class="p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-2 border-transparent hover:border-[#091e65] group">
+                        <i class="fas fa-globe text-2xl text-[#091e65] mb-2 group-hover:scale-110 transition-transform"></i>
+                        <h3 class="font-semibold text-gray-800">اردو</h3>
+                        <p class="text-xs text-gray-500">Browse Urdu audiobooks</p>
+                    </a>
+                    <a href="?language=Punjabi" 
+                       class="p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-2 border-transparent hover:border-[#091e65] group">
+                        <i class="fas fa-globe text-2xl text-[#091e65] mb-2 group-hover:scale-110 transition-transform"></i>
+                        <h3 class="font-semibold text-gray-800">پنجابی</h3>
+                        <p class="text-xs text-gray-500">Browse Punjabi audiobooks</p>
+                    </a>
+                    <a href="?language=Sindhi" 
+                       class="p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow border-2 border-transparent hover:border-[#091e65] group">
+                        <i class="fas fa-globe text-2xl text-[#091e65] mb-2 group-hover:scale-110 transition-transform"></i>
+                        <h3 class="font-semibold text-gray-800">سنڌي</h3>
+                        <p class="text-xs text-gray-500">Browse Sindhi audiobooks</p>
+                    </a>
+                </div>
+
+                <!-- Popular Genres -->
+                <div class="mt-12">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-6">Popular Genres</h3>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        {% for genre in "Fiction,Mystery,Romance,Biography,History,Self Help,Business,Fantasy,Thriller,Science Fiction"|split:"," %}
+                            <a href="?genre={{ genre }}" 
+                               class="px-4 py-2 bg-white text-gray-700 rounded-full border border-gray-300 hover:border-[#091e65] hover:text-[#091e65] transition-colors text-sm font-medium">
+                                {{ genre }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         {% endif %}
     </div>
 </div>
+
+<!-- Custom CSS for line clamping -->
+<style>
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
 {% endblock %}

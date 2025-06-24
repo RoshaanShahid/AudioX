@@ -8,6 +8,18 @@
     const AUDIOBOOKS_STORE_NAME = 'audiobooks';
     const CHAPTERS_STORE_NAME = 'chapters';
 
+    // ADD THIS NEW FUNCTION HERE
+    function createChapterUniqueId(audiobookInfo, chapterInfo) {
+        const audiobookPart = audiobookInfo.audiobookSlug || audiobookInfo.slug || audiobookInfo.audiobookId;
+        const chapterPart = chapterInfo.chapter_id || chapterInfo.chapterIdOriginal || chapterInfo.chapterIndex;
+        if (!audiobookPart || chapterPart === undefined || chapterPart === null) {
+            console.error("Cannot create a valid chapter unique ID with provided info:", audiobookInfo, chapterInfo);
+            return null;
+        }
+        return `${audiobookPart}_${chapterPart}`;
+    }
+    // END OF NEW FUNCTION
+
     let db;
 
     // --- Utility: Format Duration ---
@@ -176,7 +188,7 @@
     }
 
     async function downloadChapter(chapterInfo, audiobookInfo, progressCallback) {
-        const chapterUniqueId = `${audiobookInfo.audiobookSlug || audiobookInfo.audiobookId}_${chapterInfo.chapter_id || chapterInfo.chapter_index}`;
+        const chapterUniqueId = createChapterUniqueId(audiobookInfo, chapterInfo);
         
         if (await isChapterDownloaded(chapterUniqueId)) {
             console.log(`OfflineManager: Chapter "${chapterInfo.chapter_title}" already downloaded.`);
@@ -927,16 +939,17 @@
     }
 
 
-    // --- Public API ---
-    window.OfflineManager = {
-        initDB,
-        isChapterDownloaded,
-        downloadChapter,
-        downloadFullAudiobook,
-        // For downloads page UI and interactions:
-        populateDownloadsPage,
-        initOfflinePlayer,
-        initDownloadsPageModals
-    };
+   // --- Public API ---
+    window.OfflineManager = {
+        initDB,
+        isChapterDownloaded,
+        downloadChapter,
+        downloadFullAudiobook,
+        createChapterUniqueId, // ADD THIS LINE TO EXPOSE THE FUNCTION
+        // For downloads page UI and interactions:
+        populateDownloadsPage,
+        initOfflinePlayer,
+        initDownloadsPageModals
+    };
 
 })(window);

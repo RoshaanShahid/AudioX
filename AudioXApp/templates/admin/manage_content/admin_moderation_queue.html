@@ -1,0 +1,194 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block title %}Content Moderation Queue{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 h-full">
+    <div class="container mx-auto px-4 py-8 h-full">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-brand-primary">Content Moderation Queue</h1>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-4 p-4 rounded-md 
+                    {% if message.tags == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)]">
+
+            <div id="queue-panel" class="lg:w-1/3 xl:w-1/4 bg-white rounded-lg shadow-md border border-gray-200">
+                <div class="p-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-700">Awaiting Review ({{ flagged_audiobooks|length }})</h2>
+                </div>
+                <div class="overflow-y-auto h-[calc(100%-65px)]">
+                    {% if flagged_audiobooks %}
+                        <div id="queue-items-container">
+                            {% for audiobook in flagged_audiobooks %}
+                                <div class="queue-item cursor-pointer p-4 flex items-center gap-4 border-b hover:bg-gray-50" data-target="review-panel-{{ audiobook.audiobook_id }}">
+                                    <img src="{{ audiobook.cover_image.url }}" alt="Cover for {{ audiobook.title }}" class="w-12 h-12 rounded-md object-cover flex-shrink-0">
+                                    <div class="overflow-hidden">
+                                        <p class="font-semibold text-gray-800 truncate">{{ audiobook.title }}</p>
+                                        <p class="text-sm text-gray-500 truncate">by {{ audiobook.creator.user.username }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-6 text-center text-gray-500">
+                            <p>No items to review.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div id="review-panel-container" class="lg:w-2/3 xl:w-3/4">
+                {% if flagged_audiobooks %}
+                    {% for audiobook in flagged_audiobooks %}
+                    <div id="review-panel-{{ audiobook.audiobook_id }}" class="review-panel bg-white rounded-lg shadow-md border border-gray-200 h-full flex-col hidden">
+                        <div class="overflow-y-auto h-full p-6">
+                            <div class="pb-5 border-b border-gray-200">
+                                <h2 class="text-2xl font-bold text-brand-primary">{{ audiobook.title }}</h2>
+                                <p class="text-md text-gray-500 mt-1">
+                                    By <span class="font-medium text-gray-700">{{ audiobook.author }}</span> | Narrated by <span class="font-medium text-gray-700">{{ audiobook.narrator }}</span>
+                                </p>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    Submitted by: <a href="{% url 'AudioXApp:admin_view_user_detail' audiobook.creator.user.user_id %}" class="text-brand-primary hover:underline font-medium">{{ audiobook.creator.user.username }}</a>
+                                </p>
+                            </div>
+
+                            <div class="my-6">
+                                <h4 class="font-semibold text-gray-800 text-lg mb-4">Flagged Chapters for Review:</h4>
+                                <div class="space-y-6">
+                                    {% for chapter in audiobook.flagged_chapters %}
+                                    <div class="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                                        <div class="flex items-center justify-between">
+                                            <p class="font-semibold text-gray-900">{{ chapter.chapter_order }}: {{ chapter.chapter_name }}</p>
+                                        </div>
+                                        <p class="text-sm text-red-700 mt-2">
+                                            <i class="fas fa-flag mr-1"></i>
+                                            <strong>Reason:</strong> {{ chapter.moderation_notes|default:"No specific reason provided." }}
+                                        </p>
+                                        
+                                        {% if chapter.audio_file %}
+                                        <div class="mt-4">
+                                            <audio controls class="w-full">
+                                                <source src="{{ chapter.audio_file.url }}" type="audio/mpeg">
+                                                Your browser does not support the audio element.
+                                            </audio>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% empty %}
+                                    <div class="p-4 rounded-lg border border-dashed text-center text-gray-500">
+                                        <p>No specific chapters were flagged for this audiobook.</p>
+                                        <p class="text-sm">Please review the audiobook as a whole.</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-gray-50 border-t flex items-center justify-end gap-3 rounded-b-lg">
+                            <form action="{% url 'AudioXApp:admin_reject_audiobook' audiobook.audiobook_id %}" method="post" class="flex-grow">
+                                {% csrf_token %}
+                                <div class="flex gap-2">
+                                    <input type="text" name="reason" class="w-full p-2 border border-gray-300 rounded-md text-sm" placeholder="Reason for rejection (required)..." required>
+                                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md transition whitespace-nowrap">
+                                        <i class="fas fa-times-circle mr-2"></i>Reject
+                                    </button>
+                                </div>
+                            </form>
+                            <form action="{% url 'AudioXApp:admin_approve_audiobook' audiobook.audiobook_id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="px-4 py-2 bg-brand-primary hover:opacity-90 text-white font-bold rounded-md transition whitespace-nowrap">
+                                    <i class="fas fa-check-circle mr-2"></i>Approve Audiobook
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                {% else %}
+                    <div class="flex items-center justify-center bg-white rounded-lg shadow-md border border-gray-200 h-full">
+                        <div class="text-center py-12">
+                            <div class="inline-block bg-green-100 text-green-600 p-5 rounded-full">
+                                <i class="fas fa-check-double text-5xl"></i>
+                            </div>
+                            <h3 class="mt-6 text-2xl font-semibold text-gray-800">The Moderation Queue is Clear!</h3>
+                            <p class="mt-2 text-gray-500">Excellent work. All content has been reviewed.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Custom styles for the audio player to give it a premium feel */
+    audio {
+        filter: sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%);
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const queueItemsContainer = document.getElementById('queue-items-container');
+    const reviewPanelContainer = document.getElementById('review-panel-container');
+
+    if (queueItemsContainer && reviewPanelContainer) {
+        const queueItems = queueItemsContainer.querySelectorAll('.queue-item');
+        const reviewPanels = reviewPanelContainer.querySelectorAll('.review-panel');
+
+        function showPanel(panelId) {
+            // Hide all panels
+            reviewPanels.forEach(panel => {
+                panel.classList.add('hidden');
+                panel.classList.remove('flex');
+            });
+            
+            // Deactivate all queue items
+            queueItems.forEach(item => {
+                item.classList.remove('bg-blue-50', 'border-l-4', 'border-brand-primary');
+            });
+
+            // Show the target panel
+            const targetPanel = document.getElementById(panelId);
+            if (targetPanel) {
+                targetPanel.classList.remove('hidden');
+                targetPanel.classList.add('flex'); // Use flex to make footer stick to bottom
+            }
+
+            // Activate the corresponding queue item
+            const targetQueueItem = document.querySelector(`.queue-item[data-target="${panelId}"]`);
+            if (targetQueueItem) {
+                targetQueueItem.classList.add('bg-blue-50', 'border-l-4', 'border-brand-primary');
+            }
+        }
+
+        // Add click event listeners to queue items
+        queueItems.forEach(item => {
+            item.addEventListener('click', function () {
+                const targetPanelId = this.getAttribute('data-target');
+                showPanel(targetPanelId);
+            });
+        });
+
+        // Show the first panel by default if it exists
+        if (queueItems.length > 0) {
+            const firstPanelId = queueItems[0].getAttribute('data-target');
+            showPanel(firstPanelId);
+        }
+    }
+});
+</script>
+
+{% endblock %}

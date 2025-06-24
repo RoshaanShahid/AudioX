@@ -7,7 +7,9 @@ from datetime import datetime, timedelta
 import os
 import logging
 import asyncio
-from io import BytesIO # Import BytesIO
+from io import BytesIO
+from asgiref.sync import async_to_sync
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, Http404
 from django.contrib import messages
@@ -27,22 +29,31 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile, TemporaryUploadedFile
+
+
 from mutagen.mp3 import MP3, HeaderNotFoundError as MP3HeaderNotFoundError
 from mutagen.wave import WAVE, error as WaveError
 from mutagen.mp4 import MP4, MP4StreamInfoError
 from mutagen.oggvorbis import OggVorbis, OggVorbisHeaderError
 from mutagen.flac import FLAC, FLACNoHeaderError
 from typing import Optional
+
 from ...models import (
     User, Creator, Audiobook, Chapter,
     CreatorEarning, AudiobookViewLog
 )
 from ..utils import _get_full_context
 from ..decorators import creator_required
-from .creator_tts_views import (
+from ...tasks import process_chapter_for_moderation
+
+
+from ...tts_constants import (
     EDGE_TTS_VOICES_BY_LANGUAGE,
     ALL_EDGE_TTS_VOICES_MAP,
     LANGUAGE_GENRE_MAPPING,
+)
+
+from .creator_tts_views import (
     generate_audio_edge_tts_async,
     extract_text_from_pdf,
     extract_text_from_docx
@@ -53,90 +64,9 @@ logger = logging.getLogger(__name__)
 EARNING_PER_VIEW = Decimal(getattr(settings, 'CREATOR_EARNING_PER_FREE_VIEW', '1.00'))
 GENRE_OTHER_VALUE = '_OTHER_'
 
-# --- Helper Functions ---
 
-def get_audio_duration(file_obj_or_path):
-    """
-    Extracts the duration of an audio file using mutagen.
-    Supports file objects (like InMemoryUploadedFile) or file paths.
-    
-    If given a file-like object (e.g., InMemoryUploadedFile, ContentFile),
-    it reads its content into BytesIO to avoid disturbing the original
-    file pointer, preventing "I/O operation on closed file" errors.
-    """
-    duration = None
-    filename = None
-    file_to_read = None
-    temp_file_for_mutagen = None # To hold BytesIO or a path to be opened by mutagen
-
-    if isinstance(file_obj_or_path, str):
-        filename = os.path.basename(file_obj_or_path)
-        file_to_read = file_obj_or_path # This is a path, mutagen will open it
-    elif hasattr(file_obj_or_path, 'name'):
-        filename = file_obj_or_path.name
-        if isinstance(file_obj_or_path, TemporaryUploadedFile):
-            file_to_read = file_obj_or_path.temporary_file_path() # Get path for TemporaryUploadedFile
-        elif isinstance(file_obj_or_path, (InMemoryUploadedFile, ContentFile)):
-            # For in-memory files, read content into BytesIO to preserve original stream
-            try:
-                # Ensure the original file-like object is at the beginning
-                original_position = file_obj_or_path.tell()
-                file_obj_or_path.seek(0)
-                temp_file_for_mutagen = BytesIO(file_obj_or_path.read())
-                file_obj_or_path.seek(original_position) # Restore original position
-            except Exception as e_copy:
-                logger.warning(f"Could not read content from in-memory file '{filename}' into BytesIO for duration: {e_copy}")
-                return None
-        else:
-            if hasattr(file_obj_or_path, 'path'): # Fallback for other file-like objects with a path attribute
-                file_to_read = file_obj_or_path.path
-            else:
-                logger.error(f"Unsupported file object type for duration extraction: {type(file_obj_or_path)}")
-                return None
-
-    if file_to_read: # If it's a path (either original string or from TemporaryUploadedFile)
-        temp_file_for_mutagen = file_to_read
-
-    if temp_file_for_mutagen is None:
-        logger.error(f"No valid readable source determined for duration extraction of '{filename}'.")
-        return None
-
-    try:
-        ext = os.path.splitext(filename)[1].lower()
-        audio = None
-        if ext in ['.mp3']:
-            audio = MP3(temp_file_for_mutagen)
-        elif ext in ['.wav']:
-            audio = WAVE(temp_file_for_mutagen)
-        elif ext in ['.m4a', '.mp4', '.m4b', '.aac']:
-            audio = MP4(temp_file_for_mutagen)
-        elif ext in ['.ogg', '.oga']:
-            audio = OggVorbis(temp_file_for_mutagen)
-        elif ext in ['.flac']:
-            audio = FLAC(temp_file_for_mutagen)
-        else:
-            logger.warning(f"Unsupported audio format for duration extraction: {filename} (extension: {ext})")
-            return None
-        
-        if audio and audio.info and hasattr(audio.info, 'length'):
-            duration = audio.info.length
-        else:
-            logger.warning(f"Could not retrieve audio info for {filename}. Mutagen may not have found a valid stream.")
-            return None
-
-        return float(duration) if duration is not None else None
-    except (MP3HeaderNotFoundError, WaveError, MP4StreamInfoError, OggVorbisHeaderError, FLACNoHeaderError) as e:
-        logger.warning(f"Mutagen error extracting duration for {filename}: {type(e).__name__} - {e}")
-    except Exception as e:
-        logger.error(f"Unexpected error extracting duration for {filename}: {e}", exc_info=True)
-    finally:
-        # Close BytesIO object if created
-        if isinstance(temp_file_for_mutagen, BytesIO):
-            temp_file_for_mutagen.close()
-    return None
 
 def _reorder_chapters(audiobook):
-    """Re-orders the chapters of an audiobook sequentially starting from 1."""
     chapters = Chapter.objects.filter(audiobook=audiobook).order_by('chapter_order')
     for i, chapter in enumerate(chapters, 1):
         if chapter.chapter_order != i:
@@ -144,16 +74,10 @@ def _reorder_chapters(audiobook):
     logger.info(f"Re-ordered chapters for audiobook '{audiobook.slug}'.")
 
 
-# --- View Logging ---
-
 @login_required
 @require_POST
 @csrf_protect
 def log_audiobook_view(request):
-    """
-    Logs a view for an audiobook and potentially awards earnings to the creator.
-    A view is logged only once per user per audiobook within a 24-hour period.
-    """
     if not request.user.is_authenticated:
         return JsonResponse({'status': 'error', 'message': 'User not authenticated.'}, status=401)
     try:
@@ -198,16 +122,11 @@ def log_audiobook_view(request):
         logger.error(f"log_audiobook_view: Internal error for user {request.user.username}, audiobook ID {audiobook_id}. Error: {e}", exc_info=True)
         return JsonResponse({'status': 'error', 'message': 'An internal error occurred.'}, status=500)
 
-# --- Audiobook Management Views ---
 
 @creator_required
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def creator_upload_audiobook(request):
-    """
-    Handles the creation of a new audiobook, including its details and chapters.
-    Supports uploading audio files, generating TTS from text, or generating TTS from documents.
-    """
     creator = request.creator
     form_errors = {}
     submitted_values = {}
@@ -311,12 +230,12 @@ def creator_upload_audiobook(request):
                 chapter_document_file_from_form = request.FILES.get(f'chapters[{index}][document_file]')
                 chapter_doc_tts_voice_option_id = submitted_values.get(f'chapters[{index}][doc_tts_voice]', '').strip()
                 generated_document_tts_audio_url_from_form = submitted_values.get(f'chapters[{index}][generated_document_tts_audio_url]', '').strip()
-                generated_document_filename_from_form = submitted_values.get(f'chapters[{index}][generated_document_filename]', '').strip() # Added
+                generated_document_filename_from_form = submitted_values.get(f'chapters[{index}][generated_document_filename]', '').strip()
 
                 try:
                     chapter_order = int(submitted_values.get(f'chapters[{index}][order]', index + 1))
                 except ValueError: chapter_order = index + 1
-
+                
                 current_chapter_errors = {}
                 temp_chapter_data_for_repopulation = {
                     'original_index': index, 'title': chapter_title, 'order': chapter_order,
@@ -329,26 +248,21 @@ def creator_upload_audiobook(request):
                     'doc_tts_voice': chapter_doc_tts_voice_option_id,
                     'doc_tts_voice_display_name': ALL_EDGE_TTS_VOICES_MAP.get(chapter_doc_tts_voice_option_id, {}).get('name', ''),
                     'generated_document_tts_audio_url': generated_document_tts_audio_url_from_form,
-                    'generated_document_filename': generated_document_filename_from_form, # Added
+                    'generated_document_filename': generated_document_filename_from_form,
                     'errors': {}
                 }
                 if chapter_audio_file_from_form:
                     temp_chapter_data_for_repopulation['audio_filename'] = chapter_audio_file_from_form.name
                 if chapter_document_file_from_form:
-                    temp_chapter_data_for_repopulation['document_filename'] = chapter_document_file_from_form.name
-
+                    temp_chapter_data_for_repopulation['document_filename'] = chapter_document_file_from_form
                 if not chapter_title: current_chapter_errors['title'] = "Chapter title is required."
-                
                 audio_file_to_process_for_db = None
                 text_content_for_db = None
                 is_tts_generated_for_db = False
                 actual_edge_tts_voice_id_for_gen = None
                 tts_option_id_for_model = None
                 source_document_filename_for_db = None
-
                 voices_available_for_main_lang = EDGE_TTS_VOICES_BY_LANGUAGE.get(language)
-
-                # Chapter Source Validation and Preparation
                 if effective_chapter_input_type == 'file':
                     if not chapter_audio_file_from_form:
                         current_chapter_errors['audio_file'] = "Audio file is required for 'Upload File' option."
@@ -360,7 +274,6 @@ def creator_upload_audiobook(request):
                             current_chapter_errors['audio_file'] = f"Audio file too large (Max {filesizeformat(max_audio_size)})."
                         if chapter_audio_file_from_form.content_type not in allowed_audio_types:
                             current_chapter_errors['audio_file'] = f"Invalid audio file type. Allowed: MP3, WAV, OGG, M4A."
-                
                 elif effective_chapter_input_type == 'generated_tts':
                     if not language or not voices_available_for_main_lang:
                         current_chapter_errors['tts_general'] = "Audiobook language is not set or TTS is unavailable for it."
@@ -371,12 +284,11 @@ def creator_upload_audiobook(request):
                         elif not generated_tts_audio_url_from_form:
                             current_chapter_errors['generated_tts'] = "Confirmed TTS audio URL is missing. Please re-generate or re-confirm."
                         else:
-                            audio_file_to_process_for_db = generated_tts_audio_url_from_form # This is a URL to a temporary file
-                            text_content_for_db = chapter_text_content_input # Text content is submitted with the form
+                            audio_file_to_process_for_db = generated_tts_audio_url_from_form
+                            text_content_for_db = chapter_text_content_input
                             is_tts_generated_for_db = True
                             tts_option_id_for_model = chapter_tts_voice_option_id
-                            temp_chapter_data_for_repopulation['audio_filename'] = f"Generated: {os.path.basename(generated_tts_audio_url_from_form)}" # For display
-
+                            temp_chapter_data_for_repopulation['audio_filename'] = f"Generated: {os.path.basename(generated_tts_audio_url_from_form)}"
                 elif effective_chapter_input_type == 'generated_document_tts':
                     if not language or not voices_available_for_main_lang:
                         current_chapter_errors['document_tts_general'] = "Audiobook language is not set or TTS is unavailable for it."
@@ -387,13 +299,12 @@ def creator_upload_audiobook(request):
                         elif not generated_document_tts_audio_url_from_form:
                             current_chapter_errors['generated_document_tts'] = "Confirmed Document TTS audio URL is missing. Please re-generate or re-confirm."
                         else:
-                            audio_file_to_process_for_db = generated_document_tts_audio_url_from_form # This is a URL to a temporary file
+                            audio_file_to_process_for_db = generated_document_tts_audio_url_from_form
                             is_tts_generated_for_db = True
                             tts_option_id_for_model = chapter_doc_tts_voice_option_id
-                            source_document_filename_for_db = generated_document_filename_from_form # Get original document filename
-                            temp_chapter_data_for_repopulation['audio_filename'] = f"From Doc: {os.path.basename(generated_document_tts_audio_url_from_form)}" # For display
-
-                elif effective_chapter_input_type == 'tts': # User submits text for direct TTS generation
+                            source_document_filename_for_db = generated_document_filename_from_form
+                            temp_chapter_data_for_repopulation['audio_filename'] = f"From Doc: {os.path.basename(generated_document_tts_audio_url_from_form)}"
+                elif effective_chapter_input_type == 'tts':
                     if not language or not voices_available_for_main_lang:
                         current_chapter_errors['tts_general'] = "Audiobook language is not set or TTS is unavailable for it."
                     else:
@@ -409,18 +320,15 @@ def creator_upload_audiobook(request):
                             is_tts_generated_for_db = True
                             actual_edge_tts_voice_id_for_gen = selected_voice_details['edge_voice_id']
                             tts_option_id_for_model = selected_voice_details['id']
-                            # Audio generation will happen in the transaction block below
-
-                elif effective_chapter_input_type == 'document_tts': # User submits document for direct TTS generation
+                elif effective_chapter_input_type == 'document_tts':
                     doc_file_obj = request.FILES.get('new_chapter_document_file')
-                    tts_voice_id = post_data.get('new_chapter_doc_tts_voice', '').strip()
-
-                    voices_available_for_main_lang = EDGE_TTS_VOICES_BY_LANGUAGE.get(audiobook_locked.language)
-                    if not audiobook_locked.language or not voices_available_for_main_lang:
+                    tts_voice_id_doc = submitted_values.get('new_chapter_doc_tts_voice', '').strip()
+                    voices_available_for_main_lang_doc = EDGE_TTS_VOICES_BY_LANGUAGE.get(language)
+                    if not language or not voices_available_for_main_lang_doc:
                         current_chapter_errors['document_tts_general'] = "Audiobook language is not set or TTS is unavailable for it."
                     else:
-                        selected_doc_voice_details = ALL_EDGE_TTS_VOICES_MAP.get(tts_voice_id)
-                        if not selected_doc_voice_details or selected_doc_voice_details['id'] not in [v['id'] for v in voices_available_for_main_lang]:
+                        selected_doc_voice_details = ALL_EDGE_TTS_VOICES_MAP.get(tts_voice_id_doc)
+                        if not selected_doc_voice_details or selected_doc_voice_details['id'] not in [v['id'] for v in voices_available_for_main_lang_doc]:
                             current_chapter_errors['doc_tts_voice'] = "Please select a valid narrator voice for the document."
                         elif not doc_file_obj:
                             current_chapter_errors['document_file'] = "Document (PDF/Word) is required for this option."
@@ -448,12 +356,11 @@ def creator_upload_audiobook(request):
                                     if not extracted_doc_text or len(extracted_doc_text.strip()) < 10:
                                         current_chapter_errors['document_tts_general'] = "Could not extract sufficient text from the document."
                                     else:
-                                        text_content_for_db = extracted_doc_text.strip()[:20000] # Trim if too long for TTS engine
+                                        text_content_for_db = extracted_doc_text.strip()[:20000]
                                         is_tts_generated_for_db = True
                                         actual_edge_tts_voice_id_for_gen = selected_doc_voice_details['edge_voice_id']
                                         tts_option_id_for_model = selected_doc_voice_details['id']
                                         source_document_filename_for_db = doc_file.name
-                                        # Audio generation will happen in the transaction block below
                                 except Exception as e_doc_extract:
                                     logger.error(f"Error processing document for chapter {index} on final save: {e_doc_extract}", exc_info=True)
                                     current_chapter_errors['document_tts_general'] = "Error processing document. Please ensure it's a valid text-based file."
@@ -465,7 +372,6 @@ def creator_upload_audiobook(request):
                     temp_chapter_data_for_repopulation['errors'] = current_chapter_errors
                 submitted_chapters_for_template.append(temp_chapter_data_for_repopulation)
                 
-                # Only add to chapters_to_save_data if no errors for this chapter
                 if not current_chapter_errors:
                     chapters_to_save_data.append({
                         'title': chapter_title,
@@ -476,7 +382,7 @@ def creator_upload_audiobook(request):
                         'is_tts_final': is_tts_generated_for_db,
                         'actual_edge_tts_voice_id_for_gen': actual_edge_tts_voice_id_for_gen,
                         'tts_option_id_for_model': tts_option_id_for_model,
-                        'source_document_filename': source_document_filename_for_db, # Added for add chapter
+                        'source_document_filename': source_document_filename_for_db,
                     })
             if any(key.startswith('chapter_') for key in form_errors):
                 form_errors.setdefault('chapters_general', "Please correct errors in the chapter details.")
@@ -484,124 +390,91 @@ def creator_upload_audiobook(request):
         if not form_errors:
             try:
                 with transaction.atomic():
-                    new_audiobook = Audiobook(creator=creator, title=title, author=narrator, narrator=narrator, language=language, genre=actual_genre_to_save, description=description, cover_image=cover_image_file, is_paid=is_paid, price=price if is_paid else Decimal('0.00'), status='PUBLISHED')
+                    new_audiobook = Audiobook(
+                        creator=creator,
+                        title=title,
+                        author=author,
+                        narrator=narrator,
+                        language=language,
+                        genre=actual_genre_to_save,
+                        description=description,
+                        cover_image=cover_image_file,
+                        is_paid=is_paid,
+                        price=price if is_paid else Decimal('0.00'),
+                        status='INACTIVE'
+                    )
                     new_audiobook.full_clean()
                     new_audiobook.save()
+                    
                     chapters_to_save_data.sort(key=lambda c: c['order'])
+                    
                     for ch_data_to_save in chapters_to_save_data:
                         final_ch_audio_file_field_val = None
                         current_ch_text_content = ch_data_to_save['text_content_for_tts']
                         current_ch_is_tts_generated = ch_data_to_save['is_tts_final']
                         current_ch_tts_voice_id = ch_data_to_save['tts_option_id_for_model']
-                        current_ch_source_document_filename = ch_data_to_save['source_document_filename'] # Get source doc filename here
-
+                        current_ch_source_document_filename = ch_data_to_save['source_document_filename']
                         ch_input_type = ch_data_to_save['input_type_final']
                         perm_ch_audio_dir = os.path.join('chapters_audio', new_audiobook.slug)
                         perm_ch_filename_base = f"ch_{ch_data_to_save['order']}_{slugify(ch_data_to_save['title'])}_{uuid.uuid4().hex[:6]}"
-                        
                         if ch_input_type == 'file':
                             final_ch_audio_file_field_val = ch_data_to_save['audio_file_obj_or_temp_url']
-
-                        elif ch_input_type.startswith('generated_'): # This covers 'generated_tts' and 'generated_document_tts'
+                        elif ch_input_type.startswith('generated_'):
                             temp_preview_url = ch_data_to_save['audio_file_obj_or_temp_url']
-                            
                             if not temp_preview_url or not temp_preview_url.startswith(settings.MEDIA_URL):
-                                logger.error(f"Invalid temp preview URL scheme: {temp_preview_url} for chapter '{ch_data_to_save['title']}'")
                                 raise ValidationError(f"Invalid temporary audio URL for chapter '{ch_data_to_save['title']}'.")
-                            
                             rel_path_from_media_url = temp_preview_url.replace(settings.MEDIA_URL, '', 1).lstrip('/')
                             if default_storage.exists(rel_path_from_media_url):
                                 try:
                                     with default_storage.open(rel_path_from_media_url, 'rb') as f_preview:
-                                        perm_ch_filename = f"{perm_ch_filename_base}.mp3" # No "_preview" suffix needed for permanent
+                                        perm_ch_filename = f"{perm_ch_filename_base}.mp3"
                                         perm_ch_path_rel_media_for_save = os.path.join(perm_ch_audio_dir, perm_ch_filename)
-                                        # Create ContentFile from read content, it will be automatically saved by FileField
                                         final_ch_audio_file_field_val = ContentFile(f_preview.read(), name=perm_ch_path_rel_media_for_save)
                                         try:
                                             default_storage.delete(rel_path_from_media_url)
                                         except OSError as e_remove:
                                             logger.warning(f"Could not remove temp preview file {rel_path_from_media_url} from storage: {e_remove}")
-                                        logger.info(f"Moved preview TTS from {rel_path_from_media_url} to {final_ch_audio_file_field_val.name}")
                                 except Exception as e_save:
-                                    logger.error(f"Error saving preview TTS file for chapter '{ch_data_to_save['title']}': {e_save}", exc_info=True)
-                                    form_errors['chapters_general'] = f"Error saving preview audio for chapter '{ch_data_to_save['title']}': {e_save}"
-                                    raise ValidationError(form_errors) # Re-raise to prevent chapter creation
+                                    raise ValidationError(f"Error saving preview audio for chapter '{ch_data_to_save['title']}': {e_save}")
                             else:
-                                logger.error(f"Preview TTS file {rel_path_from_media_url} not found for chapter: {ch_data_to_save['title']}")
-                                form_errors['chapters_general'] = f"Preview audio for chapter '{ch_data_to_save['title']}' was not found."
-                                raise ValidationError(form_errors) # Re-raise to prevent chapter creation
-                                
-                        elif ch_input_type == 'tts' or ch_input_type == 'document_tts': # Direct generation on form submission
+                                raise ValidationError(f"Preview audio for chapter '{ch_data_to_save['title']}' was not found.")
+                        elif ch_input_type == 'tts' or ch_input_type == 'document_tts':
                             actual_edge_voice_to_use = ch_data_to_save['actual_edge_tts_voice_id_for_gen']
                             text_for_generation = ch_data_to_save['text_content_for_tts']
-
                             if not text_for_generation or not actual_edge_voice_to_use:
-                                logger.error(f"Internal logic error: Missing text or voice for NEW TTS gen. Chapter: {ch_data_to_save['title']}, InputType: {ch_input_type}")
                                 raise ValidationError(f"Internal error: Missing text or voice for new TTS for chapter '{ch_data_to_save['title']}'.")
-                            
                             perm_ch_filename = f"{perm_ch_filename_base}_directgen.mp3"
                             perm_ch_path_rel_media_for_save = os.path.join(perm_ch_audio_dir, perm_ch_filename)
-                            
-                            # Use default_storage for path to handle both local and cloud storage correctly
                             temp_output_path = default_storage.path(perm_ch_path_rel_media_for_save) if hasattr(default_storage, 'path') else os.path.join(settings.MEDIA_ROOT, perm_ch_path_rel_media_for_save)
                             os.makedirs(os.path.dirname(temp_output_path), exist_ok=True)
-                            
                             try:
-                                asyncio.run(generate_audio_edge_tts_async(text_for_generation, actual_edge_voice_to_use, temp_output_path))
-                                
-                                # Read generated content into ContentFile
+                                async_to_sync(generate_audio_edge_tts_async)(text_for_generation, actual_edge_voice_to_use, temp_output_path)
                                 with open(temp_output_path, 'rb') as f_upload:
                                     final_ch_audio_file_field_val = ContentFile(f_upload.read(), name=perm_ch_path_rel_media_for_save)
-                                
-                                os.remove(temp_output_path) # Clean up local temp file
-                                logger.info(f"Generated and prepared TTS for saving: {final_ch_audio_file_field_val.name}")
-
+                                os.remove(temp_output_path)
                             except Exception as e_gen_final_ch:
-                                logger.error(f"Final TTS gen failed for '{ch_data_to_save['title']}': {e_gen_final_ch}", exc_info=True)
-                                form_errors['chapters_general'] = f"TTS generation failed for chapter '{ch_data_to_save['title']}'. Error: {e_gen_final_ch}"
-                                raise ValidationError(form_errors) # Re-raise to prevent chapter creation
+                                raise ValidationError(f"TTS generation failed for chapter '{ch_data_to_save['title']}'. Error: {e_gen_final_ch}")
                         else:
                             raise ValidationError(f"Unknown chapter input type during save: {ch_input_type}")
-                        
-                        chapter_duration_val = None
-                        chapter_size_bytes_val = None
 
-                        if final_ch_audio_file_field_val:
-                            # Pass the ContentFile object to get_audio_duration
-                            if isinstance(final_ch_audio_file_field_val, (InMemoryUploadedFile, ContentFile, TemporaryUploadedFile)):
-                                file_for_duration_extraction = final_ch_audio_file_field_val
-                                chapter_size_bytes_val = final_ch_audio_file_field_val.size
-                            # If it's a string path, open it from default_storage
-                            elif isinstance(final_ch_audio_file_field_val, str): # This branch is likely not taken with ContentFile assignments above
-                                file_for_duration_extraction_path = default_storage.path(final_ch_audio_file_field_val) if hasattr(default_storage, 'path') else os.path.join(settings.MEDIA_ROOT, final_ch_audio_file_field_val)
-                                if default_storage.exists(final_ch_audio_file_field_val):
-                                    with default_storage.open(final_ch_audio_file_field_val, 'rb') as f_read:
-                                        file_for_duration_extraction = ContentFile(f_read.read(), name=os.path.basename(final_ch_audio_file_field_val))
-                                    chapter_size_bytes_val = default_storage.size(final_ch_audio_file_field_val)
-                                else:
-                                    logger.warning(f"File for duration extraction not found: {final_ch_audio_file_field_val}")
-                                    file_for_duration_extraction = None
-                            
-                            if file_for_duration_extraction:
-                                chapter_duration_val = get_audio_duration(file_for_duration_extraction)
-                                if chapter_duration_val is None:
-                                    logger.warning(f"Could not determine duration for audio file: {final_ch_audio_file_field_val.name if hasattr(final_ch_audio_file_field_val, 'name') else final_ch_audio_file_field_val}")
-
-                        Chapter.objects.create(
+                        new_chapter = Chapter.objects.create(
                             audiobook=new_audiobook,
                             chapter_name=ch_data_to_save['title'],
                             chapter_order=ch_data_to_save['order'],
                             audio_file=final_ch_audio_file_field_val,
-                            duration_seconds=chapter_duration_val,
-                            size_bytes=chapter_size_bytes_val,
                             text_content=current_ch_text_content,
                             is_tts_generated=current_ch_is_tts_generated,
                             tts_voice_id=current_ch_tts_voice_id,
                             source_document_filename=current_ch_source_document_filename
                         )
-                        logger.info(f"Chapter '{ch_data_to_save['title']}' created with duration_seconds: {chapter_duration_val} and size_bytes: {chapter_size_bytes_val}")
-                    messages.success(request, f"Audiobook '{new_audiobook.title}' and its chapters published successfully!")
+                        logger.info(f"Chapter '{new_chapter.chapter_name}' created for Audiobook '{new_audiobook.title}'.")
+                        
+                        process_chapter_for_moderation.delay(new_chapter.chapter_id)
+                        logger.info(f"Dispatched moderation task for Chapter ID: {new_chapter.chapter_id}")
+                        
+                    messages.success(request, f"Audiobook '{new_audiobook.title}' has been submitted for review. You will be notified once it's published.")
                     return redirect('AudioXApp:creator_my_audiobooks')
+
             except ValidationError as e:
                 logger.error(f"Saving Error (Validation): {e.message_dict if hasattr(e, 'message_dict') else e}", exc_info=True)
                 if hasattr(e, 'message_dict'):
@@ -624,7 +497,15 @@ def creator_upload_audiobook(request):
 
         submitted_values['chapters'] = submitted_chapters_for_template
 
-    context = {'creator': creator, 'form_errors': form_errors, 'submitted_values': submitted_values, 'EDGE_TTS_VOICES_BY_LANGUAGE_JSON': json.dumps(EDGE_TTS_VOICES_BY_LANGUAGE), 'LANGUAGE_GENRE_MAPPING_JSON': json.dumps(LANGUAGE_GENRE_MAPPING), 'GENRE_OTHER_VALUE': GENRE_OTHER_VALUE, 'django_messages_json': json.dumps([{'message': str(m), 'tags': m.tags} for m in get_messages(request)])}
+    context = {
+        'creator': creator,
+        'form_errors': form_errors,
+        'submitted_values': submitted_values,
+        'EDGE_TTS_VOICES_BY_LANGUAGE_JSON': json.dumps(EDGE_TTS_VOICES_BY_LANGUAGE),
+        'LANGUAGE_GENRE_MAPPING_JSON': json.dumps(LANGUAGE_GENRE_MAPPING),
+        'GENRE_OTHER_VALUE': GENRE_OTHER_VALUE,
+        'django_messages_json': json.dumps([{'message': str(m), 'tags': m.tags} for m in get_messages(request)])
+    }
     return render(request, 'creator/creator_upload_audiobooks.html', context)
 
 
@@ -632,12 +513,6 @@ def creator_upload_audiobook(request):
 @require_http_methods(["GET", "POST"])
 @csrf_protect
 def creator_manage_upload_detail_view(request, audiobook_slug):
-    """
-    Handles managing an existing audiobook's details and its chapters.
-    Allows editing audiobook metadata, updating status, adding new chapters,
-    editing existing chapters (replacing audio file, re-generating TTS from text or document),
-    and deleting chapters.
-    """
     creator = request.creator
     audiobook = get_object_or_404(Audiobook.objects.select_related('creator'), slug=audiobook_slug, creator=creator)
 
@@ -669,10 +544,8 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
         try:
             with transaction.atomic():
                 audiobook_locked = Audiobook.objects.select_for_update().get(pk=audiobook.pk)
-                # Define language from audiobook_locked for use in validation
                 language = audiobook_locked.language
 
-                # --- ACTION: edit_audiobook_details ---
                 if action == 'edit_audiobook_details':
                     updated_title = post_data.get('title', '').strip()
                     updated_author = post_data.get('author', '').strip()
@@ -706,7 +579,6 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                         audiobook_locked.description = updated_description
                         update_fields.append('description')
 
-                    # Handle cover image update
                     if new_cover_image:
                         max_cover_size = 2 * 1024 * 1024
                         allowed_cover_types = ['image/jpeg', 'image/png', 'image/jpg']
@@ -716,7 +588,6 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                             view_form_errors['cover_image'] = "Invalid cover image type (PNG, JPG/JPEG only)."
                         
                         if not view_form_errors.get('cover_image'):
-                            # Delete old cover image if it exists and new one is valid
                             if audiobook_locked.cover_image:
                                 old_cover_path = audiobook_locked.cover_image.name
                                 if default_storage.exists(old_cover_path):
@@ -724,11 +595,8 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                                     logger.info(f"Deleted old cover image: {old_cover_path}")
                             audiobook_locked.cover_image = new_cover_image
                             update_fields.append('cover_image')
-                    # else: no new cover image, keep existing one. The HTML does not provide an option to remove the existing cover image.
-
 
                     if view_form_errors:
-                        # If there are errors, make sure submitted values are passed back to template for re-display
                         view_submitted_values['title'] = updated_title
                         view_submitted_values['author'] = updated_author
                         view_submitted_values['narrator'] = updated_narrator
@@ -736,39 +604,172 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                         
                         raise ValidationError(view_form_errors)
 
-                    # Only save if there are changes and no errors
                     if update_fields:
                         audiobook_locked.save(update_fields=update_fields)
-                        # CRITICAL FIX: Refresh slug after save, as it might have changed if title was updated
-                        audiobook_locked.refresh_from_db(fields=['slug']) 
+                        audiobook_locked.refresh_from_db(fields=['slug'])
                         messages.success(request, f"Audiobook '{audiobook_locked.title}' details updated successfully.")
                     else:
                         messages.info(request, "No changes detected for audiobook details.")
                     
                     return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook_locked.slug)
 
-                # --- ACTION: update_status_only ---
                 elif action == 'update_status_only':
                     new_status = post_data.get('status_only_select')
+                    old_status = audiobook_locked.status
+                    
+                    logger.info(f"Status update attempt: '{old_status}' -> '{new_status}' for audiobook '{audiobook_locked.slug}'")
+                    logger.info(f"Audiobook ID: {audiobook_locked.pk}, Current status: {audiobook_locked.status}, Current moderation_status: {audiobook_locked.moderation_status}")
+                    
+                    if audiobook_locked.status in ['REJECTED', 'PAUSED_BY_ADMIN', 'UNDER_REVIEW']:
+                        error_msg = f"The status '{audiobook_locked.get_status_display()}' cannot be changed at this time."
+                        logger.warning(f"Status change blocked: {error_msg}")
+                        messages.error(request, error_msg)
+                        raise ValidationError("Creator attempted to change a locked status.")
                     
                     if not new_status:
                         view_form_errors['status_update_status'] = "Please select a status."
+                        logger.warning("Status update failed: No status selected")
                     elif new_status == audiobook_locked.status:
+                        logger.info(f"Status unchanged: already '{new_status}'")
                         messages.info(request, "Audiobook status is already set to the selected value. No change applied.")
                         return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook_locked.slug)
-                    elif audiobook_locked.status in ['REJECTED', 'PAUSED_BY_ADMIN'] and new_status != audiobook_locked.status:
-                        view_form_errors['status_update_status'] = f"Status cannot be changed from '{audiobook_locked.get_status_display()}' by creator."
-                    
+                    elif new_status not in ['PUBLISHED', 'INACTIVE']:
+                        view_form_errors['status_update_status'] = "Invalid status selected."
+                        logger.warning(f"Invalid status selected: '{new_status}'")
+
                     if view_form_errors:
                         view_submitted_values['status_only_select'] = new_status
                         raise ValidationError(view_form_errors)
 
-                    audiobook_locked.status = new_status
-                    audiobook_locked.save(update_fields=['status'])
-                    messages.success(request, f"Audiobook status updated to '{audiobook_locked.get_status_display()}'.")
+                    logger.info("🎯 CUSTOM SAVE METHOD DETECTED - Using coordinated status + moderation_status update...")
+                    
+                    success = False
+                    
+                    # Method 1: Update both status and moderation_status to work WITH the custom save method
+                    try:
+                        logger.info("Method 1: Coordinated status + moderation_status update...")
+                        
+                        # Set the appropriate moderation_status to match the desired status
+                        if new_status == 'PUBLISHED':
+                            audiobook_locked.moderation_status = Audiobook.ModerationStatusChoices.APPROVED
+                        elif new_status == 'INACTIVE':
+                            # For INACTIVE, we need to set a moderation status that won't trigger auto-change
+                            audiobook_locked.moderation_status = Audiobook.ModerationStatusChoices.PENDING_REVIEW
+                        
+                        # Set the status
+                        audiobook_locked.status = new_status
+                        
+                        logger.info(f"Setting status='{new_status}' and moderation_status='{audiobook_locked.moderation_status}'")
+                        
+                        # Save both fields
+                        audiobook_locked.save(update_fields=['status', 'moderation_status'])
+                        
+                        # Verify the change
+                        audiobook_locked.refresh_from_db(fields=['status', 'moderation_status'])
+                        logger.info(f"After save: status='{audiobook_locked.status}', moderation_status='{audiobook_locked.moderation_status}'")
+                        
+                        if audiobook_locked.status == new_status:
+                            logger.info("✅ Method 1 successful - coordinated update worked!")
+                            success = True
+                        else:
+                            logger.warning(f"❌ Method 1 failed: Expected '{new_status}', got '{audiobook_locked.status}'")
+                            
+                    except Exception as method1_error:
+                        logger.error(f"Method 1 failed with error: {method1_error}", exc_info=True)
+                    
+                    # Method 2: Direct SQL update (bypasses Django ORM completely)
+                    if not success:
+                        try:
+                            logger.info("Method 2: Direct SQL update (bypassing ORM)...")
+                            from django.db import connection
+                            
+                            # Use the correct table name from your models
+                            table_name = "AUDIOBOOKS"  # Your table name is uppercase
+                            
+                            # Determine the appropriate moderation_status
+                            if new_status == 'PUBLISHED':
+                                new_moderation_status = 'approved'
+                            elif new_status == 'INACTIVE':
+                                new_moderation_status = 'pending_review'
+                            else:
+                                new_moderation_status = 'pending_review'
+                            
+                            with connection.cursor() as cursor:
+                                # Update both status and moderation_status directly
+                                cursor.execute(
+                                    f'UPDATE "{table_name}" SET status = %s, moderation_status = %s WHERE audiobook_id = %s',
+                                    [new_status, new_moderation_status, audiobook_locked.pk]
+                                )
+                                rows_affected = cursor.rowcount
+                                logger.info(f"Direct SQL update affected {rows_affected} rows")
+                                
+                                if rows_affected > 0:
+                                    # Verify the change
+                                    cursor.execute(f'SELECT status, moderation_status FROM "{table_name}" WHERE audiobook_id = %s', [audiobook_locked.pk])
+                                    result = cursor.fetchone()
+                                    db_status, db_moderation_status = result
+                                    logger.info(f"After SQL update: status='{db_status}', moderation_status='{db_moderation_status}'")
+                                    
+                                    if db_status == new_status:
+                                        logger.info("✅ Method 2 successful - direct SQL update worked!")
+                                        success = True
+                                        # Update the model instance to reflect the change
+                                        audiobook_locked.status = new_status
+                                        audiobook_locked.moderation_status = new_moderation_status
+                                    else:
+                                        logger.error(f"❌ Method 2 failed: Expected '{new_status}', got '{db_status}'")
+                                else:
+                                    logger.error("❌ Method 2 failed: No rows affected")
+                                    
+                        except Exception as method2_error:
+                            logger.error(f"Method 2 failed with error: {method2_error}", exc_info=True)
+                    
+                    # Method 3: QuerySet update (if transaction isn't aborted)
+                    if not success:
+                        try:
+                            logger.info("Method 3: QuerySet update...")
+                            
+                            # Determine the appropriate moderation_status
+                            if new_status == 'PUBLISHED':
+                                new_moderation_status = Audiobook.ModerationStatusChoices.APPROVED
+                            elif new_status == 'INACTIVE':
+                                new_moderation_status = Audiobook.ModerationStatusChoices.PENDING_REVIEW
+                            else:
+                                new_moderation_status = Audiobook.ModerationStatusChoices.PENDING_REVIEW
+                            
+                            rows_updated = Audiobook.objects.filter(pk=audiobook_locked.pk).update(
+                                status=new_status,
+                                moderation_status=new_moderation_status
+                            )
+                            logger.info(f"QuerySet update affected {rows_updated} rows")
+                            
+                            if rows_updated > 0:
+                                # Verify the change
+                                db_audiobook = Audiobook.objects.get(pk=audiobook_locked.pk)
+                                logger.info(f"After QuerySet update: status='{db_audiobook.status}', moderation_status='{db_audiobook.moderation_status}'")
+                                
+                                if db_audiobook.status == new_status:
+                                    logger.info("✅ Method 3 successful - QuerySet update worked!")
+                                    success = True
+                                    audiobook_locked.status = new_status
+                                    audiobook_locked.moderation_status = new_moderation_status
+                                else:
+                                    logger.error(f"❌ Method 3 failed: Expected '{new_status}', got '{db_audiobook.status}'")
+                            else:
+                                logger.error("❌ Method 3 failed: No rows updated")
+                                
+                        except Exception as method3_error:
+                            logger.error(f"Method 3 failed with error: {method3_error}", exc_info=True)
+                    
+                    if success:
+                        logger.info(f"🎉 Status successfully updated from '{old_status}' to '{new_status}' for audiobook '{audiobook_locked.slug}'")
+                        messages.success(request, f"Audiobook status updated from '{old_status}' to '{new_status}'.")
+                    else:
+                        logger.error(f"💥 All methods failed to update status for audiobook '{audiobook_locked.slug}'")
+                        messages.error(request, "Status update failed. The custom save method is preventing status changes. Please contact support.")
+                    
                     return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook_locked.slug)
 
-                # --- ACTION: add_chapter ---
                 elif action == 'add_chapter':
                     errors = {}
                     title = post_data.get('new_chapter_title', '').strip()
@@ -778,11 +779,10 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                     
                     audio_source, text_content, is_tts, tts_voice_id, doc_filename = None, None, False, None, None
                     
-                    # Prepare data based on input_type for new chapter
                     if input_type == 'file':
                         audio_source = request.FILES.get('new_chapter_audio')
                         if not audio_source: errors['new_chapter_audio'] = "An audio file is required."
-                        elif audio_source: # Validate file
+                        elif audio_source:
                             max_audio_size = 50 * 1024 * 1024
                             allowed_audio_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/m4a']
                             if audio_source.size > max_audio_size:
@@ -793,7 +793,7 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                     elif input_type == 'generated_tts':
                         audio_source = post_data.get('new_chapter_generated_tts_url')
                         tts_voice_id = post_data.get('new_chapter_tts_voice')
-                        text_content = post_data.get('new_chapter_text_content', '') # Store the text content
+                        text_content = post_data.get('new_chapter_text_content', '')
 
                         if not audio_source: errors['add_chapter_general'] = "A confirmed generated audio file (from text) is required."
                         if not tts_voice_id or tts_voice_id == 'default': errors['new_chapter_tts_voice'] = "A narrator voice must be selected."
@@ -807,8 +807,8 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                     elif input_type == 'generated_document_tts':
                         audio_source = post_data.get('new_chapter_generated_document_tts_url')
                         tts_voice_id = post_data.get('new_chapter_doc_tts_voice')
-                        doc_filename = post_data.get('new_chapter_document_filename', '') # Original document filename
-                        text_content = post_data.get('new_chapter_document_extracted_text', '') # Extracted text, if passed
+                        doc_filename = post_data.get('new_chapter_document_filename', '')
+                        text_content = post_data.get('new_chapter_document_extracted_text', '')
 
                         if not audio_source: errors['add_chapter_general'] = "A confirmed generated audio file (from document) is required."
                         if not tts_voice_id or tts_voice_id == 'default': errors['new_chapter_doc_tts_voice'] = "A narrator voice must be selected."
@@ -819,10 +819,9 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                             if not voices_for_lang or not selected_voice_detail or selected_voice_detail['id'] not in [v['id'] for v in voices_for_lang]:
                                 errors['new_chapter_doc_tts_voice'] = "Invalid narrator voice selected for audiobook language."
 
-                    elif input_type == 'tts': # User submits text for direct TTS generation (no preview)
+                    elif input_type == 'tts':
                         text_content = post_data.get('new_chapter_text_content', '').strip()
                         tts_voice_id = post_data.get('new_chapter_tts_voice', '').strip()
-
                         voices_available_for_main_lang = EDGE_TTS_VOICES_BY_LANGUAGE.get(audiobook_locked.language)
                         if not audiobook_locked.language or not voices_available_for_main_lang:
                             errors['tts_general'] = "Audiobook language is not set or TTS is unavailable for it."
@@ -837,18 +836,16 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                             else:
                                 is_tts = True
                                 actual_edge_tts_voice_id_for_gen = selected_voice_details['edge_voice_id']
-                                # Audio will be generated below if no errors
 
-                    elif input_type == 'document_tts': # User submits document for direct TTS generation (no preview)
+                    elif input_type == 'document_tts':
                         doc_file_obj = request.FILES.get('new_chapter_document_file')
-                        tts_voice_id = post_data.get('new_chapter_doc_tts_voice', '').strip()
-
-                        voices_available_for_main_lang = EDGE_TTS_VOICES_BY_LANGUAGE.get(audiobook_locked.language)
-                        if not audiobook_locked.language or not voices_available_for_main_lang:
+                        tts_voice_id_doc = post_data.get('new_chapter_doc_tts_voice', '').strip()
+                        voices_available_for_main_lang_doc = EDGE_TTS_VOICES_BY_LANGUAGE.get(audiobook_locked.language)
+                        if not audiobook_locked.language or not voices_available_for_main_lang_doc:
                             errors['document_tts_general'] = "Audiobook language is not set or TTS is unavailable for it."
                         else:
-                            selected_doc_voice_details = ALL_EDGE_TTS_VOICES_MAP.get(tts_voice_id)
-                            if not selected_doc_voice_details or selected_doc_voice_details['id'] not in [v['id'] for v in voices_available_for_main_lang]:
+                            selected_doc_voice_details = ALL_EDGE_TTS_VOICES_MAP.get(tts_voice_id_doc)
+                            if not selected_doc_voice_details or selected_doc_voice_details['id'] not in [v['id'] for v in voices_available_for_main_lang_doc]:
                                 errors['new_chapter_doc_tts_voice'] = "Please select a valid narrator voice for the document."
                             elif not doc_file_obj:
                                 errors['new_chapter_document_file'] = "Document (PDF/Word) is required for this option."
@@ -864,7 +861,7 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                                     errors['new_chapter_document_file'] = f"Document too large (Max {filesizeformat(max_doc_size)})."
                                 elif not (doc_file.content_type in allowed_doc_mime_types or doc_extension in allowed_doc_extensions):
                                     errors['new_chapter_document_file'] = "Invalid document type. Allowed: PDF, DOC, DOCX."
-                            
+                                
                                 if not errors.get('new_chapter_document_file'):
                                     try:
                                         doc_content_bytes = doc_file.read()
@@ -876,12 +873,11 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                                         if not extracted_doc_text or len(extracted_doc_text.strip()) < 10:
                                             errors['document_tts_general'] = "Could not extract sufficient text from the document."
                                         else:
-                                            text_content = extracted_doc_text.strip()[:20000] # Trim if too long for TTS engine
+                                            text_content = extracted_doc_text.strip()[:20000]
                                             is_tts = True
                                             actual_edge_tts_voice_id_for_gen = selected_doc_voice_details['edge_voice_id']
                                             tts_voice_id = selected_doc_voice_details['id']
                                             doc_filename = doc_file.name
-                                            # Audio will be generated below if no errors
                                     except Exception as e_doc_extract:
                                         logger.error(f"Error processing document for new chapter direct save: {e_doc_extract}", exc_info=True)
                                         errors['document_tts_general'] = "Error processing document for direct TTS generation."
@@ -892,25 +888,24 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                         view_form_errors['add_chapter_errors'] = errors
                         add_chapter_active_with_errors = True
                         messages.error(request, "Please correct the errors to add the chapter.")
-                        raise ValidationError(errors) # Raise to trigger error rendering
+                        raise ValidationError(errors)
 
                     new_order = audiobook_locked.chapters.count() + 1
                     perm_ch_audio_dir = os.path.join('chapters_audio', audiobook_locked.slug)
                     perm_ch_filename_base = f"ch_{new_order}_{slugify(title)}_{uuid.uuid4().hex[:6]}"
                     
-                    # Handle audio file based on processed type
                     final_audio_file_field_val = None
                     if input_type == 'file':
-                        final_audio_file_field_val = audio_source # This is the UploadedFile object
-                    elif input_type.startswith('generated_'): # 'generated_tts' or 'generated_document_tts'
-                        temp_preview_url = audio_source # This is the URL to the temporary preview file
+                        final_audio_file_field_val = audio_source
+                    elif input_type.startswith('generated_'):
+                        temp_preview_url = audio_source
                         rel_path = temp_preview_url.replace(settings.MEDIA_URL, '', 1).lstrip('/')
                         if default_storage.exists(rel_path):
                             with default_storage.open(rel_path, 'rb') as f:
-                                unique_filename = f"{perm_ch_filename_base}.mp3" # No "_preview" suffix needed for permanent
+                                unique_filename = f"{perm_ch_filename_base}.mp3"
                                 final_audio_file_field_val = ContentFile(f.read(), name=os.path.join(perm_ch_audio_dir, unique_filename))
                             try:
-                                default_storage.delete(rel_path) # Delete temp file
+                                default_storage.delete(rel_path)
                             except OSError as e_remove:
                                 logger.warning(f"Could not remove temp preview file {rel_path} from storage: {e_remove}")
                             logger.info(f"Moved preview audio from {rel_path} to permanent: {final_audio_file_field_val.name}")
@@ -918,27 +913,23 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                             logger.error(f"Temporary audio file not found for chapter add: {rel_path}")
                             errors['add_chapter_general'] = "Temporary audio file not found. Please re-generate or re-confirm."
                             raise ValidationError(errors)
-                    elif input_type == 'tts' or input_type == 'document_tts': # Direct generation
+                    elif input_type == 'tts' or input_type == 'document_tts':
                         final_file_name = f"{perm_ch_filename_base}_directgen.mp3"
                         full_path_for_gen = os.path.join(perm_ch_audio_dir, final_file_name)
-                        
                         temp_output_path_for_gen = default_storage.path(full_path_for_gen) if hasattr(default_storage, 'path') else os.path.join(settings.MEDIA_ROOT, full_path_for_gen)
                         os.makedirs(os.path.dirname(temp_output_path_for_gen), exist_ok=True)
                         
                         try:
-                            # Use the actual edge_voice_id mapped from the tts_voice_id
                             actual_edge_voice_to_use = ALL_EDGE_TTS_VOICES_MAP.get(tts_voice_id, {}).get('edge_voice_id')
                             if not actual_edge_voice_to_use:
                                 raise ValueError(f"Edge TTS voice ID not found for {tts_voice_id}")
-
-                            asyncio.run(generate_audio_edge_tts_async(text_content, actual_edge_voice_to_use, temp_output_path_for_gen))
+                            async_to_sync(generate_audio_edge_tts_async)(text_content, actual_edge_voice_to_use, temp_output_path_for_gen)
                             
                             with open(temp_output_path_for_gen, 'rb') as f_upload:
                                 final_audio_file_field_val = ContentFile(f_upload.read(), name=full_path_for_gen)
                             
                             os.remove(temp_output_path_for_gen)
                             logger.info(f"Generated and prepared TTS for saving: {final_audio_file_field_val.name}")
-
                         except Exception as e_gen:
                             logger.error(f"Direct TTS generation failed for '{title}': {e_gen}", exc_info=True)
                             errors['add_chapter_general'] = f"TTS generation failed: {e_gen}"
@@ -948,46 +939,18 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                         audiobook=audiobook_locked,
                         chapter_name=title,
                         chapter_order=new_order,
-                        audio_file=final_audio_file_field_val, # Set the file here
+                        audio_file=final_audio_file_field_val,
                         text_content=text_content,
                         is_tts_generated=is_tts,
                         tts_voice_id=tts_voice_id,
                         source_document_filename=doc_filename
                     )
                     
-                    chapter.full_clean() # Run model validation
-
-                    # Calculate duration and size after audio_file is set
-                    chapter_duration_val = None
-                    chapter_size_bytes_val = None
-
-                    if chapter.audio_file and chapter.audio_file.name:
-                        if isinstance(chapter.audio_file.file, (InMemoryUploadedFile, ContentFile, TemporaryUploadedFile)):
-                            file_for_duration_extraction = chapter.audio_file.file
-                            chapter_size_bytes_val = chapter.audio_file.size
-                        elif default_storage.exists(chapter.audio_file.name):
-                            with default_storage.open(chapter.audio_file.name, 'rb') as f_read:
-                                file_for_duration_extraction = ContentFile(f_read.read(), name=os.path.basename(chapter.audio_file.name))
-                            chapter_size_bytes_val = default_storage.size(chapter.audio_file.name)
-                        else:
-                            logger.warning(f"File for duration extraction not found: {chapter.audio_file.name}")
-                            file_for_duration_extraction = None
-                            
-                        if file_for_duration_extraction:
-                            chapter_duration_val = get_audio_duration(file_for_duration_extraction)
-                            if chapter_duration_val is None:
-                                logger.warning(f"Could not determine duration for newly added chapter: {chapter.audio_file.name}")
-                        else:
-                            logger.warning(f"Could not open audio file for duration extraction after save: {chapter.audio_file.name}")
-                    
-                    chapter.duration_seconds = chapter_duration_val
-                    chapter.size_bytes = chapter_size_bytes_val
-                    chapter.save() # Save the chapter with all details
-
+                    chapter.full_clean()
+                    chapter.save()
                     messages.success(request, f"Chapter '{title}' added successfully.")
                     return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook_locked.slug)
 
-                # --- ACTION: edit_chapter_X ---
                 elif action.startswith('edit_chapter_'):
                     chapter_id = action.replace('edit_chapter_', '')
                     chapter_locked = get_object_or_404(Chapter.objects.select_for_update(), chapter_id=chapter_id, audiobook=audiobook_locked)
@@ -996,34 +959,29 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                     new_chapter_title = post_data.get(f'chapter_title_{chapter_id}', '').strip()
                     edit_input_type = post_data.get(f'edit_chapter_input_type_hidden_{chapter_id}', '').strip()
                     
-                    # New audio file, text, voice, doc file inputs
                     new_audio_file_from_form = request.FILES.get(f'chapter_audio_{chapter_id}')
                     new_text_content_input = post_data.get(f'chapter_text_content_{chapter_id}', '').strip()
                     new_tts_voice_option_id = post_data.get(f'chapter_tts_voice_{chapter_id}', '').strip()
                     new_document_file_from_form = request.FILES.get(f'chapter_document_edit_{chapter_id}')
                     new_doc_tts_voice_option_id = post_data.get(f'chapter_doc_tts_voice_edit_{chapter_id}', '').strip()
                     
-                    # Generated preview URLs (if user confirmed preview)
                     generated_tts_audio_url_from_form = post_data.get(f'edit_chapter_generated_tts_url_{chapter_id}', '').strip()
                     generated_doc_tts_audio_url_from_form = post_data.get(f'edit_chapter_generated_document_tts_url_{chapter_id}', '').strip()
-                    generated_doc_filename_from_form = post_data.get(f'edit_chapter_source_document_filename_{chapter_id}', '').strip() # Added
+                    generated_doc_filename_from_form = post_data.get(f'edit_chapter_source_document_filename_{chapter_id}', '').strip()
 
-                    # Data for final chapter update
-                    final_audio_file_for_save = None # This will be the UploadedFile object or a ContentFile
-                    final_text_content = None
-                    final_is_tts_generated = False
-                    final_tts_voice_id = None
-                    final_source_document_filename = None
-                    delete_old_audio = False # Flag to delete the old audio file
+                    final_audio_file_for_save = None
+                    final_text_content = chapter_locked.text_content
+                    final_is_tts_generated = chapter_locked.is_tts_generated
+                    final_tts_voice_id = chapter_locked.tts_voice_id
+                    final_source_document_filename = chapter_locked.source_document_filename
+                    delete_old_audio = False
 
                     voices_available_for_main_lang = EDGE_TTS_VOICES_BY_LANGUAGE.get(audiobook_locked.language)
 
-                    # 1. Validate new_chapter_title
                     if not new_chapter_title: edit_errors['title'] = "Chapter title is required."
 
-                    # 2. Determine and validate new audio source based on edit_input_type
                     if edit_input_type == 'file':
-                        if new_audio_file_from_form: # Only if a new file is actually uploaded
+                        if new_audio_file_from_form:
                             final_audio_file_for_save = new_audio_file_from_form
                             max_audio_size = 50 * 1024 * 1024
                             allowed_audio_types = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a', 'audio/m4a']
@@ -1033,17 +991,11 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                                 edit_errors['audio'] = "Invalid audio file type. Allowed: MP3, WAV, OGG, M4A."
                             
                             if not edit_errors.get('audio'):
-                                delete_old_audio = True # If new file is valid, delete old one
-                        elif not chapter_locked.audio_file: # If no new file and no existing file
+                                delete_old_audio = True
+                        elif not chapter_locked.audio_file:
                             edit_errors['audio'] = "An audio file is required if no existing file is present."
                         else:
-                            # Keep current audio file if no new one provided for 'file' type
-                            final_audio_file_for_save = chapter_locked.audio_file 
-                            final_text_content = chapter_locked.text_content
-                            final_is_tts_generated = chapter_locked.is_tts_generated
-                            final_tts_voice_id = chapter_locked.tts_voice_id
-                            final_source_document_filename = chapter_locked.source_document_filename
-
+                            final_audio_file_for_save = None
 
                     elif edit_input_type == 'generated_tts':
                         if not language or not voices_available_for_main_lang:
@@ -1055,13 +1007,12 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                             elif not generated_tts_audio_url_from_form:
                                 edit_errors['generated_tts'] = "Confirmed TTS audio URL is missing. Please re-generate or re-confirm."
                             else:
-                                final_audio_file_for_save = generated_tts_audio_url_from_form # This is a URL to a temporary file
+                                final_audio_file_for_save = generated_tts_audio_url_from_form
                                 final_text_content = new_text_content_input
                                 final_is_tts_generated = True
                                 final_tts_voice_id = new_tts_voice_option_id
                                 final_source_document_filename = None
                                 delete_old_audio = True
-
 
                     elif edit_input_type == 'generated_document_tts':
                         if not language or not voices_available_for_main_lang:
@@ -1073,15 +1024,14 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                             elif not generated_doc_tts_audio_url_from_form:
                                 edit_errors['generated_document_tts'] = "Confirmed Document TTS audio URL is missing. Please re-generate or re-confirm."
                             else:
-                                final_audio_file_for_save = generated_doc_tts_audio_url_from_form # This is a URL to a temporary file
-                                final_text_content = new_text_content_input # (text content from document if passed)
+                                final_audio_file_for_save = generated_doc_tts_audio_url_from_form
+                                final_text_content = None
                                 final_is_tts_generated = True
                                 final_tts_voice_id = new_doc_tts_voice_option_id
                                 final_source_document_filename = generated_doc_filename_from_form
                                 delete_old_audio = True
 
-
-                    elif edit_input_type == 'tts': # Direct generation from text
+                    elif edit_input_type == 'tts':
                         if not language or not voices_available_for_main_lang:
                             edit_errors['tts_general'] = "Audiobook language is not set or TTS is unavailable for it."
                         else:
@@ -1096,20 +1046,17 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                                 final_text_content = new_text_content_input
                                 final_is_tts_generated = True
                                 final_tts_voice_id = new_tts_voice_option_id
-                                # Actual generation will happen below if no errors
+                                final_source_document_filename = None
                                 delete_old_audio = True
 
-                    elif edit_input_type == 'document_tts': # Direct generation from document
+                    elif edit_input_type == 'document_tts':
                         doc_file = new_document_file_from_form
                         if not doc_file and chapter_locked.source_document_filename and chapter_locked.is_tts_generated:
-                            # User is changing voice for an existing document-TTS chapter without re-uploading document.
-                            # We need to re-use the stored text_content and source_document_filename.
-                            final_text_content = chapter_locked.text_content # Assuming this stores the extracted text
+                            final_text_content = chapter_locked.text_content
                             final_is_tts_generated = True
                             final_tts_voice_id = new_doc_tts_voice_option_id
                             final_source_document_filename = chapter_locked.source_document_filename
-                            delete_old_audio = True # Generate new audio from old text, so delete old audio
-
+                            delete_old_audio = True
                         elif not language or not voices_available_for_main_lang:
                             edit_errors['document_tts_general'] = "Audiobook language is not set or TTS is unavailable for it."
                         else:
@@ -1149,7 +1096,6 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                                     except Exception as e_doc_extract:
                                         logger.error(f"Error processing document for chapter edit (direct save): {e_doc_extract}", exc_info=True)
                                         edit_errors['document_tts_general'] = "Error processing document for direct TTS generation."
-
                     else:
                         edit_errors['input_type'] = "Invalid audio source type selected for chapter."
 
@@ -1158,7 +1104,6 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                         messages.error(request, f"Please correct the errors for chapter '{new_chapter_title or chapter_id}'.")
                         raise ValidationError(edit_errors)
 
-                    # --- Perform audio generation/moving for TTS/Document TTS if necessary ---
                     if (edit_input_type == 'tts' or edit_input_type == 'document_tts') and final_is_tts_generated:
                         perm_ch_audio_dir = os.path.join('chapters_audio', audiobook_locked.slug)
                         perm_ch_filename_base = f"ch_{chapter_locked.chapter_order}_{slugify(new_chapter_title)}_{uuid.uuid4().hex[:6]}"
@@ -1172,22 +1117,19 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                             actual_edge_voice_to_use = ALL_EDGE_TTS_VOICES_MAP.get(final_tts_voice_id, {}).get('edge_voice_id')
                             if not actual_edge_voice_to_use:
                                 raise ValueError(f"Edge TTS voice ID not found for {final_tts_voice_id}")
-
-                            asyncio.run(generate_audio_edge_tts_async(final_text_content, actual_edge_voice_to_use, temp_output_path_for_gen))
+                            async_to_sync(generate_audio_edge_tts_async)(final_text_content, actual_edge_voice_to_use, temp_output_path_for_gen)
                             
                             with open(temp_output_path_for_gen, 'rb') as f_generated:
-                                final_audio_file_for_save = ContentFile(f_generated.read(), name=os.path.basename(temp_output_path_for_gen))
+                                final_audio_file_for_save = ContentFile(f_generated.read(), name=os.path.basename(full_path_for_gen))
                             
                             os.remove(temp_output_path_for_gen)
                             logger.info(f"Generated and prepared TTS from {temp_output_path_for_gen}")
-
                         except Exception as e_gen:
                             logger.error(f"TTS generation failed for chapter '{new_chapter_title}': {e_gen}", exc_info=True)
                             edit_errors['tts_general'] = f"TTS generation failed: {e_gen}"
                             raise ValidationError(edit_errors)
-
-
-                    elif edit_input_type.startswith('generated_'): # Move temp preview file to permanent location
+                            
+                    elif edit_input_type.startswith('generated_'):
                         temp_preview_url = final_audio_file_for_save
                         rel_path = temp_preview_url.replace(settings.MEDIA_URL, '', 1).lstrip('/')
                         if default_storage.exists(rel_path):
@@ -1200,7 +1142,7 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                                 with default_storage.open(rel_path, 'rb') as f_preview:
                                     final_audio_file_for_save = ContentFile(f_preview.read(), name=os.path.basename(full_path_for_move))
                                 try:
-                                    default_storage.delete(rel_path) # Delete temp preview file
+                                    default_storage.delete(rel_path)
                                 except OSError as e_remove:
                                     logger.warning(f"Could not remove temp preview file {rel_path} from storage: {e_remove}")
                                 logger.info(f"Moved confirmed preview audio from {rel_path} to ContentFile object.")
@@ -1213,7 +1155,6 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                             edit_errors['general'] = "Confirmed audio file not found. Please re-generate or re-confirm."
                             raise ValidationError(edit_errors)
                     
-                    # --- Delete old audio file if a new one is being set ---
                     if delete_old_audio and chapter_locked.audio_file and chapter_locked.audio_file.name:
                         old_audio_path = chapter_locked.audio_file.name
                         if default_storage.exists(old_audio_path):
@@ -1222,53 +1163,20 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
                                 logger.info(f"Deleted old audio file for chapter '{chapter_locked.chapter_name}': {old_audio_path}")
                             except OSError as e_del:
                                 logger.warning(f"Could not delete old audio file {old_audio_path}: {e_del}")
-
-                    # --- Update chapter fields ---
+                    
                     chapter_locked.chapter_name = new_chapter_title
                     chapter_locked.text_content = final_text_content
                     chapter_locked.is_tts_generated = final_is_tts_generated
                     chapter_locked.tts_voice_id = final_tts_voice_id
                     chapter_locked.source_document_filename = final_source_document_filename
                     
-                    # Ensure the file-like object is seekable from beginning before assignment
-                    if isinstance(final_audio_file_for_save, (InMemoryUploadedFile, ContentFile)):
-                        final_audio_file_for_save.seek(0)
-                        
-                    chapter_locked.audio_file = final_audio_file_for_save 
-                    
-                    # Recalculate duration and size for the updated audio file
-                    chapter_duration_val = None
-                    chapter_size_bytes_val = None
+                    if final_audio_file_for_save:
+                        chapter_locked.audio_file = final_audio_file_for_save
 
-                    if chapter_locked.audio_file and chapter_locked.audio_file.name:
-                        if isinstance(final_audio_file_for_save, (InMemoryUploadedFile, ContentFile)):
-                            # Use the in-memory object directly for size and duration
-                            chapter_size_bytes_val = final_audio_file_for_save.size
-                            file_for_duration_extraction = final_audio_file_for_save
-                        elif chapter_locked.audio_file.name and default_storage.exists(chapter_locked.audio_file.name):
-                            # If the file is on storage (e.g., from an existing file being kept, or a new file already saved)
-                            chapter_size_bytes_val = default_storage.size(chapter_locked.audio_file.name)
-                            with default_storage.open(chapter_locked.audio_file.name, 'rb') as f_read:
-                                file_for_duration_extraction = ContentFile(f_read.read(), name=os.path.basename(chapter_locked.audio_file.name))
-                        else:
-                            logger.warning(f"Could not determine size for chapter {chapter_locked.chapter_id}'s audio file: {chapter_locked.audio_file.name}")
-                            file_for_duration_extraction = None
-
-                        if file_for_duration_extraction:
-                            chapter_duration_val = get_audio_duration(file_for_duration_extraction)
-                            if chapter_duration_val is None:
-                                logger.warning(f"Could not determine duration for edited chapter: {chapter_locked.audio_file.name}")
-                        else:
-                            logger.warning(f"Could not open audio file for duration extraction after edit: {chapter_locked.audio_file.name}")
-                    
-                    chapter_locked.duration_seconds = chapter_duration_val
-                    chapter_locked.size_bytes = chapter_size_bytes_val
-
-                    chapter_locked.save() # Save the updated chapter
+                    chapter_locked.save()
                     messages.success(request, f"Chapter '{new_chapter_title}' updated successfully.")
                     return redirect('AudioXApp:creator_manage_upload_detail', audiobook_slug=audiobook_locked.slug)
 
-                # --- ACTION: delete_chapter ---
                 elif action.startswith('delete_chapter_'):
                     chapter_id = action.split('_')[-1]
                     chapter = get_object_or_404(Chapter, chapter_id=chapter_id, audiobook=audiobook_locked)
@@ -1310,7 +1218,6 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
             logger.error(f"Error processing POST for '{audiobook_slug}': {e}", exc_info=True)
             messages.error(request, f"An unexpected server error occurred: {e}")
 
-    # --- Prepare context for rendering (for both GET and failed POST) ---
     db_chapters = audiobook.chapters.order_by('chapter_order')
     chapters_context_list = []
     for chapter_instance in db_chapters:
@@ -1319,21 +1226,18 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
             voice_detail = ALL_EDGE_TTS_VOICES_MAP.get(chapter_instance.tts_voice_id)
             tts_voice_display_name = voice_detail['name'] if voice_detail else f"Unknown Voice ({chapter_instance.tts_voice_id})"
         
-        # Determine the input type for template display based on current chapter state
-        input_type_for_template = 'file' # Default
+        input_type_for_template = 'file'
         if chapter_instance.is_tts_generated:
             if chapter_instance.source_document_filename:
                 input_type_for_template = 'generated_document_tts'
             elif chapter_instance.text_content:
                 input_type_for_template = 'generated_tts'
             else:
-                input_type_for_template = 'generated_tts' # Fallback to text TTS if no doc filename but is TTS generated
+                input_type_for_template = 'generated_tts'
 
         file_size_display = None
-        # Safely check for audio_file and its existence/size
         if chapter_instance.audio_file and chapter_instance.audio_file.name:
             try:
-                # Check if the file actually exists on storage before trying to get its size
                 if default_storage.exists(chapter_instance.audio_file.name):
                     file_size_display = filesizeformat(default_storage.size(chapter_instance.audio_file.name))
                 else:
@@ -1347,17 +1251,19 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
             'input_type_for_template': input_type_for_template, 'file_size_display': file_size_display,
             'existing_audio_file_url': chapter_instance.audio_file.url if chapter_instance.audio_file else None,
             'document_filename': chapter_instance.source_document_filename,
-            # Pass original TTS voice for document-generated audio if applicable for repopulation
             'doc_tts_voice_id': chapter_instance.tts_voice_id if chapter_instance.is_tts_generated and chapter_instance.source_document_filename else None,
         })
 
     view_form_errors['add_chapter_active_with_errors'] = add_chapter_active_with_errors
     django_messages_list = [{'message': str(m), 'tags': m.tags} for m in get_messages(request)]
+
+    can_creator_change_status = audiobook.status not in ['REJECTED', 'PAUSED_BY_ADMIN', 'UNDER_REVIEW']
+
     final_context = {
         'creator': creator, 'audiobook': audiobook, 'chapters_context_list': chapters_context_list,
         'form_errors': view_form_errors, 'submitted_values': view_submitted_values,
         'creator_allowed_status_choices_for_toggle': [('PUBLISHED', 'Published (Visible to users)'), ('INACTIVE', 'Inactive (Hidden from public, earnings paused)')],
-        'can_creator_change_status': audiobook.status not in ['REJECTED', 'PAUSED_BY_ADMIN'],
+        'can_creator_change_status': can_creator_change_status,
         'django_messages_json': json.dumps(django_messages_list, cls=DjangoJSONEncoder),
         'EDGE_TTS_VOICES_BY_LANGUAGE_JSON': json.dumps(EDGE_TTS_VOICES_BY_LANGUAGE),
         'GENRE_OTHER_VALUE': GENRE_OTHER_VALUE
@@ -1368,10 +1274,6 @@ def creator_manage_upload_detail_view(request, audiobook_slug):
 
 @creator_required
 def creator_my_audiobooks_view(request):
-    """
-    Displays a list of all audiobooks uploaded by the current creator,
-    along with their associated earnings from views for free audiobooks.
-    """
     creator = request.creator
     try:
         audiobooks_queryset = Audiobook.objects.filter(creator=creator).order_by('-publish_date').prefetch_related('chapters')
@@ -1390,15 +1292,10 @@ def creator_my_audiobooks_view(request):
     messages.error(request, "Could not load your audiobooks.")
     return redirect('AudioXApp:creator_dashboard')
 
-# --- JSON API Views ---
 
 @creator_required
 @require_GET
 def get_audiobook_chapters_json(request, audiobook_slug):
-    """
-    Returns a JSON response with a list of chapters for a given audiobook slug.
-    Used for AJAX requests to populate chapter lists dynamically.
-    """
     creator = request.creator
     try:
         audiobook = get_object_or_404(Audiobook, slug=audiobook_slug, creator=creator)
@@ -1417,7 +1314,16 @@ def get_audiobook_chapters_json(request, audiobook_slug):
                         audio_filename = "File Missing"
             except Exception as e:
                 logger.warning(f"Error getting file details for chapter {chapter.chapter_id} in get_audiobook_chapters_json: {e}")
-            chapter_data = {'id': chapter.chapter_id, 'name': chapter.chapter_name, 'order': chapter.chapter_order, 'audio_filename': audio_filename, 'file_size': file_size}
+            
+            # Ensure duration_seconds is included in the JSON response
+            chapter_data = {
+                'id': chapter.chapter_id,
+                'name': chapter.chapter_name,
+                'order': chapter.chapter_order,
+                'audio_filename': audio_filename,
+                'file_size': file_size,
+                'duration_seconds': chapter.duration_seconds # Added duration_seconds here
+            }
             chapters_list.append(chapter_data)
         return JsonResponse({'chapters': chapters_list}, status=200)
     except Http404:

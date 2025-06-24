@@ -4,8 +4,223 @@
 {% block title %}Payment Policy - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-[#091e65] mb-6">Payment Policy</h1>
-    <p>Details about our payment terms and conditions.</p>
+<!-- ==================== PAYMENT POLICY PAGE CONTENT ==================== -->
+<div class="min-h-screen bg-white">
+    
+    <!-- Hero Section -->
+    <section class="bg-[#091e65] text-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                    Payment <span class="text-red-500">Policy</span>
+                </h1>
+                <p class="text-lg text-white leading-relaxed">
+                    Transparent and secure payment terms for AudioX services
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-12">
+        <div class="max-w-4xl mx-auto">
+            
+            <!-- Last Updated -->
+            <div class="bg-white border-l-4 border-[#091e65] p-4 mb-8 shadow-lg">
+                <p class="text-sm text-gray-700">
+                    <i class="fas fa-calendar-alt text-[#091e65] mr-2"></i>
+                    <strong>Last Updated:</strong> January 2025
+                </p>
+            </div>
+
+            <!-- Introduction -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Introduction</h2>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    This Payment Policy outlines the terms and conditions governing payments for AudioX services. By using our platform and making payments, you agree to comply with this policy.
+                </p>
+                <p class="text-gray-700 leading-relaxed">
+                    AudioX is committed to providing transparent, secure, and fair payment processes for all our users in Pakistan and beyond.
+                </p>
+            </section>
+
+            <!-- Payment Methods -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Accepted Payment Methods</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white border-2 border-[#091e65] p-6 shadow-lg">
+                        <h3 class="text-xl font-bold text-[#091e65] mb-4 flex items-center">
+                            <i class="fas fa-credit-card mr-3"></i>
+                            Credit & Debit Cards
+                        </h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li>• Visa</li>
+                            <li>• Mastercard</li>
+                            <li>• Local Pakistani bank cards</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-2 border-red-500 p-6 shadow-lg">
+                        <h3 class="text-xl font-bold text-red-500 mb-4 flex items-center">
+                            <i class="fas fa-mobile-alt mr-3"></i>
+                            Mobile Payments
+                        </h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li>• JazzCash</li>
+                            <li>• Easypaisa</li>
+                            <li>• Bank transfers</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-white border-l-4 border-red-500 p-4 shadow-lg">
+                    <p class="text-gray-700">
+                        <strong class="text-red-500">Note:</strong> All payments are processed through secure, encrypted channels to protect your financial information.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Pricing & Subscriptions -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Pricing & Subscriptions</h2>
+                
+                <div class="space-y-6">
+                    <div class="bg-white border-l-4 border-[#091e65] p-6 shadow-lg">
+                        <h3 class="text-xl font-bold text-[#091e65] mb-3">Premium Subscription</h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li>• Monthly subscription: PKR 299/month</li>
+                            <li>• Annual subscription: PKR 2,999/year (Save 17%)</li>
+                            <li>• Unlimited access to premium audiobooks</li>
+                            <li>• Ad-free listening experience</li>
+                            <li>• Offline downloads</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-l-4 border-red-500 p-6 shadow-lg">
+                        <h3 class="text-xl font-bold text-red-500 mb-3">Coin System</h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li>• 100 Coins: PKR 50</li>
+                            <li>• 500 Coins: PKR 200 (Save 20%)</li>
+                            <li>• 1000 Coins: PKR 350 (Save 30%)</li>
+                            <li>• Use coins to purchase individual audiobooks</li>
+                            <li>• Coins never expire</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Billing & Charges -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Billing & Charges</h2>
+                
+                <div class="space-y-4">
+                    <div class="border-l-4 border-[#091e65] pl-4 bg-white p-4 shadow-lg">
+                        <h3 class="text-lg font-bold text-[#091e65] mb-2">Automatic Renewal</h3>
+                        <p class="text-gray-700">
+                            Premium subscriptions automatically renew at the end of each billing period unless cancelled before the renewal date.
+                        </p>
+                    </div>
+                    
+                    <div class="border-l-4 border-red-500 pl-4 bg-white p-4 shadow-lg">
+                        <h3 class="text-lg font-bold text-red-500 mb-2">Payment Processing</h3>
+                        <p class="text-gray-700">
+                            Payments are processed immediately upon subscription or coin purchase. You will receive a confirmation email with payment details.
+                        </p>
+                    </div>
+                    
+                    <div class="border-l-4 border-[#091e65] pl-4 bg-white p-4 shadow-lg">
+                        <h3 class="text-lg font-bold text-[#091e65] mb-2">Failed Payments</h3>
+                        <p class="text-gray-700">
+                            If a payment fails, we will attempt to process it again within 3 days. If unsuccessful, your subscription may be suspended.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Refund Policy -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Refund Policy</h2>
+                
+                <div class="bg-[#091e65] text-white p-6 mb-6 shadow-lg">
+                    <h3 class="text-xl font-bold mb-3">7-Day Money-Back Guarantee</h3>
+                    <p class="text-white">
+                        We offer a 7-day money-back guarantee for new premium subscriptions. If you're not satisfied, contact us within 7 days for a full refund.
+                    </p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 p-4 shadow-lg">
+                        <h4 class="font-bold text-gray-800 mb-2">Refund Conditions:</h4>
+                        <ul class="space-y-1 text-gray-700 text-sm">
+                            <li>• Request must be made within 7 days of initial purchase</li>
+                            <li>• Refunds are processed within 5-7 business days</li>
+                            <li>• Coin purchases are non-refundable once used</li>
+                            <li>• Partial refunds may apply for annual subscriptions</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security & Privacy -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Security & Privacy</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white border-l-4 border-[#091e65] p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-[#091e65] mb-3 flex items-center">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            Data Protection
+                        </h3>
+                        <p class="text-gray-700 text-sm">
+                            All payment information is encrypted and processed through secure payment gateways. We never store your complete card details.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white border-l-4 border-red-500 p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-red-500 mb-3 flex items-center">
+                            <i class="fas fa-lock mr-2"></i>
+                            PCI Compliance
+                        </h3>
+                        <p class="text-gray-700 text-sm">
+                            Our payment processing is PCI DSS compliant, ensuring the highest standards of payment security.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Information -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Payment Support</h2>
+                
+                <div class="bg-red-500 text-white p-6 shadow-lg">
+                    <h3 class="text-xl font-bold mb-4">Need Help with Payments?</h3>
+                    <p class="text-white mb-4">
+                        Our support team is here to help with any payment-related questions or issues.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="{% url 'AudioXApp:contact_us' %}" class="bg-white text-red-500 font-bold px-6 py-3 transition-colors duration-300 text-center hover:bg-gray-100">
+                            <i class="fas fa-envelope mr-2"></i>
+                            Contact Support
+                        </a>
+                        <a href="mailto:payments@audiox.pk" class="bg-[#091e65] text-white font-bold px-6 py-3 transition-colors duration-300 text-center hover:bg-blue-800">
+                            <i class="fas fa-at mr-2"></i>
+                            payments@audiox.pk
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Policy Updates -->
+            <section>
+                <div class="bg-gray-50 border border-gray-200 p-6 shadow-lg">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Policy Updates</h3>
+                    <p class="text-gray-700 text-sm leading-relaxed">
+                        AudioX reserves the right to update this Payment Policy at any time. Users will be notified of significant changes via email or platform notifications. Continued use of our services after policy updates constitutes acceptance of the new terms.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </div>
 </div>
 {% endblock %}

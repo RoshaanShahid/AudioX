@@ -1,0 +1,171 @@
+{% extends 'admin/admin_base.html' %}
+{% load static humanize %}
+
+{% block title %}User Content Reports{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 h-full">
+    <div class="container mx-auto px-4 py-8 h-full">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-brand-primary">Review User Reports</h1>
+            <a href="{% url 'AudioXApp:admin_manage_content' %}" class="text-sm font-medium text-brand-primary hover:opacity-80 transition-opacity">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Content Dashboard
+            </a>
+        </div>
+
+        {% if messages %}
+            <div class="mb-6 space-y-3">
+                {% for message in messages %}
+                    <div class="p-4 rounded-lg border {% if message.tags == 'success' %} bg-green-50 text-green-800 border-green-200 {% else %} bg-blue-50 text-blue-800 border-blue-200 {% endif %}" role="alert">
+                        <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-info-circle{% endif %} mr-2"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="flex flex-col lg:flex-row gap-6 h-[calc(100vh-220px)]">
+
+            <div id="queue-panel" class="lg:w-1/3 xl:w-1/4 bg-white rounded-lg shadow-md border border-gray-200">
+                <div class="p-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-700">Reported Content ({{ grouped_reports|length }})</h2>
+                </div>
+                <div class="overflow-y-auto h-[calc(100%-65px)]">
+                    {% if grouped_reports %}
+                        <div id="queue-items-container">
+                            {% for audiobook, reports, report_count in grouped_reports %}
+                                <div class="queue-item cursor-pointer p-4 flex items-center gap-4 border-b hover:bg-gray-50" data-target="review-panel-{{ audiobook.audiobook_id }}">
+                                    <img src="{{ audiobook.cover_image.url }}" alt="Cover" class="w-12 h-12 rounded-md object-cover flex-shrink-0">
+                                    <div class="flex-grow overflow-hidden">
+                                        <p class="font-semibold text-gray-800 truncate">{{ audiobook.title }}</p>
+                                        <p class="text-sm text-gray-500 truncate">by {{ audiobook.creator.user.username|default:'Platform' }}</p>
+                                    </div>
+                                    <span class="flex-shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                                        {{ report_count }}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                         <div class="p-6 text-center text-gray-500 flex items-center justify-center h-full">
+                            <p>No pending reports.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div id="review-panel-container" class="lg:w-2/3 xl:w-3/4">
+                {% if grouped_reports %}
+                    {% for audiobook, reports, report_count in grouped_reports %}
+                    <div id="review-panel-{{ audiobook.audiobook_id }}" class="review-panel bg-white rounded-lg shadow-md border border-gray-200 h-full flex-col hidden">
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h2 class="text-2xl font-bold text-brand-primary">{{ audiobook.title }}</h2>
+                                    <p class="text-md text-gray-500">by {{ audiobook.creator.user.username|default:'Platform' }}</p>
+                                </div>
+                                <a href="{% url 'AudioXApp:admin_creator_audiobook_detail' audiobook.audiobook_id %}" class="text-sm font-medium text-brand-primary hover:opacity-80 transition whitespace-nowrap">
+                                    View Audiobook<i class="fas fa-external-link-alt ml-2"></i>
+                                </a>
+                            </div>
+                            <div class="mt-4 flex items-center gap-3">
+                                <form action="{% url 'AudioXApp:admin_resolve_reports' audiobook.audiobook_id %}" method="post" onsubmit="return confirm('Are you sure you want to mark all {{ report_count }} reports for this audiobook as resolved?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md transition text-sm">
+                                        <i class="fas fa-check-double mr-2"></i>Mark All Resolved
+                                    </button>
+                                </form>
+                                <form action="{% url 'AudioXApp:admin_takedown_audiobook' audiobook.audiobook_id %}" method="post" onsubmit="return confirm('Are you sure you want to take down this content? This action is immediate.');">
+                                    {% csrf_token %}
+                                     <input type="hidden" name="reason" value="Content taken down following user reports.">
+                                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md transition text-sm">
+                                        <i class="fas fa-gavel mr-2"></i>Takedown Content
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-y-auto h-full p-6 bg-gray-50/50">
+                            <div class="space-y-4">
+                                {% for report in reports %}
+                                <div class="p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
+                                    <div class="flex justify-between items-center text-xs text-gray-500 mb-2">
+                                        <span>Reported by: <strong class="text-gray-700">{{ report.reported_by.username }}</strong></span>
+                                        <span>{{ report.created_at|naturaltime }}</span>
+                                    </div>
+                                    <p class="font-semibold text-gray-800 text-md">{{ report.get_reason_display }}</p>
+                                    {% if report.details %}
+                                    <blockquote class="mt-2 p-3 rounded-md bg-gray-50 border-l-4 border-gray-300 text-sm text-gray-700">
+                                        {{ report.details }}
+                                    </blockquote>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                {% else %}
+                    <div class="flex items-center justify-center bg-white rounded-lg shadow-md border border-gray-200 h-full">
+                        <div class="text-center py-12">
+                            <div class="inline-block bg-green-100 text-green-600 p-5 rounded-full">
+                                <i class="fas fa-shield-alt text-5xl"></i>
+                            </div>
+                            <h3 class="mt-6 text-2xl font-semibold text-gray-800">No Pending User Reports</h3>
+                            <p class="mt-2 text-gray-500">The reports queue is empty. Great job maintaining the community!</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const queueItemsContainer = document.getElementById('queue-items-container');
+    const reviewPanelContainer = document.getElementById('review-panel-container');
+
+    if (queueItemsContainer && reviewPanelContainer) {
+        const queueItems = queueItemsContainer.querySelectorAll('.queue-item');
+        const reviewPanels = reviewPanelContainer.querySelectorAll('.review-panel');
+
+        function showPanel(panelId) {
+            reviewPanels.forEach(panel => {
+                panel.classList.add('hidden');
+                panel.classList.remove('flex');
+            });
+            
+            queueItems.forEach(item => {
+                item.classList.remove('bg-blue-50', 'border-l-4', 'border-brand-primary');
+            });
+
+            const targetPanel = document.getElementById(panelId);
+            if (targetPanel) {
+                targetPanel.classList.remove('hidden');
+                targetPanel.classList.add('flex');
+            }
+
+            const targetQueueItem = document.querySelector(`.queue-item[data-target="${panelId}"]`);
+            if (targetQueueItem) {
+                targetQueueItem.classList.add('bg-blue-50', 'border-l-4', 'border-brand-primary');
+            }
+        }
+
+        queueItems.forEach(item => {
+            item.addEventListener('click', function () {
+                const targetPanelId = this.getAttribute('data-target');
+                showPanel(targetPanelId);
+            });
+        });
+
+        if (queueItems.length > 0) {
+            const firstPanelId = queueItems[0].getAttribute('data-target');
+            showPanel(firstPanelId);
+        }
+    }
+});
+</script>
+{% endblock %}

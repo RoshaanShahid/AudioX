@@ -1,0 +1,185 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ audiobook.title }} - Audiobook Details{% endblock %}
+
+{% block header_title %}Audiobook Details{% endblock %}
+
+{% block content %}
+<div x-data="{ takedownModal: false, reinstateModal: false }">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row items-start justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-brand-text-primary">{{ audiobook.title }}</h1>
+            <p class="text-md text-brand-text-secondary mt-1">by {{ audiobook.author }}</p>
+        </div>
+        <div class="flex items-center gap-4">
+            {% if audiobook.status != 'TAKEDOWN' %}
+            <button @click="takedownModal = true" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200 ease-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-surface focus:ring-red-500 flex items-center space-x-1.5">
+                <i class="fas fa-ban"></i>
+                <span>Takedown</span>
+            </button>
+            {% else %}
+            <button @click="reinstateModal = true" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-all duration-200 ease-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-surface focus:ring-green-500 flex items-center space-x-1.5">
+                <i class="fas fa-undo"></i>
+                <span>Reinstate</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column: Audiobook Info -->
+        <div class="lg:col-span-2 space-y-8">
+            <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card p-6">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="w-full md:w-1/3 flex-shrink-0">
+                        <img class="w-full aspect-[2/3] object-cover rounded-lg shadow-lg" src="{{ audiobook.cover_image.url|default:'/static/img/default_cover.png' }}" alt="{{ audiobook.title }} cover">
+                    </div>
+                    <div class="w-full md:w-2/3">
+                        <h3 class="text-xl font-semibold text-brand-text-primary border-b border-brand-border pb-3 mb-4">Description</h3>
+                        <p class="text-sm text-brand-text-secondary leading-relaxed">{{ audiobook.description|linebreaksbr }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chapters List -->
+            <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card">
+                <h3 class="text-xl font-semibold text-brand-text-primary border-b border-brand-border p-6">Chapters ({{ audiobook.chapters.count }})</h3>
+                <ul class="divide-y divide-brand-border">
+                    {% for chapter in audiobook.chapters.all %}
+                    <li class="p-6 hover:bg-brand-surface-alt transition-colors duration-150">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-semibold text-brand-text-primary">Chapter {{ chapter.chapter_order }}: {{ chapter.chapter_name }}</p>
+                                <p class="text-xs text-brand-text-muted mt-1">
+                                    Duration: {{ chapter.duration_display }} | Size: {{ chapter.size_bytes|filesizeformat }}
+                                </p>
+                            </div>
+                            <div>
+                                {% if chapter.audio_file %}
+                                <audio controls controlsList="nodownload" class="h-8">
+                                    <source src="{{ chapter.audio_file.url }}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                                {% else %}
+                                <span class="text-xs italic text-brand-danger-dark">No audio file</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="p-6 text-center text-brand-text-muted">No chapters found for this audiobook.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Column: Stats & Details -->
+        <div class="space-y-8">
+            <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card p-6">
+                <h3 class="text-xl font-semibold text-brand-text-primary border-b border-brand-border pb-3 mb-4">Statistics</h3>
+                <div class="space-y-4 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-brand-text-secondary">Views:</span>
+                        <span class="font-semibold text-brand-text-primary">{{ audiobook.total_views|intcomma }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-brand-text-secondary">Sales:</span>
+                        <span class="font-semibold text-brand-text-primary">{{ audiobook.total_sales|intcomma }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-brand-text-secondary">Revenue Generated:</span>
+                        <span class="font-semibold text-brand-text-primary">PKR {{ audiobook.total_revenue_generated|floatformat:2|intcomma }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-brand-surface rounded-2xl border border-brand-border shadow-card p-6">
+                <h3 class="text-xl font-semibold text-brand-text-primary border-b border-brand-border pb-3 mb-4">Details</h3>
+                <div class="space-y-4 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-brand-text-secondary">Status:</span>
+                        {% if audiobook.status == 'TAKEDOWN' %}
+                            <span class="font-semibold text-red-600">{{ audiobook.get_status_display }}</span>
+                        {% elif audiobook.status == 'PUBLISHED' %}
+                             <span class="font-semibold text-green-600">{{ audiobook.get_status_display }}</span>
+                        {% else %}
+                             <span class="font-semibold text-gray-600">{{ audiobook.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-brand-text-secondary">Creator:</span>
+                        {% if audiobook.creator %}
+                        <a href="{% url 'AudioXApp:admin_view_creator_detail' audiobook.creator.pk %}" class="font-semibold text-red-600 hover:underline">{{ audiobook.creator.user.username }}</a>
+                        {% else %}
+                        <span class="font-semibold text-brand-text-primary">Platform</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-brand-text-secondary">Language:</span>
+                        <span class="font-semibold text-brand-text-primary">{{ audiobook.language }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-brand-text-secondary">Genre:</span>
+                        <span class="font-semibold text-brand-text-primary">{{ audiobook.genre }}</span>
+                    </div>
+                     <div class="flex justify-between">
+                        <span class="text-brand-text-secondary">Added On:</span>
+                        <span class="font-semibold text-brand-text-primary">{{ audiobook.created_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if audiobook.status == 'TAKEDOWN' %}
+            <div class="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-6 text-red-800">
+                <h3 class="text-xl font-semibold">Takedown Information</h3>
+                <div class="mt-4 space-y-2 text-sm">
+                    <p><strong>Taken Down By:</strong> {{ audiobook.takedown_by.username|default:'N/A' }}</p>
+                    <p><strong>Date:</strong> {{ audiobook.takedown_at|date:"M d, Y, P" }}</p>
+                    <p><strong>Reason:</strong> {{ audiobook.takedown_reason|default:'No reason provided.' }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Takedown Modal -->
+    <div x-show="takedownModal" @keydown.escape.window="takedownModal = false" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style="display: none;">
+        <div @click.away="takedownModal = false" class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+            <h3 class="text-2xl font-bold text-gray-800">Confirm Takedown</h3>
+            <p class="mt-2 text-gray-600">Are you sure you want to takedown this audiobook? Please provide a reason (optional but recommended).</p>
+            <form action="{% url 'AudioXApp:admin_takedown_audiobook' audiobook.audiobook_id %}" method="POST" class="mt-6">
+                {% csrf_token %}
+                <textarea name="reason" rows="3" placeholder="Reason for takedown..." class="w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"></textarea>
+                <div class="mt-6 flex justify-end gap-4">
+                    <button type="button" @click="takedownModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Confirm Takedown</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reinstate Modal -->
+    <div x-show="reinstateModal" @keydown.escape.window="reinstateModal = false" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style="display: none;">
+        <div @click.away="reinstateModal = false" class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+            <h3 class="text-2xl font-bold text-gray-800">Confirm Reinstatement</h3>
+            <p class="mt-2 text-gray-600">This will reinstate the audiobook and set its status to "Inactive". The creator will then be able to republish it. Are you sure?</p>
+            <form action="{% url 'AudioXApp:admin_reinstate_audiobook' audiobook.audiobook_id %}" method="POST" class="mt-6">
+                {% csrf_token %}
+                <div class="mt-6 flex justify-end gap-4">
+                    <button type="button" @click="reinstateModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Confirm Reinstatement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+{% endblock %}

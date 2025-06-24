@@ -1,17 +1,22 @@
+<!-- File Path: AudioXApp/templates/admin/admin_welcome.html -->
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Meta and Links -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AudioX Admin Portal - Welcome</title>
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    </head>
+</head>
 <body class="font-inter flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-100 to-slate-200">
 
+    <!-- Main Content Wrapper -->
     <div class="w-full max-w-3xl p-10 md:p-14 space-y-10 bg-white rounded-xl shadow-xl text-center border border-gray-200">
+        
+        <!-- Header and Welcome Message -->
         <div>
             <div class="flex items-center justify-center text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
                 <span class="text-theme-primary">AUDIO</span><span class="text-red-500">X</span>
@@ -25,15 +30,16 @@
             </p>
         </div>
 
+        <!-- Separator -->
         <div class="border-t border-gray-200 pt-8"></div>
 
+        <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row justify-center items-center gap-5 md:gap-8">
             <a href="{% url 'AudioXApp:adminlogin' %}"
                class="w-full sm:w-auto inline-flex items-center justify-center px-10 py-3 text-lg font-medium rounded-md text-white bg-theme-primary hover:bg-theme-primary-hover shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out">
-               <i class="fas fa-sign-in-alt mr-2.5 h-5 w-5" aria-hidden="true"></i>
-               Admin Login
+                <i class="fas fa-sign-in-alt mr-2.5 h-5 w-5" aria-hidden="true"></i>
+                Admin Login
             </a>
-
             <a href="{% url 'AudioXApp:adminsignup' %}"
                class="w-full sm:w-auto inline-flex items-center justify-center px-10 py-3 text-lg font-medium rounded-md text-theme-primary bg-white border-2 border-theme-primary hover:bg-indigo-50 hover:text-theme-primary-hover hover:border-theme-primary-hover shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out">
                 <i class="fas fa-user-plus mr-2.5 h-5 w-5" aria-hidden="true"></i>
@@ -41,6 +47,7 @@
             </a>
         </div>
 
+        <!-- Back to Main Site Link -->
         <div class="text-base text-center pt-8">
             <a href="{% url 'AudioXApp:home' %}" class="font-medium text-theme-primary hover:text-theme-primary-hover hover:underline">
                 <i class="fas fa-arrow-left mr-1.5"></i> Go Back to Main Site

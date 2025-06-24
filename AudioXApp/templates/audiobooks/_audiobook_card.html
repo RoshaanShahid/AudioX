@@ -1,0 +1,60 @@
+{% load humanize %}
+{% load mathfilters %}
+
+<a href="{% url 'AudioXApp:audiobook_detail' audiobook_slug=book.slug %}" class="block group relative">
+    <div class="bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl h-full flex flex-col">
+        <div class="relative h-80 w-full">
+            {# This logic checks if the cover_image is a file object (from DB) or a simple URL (from cache) #}
+            <img src="{% if book.cover_image.url %}{{ book.cover_image.url }}{% else %}{{ book.cover_image|default:'https://placehold.co/300x320/eeeeee/999999?text=Cover+Not+Found' }}{% endif %}"
+                 alt="{{ book.title }}"
+                 class="w-full h-full object-cover rounded-t-3xl"
+                 loading="lazy" width="300" height="320"
+                 onerror="this.onerror=null; this.src='https://placehold.co/300x320/eeeeee/999999?text=Cover+Error';">
+            
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 rounded-t-3xl">
+                <div class="bg-white/80 text-[#091e65] rounded-full p-4 transition-transform duration-200 hover:scale-110 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>
+                </div>
+            </div>
+            {% if book.is_paid %}
+                <span class="absolute top-3 right-3 bg-[#091e65] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow">Price: {{ book.price|floatformat:2 }}</span>
+            {% endif %}
+        </div>
+        <div class="p-4 flex-grow flex flex-col">
+            <h3 class="font-semibold text-lg text-gray-800 truncate" title="{{ book.title }}">{{ book.title }}</h3>
+            
+            {# Logic to correctly display Author or Creator #}
+            {% if book.creator %}
+                <p class="text-sm text-gray-600 truncate" title="By {{ book.creator.creator_name }}">By {{ book.creator.creator_name }}</p>
+            {% else %}
+                <p class="text-sm text-gray-600 truncate" title="By {{ book.author }}">By {{ book.author }}</p>
+            {% endif %}
+            
+            <div class="mt-auto pt-2 flex justify-between items-center text-xs text-gray-500">
+                <div class="flex items-center space-x-1">
+                    {% with rating=book.average_rating %}
+                        {% if rating is not None and rating > 0 %}
+                            {% with full_stars=rating|floatformat:0|add:"0" decimal_part_str=rating|stringformat:".1f"|slice:"-1:" %}
+                            {% with decimal_part_int=decimal_part_str|add:"0" %}
+                                {% for i in ""|center:full_stars %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endfor %}
+                                {% if decimal_part_int >= 3 and decimal_part_int <= 7 %}<i class="fas fa-star-half-alt text-yellow-400 text-sm mr-px"></i>
+                                    {% with current_stars=full_stars|add:1 empty_stars=5|sub:current_stars %}{% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}{% endwith %}
+                                {% elif decimal_part_int > 7 %}
+                                    {% with effective_full_stars=full_stars|add:1 %}{% if effective_full_stars > full_stars and full_stars < 5 %}<i class="fas fa-star text-yellow-400 text-sm mr-px"></i>{% endif %}
+                                    {% with empty_stars=5|sub:effective_full_stars %}{% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}{% endwith %}{% endwith %}
+                                {% else %}{% with empty_stars=5|sub:full_stars %}{% for i in ""|center:empty_stars %}<i class="far fa-star text-gray-300 text-sm mr-px"></i>{% endfor %}{% endwith %}{% endif %}
+                            {% endwith %}{% endwith %}
+                            <span class="font-medium text-gray-600 ml-1">{{ rating|floatformat:1 }}</span>
+                        {% else %}
+                            <span class="text-gray-400 italic text-xs">No ratings</span>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                <div class="flex items-center space-x-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                    <span>{{ book.total_views|intcomma|default:"0" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</a>

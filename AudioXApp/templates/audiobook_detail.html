@@ -44,6 +44,134 @@
         .star-rating-input .fa-star {
             transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
         }
+
+        .chapter-progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0; /* A light gray background */
+            border-radius: 9999px;
+            height: 6px;
+            margin-top: 8px; /* Add some space above the bar */
+            display: none; /* It will be hidden by default, JS will show it if there is progress */
+        }
+        .chapter-progress-bar-inner {
+            height: 100%;
+            width: 0%; /* JS will update this width */
+            background-color: #DC2626; /* Using your theme's red color */
+            border-radius: 9999px;
+            transition: width 0.3s ease-out;
+        }
+
+        /* NEW: Chapter Unlock Styles */
+        .chapter-unlock-section {
+            margin-top: 12px;
+            padding: 12px;
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border: 2px solid #F59E0B;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.1);
+        }
+
+        .chapter-unlock-btn {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+            font-size: 0.875rem;
+        }
+
+        .chapter-unlock-btn:hover {
+            background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .chapter-unlock-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .chapter-already-unlocked {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            border: 2px solid #10B981;
+        }
+
+        /* Coin Purchase Styles */
+        .coin-purchase-section {
+            margin-top: 15px;
+            padding: 16px;
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border: 2px solid #F59E0B;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1);
+        }
+
+        .coin-purchase-btn {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+        }
+
+        .coin-purchase-btn:hover {
+            background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .coin-purchase-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .coin-balance-display {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: #92400E;
+            font-weight: 500;
+        }
+
+        .purchase-method-divider {
+            display: flex;
+            align-items: center;
+            margin: 16px 0;
+            color: #6B7280;
+            font-size: 0.875rem;
+        }
+
+        .purchase-method-divider::before,
+        .purchase-method-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #E5E7EB;
+        }
+
+        .purchase-method-divider span {
+            padding: 0 12px;
+            background: white;
+        }
+
+        .coin-insufficient {
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            border: 2px solid #F87171;
+        }
+
+        .coin-already-purchased {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            border: 2px solid #10B981;
+        }
     </style>
 {% endblock %}
 
@@ -105,57 +233,103 @@
                 {% endwith %}
 
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[#09065E]/70">
-                    {% if audiobook.average_rating is not None and audiobook.average_rating > 0 %}
-                    <div class="flex items-center space-x-1.5">
-                        {% with rating_value=audiobook.average_rating|floatformat:0|add:"0" %}
-                            {% for i in "12345" %}
-                                <svg class="w-5 h-5 {% if i <= rating_value %}text-red-500{% else %}text-[#09065E]/20{% endif %}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                            {% endfor %}
-                        {% endwith %}
-                        <span class="text-[#09065E] font-semibold pt-px">{{ audiobook.average_rating|floatformat:1 }}</span>
-                        <span class="text-[#09065E]/60 pt-px">({{ reviews|length|default:0 }} review{{ reviews|length|pluralize }})</span>
-                    </div>
-                    {% else %}
-                    <div class="flex items-center space-x-1.5">
-                        {% for i in "12345" %}
-                            <svg class="w-5 h-5 text-[#09065E]/20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                        {% endfor %}
-                        <span class="ml-1.5 text-[#09065E]/60 pt-px">No ratings yet</span>
-                    </div>
-                    {% endif %}
+    {% if audiobook.average_rating is not None and audiobook.average_rating > 0 %}
+    <div class="flex items-center space-x-1.5">
+        {% with rating_value=audiobook.average_rating|floatformat:0|add:"0" %}
+            {% for i in "12345" %}
+                <svg class="w-5 h-5 {% if i <= rating_value %}text-red-500{% else %}text-[#09065E]/20{% endif %}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+            {% endfor %}
+        {% endwith %}
+        <span class="text-[#09065E] font-semibold pt-px">{{ audiobook.average_rating|floatformat:1 }}</span>
+        <span class="text-[#09065E]/60 pt-px">({{ reviews|length|default:0 }} review{{ reviews|length|pluralize }})</span>
+    </div>
+    {% else %}
+    <div class="flex items-center space-x-1.5">
+        {% for i in "12345" %}
+            <svg class="w-5 h-5 text-[#09065E]/20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+        {% endfor %}
+        <span class="ml-1.5 text-[#09065E]/60 pt-px">No ratings yet</span>
+    </div>
+    {% endif %}
 
-                    {% with current_book_display=audiobook_data_for_display|default:audiobook %}
-                        {% if current_book_display.language %}
-                        <span class="inline-flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-[#09065E]/50" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.029 18.029 0 01-1.192 2.336A18.023 18.023 0 017.189 9.5L7 9.73V10a2 2 0 002 2v1a1 1 0 01-1 1H4a1 1 0 110-2h1.001A18.03 18.03 0 016.335 9.61 18.03 18.03 0 017.68 8.313l-.001-.001a17.94 17.94 0 011.085-.92l.001-.001L10 6.04l.005-.006a17.98 17.98 0 011.609-1.89 18.032 18.032 0 011.192-2.336H14V3a1 1 0 011-1h1a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
-                            <span class="pt-px">{{ current_book_display.language }}</span>
-                        </span>
-                        {% endif %}
-                        {% if current_book_display.source %}
-                        <span class="inline-flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-[#09065E]/50" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" /><path fill-rule="evenodd" d="M2 5a3 3 0 013-3h10a3 3 0 013 3v10a3 3 0 01-3 3H5a3 3 0 01-3-3V5zm3-1a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1H5z" clip-rule="evenodd" /></svg>
-                            <span class="pt-px">Source: {{ current_book_display.get_source_display|default:current_book_display.source|capfirst }}</span>
-                        </span>
-                        {% endif %}
-                    {% endwith %}
+    {% with current_book_display=audiobook_data_for_display|default:audiobook %}
+        {% if current_book_display.language %}
+        <span class="inline-flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-[#09065E]/50" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.029 18.029 0 01-1.192 2.336A18.023 18.023 0 017.189 9.5L7 9.73V10a2 2 0 002 2v1a1 1 0 01-1 1H4a1 1 0 110-2h1.001A18.03 18.03 0 016.335 9.61 18.03 18.03 0 017.68 8.313l-.001-.001a17.94 17.94 0 011.085-.92l.001-.001L10 6.04l.005-.006a17.98 17.98 0 011.609-1.89 18.032 18.032 0 011.192-2.336H14V3a1 1 0 011-1h1a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+            <span class="pt-px">{{ current_book_display.language }}</span>
+        </span>
+        {% endif %}
+        {% if current_book_display.source %}
+        <span class="inline-flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-[#09065E]/50" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" /><path fill-rule="evenodd" d="M2 5a3 3 0 013-3h10a3 3 0 013 3v10a3 3 0 01-3 3H5a3 3 0 01-3-3V5zm3-1a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1H5z" clip-rule="evenodd" /></svg>
+            <span class="pt-px">Source: {{ current_book_display.get_source_display|default:current_book_display.source|capfirst }}</span>
+        </span>
+        {% endif %}
+    {% endwith %}
 
-                    {% if audiobook.total_views is not None %}
-                    <span class="inline-flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-[#09065E]/50" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
-                        <span class="pt-px">{{ audiobook.total_views|intcomma }} View{{ audiobook.total_views|pluralize }}</span>
-                    </span>
-                    {% endif %}
+    {% if audiobook.total_views is not None %}
+    <span class="inline-flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-[#09065E]/50" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+        <span class="pt-px">{{ audiobook.total_views|intcomma }} View{{ audiobook.total_views|pluralize }}</span>
+    </span>
+    {% endif %}
+
+    {% if request.user.is_authenticated and audiobook and audiobook.audiobook_id %}
+    <div x-data="{ open: false }" class="relative">
+        <button @click="open = !open" class="inline-flex items-center text-[#09065E]/70 hover:text-red-600 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500/70 rounded-md">
+            <i class="fas fa-flag mr-1.5"></i>
+            <span class="pt-px">Report</span>
+        </button>
+
+        <div x-show="open"
+             @click.outside="open = false"
+             x-transition:enter="transition ease-out duration-100"
+             x-transition:enter-start="transform opacity-0 scale-95"
+             x-transition:enter-end="transform opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-75"
+             x-transition:leave-start="transform opacity-100 scale-100"
+             x-transition:leave-end="transform opacity-0 scale-95"
+             class="absolute z-50 mt-2 w-72 -right-4 sm:right-0 bg-white rounded-lg shadow-2xl border border-slate-200 p-4"
+             style="display: none;">
+            
+            <form action="{% url 'AudioXApp:submit_content_report' audiobook.audiobook_id %}" method="post">
+                {% csrf_token %}
+                <h4 class="font-semibold text-slate-800 mb-2 text-base">Report this Audiobook</h4>
+                <div class="space-y-3">
+                    <div>
+                        <label for="reason" class="sr-only">Reason</label>
+                        <select name="reason" id="reason" required class="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-slate-300 focus:outline-none focus:ring-red-500 focus:border-red-500 rounded-md">
+                            <option value="" disabled selected>Select a reason...</option>
+                            <option value="HATE_SPEECH">Hate Speech</option>
+                            <option value="ABUSIVE_CONTENT">Abusive or Harassing</option>
+                            <option value="VIOLENT_CONTENT">Violent or Graphic Content</option>
+                            <option value="COPYRIGHT_INFRINGEMENT">Copyright Infringement</option>
+                            <option value="MISINFORMATION">Misinformation or Spam</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="details" class="sr-only">Additional Details</label>
+                        <textarea name="details" id="details" rows="3" class="mt-1 block w-full p-2 text-sm border border-slate-300 rounded-md shadow-sm" placeholder="Additional details (optional)"></textarea>
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md text-sm">Submit Report</button>
+                    </div>
                 </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
 
-                {% with current_book_display=audiobook_data_for_display|default:audiobook %}
+</div>
+
                 <div class="text-[#09065E]/80 leading-relaxed line-clamp-3 sm:line-clamp-4 selection:bg-red-200 selection:text-red-800">
-                    {{ current_book_display.description|striptags|safe|default:"No description available for this audiobook." }}
+                    {{ audiobook_data_for_display.description|striptags|safe|default:"No description available for this audiobook." }}
                 </div>
-                {% endwith %}
 
                 {% with current_book_display=audiobook_data_for_display|default:audiobook %}
                     {% if is_creator_book_page and current_book_display.is_paid %}
@@ -168,10 +342,33 @@
                                         <i class="fas fa-check-circle mr-1.5"></i> Purchased & Unlocked
                                     </div>
                                 {% else %}
+                                    <div class="coin-purchase-section" id="coinPurchaseSection">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <h4 class="text-base font-semibold text-amber-800 flex items-center">
+                                                <i class="fas fa-coins mr-2 text-amber-600"></i>
+                                                Pay with Coins
+                                            </h4>
+                                            <div class="coin-balance-display" id="coinBalanceDisplay">
+                                                Your balance: <span id="userCoinBalance">{{ user.coins|default:0 }}</span> coins
+                                            </div>
+                                        </div>
+                                        
+                                        <button id="coinPurchaseBtn" class="coin-purchase-btn w-full">
+                                            <i class="fas fa-coins mr-2"></i>
+                                            Purchase with <span id="coinsRequired">{{ current_book_display.price|floatformat:0 }}</span> Coins
+                                        </button>
+                                        
+                                        <div id="coinPurchaseStatus" class="mt-3 text-sm"></div>
+                                    </div>
+
+                                    <div class="purchase-method-divider" id="purchaseMethodDivider">
+                                        <span>or</span>
+                                    </div>
+
                                     <button id="purchase-button"
                                             data-audiobook-slug="{{ current_book_display.slug }}"
                                             class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500/70 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 ease-in-out transform hover:-translate-y-0.5 active:translate-y-0">
-                                        <i class="fas fa-shopping-cart mr-2"></i> Purchase Now (PKR {{ current_book_display.price|floatformat:2 }})
+                                        <i class="fas fa-shopping-cart mr-2"></i> Purchase with Card (PKR {{ current_book_display.price|floatformat:2 }})
                                     </button>
                                     <p class="text-xs text-center text-red-500 mt-1.5">Secure payment via Stripe.</p>
                                 {% endif %}
@@ -191,9 +388,9 @@
                         <span>Play First Episode</span>
                     </button>
                     <div class="flex items-center space-x-2 sm:space-x-3">
-                        <button id="add-to-library-button" data-audiobook-id="{{ audiobook.audiobook_id|default:''|escapejs }}" class="w-full sm:w-auto flex items-center justify-center space-x-2.5 px-7 py-3.5 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition-all duration-150 ease-in-out text-base font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600/70">
+                        <button id="add-to-library-button" data-audiobook-id="{{ audiobook.audiobook_id|default:''|escapejs }}" class="w-full sm:w-auto flex items-center justify-center space-x-2.5 px-7 py-3.5 text-white rounded-lg shadow-md transition-all duration-150 ease-in-out text-base font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 {% if is_in_library %}bg-[#091e65] hover:bg-opacity-90 focus:ring-[#091e65]/70{% else %}bg-red-600 hover:bg-red-700 focus:ring-red-600/70{% endif %}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" /></svg>
-                            <span id="add-to-library-text">Add to Library</span>
+                            <span id="add-to-library-text">{% if is_in_library %}In Library{% else %}Add to Library{% endif %}</span>
                         </button>
                         <button id="download-full-audiobook-btn" data-audiobook-id="{{ audiobook.audiobook_id|default:''|escapejs }}" class="w-full sm:w-auto flex items-center justify-center space-x-2 px-5 py-3 border border-[#09065E]/40 text-[#09065E]/90 rounded-lg hover:bg-[#09065E]/5 hover:border-[#09065E]/60 transition-all duration-150 ease-in-out text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#09065E]/50">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
@@ -294,12 +491,14 @@
                         {% for chapter_display_item in chapters_to_display %}
                         <div class="chapter-container bg-white p-4 sm:p-5 rounded-lg border border-[#09065E]/20 hover:border-[#09065E]/30 shadow-lg hover:shadow-xl shadow-[#09065E]/[0.07] hover:shadow-[#09065E]/10 transition-all duration-200 ease-in-out">
                             <div class="chapter-item flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
-                                data-chapter-title="{{ chapter_display_item.chapter_title|escapejs|default:"Untitled Episode" }}"
-                                data-chapter-index="{{ chapter_display_item.chapter_index }}"
-                                data-chapter-id="{{ chapter_display_item.chapter_id|default:'' }}"
-                                data-audio-url-template="{{ chapter_display_item.audio_url_template|default:'' }}"
-                                data-is-accessible="{{ chapter_display_item.is_accessible|yesno:'true,false' }}"
-                                data-duration-seconds="{{ chapter_display_item.duration_seconds|default:0 }}">
+                                 data-chapter-title="{{ chapter_display_item.chapter_title|escapejs|default:"Untitled Episode" }}"
+                                 data-chapter-index="{{ chapter_display_item.chapter_index }}"
+                                 data-chapter-id="{{ chapter_display_item.chapter_id|default:'' }}"
+                                 data-audio-url-template="{{ chapter_display_item.audio_url_template|default:'' }}"
+                                 data-is-accessible="{{ chapter_display_item.is_accessible|yesno:'true,false' }}"
+                                 data-lock-reason="{{ chapter_display_item.lock_reason|default:'' }}"
+                                 data-duration-seconds="{{ chapter_display_item.duration_seconds|default:0 }}">
+                                
                                 <div class="flex items-center space-x-4 flex-grow min-w-0">
                                     <div class="flex-shrink-0">
                                         {% if chapter_display_item.is_accessible %}
@@ -315,6 +514,7 @@
                                         </div>
                                         {% endif %}
                                     </div>
+                                    
                                     <div class="flex-grow min-w-0">
                                         <p class="text-lg font-semibold {% if chapter_display_item.is_accessible %}text-[#09065E] group-hover:text-red-700{% else %}text-[#09065E]/50{% endif %} transition-colors duration-150 truncate" title="{{ chapter_display_item.chapter_title|default:"Untitled Episode" }}">
                                             <span class="text-base {% if chapter_display_item.is_accessible %}text-[#09065E]/60{% else %}text-[#09065E]/40{% endif %} mr-1.5">{{ forloop.counter }}.</span> {{ chapter_display_item.chapter_title|default:"Untitled Episode" }}
@@ -322,15 +522,19 @@
                                         <p class="text-sm {% if chapter_display_item.is_accessible %}text-[#09065E]/70{% else %}text-[#09065E]/50{% endif %} font-mono mt-1">
                                             Duration: {{ chapter_display_item.duration_seconds|format_duration }}
                                         </p>
+                                        <div class="chapter-progress-bar-container">
+                                            <div class="chapter-progress-bar-inner"></div>
+                                        </div>
                                     </div>
                                 </div>
+                                
                                 <div class="flex items-center space-x-2 sm:space-x-2.5 flex-shrink-0 mt-3 sm:mt-0 self-start sm:self-center">
                                     {% if chapter_display_item.is_accessible %}
                                     <div class="relative chapter-download-container flex flex-col items-center">
                                         <button 
                                             class="download-chapter-btn p-2.5 rounded-full text-[#09065E]/70 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500/70 hover:bg-red-100 transition-all duration-150"
                                             title="Download Episode {{ forloop.counter }}"
-                                            data-chapter-unique-id="{{ audiobook.slug|default:audiobook.audiobook_id|default:'defaultaudiobook' }}_{{ chapter_display_item.chapter_id|default:forloop.counter }}"
+                                            data-chapter-unique-id="{{ audiobook.slug|default:audiobook.audiobook_id|default:'defaultaudiobook' }}_{{ chapter_display_item.chapter_id|default:chapter_display_item.chapter_index }}"
                                             data-chapter-id="{{ chapter_display_item.chapter_id|default:'' }}"
                                             data-chapter-index="{{ chapter_display_item.chapter_index }}"
                                             data-audiobook-slug="{{ audiobook.slug|default:audiobook.audiobook_id|default:'' }}"
@@ -368,6 +572,46 @@
                                     {% endif %}
                                 </div>
                             </div>
+                            
+                            {% if not chapter_display_item.is_accessible and user.is_authenticated and chapter_display_item.lock_reason == 'coin_unlock_available' %}
+                                <div class="chapter-unlock-section" id="unlock-section-{{ chapter_display_item.chapter_id }}">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-sm font-semibold text-amber-800 flex items-center">
+                                            <i class="fas fa-coins mr-2 text-amber-600"></i>
+                                            Unlock this Chapter
+                                        </h4>
+                                        <div class="text-xs bg-white/80 px-2 py-1 rounded text-amber-800">
+                                            Your balance: <span id="user-coins-{{ chapter_display_item.chapter_id }}">{{ user.coins|default:0 }}</span> coins
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="text-xs text-amber-700 mb-3">
+                                        Unlock "{{ chapter_display_item.chapter_title }}" for {{ chapter_display_item.unlock_cost }} coins and listen anytime!
+                                    </p>
+                                    
+                                    <button onclick="unlockChapterWithCoins('{{ chapter_display_item.chapter_id }}')" 
+                                            class="chapter-unlock-btn w-full"
+                                            id="unlock-btn-{{ chapter_display_item.chapter_id }}"
+                                            data-unlock-cost="{{ chapter_display_item.unlock_cost }}"
+                                            {% if user.coins|default:0 < chapter_display_item.unlock_cost %}disabled{% endif %}>
+                                        <i class="fas fa-unlock mr-2"></i>
+                                        {% if user.coins|default:0 >= chapter_display_item.unlock_cost %}
+                                            Unlock for {{ chapter_display_item.unlock_cost }} Coins
+                                        {% else %}
+                                            Need {{ chapter_display_item.unlock_cost|sub:user.coins|default:0 }} more coins
+                                        {% endif %}
+                                    </button>
+                                    
+                                    {% if user.coins|default:0 < chapter_display_item.unlock_cost %}
+                                    <p class="text-xs text-center mt-2 text-amber-700">
+                                        <a href="{% url 'AudioXApp:buycoins' %}" class="font-bold underline hover:text-amber-800">Buy more coins</a> to unlock this chapter
+                                    </p>
+                                    {% endif %}
+                                    
+                                    <div id="unlock-status-{{ chapter_display_item.chapter_id }}" class="mt-2 text-sm"></div>
+                                </div>
+                            {% endif %}
+                            
                             <div id="review-form-{{ chapter_display_item.chapter_id|default:forloop.counter }}" class="chapter-review-section hidden mt-5 pt-5 border-t-2 border-[#09065E]/10">
                                 <h4 class="text-lg font-semibold text-[#09065E]/90 mb-4">Community Chat for: <span class="text-red-700">{{ chapter_display_item.chapter_title|default:"Untitled Episode" }}</span></h4>
                                 <div class="chat-messages-list max-h-72 overflow-y-auto space-y-4 mb-4 pr-2.5 mt-2">
@@ -378,7 +622,7 @@
                                             <p class="text-[#09065E]/90 bg-[#09065E]/5 p-3 rounded-lg rounded-tl-none mt-1.5 shadow-sm">This part was absolutely amazing! Really captured the essence.</p>
                                         </div>
                                     </div>
-                                     <div class="flex items-start space-x-3.5 text-sm">
+                                    <div class="flex items-start space-x-3.5 text-sm">
                                         <img src="https://placehold.co/40x40/DD2C00/FFFFFF?text=U2&font=sans" alt="User 2" class="w-10 h-10 rounded-full flex-shrink-0 border-2 border-white shadow-sm">
                                         <div class="flex-1">
                                             <p class="font-semibold text-red-700">User Two <span class="text-xs text-[#09065E]/50 font-normal ml-2">1 min ago</span></p>
@@ -432,133 +676,46 @@
                     </div>
                 </div>
 
-                {# --- Corrected Review Form Conditional Logic --- #}
                 {% if user.is_authenticated %}
-                    {% with current_book_display=audiobook_data_for_display|default:audiobook %}
-                        {# Assign direct boolean values to context variables for clarity #}
-                        {% with book_is_paid_value=current_book_display.is_paid %}
-                        {% with is_creator_book_value=is_creator_book_page %}
-                        {% with user_has_purchased_value=user_has_purchased %}
-
-                            {% comment %}
-                                Determine if the review form should be shown.
-                                Logic:
-                                1. If the book is NOT paid (free), show form.
-                                2. Else if it IS a creator book AND IS paid AND user HAS purchased, show form.
-                                3. Else if it's NOT a creator book (external book), show form.
-                                4. Else (e.g., paid creator book, not purchased), show "purchase to review" message.
-                            {% endcomment %}
-
-                            {% if not book_is_paid_value %}
-                                {# Condition 1: Book is FREE - Show Review Form #}
-                                <form id="review-form" class="mb-10 p-6 border-2 border-dashed border-red-400/60 rounded-xl bg-red-50 {% if current_user_has_reviewed %}hidden{% endif %}" data-add-url="{% url 'AudioXApp:add_review' audiobook_slug=audiobook.slug %}">
-                                    {% csrf_token %}
-                                    <h4 class="text-xl font-semibold text-[#09065E] mb-2">Share Your Thoughts</h4>
-                                    <p class="text-sm text-[#09065E]/70 mb-6">Help others discover this audiobook by leaving your review.</p>
-                                    <div class="mb-6">
-                                        <label class="block text-sm font-medium text-[#09065E]/90 mb-2">Your Rating <span class="text-red-600">*</span></label>
-                                        <div id="review-rating-input" class="flex items-center space-x-1.5 cursor-pointer text-[#09065E]/30">
-                                            {% for i_star_val in "12345" %}
-                                            <svg class="w-9 h-9 star-input-icon hover:text-red-400 transition-colors duration-150" data-rating-value="{{ i_star_val }}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                            </svg>
-                                            {% endfor %}
-                                        </div>
-                                        <input type="hidden" name="rating" id="rating-value-input" value="0" required>
-                                        <div id="rating-error" class="text-red-600 text-xs mt-2 h-4"></div>
-                                    </div>
-                                    <div class="mb-6">
-                                        <label for="comment-input" class="block text-sm font-medium text-[#09065E]/90 mb-2">Your Comment (Optional)</label>
-                                        <textarea name="comment" id="comment-input" rows="5" class="w-full px-4 py-3 border-2 border-[#09065E]/20 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500/70 focus:border-red-500/70 sm:text-sm text-[#09065E] placeholder-[#09065E]/50 transition-colors duration-150" placeholder="What did you think about this audiobook?"></textarea>
-                                    </div>
-                                    <div class="flex justify-end items-center space-x-4">
-                                        <div id="form-message" class="text-sm flex-grow text-[#09065E]/80"></div>
-                                        <button type="submit" id="submit-review-btn" class="inline-flex items-center px-7 py-3 bg-[#09065E] border border-transparent rounded-lg shadow-md text-base font-semibold text-white hover:bg-[#09065E]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#09065E]/70 disabled:opacity-70 transition-all duration-150">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 16.571V11.5a1 1 0 011-1h.094a1 1 0 01.803.424l4.25 5.5a1 1 0 001.6-.25L17.894 3.962a1 1 0 00-.999-1.409l-7 .001z" /></svg>
-                                            Submit Review
-                                        </button>
-                                    </div>
-                                </form>
-                            {% elif is_creator_book_value and book_is_paid_value and user_has_purchased_value %}
-                                {# Condition 2: Paid Creator Book, Purchased - Show Review Form #}
-                                <form id="review-form" class="mb-10 p-6 border-2 border-dashed border-red-400/60 rounded-xl bg-red-50 {% if current_user_has_reviewed %}hidden{% endif %}" data-add-url="{% url 'AudioXApp:add_review' audiobook_slug=audiobook.slug %}">
-                                    {% csrf_token %}
-                                    <h4 class="text-xl font-semibold text-[#09065E] mb-2">Share Your Thoughts</h4>
-                                    <p class="text-sm text-[#09065E]/70 mb-6">Help others discover this audiobook by leaving your review.</p>
-                                    <div class="mb-6">
-                                        <label class="block text-sm font-medium text-[#09065E]/90 mb-2">Your Rating <span class="text-red-600">*</span></label>
-                                        <div id="review-rating-input" class="flex items-center space-x-1.5 cursor-pointer text-[#09065E]/30">
-                                            {% for i_star_val in "12345" %}
-                                            <svg class="w-9 h-9 star-input-icon hover:text-red-400 transition-colors duration-150" data-rating-value="{{ i_star_val }}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                            </svg>
-                                            {% endfor %}
-                                        </div>
-                                        <input type="hidden" name="rating" id="rating-value-input" value="0" required>
-                                        <div id="rating-error" class="text-red-600 text-xs mt-2 h-4"></div>
-                                    </div>
-                                    <div class="mb-6">
-                                        <label for="comment-input" class="block text-sm font-medium text-[#09065E]/90 mb-2">Your Comment (Optional)</label>
-                                        <textarea name="comment" id="comment-input" rows="5" class="w-full px-4 py-3 border-2 border-[#09065E]/20 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500/70 focus:border-red-500/70 sm:text-sm text-[#09065E] placeholder-[#09065E]/50 transition-colors duration-150" placeholder="What did you think about this audiobook?"></textarea>
-                                    </div>
-                                    <div class="flex justify-end items-center space-x-4">
-                                        <div id="form-message" class="text-sm flex-grow text-[#09065E]/80"></div>
-                                        <button type="submit" id="submit-review-btn" class="inline-flex items-center px-7 py-3 bg-[#09065E] border border-transparent rounded-lg shadow-md text-base font-semibold text-white hover:bg-[#09065E]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#09065E]/70 disabled:opacity-70 transition-all duration-150">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 16.571V11.5a1 1 0 011-1h.094a1 1 0 01.803.424l4.25 5.5a1 1 0 001.6-.25L17.894 3.962a1 1 0 00-.999-1.409l-7 .001z" /></svg>
-                                            Submit Review
-                                        </button>
-                                    </div>
-                                </form>
-                            {% elif not is_creator_book_value %}
-                                {# Condition 3: Not a Creator Book (External) - Show Review Form #}
-                                <form id="review-form" class="mb-10 p-6 border-2 border-dashed border-red-400/60 rounded-xl bg-red-50 {% if current_user_has_reviewed %}hidden{% endif %}" data-add-url="{% url 'AudioXApp:add_review' audiobook_slug=audiobook.slug %}">
-                                    {% csrf_token %}
-                                    <h4 class="text-xl font-semibold text-[#09065E] mb-2">Share Your Thoughts</h4>
-                                    <p class="text-sm text-[#09065E]/70 mb-6">Help others discover this audiobook by leaving your review.</p>
-                                    <div class="mb-6">
-                                        <label class="block text-sm font-medium text-[#09065E]/90 mb-2">Your Rating <span class="text-red-600">*</span></label>
-                                        <div id="review-rating-input" class="flex items-center space-x-1.5 cursor-pointer text-[#09065E]/30">
-                                            {% for i_star_val in "12345" %}
-                                            <svg class="w-9 h-9 star-input-icon hover:text-red-400 transition-colors duration-150" data-rating-value="{{ i_star_val }}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                            </svg>
-                                            {% endfor %}
-                                        </div>
-                                        <input type="hidden" name="rating" id="rating-value-input" value="0" required>
-                                        <div id="rating-error" class="text-red-600 text-xs mt-2 h-4"></div>
-                                    </div>
-                                    <div class="mb-6">
-                                        <label for="comment-input" class="block text-sm font-medium text-[#09065E]/90 mb-2">Your Comment (Optional)</label>
-                                        <textarea name="comment" id="comment-input" rows="5" class="w-full px-4 py-3 border-2 border-[#09065E]/20 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500/70 focus:border-red-500/70 sm:text-sm text-[#09065E] placeholder-[#09065E]/50 transition-colors duration-150" placeholder="What did you think about this audiobook?"></textarea>
-                                    </div>
-                                    <div class="flex justify-end items-center space-x-4">
-                                        <div id="form-message" class="text-sm flex-grow text-[#09065E]/80"></div>
-                                        <button type="submit" id="submit-review-btn" class="inline-flex items-center px-7 py-3 bg-[#09065E] border border-transparent rounded-lg shadow-md text-base font-semibold text-white hover:bg-[#09065E]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#09065E]/70 disabled:opacity-70 transition-all duration-150">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 16.571V11.5a1 1 0 011-1h.094a1 1 0 01.803.424l4.25 5.5a1 1 0 001.6-.25L17.894 3.962a1 1 0 00-.999-1.409l-7 .001z" /></svg>
-                                            Submit Review
-                                        </button>
-                                    </div>
-                                </form>
-                            {% else %} {# User authenticated, but doesn't meet criteria to review (e.g., paid creator book, not purchased) #}
-                                <div class="mb-6 p-4 bg-gray-100 border border-gray-200 text-gray-700 rounded-lg text-sm text-center shadow-sm">
-                                    {% if is_creator_book_value and book_is_paid_value %}
-                                        <i class="fas fa-lock mr-2 text-gray-500"></i> Purchase this audiobook to leave a review.
-                                    {% else %}
-                                        Reviewing is currently unavailable for this item.
-                                    {% endif %}
+                    {% if can_user_review %}
+                        <form id="review-form" class="mb-10 p-6 border-2 border-dashed border-red-400/60 rounded-xl bg-red-50 {% if current_user_has_reviewed %}hidden{% endif %}" data-add-url="{% url 'AudioXApp:add_review' audiobook_slug=audiobook.slug %}">
+                            {% csrf_token %}
+                            <h4 class="text-xl font-semibold text-[#09065E] mb-2">Share Your Thoughts</h4>
+                            <p class="text-sm text-[#09065E]/70 mb-6">Help others discover this audiobook by leaving your review.</p>
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-[#09065E]/90 mb-2">Your Rating <span class="text-red-600">*</span></label>
+                                <div id="review-rating-input" class="flex items-center space-x-1.5 cursor-pointer text-[#09065E]/30">
+                                    {% for i_star_val in "12345" %}
+                                    <svg class="w-9 h-9 star-input-icon hover:text-red-400 transition-colors duration-150" data-rating-value="{{ i_star_val }}" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                    {% endfor %}
                                 </div>
-                            {% endif %}
-                        {% endwith %} {# endwith user_has_purchased_value #}
-                        {% endwith %} {# endwith is_creator_book_value #}
-                        {% endwith %} {# endwith book_is_paid_value #}
-                    {% endwith %} {# endwith current_book_display #}
-                {% else %} {# User not authenticated #}
+                                <input type="hidden" name="rating" id="rating-value-input" value="0" required>
+                                <div id="rating-error" class="text-red-600 text-xs mt-2 h-4"></div>
+                            </div>
+                            <div class="mb-6">
+                                <label for="comment-input" class="block text-sm font-medium text-[#09065E]/90 mb-2">Your Comment (Optional)</label>
+                                <textarea name="comment" id="comment-input" rows="5" class="w-full px-4 py-3 border-2 border-[#09065E]/20 rounded-lg shadow-sm focus:ring-2 focus:ring-red-500/70 focus:border-red-500/70 sm:text-sm text-[#09065E] placeholder-[#09065E]/50 transition-colors duration-150" placeholder="What did you think about this audiobook?"></textarea>
+                            </div>
+                            <div class="flex justify-end items-center space-x-4">
+                                <div id="form-message" class="text-sm flex-grow text-[#09065E]/80"></div>
+                                <button type="submit" id="submit-review-btn" class="inline-flex items-center px-7 py-3 bg-[#09065E] border border-transparent rounded-lg shadow-md text-base font-semibold text-white hover:bg-[#09065E]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#09065E]/70 disabled:opacity-70 transition-all duration-150">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2.5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 16.571V11.5a1 1 0 011-1h.094a1 1 0 01.803.424l4.25 5.5a1 1 0 001.6-.25L17.894 3.962a1 1 0 00-.999-1.409l-7 .001z" /></svg>
+                                    Submit Review
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="mb-6 p-4 bg-gray-100 border border-gray-200 text-gray-700 rounded-lg text-sm text-center shadow-sm">
+                            <i class="fas fa-lock mr-2 text-gray-500"></i> Purchase this audiobook to leave a review.
+                        </div>
+                    {% endif %}
+                {% else %}
                     <p class="text-md text-[#09065E]/80 mb-8 bg-[#09065E]/5 p-5 rounded-xl border-2 border-[#09065E]/10 shadow-sm text-center">
                         <a href="{% url 'AudioXApp:login' %}?next={{ request.path|urlencode }}#content-reviews" class="font-semibold text-red-600 hover:underline">Log in</a> or <a href="{% url 'AudioXApp:signup' %}?next={{ request.path|urlencode }}#content-reviews" class="font-semibold text-red-600 hover:underline">Sign up</a> to leave a review.
                     </p>
                 {% endif %}
-                {# --- End Review Form Conditional Logic --- #}
-
                 <div id="edit-review-prompt" class="mb-8 text-center p-5 bg-[#09065E]/5 rounded-xl border-2 border-[#09065E]/10 {% if not current_user_has_reviewed %}hidden{% endif %}">
                     <p class="text-md text-[#09065E]/80 mb-2.5">You've already reviewed this audiobook.</p>
                     {% if user_review_object %}
@@ -696,7 +853,7 @@
 
     <div id="bottom-player-bar"
          class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#09065E]/10 shadow-[0_-8px_20px_rgba(9,6,101,0.08)] p-3 sm:p-4 z-[60] transform translate-y-full transition-transform duration-300 ease-in-out">
-        <audio id="audioPlayer" class="hidden" preload="metadata" data-audiobook-id="{{ audiobook.audiobook_id|default:'' }}"></audio>
+        <audio id="audioPlayer" class="hidden" preload="metadata" autoplay="false" data-audiobook-id="{{ audiobook.audiobook_id|default:'' }}"></audio>
         <div class="max-w-screen-lg mx-auto flex items-center gap-3 sm:gap-5">
             <div class="flex items-center space-x-3 flex-shrink-0 w-1/3 sm:w-auto sm:max-w-[200px] md:max-w-[280px] min-w-0">
                 <img id="player-cover-image" src="https://placehold.co/80x80/09065E/FFFFFF?text=N/A&font=sans" alt="Now Playing"
@@ -762,63 +919,33 @@
         </div>
     </div>
 
-<div id="custom-modal-overlay" class="fixed inset-0 bg-[#09065E]/80 backdrop-blur-md flex items-center justify-center p-4 z-[100] hidden opacity-0 transition-opacity duration-300 ease-out">
-    <div id="custom-modal-content" class="bg-white rounded-xl shadow-2xl shadow-[#09065E]/40 p-6 sm:p-8 w-full max-w-md transform opacity-0 scale-95 transition-all duration-300 ease-out">
-        <div class="flex justify-between items-center mb-5 sm:mb-6">
-            <h3 id="custom-modal-title" class="text-xl sm:text-2xl font-semibold text-[#09065E] tracking-tight">Modal Title</h3>
-            <button id="custom-modal-close-btn-icon" class="text-[#09065E]/60 hover:text-red-600 transition-colors duration-150 p-1.5 rounded-full hover:bg-red-100 -mr-2 -mt-2 sm:-mr-2.5 sm:-mt-2.5 focus:outline-none focus:ring-2 focus:ring-red-500/70">
+<div id="audiox-popup-overlay" class="fixed inset-0 bg-[#09065E]/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] hidden opacity-0 transition-opacity duration-300 ease-out">
+    <div id="audiox-popup-content" class="bg-white rounded-lg shadow-2xl w-full max-w-md transform opacity-0 scale-95 transition-all duration-300 ease-out">
+        <div id="audiox-popup-header" class="p-5 border-b-2 flex justify-between items-center">
+            <h3 id="audiox-popup-title" class="text-xl font-bold text-[#09065E]">Popup Title</h3>
+            <button id="audiox-popup-close-btn-icon" class="text-[#09065E]/60 hover:text-red-600 transition-colors duration-150 p-1 rounded-full hover:bg-red-100 -mr-2 -mt-2 focus:outline-none focus:ring-2 focus:ring-red-500">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
         </div>
-        <div id="custom-modal-body" class="text-[#09065E]/80 mb-6 sm:mb-8 text-sm sm:text-base leading-relaxed selection:bg-red-200 selection:text-red-800">
-            <p>Modal content goes here. This can be replaced dynamically.</p>
+        <div id="audiox-popup-body" class="p-6 text-[#09065E]/90 text-base leading-relaxed">
+            <p>Popup message goes here.</p>
         </div>
-        <div id="custom-modal-footer" class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3.5">
-            <button id="custom-modal-cancel-btn" class="w-full sm:w-auto px-6 py-2.5 border-2 border-[#09065E]/30 rounded-lg text-sm font-semibold text-[#09065E] hover:bg-[#09065E]/10 hover:border-[#09065E]/50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#09065E]/50">Cancel</button>
-            <button id="custom-modal-confirm-btn" class="w-full sm:w-auto px-6 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600/70">Confirm</button>
+        <div id="audiox-popup-footer" class="p-4 bg-white flex justify-end space-x-3 rounded-b-lg border-t-2">
+            <button id="audiox-popup-cancel-btn" class="px-6 py-2.5 rounded-md text-sm font-semibold border-2 border-[#09065E] text-[#09065E] bg-white hover:bg-[#09065E]/5 transition-colors duration-150">Cancel</button>
+            <button id="audiox-popup-confirm-btn" class="px-6 py-2.5 rounded-md text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors duration-150">Confirm</button>
         </div>
     </div>
 </div>
 
-<div id="share-modal-content-template" class="hidden">
-    <div class="mb-5">
-        <label for="share-link-input" class="block text-sm font-semibold text-[#09065E] mb-1.5">Shareable Link:</label>
-        <div class="flex rounded-lg shadow-sm border-2 border-[#09065E]/20 focus-within:border-red-500/70 focus-within:ring-1 focus-within:ring-red-500/70 transition-colors duration-150">
-            <input type="text" id="share-link-input" readonly
-                   class="flex-1 block w-full rounded-l-md sm:text-sm bg-[#09065E]/5 p-2.5 text-[#09065E] border-0 focus:ring-0">
-            <button id="copy-share-link-button"
-                    class="inline-flex items-center px-4 py-2 border-l-2 border-[#09065E]/20 rounded-r-md bg-[#09065E]/10 text-[#09065E] hover:bg-[#09065E]/20 text-sm font-semibold focus:outline-none focus:bg-[#09065E]/20 transition-colors duration-150">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                </svg>
-                <span class="ml-2">Copy</span>
-            </button>
-        </div>
-        <p id="copy-status-message" class="text-xs text-red-600 mt-1.5 min-h-[1em]"></p>
-    </div>
-    <p class="text-sm font-semibold text-[#09065E] mb-2.5">Share via:</p>
-    <div class="flex flex-wrap gap-3.5 justify-center">
-        <a href="#" id="share-facebook" target="_blank" class="social-share-button bg-[#1877F2] hover:bg-[#1462C9] text-white p-2.5 rounded-full flex items-center justify-center w-11 h-11 transition-colors duration-150 shadow-md hover:shadow-lg" title="Share on Facebook">
-            <img src="{% static 'img/share-icons/facebook-icon.png' %}" alt="Facebook" class="w-5 h-5">
-        </a>
-        <a href="#" id="share-twitter" target="_blank" class="social-share-button bg-[#1D9BF0] hover:bg-[#1A8CD8] text-white p-2.5 rounded-full flex items-center justify-center w-11 h-11 transition-colors duration-150 shadow-md hover:shadow-lg" title="Share on Twitter (X)">
-            <img src="{% static 'img/share-icons/twitter-icon.png' %}" alt="Twitter" class="w-5 h-5">
-        </a>
-        <a href="#" id="share-whatsapp" target="_blank" class="social-share-button bg-[#25D366] hover:bg-[#1DA851] text-white p-2.5 rounded-full flex items-center justify-center w-11 h-11 transition-colors duration-150 shadow-md hover:shadow-lg" title="Share on WhatsApp">
-            <img src="{% static 'img/share-icons/whatsapp-icon.png' %}" alt="WhatsApp" class="w-5 h-5">
-        </a>
-        <a href="#" id="share-email" class="social-share-button bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-full flex items-center justify-center w-11 h-11 transition-colors duration-150 shadow-md hover:shadow-lg" title="Share via Email">
-            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor"><path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"></path></svg>
-        </a>
-    </div>
 </div>
 
-<div id="inline-message-container" class="fixed top-6 right-6 z-[110] w-full max-w-md space-y-3.5">
-</div>
+<script id="page-context-data-detail" type="application/json">
+    {{ page_context_data_dict|safe }}
+</script>
+<script id="listening-history-data" type="application/json">
+    {{ listening_history_json|safe }}
+</script>
 
-{{ page_context_data_dict|json_script:"page-context-data-detail" }}
-
-<script src="{% static 'js/audiobook_detail.js' %}" defer></script>
+<script src="{% static 'js/audiobook_detail.js' %}"></script>
 
 {% endblock %}

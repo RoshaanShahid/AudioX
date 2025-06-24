@@ -6,18 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AudioX - Made in Pakistan{% endblock %}</title>
 
+    <!-- Favicon -->
     <link rel="icon" href="{% static 'img/audiox-favicon.png' %}" type="image/png">
 
+    <!-- External Dependencies -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://js.stripe.com/v3/"></script> <link rel="preconnect" href="https://fonts.googleapis.com">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+    
+    <!-- Tailwind CSS -->
     <link rel="stylesheet" href="{% static 'css/output.css' %}">
 
+    <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token }}">
 
+    <!-- Django Context Data -->
     {% if creator_js_context %}
         {{ creator_js_context|json_script:"django-context-data" }}
     {% endif %}
@@ -27,9 +36,12 @@
 
 <body class="font-sans bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
+    <!-- ==================== HEADER SECTION ==================== -->
     {% block header %}
     <header class="bg-white shadow-md sticky top-0 z-50 border-b-2 border-[#091e65]">
         <div class="container mx-auto flex items-center justify-between px-4 h-16">
+            
+            <!-- Left Section: Menu Toggle & Logo -->
             <div class="flex items-center space-x-3 sm:space-x-4">
                 <button id="menu-toggle" class="text-gray-600 hover:text-[#091e65] focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 rounded-md p-2 -ml-2 transition duration-150 ease-in-out">
                     <i class="fas fa-bars text-xl"></i>
@@ -41,9 +53,12 @@
                 </a>
             </div>
 
-            <div class="flex-grow max-w-xl mx-4 hidden md:flex items-center">
-                <div class="relative w-full">
-                    <input type="text" id="search-input" placeholder="Search audiobooks & stories..." class="w-full pl-11 pr-12 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none placeholder-gray-400 text-gray-800 text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
+            <!-- Center Section: Enhanced Search -->
+            <div class="flex-grow max-w-2xl mx-4 hidden md:flex flex-col items-center">
+                <!-- Main Search Bar -->
+                <div class="relative w-full mb-2">
+                    <input type="text" id="search-input" placeholder="Search audiobooks & stories..." 
+                           class="w-full pl-11 pr-12 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none placeholder-gray-400 text-gray-800 text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
                     <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-11 text-gray-500 hover:text-[#091e65] focus:outline-none transition duration-150 ease-in-out" id="search-btn" title="Search">
                         <i class="fas fa-search text-base"></i>
                     </button>
@@ -51,24 +66,161 @@
                         <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity">
                     </button>
                 </div>
+
+                <!-- Filter Buttons -->
+                <div class="flex flex-wrap items-center justify-center gap-2 w-full" id="search-filters">
+                    <!-- Language Filters -->
+                    <div class="flex items-center gap-1">
+                        <button class="language-filter-btn px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1 bg-white border-gray-300 text-gray-700 hover:bg-[#091e65] hover:text-white hover:border-[#091e65]" data-language="English">
+                            English
+                        </button>
+                        <button class="language-filter-btn px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1 bg-white border-gray-300 text-gray-700 hover:bg-[#091e65] hover:text-white hover:border-[#091e65]" data-language="Urdu">
+                            اردو
+                        </button>
+                        <button class="language-filter-btn px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1 bg-white border-gray-300 text-gray-700 hover:bg-[#091e65] hover:text-white hover:border-[#091e65]" data-language="Punjabi">
+                            پنجابی
+                        </button>
+                        <button class="language-filter-btn px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1 bg-white border-gray-300 text-gray-700 hover:bg-[#091e65] hover:text-white hover:border-[#091e65]" data-language="Sindhi">
+                            سنڌي
+                        </button>
+                    </div>
+
+                    <!-- Separator -->
+                    <div class="h-4 w-px bg-gray-300"></div>
+
+                    <!-- Genre Filter Dropdown -->
+                    <div class="relative" id="genre-filter-container">
+                        <button class="filter-dropdown-btn px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-1" id="genre-filter-btn">
+                            <i class="fas fa-tags text-xs"></i>
+                            <span>Genre</span>
+                            <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                        <div class="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 hidden" id="genre-filter-dropdown">
+                            <div class="p-2 max-h-48 overflow-y-auto">
+                                <div class="space-y-1" id="genre-options">
+                                    <!-- Genre options will be populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Creator Filter Dropdown -->
+                    <div class="relative" id="creator-filter-container">
+                        <button class="filter-dropdown-btn px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-1" id="creator-filter-btn">
+                            <i class="fas fa-microphone text-xs"></i>
+                            <span>Creator</span>
+                            <i class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+                        </button>
+                        <div class="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 hidden" id="creator-filter-dropdown">
+                            <div class="p-2">
+                                <input type="text" placeholder="Search creators..." class="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-[#091e65] mb-2" id="creator-search-input">
+                                <div class="max-h-40 overflow-y-auto">
+                                    <div class="space-y-1" id="creator-options">
+                                        <!-- Creator options will be populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clear Filters Button -->
+                    <button class="px-3 py-1 text-xs font-medium rounded-full border transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300 hidden" id="clear-filters-btn">
+                        <i class="fas fa-times text-xs mr-1"></i>
+                        Clear
+                    </button>
+                </div>
+
+                <!-- Active Filters Display -->
+                <div class="flex flex-wrap items-center gap-1 w-full mt-1 hidden" id="active-filters">
+                    <!-- Active filter tags will be displayed here -->
+                </div>
             </div>
 
+            <!-- Right Section: Language Selector, Coins/Premium, Profile -->
             <div class="flex items-center space-x-2 sm:space-x-3">
-                <div class="relative hidden sm:block">
-                    <select
-                        class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded-full leading-tight focus:outline-none focus:bg-white focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65] text-sm transition duration-150 ease-in-out"
-                        id="language-selector"
-                        onchange="redirectToLanguage()">
-                        <option value="English">English</option>
-                        <option value="Urdu">اردو</option>
-                        <option value="Punjabi">پنجابی</option>
-                        <option value="Sindhi">سنڌي</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                
+                <!-- Premium Language Selector -->
+                <div class="relative hidden sm:block group">
+                    <button id="language-selector-btn" 
+                            class="flex items-center gap-2 px-4 py-2 bg-[#091e65] text-white rounded-xl shadow-lg transform transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 border border-[#091e65] hover:bg-[#091e65] hover:shadow-xl">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                            <i class="fas fa-globe text-sm text-white"></i>
+                            <span id="selected-language-text" class="font-medium text-sm tracking-wide text-white">English</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-300 text-white" id="language-chevron"></i>
+                    </button>
+                    
+                    <!-- Premium Dropdown -->
+                    <div id="language-dropdown" 
+                         class="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 opacity-0 invisible transform scale-95 transition-all duration-300 ease-out origin-top-right overflow-hidden">
+                        
+                        <!-- Dropdown Header -->
+                        <div class="px-4 py-3 bg-[#091e65] text-white">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-language text-lg text-white"></i>
+                                <span class="font-semibold text-sm text-white">Select Language</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Language Options -->
+                        <div class="py-2">
+                            <button class="language-option w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#091e65] transition-all duration-200 group" data-language="English" data-url="{% url 'AudioXApp:home' %}">
+                                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 group-hover:bg-white/20 transition-colors">
+                                    <span class="text-sm font-bold text-[#091e65] group-hover:text-white">EN</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-900 group-hover:text-white">English</div>
+                                    <div class="text-xs text-gray-700 group-hover:text-white">International</div>
+                                </div>
+                                <i class="fas fa-check text-[#091e65] group-hover:text-white opacity-0 transition-opacity" id="check-English"></i>
+                            </button>
+                            
+                            <button class="language-option w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#091e65] transition-all duration-200 group" data-language="Urdu" data-url="{% url 'AudioXApp:urdu_page' %}">
+                                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-red-50 group-hover:bg-white/20 transition-colors">
+                                    <span class="text-sm font-bold text-red-600 group-hover:text-white">اُ</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-900 group-hover:text-white">اردو</div>
+                                    <div class="text-xs text-gray-700 group-hover:text-white">Urdu</div>
+                                </div>
+                                <i class="fas fa-check text-[#091e65] group-hover:text-white opacity-0 transition-opacity" id="check-Urdu"></i>
+                            </button>
+                            
+                            <button class="language-option w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#091e65] transition-all duration-200 group" data-language="Punjabi" data-url="{% url 'AudioXApp:punjabi_page' %}">
+                                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-red-50 group-hover:bg-white/20 transition-colors">
+                                    <span class="text-sm font-bold text-red-600 group-hover:text-white">پ</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-900 group-hover:text-white">پنجابی</div>
+                                    <div class="text-xs text-gray-700 group-hover:text-white">Punjabi</div>
+                                </div>
+                                <i class="fas fa-check text-[#091e65] group-hover:text-white opacity-0 transition-opacity" id="check-Punjabi"></i>
+                            </button>
+                            
+                            <button class="language-option w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#091e65] transition-all duration-200 group" data-language="Sindhi" data-url="{% url 'AudioXApp:sindhi_page' %}">
+                                <div class="flex items-center justify-center w-8 h-8 rounded-full bg-red-50 group-hover:bg-white/20 transition-colors">
+                                    <span class="text-sm font-bold text-red-600 group-hover:text-white">س</span>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-900 group-hover:text-white">سنڌي</div>
+                                    <div class="text-xs text-gray-700 group-hover:text-white">Sindhi</div>
+                                </div>
+                                <i class="fas fa-check text-[#091e65] group-hover:text-white opacity-0 transition-opacity" id="check-Sindhi"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Dropdown Footer -->
+                        <div class="px-4 py-2 bg-gray-50 border-t border-gray-100">
+                            <div class="text-xs text-gray-500 text-center">
+                                <i class="fas fa-heart text-red-500 mr-1"></i>
+                                Made in Pakistan
+                            </div>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Coins/Premium Button -->
                 {% if user.is_authenticated %}
                     <a href="{% url 'AudioXApp:mywallet' %}" class="bg-blue-100 hover:bg-blue-200 text-[#091e65] font-semibold px-3 h-9 rounded-full flex items-center border border-blue-300 transition duration-150 ease-in-out text-sm whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 shadow-sm hover:shadow">
                         <i class="fas fa-coins mr-1.5 text-base text-[#091e65] opacity-80"></i>
@@ -83,6 +235,7 @@
                     </a>
                 {% endif %}
 
+                <!-- User Profile Dropdown -->
                 {% if user.is_authenticated %}
                 <div class="relative">
                     <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#091e65] group" id="profile-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
@@ -97,14 +250,8 @@
                     </button>
                     <div id="profile-dropdown"
                             class="absolute right-0 mt-2 w-72 origin-top-right rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden z-60 overflow-hidden"
-                            role="menu" aria-orientation="vertical" aria-labelledby="profile-dropdown-toggle" tabindex="-1"
-                            data-transition-enter="transition ease-out duration-100"
-                            data-transition-enter-start="opacity-0 scale-95"
-                            data-transition-enter-end="opacity-100 scale-100"
-                            data-transition-leave="transition ease-in duration-75"
-                            data-transition-leave-start="opacity-100 scale-100"
-                            data-transition-leave-end="opacity-0 scale-95">
-                        <div class="px-5 py-4 bg-gradient-to-br from-[#091e65] to-blue-800 text-white">
+                            role="menu" aria-orientation="vertical" aria-labelledby="profile-dropdown-toggle" tabindex="-1">
+                        <div class="px-5 py-4 bg-[#091e65] text-white">
                             <div class="flex items-center space-x-3">
                                 <div class="shrink-0">
                                     {% if user.profile_pic %}
@@ -129,7 +276,7 @@
                                 </div>
                             </div>
                             {% if user.subscription_type == 'FR' %}
-                                <a href="{% url 'AudioXApp:subscribe' %}" class="block w-full mt-4 py-1.5 px-3 text-center bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-[#091e65] transition duration-150 ease-in-out shadow-sm hover:shadow-md">
+                                <a href="{% url 'AudioXApp:subscribe' %}" class="block w-full mt-4 py-1.5 px-3 text-center bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-full focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#091e65] transition duration-150 ease-in-out shadow-sm hover:shadow-md">
                                     <i class="fas fa-arrow-up mr-1"></i> Upgrade to Premium
                                 </a>
                             {% endif %}
@@ -173,6 +320,7 @@
                     </div>
                 </div>
                 {% else %}
+                    <!-- Login/Signup Buttons for Non-authenticated Users -->
                     <div class="hidden sm:flex items-center space-x-2">
                         <a href="{% url 'AudioXApp:login' %}" class="text-[#091e65] hover:text-blue-900 font-semibold px-4 h-9 flex items-center rounded-full text-sm transition duration-150 ease-in-out hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1">Login</a>
                         <a href="{% url 'AudioXApp:signup' %}" class="bg-[#091e65] hover:bg-blue-900 text-white font-semibold px-4 h-9 flex items-center rounded-full shadow-sm text-sm transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-1">Signup</a>
@@ -185,8 +333,9 @@
             </div>
         </div>
 
+        <!-- Mobile Search Section -->
         <div class="container mx-auto px-4 pb-3 md:hidden">
-            <div class="relative w-full">
+            <div class="relative w-full mb-2">
                 <input type="text" id="search-input-mobile" placeholder="Search..." class="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none placeholder-gray-400 text-gray-800 text-sm shadow-sm transition duration-150 ease-in-out bg-gray-50 focus:bg-white" />
                 <button class="absolute left-0 top-0 bottom-0 flex items-center justify-center w-10 text-gray-500 hover:text-[#091e65] focus:outline-none" id="search-btn-mobile" title="Search">
                     <i class="fas fa-search text-base"></i>
@@ -195,13 +344,44 @@
                     <img src="{% static 'img/microphone-icon.png' %}" alt="Microphone" class="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity">
                 </button>
             </div>
+
+            <!-- Mobile Filter Buttons -->
+            <div class="flex flex-wrap items-center gap-2" id="mobile-search-filters">
+                <!-- Language Filters -->
+                <button class="language-filter-btn-mobile px-2 py-1 text-xs font-medium rounded-full border transition-all duration-200 bg-white border-gray-300 text-gray-700 hover:bg-[#091e65] hover:text-white hover:border-[#091e65]" data-language="English">
+                    English
+                </button>
+                <button class="language-filter-btn-mobile px-2 py-1 text-xs font-medium rounded-full border transition-all duration-200 bg-white border-gray-300 text-gray-700 hover:bg-[#091e65] hover:text-white hover:border-[#091e65]" data-language="Urdu">
+                    اردو
+                </button>
+                <button class="language-filter-btn-mobile px-2 py-1 text-xs font-medium rounded-full border transition-all duration-200 bg-white border-gray-300 text-gray-700 hover:bg-[#091e65] hover:text-white hover:border-[#091e65]" data-language="Punjabi">
+                    پنجابی
+                </button>
+                <button class="language-filter-btn-mobile px-2 py-1 text-xs font-medium rounded-full border transition-all duration-200 bg-white border-gray-300 text-gray-700 hover:bg-[#091e65] hover:text-white hover:border-[#091e65]" data-language="Sindhi">
+                    سنڌي
+                </button>
+
+                <!-- More Filters Button -->
+                <button class="px-2 py-1 text-xs font-medium rounded-full border transition-all duration-200 bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200" id="mobile-more-filters-btn">
+                    <i class="fas fa-filter text-xs mr-1"></i>
+                    More
+                </button>
+            </div>
+
+            <!-- Mobile Active Filters -->
+            <div class="flex flex-wrap items-center gap-1 mt-2 hidden" id="mobile-active-filters">
+                <!-- Active filter tags will be displayed here -->
+            </div>
         </div>
     </header>
     {% endblock %}
 
+    <!-- ==================== SLIDE MENU SECTION ==================== -->
     {% block slider-menu %}
     <div id="slide-menu-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[990] hidden transition-opacity duration-300 ease-in-out opacity-0"></div>
     <div id="slide-menu" class="fixed top-0 left-0 w-80 h-full bg-[#091e65] text-indigo-100 shadow-2xl z-[1000] flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out">
+        
+        <!-- Menu Header -->
         <div class="flex items-center justify-between p-5 border-b border-white/10 h-18 shrink-0">
             <a href="{% url 'AudioXApp:home' %}" class="flex items-center shrink-0 group">
                 <span class="text-2xl font-extrabold text-white tracking-tighter">AUDIO</span>
@@ -212,7 +392,11 @@
                 <span class="sr-only">Close Menu</span>
             </button>
         </div>
+        
+        <!-- Menu Content -->
         <div class="flex-grow overflow-y-auto menu-content">
+            
+            <!-- User Profile Section -->
             <div class="p-6 border-b border-white/10">
                 {% if user.is_authenticated %}
                     <div class="flex items-center space-x-4">
@@ -229,8 +413,8 @@
                             <div class="flex items-center justify-between">
                                 <p class="text-md font-semibold text-white truncate" title="{{ user.full_name|default:user.username }}">{{ user.full_name|default:user.username }}</p>
                                 <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium shadow-sm whitespace-nowrap
-                                {% if user.subscription_type == 'FR' %} bg-yellow-500/10 text-yellow-300 ring-1 ring-inset ring-yellow-500/20
-                                {% elif user.subscription_type == 'PR' %} bg-gradient-to-r from-green-500/10 via-emerald-600/10 to-teal-600/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/30
+                                {% if user.subscription_type == 'FR' %} bg-red-500/10 text-red-300 ring-1 ring-inset ring-red-500/20
+                                {% elif user.subscription_type == 'PR' %} bg-[#091e65]/10 text-white ring-1 ring-inset ring-[#091e65]/30
                                 {% else %} bg-gray-500/10 text-gray-400 ring-1 ring-inset ring-gray-500/20 {% endif %}">
                                     {% if user.subscription_type == 'FR' %}
                                         <i class="fas fa-user mr-1 opacity-70 text-xs"></i> Free
@@ -252,7 +436,7 @@
                             <a href="{% url 'AudioXApp:login' %}" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-md font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors duration-150 ease-in-out border border-white/20 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white/50 text-sm">
                                 <i class="fas fa-sign-in-alt mr-2"></i> Login
                             </a>
-                            <a href="{% url 'AudioXApp:signup' %}" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-md font-semibold bg-red-500 text-white transition-colors duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-[#091e65] text-sm">
+                            <a href="{% url 'AudioXApp:signup' %}" class="w-full inline-flex items-center justify-center px-4 py-2 rounded-md font-semibold bg-red-500 text-white transition-colors duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#091e65] text-sm">
                                 <i class="fas fa-user-plus mr-2"></i> Sign Up Free
                             </a>
                         </div>
@@ -260,80 +444,195 @@
                 {% endif %}
             </div>
 
-            <div class="px-4 py-5 space-y-3">
-                <p class="px-3 text-xs font-semibold uppercase text-indigo-200 tracking-wider">Features</p>
-                <a href="{% url 'AudioXApp:general_generate_audio_from_document' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-yellow-500/10 text-yellow-300 hover:bg-yellow-500/20 border border-yellow-500/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
-                    <i class="fas fa-file-audio mr-3 text-lg w-5 text-center text-yellow-300/80 group-hover:text-yellow-300 transition-colors"></i>
-                    <span>Generate Audio from Document</span>
-                </a>
-                <a href="{% url 'AudioXApp:chatroom_welcome' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 border border-teal-500/30 transition-all duration-200 ease-in-out shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
-                    <i class="fas fa-comments mr-3 text-lg w-5 text-center text-teal-300/80 group-hover:text-teal-300 transition-colors"></i>
-                    <span>Community Centric Chatrooms</span>
-                </a>
-
-                {% if user.is_authenticated %}
-                    {% if is_banned %}
-                        <button id="sidemenu-view-ban-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-red-600/10 text-red-300 hover:bg-red-600/20 border border-red-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
-                            <i class="fas fa-microphone-slash mr-3 text-lg w-5 text-center opacity-80"></i>
-                            <span>Creator Profile Blocked</span>
-                        </button>
-                    {% elif is_creator %}
-                        <button id="sidemenu-switch-creator-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-green-600/10 text-green-300 hover:bg-green-600/20 border border-green-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
-                            <i class="fas fa-sliders-h mr-3 text-lg w-5 text-center opacity-80 group-hover:animate-pulse"></i>
-                            <span>Switch to Creator Mode</span>
-                        </button>
-                    {% elif creator_status == 'pending' %}
-                        <span class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-yellow-600/10 text-yellow-400 border border-yellow-600/30 opacity-70 cursor-not-allowed">
-                            <i class="fas fa-hourglass-half mr-3 text-lg w-5 text-center opacity-80"></i>
-                            <span>Creator Request Pending</span>
-                        </span>
-                    {% elif creator_status == 'rejected' %}
-                        {% if can_reapply %}
-                            <button id="sidemenu-view-rejection-reason-btn" class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-orange-600/10 text-orange-300 hover:bg-orange-600/20 border border-orange-600/30 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-1 focus:ring-offset-[#091e65]">
-                                <i class="fas fa-exclamation-circle mr-3 text-lg w-5 text-center opacity-80"></i>
-                                <span>Application Rejected</span>
-                            </button>
-                        {% else %}
-                            <span class="group w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-gray-600/10 text-gray-500 border border-gray-600/30 opacity-70 cursor-not-allowed">
-                                <i class="fas fa-times-circle mr-3 text-lg w-5 text-center opacity-80"></i>
-                                <span>Application Limit Reached</span>
-                            </span>
-                        {% endif %}
-                    {% else %}
-                        <a href="{% url 'AudioXApp:creator_apply' %}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/30 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-500/20 focus:text-blue-200">
-                            <i class="fas fa-feather-alt mr-3 text-lg w-5 text-center opacity-80"></i>
-                            <span>Become a Creator</span>
-                        </a>
-                    {% endif %}
-                {% else %}
-                    <a href="#" id="creator-portal-link-loggedout" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg text-indigo-200 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all duration-150 ease-in-out focus:outline-none focus:bg-white/10 focus:text-white">
-                        <i class="fas fa-users mr-3 text-lg w-5 text-center opacity-80"></i>
-                        <span>Creator Portal</span>
-                    </a>
-                {% endif %}
+            <!-- Features Section -->
+            <div class="px-4 py-5 space-y-4">
+    <p class="px-3 text-xs font-semibold uppercase text-indigo-200 tracking-wider">Features</p>
+    {% if user.is_authenticated %}
+        <a href="{% url 'AudioXApp:general_generate_audio_from_document' %}" class="group relative overflow-hidden flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-red-600 text-white hover:bg-red-700 border-2 border-red-500 hover:border-red-400 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-[#091e65]">
+            <div class="absolute inset-0 bg-gradient-to-r from-red-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative flex items-center w-full">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4 group-hover:bg-white/30 transition-colors duration-300">
+                    <i class="fas fa-file-audio text-lg text-white group-hover:animate-pulse"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="font-bold text-white">Generate Audio</div>
+                    <div class="text-xs text-red-100 group-hover:text-white">from Document</div>
+                </div>
+                <i class="fas fa-arrow-right text-white opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
             </div>
+        </a>
+        
+        <a href="{% url 'AudioXApp:chatroom_welcome' %}" class="group relative overflow-hidden flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-[#091e65] text-white hover:bg-blue-800 border-2 border-[#091e65] hover:border-blue-600 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-[#091e65]">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#091e65]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative flex items-center w-full">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4 group-hover:bg-white/30 transition-colors duration-300">
+                    <i class="fas fa-comments text-lg text-white group-hover:animate-pulse"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="font-bold text-white">Community</div>
+                    <div class="text-xs text-blue-100 group-hover:text-white">Chatrooms</div>
+                </div>
+                <i class="fas fa-arrow-right text-white opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
+            </div>
+        </a>
+    {% else %}
+        <button class="feature-login-required group relative overflow-hidden w-full flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-red-600 text-white hover:bg-red-700 border-2 border-red-500 hover:border-red-400 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-[#091e65]" data-feature="Document to Audio">
+            <div class="absolute inset-0 bg-gradient-to-r from-red-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative flex items-center w-full">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4 group-hover:bg-white/30 transition-colors duration-300">
+                    <i class="fas fa-file-audio text-lg text-white group-hover:animate-pulse"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="font-bold text-white">Generate Audio</div>
+                    <div class="text-xs text-red-100 group-hover:text-white">from Document</div>
+                </div>
+                <i class="fas fa-lock text-white opacity-70 group-hover:opacity-100 transition-all duration-300"></i>
+            </div>
+        </button>
+        
+        <button class="feature-login-required group relative overflow-hidden w-full flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-[#091e65] text-white hover:bg-blue-800 border-2 border-[#091e65] hover:border-blue-600 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-[#091e65]" data-feature="Community Chatrooms">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#091e65]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative flex items-center w-full">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4 group-hover:bg-white/30 transition-colors duration-300">
+                    <i class="fas fa-comments text-lg text-white group-hover:animate-pulse"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="font-bold text-white">Community</div>
+                    <div class="text-xs text-blue-100 group-hover:text-white">Chatrooms</div>
+                </div>
+                <i class="fas fa-lock text-white opacity-70 group-hover:opacity-100 transition-all duration-300"></i>
+            </div>
+        </button>
+    {% endif %}
+
+    <!-- Creator Section -->
+    {% if user.is_authenticated %}
+        {% if is_banned %}
+            <button id="sidemenu-view-ban-reason-btn" class="group relative overflow-hidden w-full flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-red-600 text-white hover:bg-red-700 border-2 border-red-500 hover:border-red-400 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-[#091e65] opacity-75 cursor-not-allowed">
+                <div class="relative flex items-center w-full">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4">
+                        <i class="fas fa-microphone-slash text-lg text-white"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-bold text-white">Creator Profile</div>
+                        <div class="text-xs text-red-100">Blocked</div>
+                    </div>
+                    <i class="fas fa-ban text-white opacity-70"></i>
+                </div>
+            </button>
+        {% elif is_creator %}
+            <button id="sidemenu-switch-creator-btn" class="group relative overflow-hidden w-full flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-[#091e65] text-white hover:bg-blue-800 border-2 border-[#091e65] hover:border-blue-600 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-[#091e65]">
+                <div class="absolute inset-0 bg-gradient-to-r from-[#091e65]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="relative flex items-center w-full">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4 group-hover:bg-white/30 transition-colors duration-300">
+                        <i class="fas fa-sliders-h text-lg text-white group-hover:animate-pulse"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-bold text-white">Switch to</div>
+                        <div class="text-xs text-blue-100 group-hover:text-white">Creator Mode</div>
+                    </div>
+                    <i class="fas fa-arrow-right text-white opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
+                </div>
+            </button>
+        {% elif creator_status == 'pending' %}
+            <div class="group relative overflow-hidden w-full flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-red-600 text-white border-2 border-red-500 transition-all duration-300 ease-in-out shadow-lg opacity-75 cursor-not-allowed">
+                <div class="relative flex items-center w-full">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4">
+                        <i class="fas fa-hourglass-half text-lg text-white"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-bold text-white">Creator Request</div>
+                        <div class="text-xs text-red-100">Pending</div>
+                    </div>
+                    <i class="fas fa-clock text-white opacity-70"></i>
+                </div>
+            </div>
+        {% elif creator_status == 'rejected' %}
+            {% if can_reapply %}
+                <button id="sidemenu-view-rejection-reason-btn" class="group relative overflow-hidden w-full flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-red-600 text-white hover:bg-red-700 border-2 border-red-500 hover:border-red-400 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-[#091e65]">
+                    <div class="absolute inset-0 bg-gradient-to-r from-red-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="relative flex items-center w-full">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4 group-hover:bg-white/30 transition-colors duration-300">
+                            <i class="fas fa-exclamation-circle text-lg text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold text-white">Application</div>
+                            <div class="text-xs text-red-100 group-hover:text-white">Rejected</div>
+                        </div>
+                        <i class="fas fa-info-circle text-white opacity-70 group-hover:opacity-100 transition-all duration-300"></i>
+                    </div>
+                </button>
+            {% else %}
+                <div class="group relative overflow-hidden w-full flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-gray-600 text-white border-2 border-gray-500 transition-all duration-300 ease-in-out shadow-lg opacity-75 cursor-not-allowed">
+                    <div class="relative flex items-center w-full">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4">
+                            <i class="fas fa-times-circle text-lg text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold text-white">Application Limit</div>
+                            <div class="text-xs text-gray-100">Reached</div>
+                        </div>
+                        <i class="fas fa-ban text-white opacity-70"></i>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'AudioXApp:creator_apply' %}" class="group relative overflow-hidden w-full flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-[#091e65] text-white hover:bg-blue-800 border-2 border-[#091e65] hover:border-blue-600 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-[#091e65]">
+                <div class="absolute inset-0 bg-gradient-to-r from-[#091e65]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="relative flex items-center w-full">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4 group-hover:bg-white/30 transition-colors duration-300">
+                        <i class="fas fa-feather-alt text-lg text-white group-hover:animate-pulse"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-bold text-white">Become a</div>
+                        <div class="text-xs text-blue-100 group-hover:text-white">Creator</div>
+                    </div>
+                    <i class="fas fa-arrow-right text-white opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"></i>
+                </div>
+            </a>
+        {% endif %}
+    {% else %}
+        <button class="feature-login-required group relative overflow-hidden w-full flex items-center px-5 py-4 text-sm font-semibold rounded-xl bg-[#091e65] text-white hover:bg-blue-800 border-2 border-[#091e65] hover:border-blue-600 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-[#091e65] focus:ring-offset-2 focus:ring-offset-[#091e65]" data-feature="Creator Portal">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#091e65]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="relative flex items-center w-full">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 mr-4 group-hover:bg-white/30 transition-colors duration-300">
+                    <i class="fas fa-users text-lg text-white group-hover:animate-pulse"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="font-bold text-white">Creator</div>
+                    <div class="text-xs text-blue-100 group-hover:text-white">Portal</div>
+                </div>
+                <i class="fas fa-lock text-white opacity-70 group-hover:opacity-100 transition-all duration-300"></i>
+            </div>
+        </button>
+    {% endif %}
+</div>
+            
+            <!-- Navigation Section -->
             <nav class="flex-grow px-4 pb-4 space-y-1">
                 <p class="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-indigo-200 tracking-wider">Navigation</p>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'AudioXApp:trending_audiobooks' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                    <a href="{% url 'AudioXApp:trending_audiobooks' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-[#091e65] transition-all duration-150 ease-in-out focus:outline-none focus:bg-[#091e65] focus:text-white">
                         <i class="fas fa-fire mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Trending Audiobooks
                     </a>
-                    <a href="{% url 'AudioXApp:my_library_page' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                    <a href="{% url 'AudioXApp:my_library_page' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-[#091e65] transition-all duration-150 ease-in-out focus:outline-none focus:bg-[#091e65] focus:text-white">
                         <i class="fas fa-bookmark mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> My Library
                     </a>
-                    <a href="{% url 'AudioXApp:my_downloads' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                    <a href="{% url 'AudioXApp:my_downloads' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-[#091e65] transition-all duration-150 ease-in-out focus:outline-none focus:bg-[#091e65] focus:text-white">
                         <i class="fas fa-download mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> My Downloads
                     </a>
                 {% else %}
-                    <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                    <a href="{% url 'AudioXApp:home' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-[#091e65] transition-all duration-150 ease-in-out focus:outline-none focus:bg-[#091e65] focus:text-white">
                         <i class="fas fa-home mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Home
                     </a>
-                    <a href="{% url 'AudioXApp:trending_audiobooks' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white">
+                    <a href="{% url 'AudioXApp:trending_audiobooks' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-[#091e65] transition-all duration-150 ease-in-out focus:outline-none focus:bg-[#091e65] focus:text-white">
                         <i class="fas fa-fire mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Trending Audiobooks
                     </a>
                 {% endif %}
+                
+                <!-- About Submenu -->
                 <div class="has-submenu-container pt-2">
-                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-blue-700 focus:text-white">
+                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-[#091e65] transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-[#091e65] focus:text-white">
                         <span class="inline-flex items-center">
                             <i class="fas fa-info-circle mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> About
                         </span>
@@ -342,11 +641,12 @@
                     <div class="submenu ml-5 mt-1 space-y-0.5 overflow-hidden max-h-0 opacity-0 transition-all duration-300 ease-out border-l border-white/20 pl-4">
                         <a href="{% url 'AudioXApp:ourteam' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Our Team</a>
                         <a href="{% url 'AudioXApp:aboutus' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">About Us</a>
-                        <a href="/careers" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Careers</a>
                     </div>
                 </div>
+                
+                <!-- Legal Submenu -->
                 <div class="has-submenu-container">
-                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-blue-700 focus:text-white">
+                    <button class="group w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-[#091e65] transition-all duration-150 ease-in-out submenu-toggle focus:outline-none focus:bg-[#091e65] focus:text-white">
                         <span class="inline-flex items-center">
                             <i class="fas fa-gavel mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Legal
                         </span>
@@ -359,13 +659,19 @@
                         <a href="{% url 'AudioXApp:privacypolicy' %}" class="group block px-2 py-1.5 text-sm font-normal rounded-md text-indigo-200 hover:text-white hover:bg-white/5 transition-all duration-150 ease-in-out">Privacy Policy</a>
                     </div>
                 </div>
+                
+                <!-- Contact Support -->
+                {% if user.is_authenticated %}
                 <div class="pt-4">
-                    <a href="{% url 'AudioXApp:contact_us' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-blue-800 transition-all duration-150 ease-in-out focus:outline-none focus:bg-blue-700 focus:text-white border border-white/10 hover:border-white/20">
+                    <a href="{% url 'AudioXApp:contact_us' %}" class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-md text-indigo-200 hover:text-white hover:bg-[#091e65] transition-all duration-150 ease-in-out focus:outline-none focus:bg-[#091e65] focus:text-white border border-white/10 hover:border-white/20">
                         <i class="fas fa-headset mr-3 text-lg w-5 text-center text-indigo-200 group-hover:text-white transition-colors"></i> Contact Support
                     </a>
                 </div>
+                {% endif %}
             </nav>
         </div>
+        
+        <!-- Menu Footer -->
         <div class="p-5 mt-auto border-t border-white/10 shrink-0">
             {% if user.is_authenticated %}
                 <a href="{% url 'AudioXApp:logout' %}" class="group w-full flex items-center justify-center px-3 py-2 text-sm font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-[#091e65] shadow-md hover:shadow-lg">
@@ -379,13 +685,15 @@
     </div>
     {% endblock %}
 
+    <!-- ==================== MAIN CONTENT SECTION ==================== -->
     <main class="flex-grow">
         {% block content %}
         {% endblock %}
     </main>
 
+    <!-- ==================== FOOTER SECTION ==================== -->
     {% block footer %}
-    <footer class="bg-gradient-to-r from-[#091e65] to-blue-900 text-indigo-100 py-12 mt-10">
+    <footer class="bg-[#091e65] text-indigo-100 py-12 mt-10">
         <div class="container mx-auto px-4">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
                     <div class="md:col-span-4 lg:col-span-4">
@@ -423,12 +731,12 @@
                                     {% if is_banned %}
                                         <li><span class="text-sm text-red-300 cursor-not-allowed opacity-70">Creator Portal</span></li>
                                     {% elif is_creator %}
-                                        <li><a href="{% url 'AudioXApp:creator_dashboard' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Dashboard</a></li>
+                                        <li><a href="{% url 'AudioXApp:creator_dashboard' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Portal</a></li>
                                     {% else %}
                                         <li><a href="{% url 'AudioXApp:creator_apply' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Become a Creator</a></li>
                                     {% endif %}
                                 {% else %}
-                                    <li><a href="#" id="creator-portal-link-footer-loggedout" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Creator Portal</a></li>
+                                    <li><button class="feature-login-required text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100 text-left" data-feature="Creator Portal">Creator Portal</button></li>
                                 {% endif %}
                                 <li><a href="{% url 'AudioXApp:contact_us' %}" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">Contact Us</a></li>
                                 <li><a href="/faq" class="text-sm hover:text-white transition duration-150 ease-in-out opacity-90 hover:opacity-100">FAQ</a></li>
@@ -467,6 +775,9 @@
     </footer>
     {% endblock %}
 
+    <!-- ==================== MODAL SECTIONS ==================== -->
+    
+    <!-- Creator Modal -->
     <div id="creator-modal-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1040] hidden opacity-0 transition-opacity duration-300 ease-in-out pointer-events-none"></div>
     <div id="creator-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-95 bg-[#091e65] text-indigo-100 rounded-xl shadow-2xl w-[90%] max-w-md z-[1050] opacity-0 transition-all duration-300 ease-in-out pointer-events-none overflow-hidden border border-white/10" role="dialog" aria-modal="true" aria-labelledby="creator-modal-title">
         <div class="p-6 sm:p-8 text-center relative">
@@ -475,13 +786,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
-            <div class="text-5xl text-teal-500 mb-5"><i class="fas fa-lock"></i></div>
-            <h2 id="creator-modal-title" class="text-xl font-bold text-white mb-4">Creator Portal Access</h2>
+            <div class="text-5xl text-red-500 mb-5"><i class="fas fa-lock"></i></div>
+            <h2 id="creator-modal-title" class="text-xl font-bold text-white mb-4">Login Required</h2>
             <p class="text-sm leading-relaxed text-indigo-200 mb-6">
-                To access the creator portal, you must first sign up or log in to AudioX, and then apply through your account to enjoy all the perks.
+                To access this feature, you must first sign up or log in to AudioX.
             </p>
             <div class="flex flex-col sm:flex-row justify-center gap-3">
-                <a href="{% url 'AudioXApp:signup' %}" class="modal-btn inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold bg-teal-500 text-white hover:bg-teal-600 transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-[#091e65]">
+                <a href="{% url 'AudioXApp:signup' %}" class="modal-btn inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold bg-red-500 text-white hover:bg-red-600 transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#091e65]">
                     <i class="fas fa-user-plus mr-2"></i> Sign Up Now
                 </a>
                 <a href="{% url 'AudioXApp:login' %}" class="modal-btn inline-flex items-center justify-center w-full sm:w-auto px-6 py-2.5 rounded-lg font-semibold bg-white/10 text-white hover:bg-white/20 transition duration-150 ease-in-out border border-white/20 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white/50">
@@ -491,650 +802,67 @@
         </div>
     </div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const contextDataElement = document.getElementById('django-context-data');
-        const djangoContext = contextDataElement ? JSON.parse(contextDataElement.textContent || '{}') : {};
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    <!-- Mobile More Filters Modal -->
+    <div id="mobile-filters-modal-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[1040] hidden opacity-0 transition-opacity duration-300 ease-in-out pointer-events-none"></div>
+    <div id="mobile-filters-modal" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-2xl z-[1050] transform translate-y-full transition-transform duration-300 ease-in-out pointer-events-none max-h-[80vh] overflow-hidden">
+        <div class="p-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Filter Options</h3>
+                <button id="close-mobile-filters" class="text-gray-400 hover:text-gray-600 p-2 -mr-2">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-4 overflow-y-auto max-h-[60vh]">
+            <!-- Genre Filter Section -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                    <i class="fas fa-tags text-[#091e65] mr-2"></i>
+                    Genre
+                </h4>
+                <div class="space-y-2" id="mobile-genre-options">
+                    <!-- Genre options will be populated dynamically -->
+                </div>
+            </div>
 
-        const SwalStyled = Swal.mixin({
-            customClass: {
-                popup: 'rounded-xl shadow-lg font-sans border border-gray-100 bg-white',
-                title: 'text-xl sm:text-2xl font-bold text-[#091e65] pt-6 px-6 pb-2 text-left',
-                htmlContainer: 'text-base text-gray-700 text-left px-6 pb-6 leading-relaxed',
-                icon: 'mt-6 mx-auto',
-                confirmButton: 'inline-flex items-center justify-center gap-2 rounded-lg bg-[#091e65] px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
-                cancelButton: 'inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out mx-1.5 mb-4',
-                actions: 'flex justify-end px-6 pb-2',
-                loader: 'border-[#091e65]',
-            },
-            buttonsStyling: false,
-        });
+            <!-- Creator Filter Section -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                    <i class="fas fa-microphone text-[#091e65] mr-2"></i>
+                    Creator
+                </h4>
+                <input type="text" placeholder="Search creators..." class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#091e65] mb-3" id="mobile-creator-search">
+                <div class="space-y-2 max-h-32 overflow-y-auto" id="mobile-creator-options">
+                    <!-- Creator options will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+        <div class="p-4 border-t border-gray-200 bg-gray-50">
+            <div class="flex gap-3">
+                <button class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50" id="mobile-clear-filters">
+                    Clear All
+                </button>
+                <button class="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#091e65] rounded-lg hover:bg-blue-900" id="mobile-apply-filters">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
 
-        // Define showCustomAlert globally using SwalStyled
-        window.showCustomAlert = function(title, message, icon = 'info', confirmButtonText = 'OK', customHtml = null) {
-            SwalStyled.fire({
-                title: title,
-                html: customHtml || `<p>${message}</p>`, // Use customHtml if provided, else message
-                icon: icon,
-                confirmButtonText: confirmButtonText,
-                customClass: { // Can add more specific classes here if needed for this modal type
-                    title: 'text-xl sm:text-2xl font-bold text-[#091e65] pt-6 px-6 pb-2 text-center', // Center title for alerts
-                    htmlContainer: 'text-base text-gray-700 text-center px-6 pb-6 leading-relaxed', // Center text
-                    icon: 'mt-6 mx-auto mb-4', // Adjust icon margin
-                }
-            });
-        };
-
-
-        // Slide-out Menu Functionality
-        const menuToggle = document.getElementById('menu-toggle');
-        const slideMenu = document.getElementById('slide-menu');
-        const closeMenu = document.getElementById('close-menu');
-        const menuBackdrop = document.getElementById('slide-menu-backdrop');
-
-        function openSlideMenu() {
-            if (!slideMenu || !menuBackdrop) return;
-            menuBackdrop.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            requestAnimationFrame(() => {
-                slideMenu.classList.remove('-translate-x-full');
-                menuBackdrop.classList.remove('opacity-0');
-                menuBackdrop.classList.add('opacity-100');
-            });
-        }
-
-        function closeSlideMenu() {
-            if (!slideMenu || !menuBackdrop) return;
-            slideMenu.classList.add('-translate-x-full');
-            menuBackdrop.classList.remove('opacity-100');
-            menuBackdrop.classList.add('opacity-0');
-            setTimeout(() => {
-                menuBackdrop.classList.add('hidden');
-                document.body.style.overflow = '';
-            }, 300);
-        }
-
-        if (menuToggle && slideMenu && closeMenu && menuBackdrop) {
-            menuToggle.addEventListener('click', (e) => { e.stopPropagation(); openSlideMenu(); });
-            closeMenu.addEventListener('click', closeSlideMenu);
-            menuBackdrop.addEventListener('click', closeSlideMenu);
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && !slideMenu.classList.contains('-translate-x-full')) {
-                    closeSlideMenu();
-                }
-            });
-        }
-
-        // Profile Dropdown Functionality
-        const profileDropdownToggle = document.getElementById('profile-dropdown-toggle');
-        const profileDropdown = document.getElementById('profile-dropdown');
-
-        function showProfileDropdown() {
-            if (!profileDropdown || !profileDropdownToggle) return;
-            profileDropdown.classList.remove('hidden');
-            profileDropdownToggle.setAttribute('aria-expanded', 'true');
-            requestAnimationFrame(() => {
-                profileDropdown.classList.remove('opacity-0', 'scale-95');
-                profileDropdown.classList.add('opacity-100', 'scale-100');
-            });
-        }
-
-        function hideProfileDropdown() {
-            if (!profileDropdown || !profileDropdownToggle) return;
-            profileDropdown.classList.remove('opacity-100', 'scale-100');
-            profileDropdown.classList.add('opacity-0', 'scale-95');
-            profileDropdownToggle.setAttribute('aria-expanded', 'false');
-            setTimeout(() => { profileDropdown.classList.add('hidden'); }, 100);
-        }
-
-        if (profileDropdownToggle && profileDropdown) {
-            profileDropdownToggle.addEventListener('click', (event) => {
-                event.stopPropagation();
-                const isExpanded = profileDropdownToggle.getAttribute('aria-expanded') === 'true';
-                if (isExpanded) {
-                    hideProfileDropdown();
-                } else {
-                    if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) {
-                        closeSlideMenu();
-                    }
-                    showProfileDropdown();
-                }
-            });
-            document.addEventListener('click', (event) => {
-                if (profileDropdown && !profileDropdown.classList.contains('hidden') &&
-                    !profileDropdown.contains(event.target) &&
-                    profileDropdownToggle && !profileDropdownToggle.contains(event.target)) {
-                    hideProfileDropdown();
-                }
-            });
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && profileDropdown && !profileDropdown.classList.contains('hidden')) {
-                    hideProfileDropdown();
-                    if(profileDropdownToggle) profileDropdownToggle.focus();
-                }
-            });
-        }
-
-        // Search Functionality
-        const performSearchQuery = (query, inputElement) => {
-            if (query) {
-                window.location.href = `/search/?q=${encodeURIComponent(query)}`;
-            } else {
-                if (inputElement) inputElement.focus();
-            }
-        };
-
-        const setupSearchButton = (buttonId, inputId) => {
-            const btn = document.getElementById(buttonId);
-            const input = document.getElementById(inputId);
-            if (!btn || !input) return;
-
-            const performSearch = () => {
-                const query = input.value.trim();
-                performSearchQuery(query, input);
-            };
-
-            btn.addEventListener('click', performSearch);
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    performSearch();
-                }
-            });
-        };
-        setupSearchButton('search-btn', 'search-input');
-        setupSearchButton('search-btn-mobile', 'search-input-mobile');
-
-        // Voice Search Functionality
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
-
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.onstart = () => {
-                const voiceBtnDesktop = document.getElementById('voice-search-btn');
-                const voiceBtnMobile = document.getElementById('voice-search-btn-mobile');
-                const currentActiveButton = recognition.currentVoiceButtonId === 'voice-search-btn' ? voiceBtnDesktop : voiceBtnMobile;
-
-                if (currentActiveButton) {
-                    currentActiveButton.classList.add('is-listening');
-                }
-
-                SwalStyled.fire({
-                    title: 'Listening...',
-                    imageUrl: "{% static 'img/microphone-icon.png' %}",
-                    imageWidth: 60,
-                    imageHeight: 60,
-                    imageAlt: 'Microphone listening',
-                    showConfirmButton: false,
-                    allowOutsideClick: false,
-                    customClass: {
-                        popup: 'rounded-xl shadow-lg font-sans border border-gray-100 bg-white w-auto max-w-xs',
-                        title: 'text-lg font-semibold text-[#091e65] pt-5 px-5 pb-4 text-center',
-                        image: 'mx-auto mb-2 animate-pulse'
-                    },
-                    timer: 10000,
-                    timerProgressBar: true,
-                });
-            };
-
-            recognition.onresult = (event) => {
-                Swal.close();
-                const transcript = event.results[0][0].transcript;
-                const currentSearchInputId = recognition.currentSearchInputId;
-                const searchInput = document.getElementById(currentSearchInputId);
-
-                if (searchInput) {
-                    searchInput.value = transcript;
-                    performSearchQuery(transcript, searchInput);
-                }
-            };
-
-            recognition.onerror = (event) => {
-                Swal.close();
-                let errorMessage = 'An unknown voice search error occurred. Please try again.';
-                if (event.error === 'no-speech') {
-                    errorMessage = 'No speech was detected. Please ensure your microphone is working and try again.';
-                } else if (event.error === 'audio-capture') {
-                    errorMessage = 'Microphone problem. Please ensure it is connected and enabled.';
-                } else if (event.error === 'not-allowed') {
-                    errorMessage = 'Permission to use the microphone was denied or is not available. Please allow microphone access in your browser settings and ensure you are on a secure (HTTPS) connection.';
-                } else if (event.error === 'network') {
-                    errorMessage = 'A network error occurred during voice search. Please check your internet connection.';
-                } else if (event.error === 'aborted') {
-                    errorMessage = 'Voice search was aborted. Please try again.';
-                }
-                SwalStyled.fire({ title: 'Voice Search Failed', text: errorMessage, icon: 'error', confirmButtonText: 'Okay' });
-            };
-
-            recognition.onend = () => {
-                if (Swal.isVisible() && Swal.getTitle().textContent.includes('Listening...')) {
-                    Swal.close();
-                }
-                const voiceBtnDesktop = document.getElementById('voice-search-btn');
-                const voiceBtnMobile = document.getElementById('voice-search-btn-mobile');
-                if (voiceBtnDesktop) voiceBtnDesktop.classList.remove('is-listening');
-                if (voiceBtnMobile) voiceBtnMobile.classList.remove('is-listening');
-            };
-        }
-
-        const initiateVoiceSearch = (buttonId, inputId) => {
-            const btn = document.getElementById(buttonId);
-            const input = document.getElementById(inputId);
-
-            if (!btn || !input) return;
-
-            btn.addEventListener('click', () => {
-                if (!SpeechRecognition) {
-                    SwalStyled.fire({
-                        title: 'Voice Search Not Supported',
-                        text: 'Sorry, your browser does not support voice input, or you are not on a secure (HTTPS) connection.',
-                        icon: 'warning',
-                        confirmButtonText: 'Okay'
-                    });
-                    return;
-                }
-
-                recognition.currentSearchInputId = inputId;
-                recognition.currentVoiceButtonId = buttonId;
-
-                const langSelector = document.getElementById('language-selector');
-                let recognitionLang = navigator.language || 'en-US';
-                if (langSelector) {
-                    const selectedLang = langSelector.value;
-                    if (selectedLang === 'English') recognitionLang = 'en-US';
-                    else if (selectedLang === 'Urdu') recognitionLang = 'ur-PK';
-                    else if (selectedLang === 'Punjabi') recognitionLang = 'pa-PK';
-                    else if (selectedLang === 'Sindhi') recognitionLang = 'sd-PK';
-                }
-                recognition.lang = recognitionLang;
-
-                try {
-                    recognition.start();
-                } catch (e) {
-                    console.error("Error starting speech recognition:", e);
-                    if (e.name === 'InvalidStateError') {
-                        SwalStyled.fire({title: 'Voice Search Busy', text: 'Voice search is already active or processing. Please wait.', icon: 'info', confirmButtonText: 'Okay'});
-                    } else {
-                        SwalStyled.fire({title: 'Voice Search Error', text: 'Could not start voice input. Please try again.', icon: 'error', confirmButtonText: 'Okay'});
-                    }
-                }
-            });
-        };
-
-        initiateVoiceSearch('voice-search-btn', 'search-input');
-        initiateVoiceSearch('voice-search-btn-mobile', 'search-input-mobile');
-
-        // Slide-out Menu Submenu Functionality
-        const submenuToggles = document.querySelectorAll('#slide-menu .submenu-toggle');
-        submenuToggles.forEach(toggle => {
-            toggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                const parentContainer = this.closest('.has-submenu-container');
-                if (!parentContainer) return;
-                const submenu = parentContainer.querySelector('.submenu');
-                const icon = this.querySelector('.submenu-icon');
-                if (!submenu || !icon) return;
-
-                const isOpen = parentContainer.classList.contains('submenu-open');
-
-                document.querySelectorAll('#slide-menu .has-submenu-container.submenu-open').forEach(openContainer => {
-                    if (openContainer !== parentContainer) {
-                        openContainer.classList.remove('submenu-open');
-                        const otherSubmenu = openContainer.querySelector('.submenu');
-                        const otherIcon = openContainer.querySelector('.submenu-icon');
-                        if(otherSubmenu) {
-                            otherSubmenu.style.maxHeight = null;
-                            otherSubmenu.classList.add('opacity-0');
-                        }
-                        if(otherIcon) otherIcon.classList.remove('rotate-180');
-                    }
-                });
-
-                if (isOpen) {
-                    parentContainer.classList.remove('submenu-open');
-                    submenu.style.maxHeight = null;
-                    submenu.classList.add('opacity-0');
-                    icon.classList.remove('rotate-180');
-                } else {
-                    parentContainer.classList.add('submenu-open');
-                    submenu.style.maxHeight = submenu.scrollHeight + "px";
-                    submenu.classList.remove('opacity-0');
-                    icon.classList.add('rotate-180');
-                }
-            });
-        });
-
-        // Creator Portal Modal for Logged Out Users
-        const creatorPortalLinkLoggedOut = document.getElementById('creator-portal-link-loggedout');
-        const creatorPortalLinkFooterLoggedOut = document.getElementById('creator-portal-link-footer-loggedout');
-        const creatorModal = document.getElementById('creator-modal');
-        const creatorModalBackdrop = document.getElementById('creator-modal-backdrop');
-        const modalCloseBtns = creatorModal ? creatorModal.querySelectorAll('.modal-close-btn') : [];
-
-        function showCreatorModal() {
-            if (!creatorModal || !creatorModalBackdrop) return;
-            if (slideMenu && !slideMenu.classList.contains('-translate-x-full')) {
-                    closeSlideMenu();
-            }
-            creatorModalBackdrop.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            creatorModal.classList.remove('pointer-events-none');
-            requestAnimationFrame(() => {
-                creatorModalBackdrop.classList.remove('opacity-0'); creatorModalBackdrop.classList.add('opacity-100');
-                creatorModal.classList.remove('opacity-0', 'scale-95'); creatorModal.classList.add('opacity-100', 'scale-100');
-            });
-        }
-
-        function hideCreatorModal() {
-            if (!creatorModal || !creatorModalBackdrop) return;
-            creatorModal.classList.remove('opacity-100', 'scale-100'); creatorModal.classList.add('opacity-0', 'scale-95');
-            creatorModalBackdrop.classList.remove('opacity-100'); creatorModalBackdrop.classList.add('opacity-0');
-            setTimeout(() => {
-                creatorModalBackdrop.classList.add('hidden');
-                creatorModal.classList.add('pointer-events-none');
-                document.body.style.overflow = '';
-            }, 300);
-        }
-
-        const setupCreatorLink = (link) => {
-            if (link) {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    showCreatorModal();
-                });
-            }
-        };
-        setupCreatorLink(creatorPortalLinkLoggedOut);
-        setupCreatorLink(creatorPortalLinkFooterLoggedOut);
-
-        modalCloseBtns.forEach(btn => btn.addEventListener('click', hideCreatorModal));
-        if (creatorModalBackdrop) creatorModalBackdrop.addEventListener('click', hideCreatorModal);
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && creatorModal && !creatorModal.classList.contains('opacity-0')) {
-                hideCreatorModal();
-            }
-        });
-
-        // Creator Status Popups and Actions
-        const sidemenuSwitchBtn = document.getElementById('sidemenu-switch-creator-btn');
-        if (sidemenuSwitchBtn) {
-            sidemenuSwitchBtn.addEventListener('click', function(event) {
-                event.preventDefault();
-                const dashboardUrl = "{% url 'AudioXApp:creator_dashboard' %}";
-                SwalStyled.fire({
-                    title: 'Switching Modes',
-                    html: 'Redirecting to Creator Dashboard...',
-                    timer: 1500,
-                    allowOutsideClick: false,
-                    didOpen: () => { Swal.showLoading(); },
-                    timerProgressBar: true,
-                    customClass: {
-                        title: 'text-xl sm:text-2xl font-semibold text-[#091e65] pt-6 px-6 pb-2 text-center',
-                        htmlContainer: 'text-base text-gray-700 text-center px-6 pb-6 leading-relaxed',
-                    }
-                }).then(() => {
-                    window.location.href = dashboardUrl;
-                });
-            });
-        }
-
-        const viewRejectionBtn = document.getElementById('sidemenu-view-rejection-reason-btn');
-        if (viewRejectionBtn && djangoContext && djangoContext.creator_status === 'rejected') {
-            viewRejectionBtn.addEventListener('click', function(event) {
-                event.preventDefault();
-                closeSlideMenu();
-
-                const reason = djangoContext.rejectionReason || 'No specific reason provided.';
-                const attemptsMade = djangoContext.applicationAttemptsCurrentMonth || 0;
-                const maxAttempts = djangoContext.maxApplicationAttempts || 3;
-                const remainingAttempts = Math.max(0, maxAttempts - attemptsMade);
-                const canApplyAgain = djangoContext.can_reapply ?? false;
-
-                let attemptsText = (remainingAttempts > 0 && canApplyAgain) ?
-                                    `<i class="fas fa-redo mr-1.5 text-sm text-gray-500"></i> You have ${remainingAttempts} application attempt${remainingAttempts !== 1 ? 's' : ''} remaining this month.` :
-                                    '<i class="fas fa-ban mr-1.5 text-sm text-red-500"></i> You have reached the application limit for this month, or re-application is not currently possible.';
-
-                const popupHtml = `<div class="space-y-4">
-                                        <p class="text-gray-700"><i class="fas fa-info-circle mr-1.5 text-[#091e65]"></i>Your previous application requires attention for the following reason:</p>
-                                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md shadow-sm" role="alert">
-                                            <p class="font-medium">${reason}</p>
-                                        </div>
-                                        <p class="text-sm text-gray-600">${attemptsText}</p>
-                                    </div>`;
-
-                SwalStyled.fire({
-                    title: 'Application Status',
-                    html: popupHtml,
-                    icon: 'warning',
-                    iconColor: '#F59E0B',
-                    showConfirmButton: canApplyAgain,
-                    confirmButtonText: '<i class="fas fa-paper-plane mr-2"></i>Apply Again',
-                    showCancelButton: true,
-                    cancelButtonText: 'Close',
-                    width: '450px',
-                }).then((result) => {
-                    if (result.isConfirmed && canApplyAgain) {
-                        window.location.href = "{% url 'AudioXApp:creator_apply' %}";
-                    }
-                });
-            });
-        }
-
-        const viewBanReasonBtn = document.getElementById('sidemenu-view-ban-reason-btn');
-        if (viewBanReasonBtn && djangoContext && djangoContext.isBanned) {
-            viewBanReasonBtn.addEventListener('click', function(event) {
-                event.preventDefault();
-                closeSlideMenu();
-
-                const reason = djangoContext.banReason || 'No specific reason provided by the administrator.';
-                const banPopupHtml = `<div class="space-y-4">
-                                        <p class="text-gray-700"><i class="fas fa-exclamation-triangle mr-1.5 text-red-600"></i> Your Creator Profile is currently blocked for the following reason:</p>
-                                        <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 rounded-md shadow-sm" role="alert">
-                                            <p class="font-medium">${reason}</p>
-                                        </div>
-                                        <p class="text-sm text-gray-600">If you believe this is an error or wish to appeal this decision, please contact our support team.</p>
-                                    </div>`;
-                SwalStyled.fire({
-                    title: 'Creator Profile Blocked',
-                    html: banPopupHtml,
-                    icon: 'error',
-                    iconColor: '#DC2626',
-                    showConfirmButton: true,
-                    confirmButtonText: '<i class="fas fa-headset mr-2"></i> Contact Support',
-                    showCancelButton: true,
-                    cancelButtonText: 'Close',
-                    width: '480px',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = "{% url 'AudioXApp:contact_us' %}";
-                    }
-                });
-            });
-        }
-
-        async function markPopupShown(apiUrl) {
-            if (!apiUrl || !csrfToken) {
-                console.error('API URL or CSRF Token is missing for markPopupShown.');
-                return;
-            }
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({})
-                });
-                if (!response.ok) {
-                    const errorData = await response.text();
-                    console.error(`Failed to mark popup shown at ${apiUrl}. Status: ${response.status}. Response: ${errorData}`);
-                }
-            } catch (error) {
-                console.error(`Error calling API ${apiUrl}:`, error);
-            }
-        }
-
-        if (djangoContext && djangoContext.showWelcomePopup) {
-            const welcomeHtml = `<div class="text-center">
-                                        <div class="text-6xl mb-4 text-teal-500 animate-bounce">🎉</div>
-                                        <h2 class="text-2xl font-bold text-[#091e65] mb-3">Welcome Aboard!</h2>
-                                        <p class="text-gray-700 mb-6 px-4">Congratulations! Your application has been approved. You're now officially part of the AudioX Creator community.</p>
-                                        <p class="text-gray-700 px-4">You can now access the Creator Dashboard to start uploading your audio creations and manage your profile.</p>
-                                    </div>`;
-            SwalStyled.fire({
-                html: welcomeHtml,
-                showConfirmButton: true,
-                confirmButtonText: '<i class="fas fa-tachometer-alt mr-2"></i> Go to Dashboard',
-                showCancelButton: true,
-                cancelButtonText: 'Maybe Later',
-                showCloseButton: true,
-                width: '480px',
-                didOpen: () => {
-                    const confirmButton = Swal.getConfirmButton();
-                    if (confirmButton) confirmButton.focus();
-                },
-                didClose: () => {
-                    if (djangoContext.markWelcomeUrl) {
-                        markPopupShown(djangoContext.markWelcomeUrl);
-                    } else {
-                        console.warn("markWelcomeUrl not found in djangoContext");
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = "{% url 'AudioXApp:creator_dashboard' %}";
-                }
-            });
-        }
-
-        if (djangoContext && djangoContext.showRejectionPopup) {
-            SwalStyled.fire({
-                title: 'Creator Application Update',
-                html: `<div class="space-y-3">
-                            <p>Unfortunately, your recent creator application was not approved for the following reason:</p>
-                            <p class="font-semibold p-3 bg-red-50 border border-red-200 rounded text-red-800">${djangoContext.rejectionReason || 'No specific reason provided.'}</p>
-                            <p class="text-sm text-gray-600">Please review the requirements. You may be able to re-apply later or contact support if you have questions.</p>
-                        </div>`,
-                icon: 'error',
-                iconColor: '#DC2626',
-                confirmButtonText: 'Okay',
-                showCloseButton: true,
-                width: '450px',
-                didClose: () => {
-                    if (djangoContext.markRejectionUrl) {
-                        markPopupShown(djangoContext.markRejectionUrl);
-                    } else {
-                        console.warn("markRejectionUrl not found in djangoContext");
-                    }
-                }
-            });
-        }
-    });
-
-
-    function redirectToLanguage() {
-        const selector = document.getElementById('language-selector');
-        if (!selector) return; // Added safety check
-        const selectedLang = selector.value;
-
-        if (selectedLang === 'English') {
-            window.location.href = "{% url 'AudioXApp:home' %}";
-        } else if (selectedLang === 'Urdu') {
-            window.location.href = "{% url 'AudioXApp:urdu_page' %}";
-        } else if (selectedLang === 'Punjabi') {
-            window.location.href = "{% url 'AudioXApp:punjabi_page' %}";
-        } else if (selectedLang === 'Sindhi') {
-            window.location.href = "{% url 'AudioXApp:sindhi_page' %}";
-        }
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        const path = window.location.pathname.toLowerCase();
-        const selector = document.getElementById('language-selector');
-
-        if (selector) {
-            if (path.startsWith('/urdu/')) {
-                selector.value = 'Urdu';
-            } else if (path.startsWith('/punjabi/')) {
-                selector.value = 'Punjabi';
-            } else if (path.startsWith('/sindhi/')) {
-                selector.value = 'Sindhi';
-            }
-            else { 
-                selector.value = 'English';
-            }
-        }
-    });
-    </script>
+    <!-- ==================== JAVASCRIPT SECTION ==================== -->
+    
+    <!-- External JavaScript -->
+    <script src="{% static 'js/Homepage.js' %}" defer></script>
+    <script src="{% static 'js/service-worker-init.js' %}" defer></script>
 
     {% block javascript_extra %}
     {{ block.super }}
 
     <script src="{% static 'js/offline_manager.js' %}" defer></script>
 
-    {# Service Worker Registration #}
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register("/service_worker.js", { scope: '/' })
-                    .then(registration => {
-                        console.log('Service Worker: Registered successfully with scope: ', registration.scope);
+    {% endblock %}
 
-                        // Optional: Listen for new worker waiting to activate
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            if (newWorker) {
-                                newWorker.addEventListener('statechange', () => {
-                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        // New update available
-                                        console.log('Service Worker: New version available and installed. Ready to activate.');
-                                        // You could prompt the user to refresh here if desired using a toast/modal
-                                        // Example: showUpdateAvailablePrompt(registration);
-                                    }
-                                });
-                            }
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Service Worker: Registration failed: ', error);
-                    });
-            });
-
-            // Optional: Controller change listener - useful if a new SW takes over.
-            let refreshing;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (refreshing) return;
-                console.log('Service Worker: Controller has changed. Reloading page for new version.');
-                window.location.reload();
-                refreshing = true;
-            });
-        } else {
-            console.warn('Service Worker: Not supported by this browser.');
-        }
-
-        // Optional: Function to show an update prompt (you'd need to implement the UI for this)
-        // function showUpdateAvailablePrompt(registration) {
-        //     const userConfirmation = confirm("A new version of the app is available. Refresh to update?");
-        //     if (userConfirmation) {
-        //         if (registration.waiting) {
-        //             registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        //         }
-        //     }
-        // }
-    </script>
-
-
-
-{% endblock %}
-
-{% block javascript %}
+    {% block javascript %}
     {% endblock javascript %}
 </body>
 </html>

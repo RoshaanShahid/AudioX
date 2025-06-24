@@ -19,10 +19,12 @@
 {% block content %}
 <div class="space-y-10 font-sans">
 
+    <!-- Key Metrics Section -->
     <section aria-labelledby="key-metrics-heading">
-        <h2 id="key-metrics-heading" class="text-lg font-semibold text-gray-600 mb-4 uppercase tracking-wider">Key Metrics</h2>
+        <h2 id="key-metrics-heading" class="text-lg font-semibold text-gray-600 mb-6 uppercase tracking-wider">Key Metrics</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             
+            <!-- Total Earnings -->
             <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-[#091e65] transform hover:scale-105">
                 <div class="flex items-center space-x-4">
                     <div class="flex-shrink-0 bg-[#091e65]/10 p-3.5 rounded-lg">
@@ -37,10 +39,11 @@
                 </div>
             </div>
 
-            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-sky-500 transform hover:scale-105">
+            <!-- Total Withdrawn -->
+            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-red-500 transform hover:scale-105">
                 <div class="flex items-center space-x-4">
-                    <div class="flex-shrink-0 bg-sky-100 p-3.5 rounded-lg">
-                        <i class="fas fa-hand-holding-usd text-2xl text-sky-600"></i>
+                    <div class="flex-shrink-0 bg-red-50 p-3.5 rounded-lg">
+                        <i class="fas fa-hand-holding-usd text-2xl text-red-600"></i>
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-gray-500">Total Withdrawn</p>
@@ -51,10 +54,11 @@
                 </div>
             </div>
 
-            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-green-500 transform hover:scale-105">
+            <!-- Total Audiobooks -->
+            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-[#091e65] transform hover:scale-105">
                 <div class="flex items-center space-x-4">
-                    <div class="flex-shrink-0 bg-green-100 p-3.5 rounded-lg">
-                        <i class="fas fa-book text-2xl text-green-600"></i>
+                    <div class="flex-shrink-0 bg-[#091e65]/10 p-3.5 rounded-lg">
+                        <i class="fas fa-book text-2xl text-[#091e65]"></i>
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-gray-500">Total Audiobooks</p>
@@ -65,10 +69,11 @@
                 </div>
             </div>
             
-            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-teal-500 transform hover:scale-105">
+            <!-- Available Balance -->
+            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-red-500 transform hover:scale-105">
                 <div class="flex items-center space-x-4">
-                    <div class="flex-shrink-0 bg-teal-100 p-3.5 rounded-lg">
-                        <i class="fas fa-file-invoice-dollar text-2xl text-teal-600"></i>
+                    <div class="flex-shrink-0 bg-red-50 p-3.5 rounded-lg">
+                        <i class="fas fa-wallet text-2xl text-red-600"></i>
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-gray-500">Available Balance</p>
@@ -79,10 +84,11 @@
                 </div>
             </div>
 
-            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-indigo-500 transform hover:scale-105">
+            <!-- Total Chapters -->
+            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-[#091e65] transform hover:scale-105">
                 <div class="flex items-center space-x-4">
-                    <div class="flex-shrink-0 bg-indigo-100 p-3.5 rounded-lg">
-                        <i class="fas fa-layer-group text-2xl text-indigo-600"></i>
+                    <div class="flex-shrink-0 bg-[#091e65]/10 p-3.5 rounded-lg">
+                        <i class="fas fa-layer-group text-2xl text-[#091e65]"></i>
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-gray-500">Total Chapters</p>
@@ -93,10 +99,11 @@
                 </div>
             </div>
 
-            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-orange-500 transform hover:scale-105">
+            <!-- Total Listens -->
+            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-red-500 transform hover:scale-105">
                 <div class="flex items-center space-x-4">
-                    <div class="flex-shrink-0 bg-orange-100 p-3.5 rounded-lg">
-                        <i class="fas fa-headphones text-2xl text-orange-600"></i>
+                    <div class="flex-shrink-0 bg-red-50 p-3.5 rounded-lg">
+                        <i class="fas fa-headphones text-2xl text-red-600"></i>
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-gray-500">Total Listens</p>
@@ -107,10 +114,11 @@
                 </div>
             </div>
             
-            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-red-500 transform hover:scale-105 md:col-span-2 lg:col-span-2">
+            <!-- Top Performing Audiobook -->
+            <div class="group bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out border-t-4 border-[#091e65] transform hover:scale-105 md:col-span-2 lg:col-span-2">
                 <div class="flex items-center space-x-4">
-                    <div class="flex-shrink-0 bg-red-100 p-3.5 rounded-lg">
-                        <i class="fas fa-star text-2xl text-red-600"></i>
+                    <div class="flex-shrink-0 bg-[#091e65]/10 p-3.5 rounded-lg">
+                        <i class="fas fa-star text-2xl text-[#091e65]"></i>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium text-gray-500">Top Performing Audiobook</p>
@@ -130,6 +138,7 @@
         </div>
     </section>
 
+    <!-- Performance Analytics Section -->
     <section aria-labelledby="performance-analytics-heading">
         <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-200/60">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
@@ -140,6 +149,7 @@
                 <span class="text-xs text-gray-400 mt-2 sm:mt-0">Last 12 Months</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
+                <!-- Earnings Chart -->
                 <div class="bg-gray-50/50 rounded-xl p-6 hover:shadow-md transition-shadow duration-300">
                     <h3 class="text-lg font-semibold text-gray-700 mb-1 flex items-center">
                         <i class="fas fa-chart-area text-[#091e65] mr-2.5 text-xl"></i>Monthly Earnings
@@ -149,9 +159,10 @@
                         <div id="earningsChart" class="h-full w-full"></div>
                     </div>
                 </div>
+                <!-- Uploads Chart -->
                 <div class="bg-gray-50/50 rounded-xl p-6 hover:shadow-md transition-shadow duration-300">
                     <h3 class="text-lg font-semibold text-gray-700 mb-1 flex items-center">
-                        <i class="fas fa-chart-bar text-[#091e65] mr-2.5 text-xl"></i>Monthly Uploads
+                        <i class="fas fa-chart-bar text-red-600 mr-2.5 text-xl"></i>Monthly Uploads
                     </h3>
                     <p class="text-xs text-gray-400 mb-4 ml-[calc(1.25rem+0.625rem)]">Publishing frequency</p>
                     <div id="uploadsChartContainer" class="h-80 w-full">
@@ -162,7 +173,9 @@
         </div>
     </section>
 
+    <!-- Audiobooks and Recent Activity Section -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <!-- My Audiobooks -->
         <div class="lg:col-span-2 bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200/60">
             <div class="px-6 py-5 border-b border-gray-200/80 flex flex-wrap justify-between items-center gap-3">
                 <h2 class="text-xl font-semibold text-gray-800">My Audiobooks</h2>
@@ -190,9 +203,9 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{{ book.publish_date|date:"d M, Y" }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold leading-none
-                                    {% if book.status == 'PUBLISHED' %} bg-green-100 text-green-800 
+                                    {% if book.status == 'PUBLISHED' %} bg-[#091e65]/10 text-[#091e65] 
                                     {% elif book.status == 'PENDING' %} bg-yellow-100 text-yellow-800
-                                    {% elif book.status == 'DRAFT' %} bg-blue-100 text-blue-700
+                                    {% elif book.status == 'DRAFT' %} bg-gray-100 text-gray-700
                                     {% elif book.status == 'REJECTED' %} bg-red-100 text-red-800
                                     {% elif book.status == 'INACTIVE' %} bg-gray-200 text-gray-700
                                     {% else %} bg-gray-100 text-gray-600 {% endif %}">
@@ -212,7 +225,9 @@
             {% else %}
                 <div class="px-6 py-16 text-center text-sm text-gray-500">
                     <div class="flex flex-col items-center space-y-3">
-                        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6.253v11.494m0 0A2.373 2.373 0 0010.5 15.5H6a2.25 2.25 0 00-2.25 2.25v.5A2.25 2.25 0 006 20.5h4.5a2.373 2.373 0 002.25-2.25V6.253zM12 6.253V3.5A2.25 2.25 0 0114.25 1.25h3.5A2.25 2.25 0 0120 3.5v12.75a2.25 2.25 0 01-2.25 2.25h-3.5A2.25 2.25 0 0112 16.253z"></path></svg>
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-book text-2xl text-gray-300"></i>
+                        </div>
                         <p class="font-medium text-lg mt-2">No Audiobooks Yet</p>
                         <p class="text-xs text-gray-400">Your uploaded audiobooks will appear here.</p>
                     </div>
@@ -220,6 +235,7 @@
             {% endif %}
         </div>
 
+        <!-- Recent Activity -->
         <div class="lg:col-span-1 bg-white rounded-xl shadow-xl border border-gray-200/60">
             <div class="px-6 py-5 border-b border-gray-200/80">
                 <h2 class="text-xl font-semibold text-gray-800">Recent Activity</h2>
@@ -254,7 +270,9 @@
                 {% else %}
                 <div class="px-6 py-16 text-center text-sm text-gray-500">
                     <div class="flex flex-col items-center space-y-3">
-                        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-bell text-2xl text-gray-300"></i>
+                        </div>
                         <p class="font-medium text-lg mt-2">No Recent Activity</p>
                         <p class="text-xs text-gray-400">Your latest actions will appear here.</p>
                     </div>

@@ -11,13 +11,13 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from django.db import transaction, IntegrityError
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from django.urls import reverse
 from django.conf import settings
 from django.utils.text import slugify
-from ...models import Creator, WithdrawalAccount, WithdrawalRequest, CreatorEarning, Audiobook, AudiobookViewLog
+from ...models import Creator, WithdrawalAccount, WithdrawalRequest, CreatorEarning, Audiobook, AudiobookViewLog, CoinPurchase
 from ..utils import _get_full_context
 from ..decorators import creator_required
 
@@ -304,6 +304,7 @@ def creator_my_earnings_view(request):
     context['available_balance'] = creator_instance.available_balance
     now = timezone.now()
 
+    # Global filter date range calculation
     global_selected_period = request.GET.get('period', 'all_time')
     global_start_date_str = request.GET.get('start_date')
     global_end_date_str = request.GET.get('end_date')
@@ -327,18 +328,21 @@ def creator_my_earnings_view(request):
             try:
                 dt_start = datetime.strptime(global_start_date_str, '%Y-%m-%d')
                 global_filter_start_date = timezone.make_aware(dt_start.replace(hour=0, minute=0, second=0, microsecond=0), timezone.get_default_timezone()) if timezone.is_naive(dt_start) else dt_start.replace(hour=0, minute=0, second=0, microsecond=0)
-            except ValueError: messages.error(request, "Invalid global start date format. Please use YYYY-MM-DD.")
+            except ValueError: 
+                messages.error(request, "Invalid global start date format. Please use YYYY-MM-DD.")
         if global_end_date_str:
             try:
                 dt_end = datetime.strptime(global_end_date_str, '%Y-%m-%d')
                 global_filter_end_date = timezone.make_aware(dt_end.replace(hour=23, minute=59, second=59, microsecond=999999), timezone.get_default_timezone()) if timezone.is_naive(dt_end) else dt_end.replace(hour=23, minute=59, second=59, microsecond=999999)
-            except ValueError: messages.error(request, "Invalid global end date format. Please use YYYY-MM-DD.")
+            except ValueError: 
+                messages.error(request, "Invalid global end date format. Please use YYYY-MM-DD.")
 
     context['start_date_str'] = global_filter_start_date.strftime('%Y-%m-%d') if global_filter_start_date else global_start_date_str
     context['end_date_str'] = global_filter_end_date.strftime('%Y-%m-%d') if global_filter_end_date else global_end_date_str
     context['selected_period'] = global_selected_period
 
-    overall_sales_earnings_query = CreatorEarning.objects.filter(creator=creator_instance, earning_type='sale').select_related('purchase')
+    # FIXED: Calculate overall earnings including both Stripe and Coin purchases
+    overall_sales_earnings_query = CreatorEarning.objects.filter(creator=creator_instance, earning_type='sale')
     if global_filter_start_date:
         overall_sales_earnings_query = overall_sales_earnings_query.filter(transaction_date__gte=global_filter_start_date)
     if global_filter_end_date:
@@ -347,11 +351,26 @@ def creator_my_earnings_view(request):
     overall_total_gross_earnings_from_sales_GLOBAL = Decimal('0.00')
     overall_total_net_earnings_from_sales_GLOBAL = Decimal('0.00')
     overall_platform_commission_from_sales_GLOBAL = Decimal('0.00')
+    
     for earning in overall_sales_earnings_query:
+        # Handle both Stripe purchases (with purchase field) and coin purchases
         if earning.purchase:
+            # Stripe purchase
             overall_total_gross_earnings_from_sales_GLOBAL += earning.purchase.amount_paid
             overall_total_net_earnings_from_sales_GLOBAL += earning.amount_earned
             overall_platform_commission_from_sales_GLOBAL += earning.purchase.platform_fee_amount
+        else:
+            # Coin purchase - need to find the corresponding CoinPurchase
+            # Since CreatorEarning doesn't directly link to CoinPurchase, we'll use the earning amount
+            # and calculate the gross based on platform commission rate
+            net_amount = earning.amount_earned
+            # Calculate gross amount from net (reverse calculation)
+            gross_amount = net_amount / (Decimal('1') - (PLATFORM_COMMISSION_RATE / Decimal('100')))
+            commission_amount = gross_amount - net_amount
+            
+            overall_total_gross_earnings_from_sales_GLOBAL += gross_amount
+            overall_total_net_earnings_from_sales_GLOBAL += net_amount
+            overall_platform_commission_from_sales_GLOBAL += commission_amount
 
     view_earnings_query_global = CreatorEarning.objects.filter(creator=creator_instance, earning_type='view')
     if global_filter_start_date:
@@ -368,6 +387,7 @@ def creator_my_earnings_view(request):
     context['earnings_from_views_for_selected_period'] = earnings_from_views_for_selected_period
     context['net_earnings_from_paid_sales'] = overall_total_net_earnings_from_sales_GLOBAL
 
+    # Audiobook-specific filter date range calculation
     ab_selected_period = request.GET.get('ab_period', 'all_time')
     ab_start_date_str = request.GET.get('ab_start_date')
     ab_end_date_str = request.GET.get('ab_end_date')
@@ -392,42 +412,116 @@ def creator_my_earnings_view(request):
             try:
                 dt_ab_start = datetime.strptime(ab_start_date_str, '%Y-%m-%d')
                 ab_filter_start_date = timezone.make_aware(dt_ab_start.replace(hour=0, minute=0, second=0, microsecond=0), timezone.get_default_timezone()) if timezone.is_naive(dt_ab_start) else dt_ab_start.replace(hour=0, minute=0, second=0, microsecond=0)
-            except ValueError: messages.error(request, "Invalid audiobook start date format. Please use YYYY-MM-DD.")
+            except ValueError: 
+                messages.error(request, "Invalid audiobook start date format. Please use YYYY-MM-DD.")
         if ab_end_date_str:
             try:
                 dt_ab_end = datetime.strptime(ab_end_date_str, '%Y-%m-%d')
                 ab_filter_end_date = timezone.make_aware(dt_ab_end.replace(hour=23, minute=59, second=59, microsecond=999999), timezone.get_default_timezone()) if timezone.is_naive(dt_ab_end) else dt_ab_end.replace(hour=23, minute=59, second=59, microsecond=999999)
-            except ValueError: messages.error(request, "Invalid audiobook end date format. Please use YYYY-MM-DD.")
+            except ValueError: 
+                messages.error(request, "Invalid audiobook end date format. Please use YYYY-MM-DD.")
 
     context['ab_start_date_str_audiobook_filter'] = ab_filter_start_date.strftime('%Y-%m-%d') if ab_filter_start_date else ab_start_date_str
     context['ab_end_date_str_audiobook_filter'] = ab_filter_end_date.strftime('%Y-%m-%d') if ab_filter_end_date else ab_end_date_str
     context['ab_selected_period'] = ab_selected_period
     context['filtered_book_slug'] = filtered_book_slug_from_url
 
-    aggregated_earnings_for_list = defaultdict(lambda: {'title': 'Unknown (Possibly Deleted Audiobook)', 'slug': None, 'cover_image_url': None, 'is_active': False, 'is_paid': True, 'publish_date': None, 'audiobook_object': None, 'status_display': 'N/A', 'paid_details': {'sales': 0, 'gross': Decimal('0.00'), 'commission': Decimal('0.00'), 'net': Decimal('0.00')}, 'free_details': {'views': 0, 'earnings': Decimal('0.00')}})
+    # FIXED: Build earnings list with proper coin purchase handling
+    aggregated_earnings_for_list = defaultdict(lambda: {
+        'title': 'Unknown (Possibly Deleted Audiobook)', 
+        'slug': None, 
+        'cover_image_url': None, 
+        'is_active': False, 
+        'is_paid': True, 
+        'publish_date': None, 
+        'audiobook_object': None, 
+        'status_display': 'N/A', 
+        'paid_details': {'sales': 0, 'gross': Decimal('0.00'), 'commission': Decimal('0.00'), 'net': Decimal('0.00')}, 
+        'free_details': {'views': 0, 'earnings': Decimal('0.00')}
+    })
+    
     all_creator_audiobooks_qs = Audiobook.objects.filter(creator=creator_instance)
     if filtered_book_slug_from_url:
         all_creator_audiobooks_qs = all_creator_audiobooks_qs.filter(slug=filtered_book_slug_from_url)
     
     audiobook_id_to_object_map = {book.audiobook_id: book for book in all_creator_audiobooks_qs}
+    
     for book_id, book_obj in audiobook_id_to_object_map.items():
         agg_data = aggregated_earnings_for_list[book_id]
         is_book_active = book_obj.status == 'PUBLISHED'
-        agg_data.update({'title': book_obj.title, 'slug': book_obj.slug, 'cover_image_url': book_obj.cover_image.url if book_obj.cover_image else None, 'is_active': is_book_active, 'is_paid': book_obj.is_paid, 'publish_date': book_obj.publish_date, 'audiobook_object': book_obj, 'status_display': book_obj.get_status_display()})
+        agg_data.update({
+            'title': book_obj.title, 
+            'slug': book_obj.slug, 
+            'cover_image_url': book_obj.cover_image.url if book_obj.cover_image else None, 
+            'is_active': is_book_active, 
+            'is_paid': book_obj.is_paid, 
+            'publish_date': book_obj.publish_date, 
+            'audiobook_object': book_obj, 
+            'status_display': book_obj.get_status_display()
+        })
+        
         current_item_filter_start_date = ab_filter_start_date
         current_item_filter_end_date = ab_filter_end_date
+        
         if book_obj.is_paid:
-            sales_for_book_query = CreatorEarning.objects.filter(creator=creator_instance, audiobook_id=book_id, earning_type='sale').select_related('purchase')
+            # FIXED: Get all sales earnings for this book (both Stripe and coin)
+            sales_for_book_query = CreatorEarning.objects.filter(
+                creator=creator_instance, 
+                audiobook_id=book_id, 
+                earning_type='sale'
+            )
             if current_item_filter_start_date:
                 sales_for_book_query = sales_for_book_query.filter(transaction_date__gte=current_item_filter_start_date)
             if current_item_filter_end_date:
                 sales_for_book_query = sales_for_book_query.filter(transaction_date__lte=current_item_filter_end_date)
+            
+            # FIXED: Also get coin purchases for this book within the date range
+            coin_purchases_query = CoinPurchase.objects.filter(
+                audiobook_id=book_id,
+                audiobook__creator=creator_instance
+            )
+            if current_item_filter_start_date:
+                coin_purchases_query = coin_purchases_query.filter(purchase_date__gte=current_item_filter_start_date)
+            if current_item_filter_end_date:
+                coin_purchases_query = coin_purchases_query.filter(purchase_date__lte=current_item_filter_end_date)
+            
+            # Process Stripe sales
             for sale_earning in sales_for_book_query:
                 if sale_earning.purchase:
+                    # Stripe purchase
                     agg_data['paid_details']['sales'] += 1
                     agg_data['paid_details']['gross'] += sale_earning.purchase.amount_paid
                     agg_data['paid_details']['commission'] += sale_earning.purchase.platform_fee_amount
                     agg_data['paid_details']['net'] += sale_earning.amount_earned
+                else:
+                    # Coin purchase (CreatorEarning without purchase link)
+                    agg_data['paid_details']['sales'] += 1
+                    net_amount = sale_earning.amount_earned
+                    # Calculate gross from net
+                    gross_amount = net_amount / (Decimal('1') - (PLATFORM_COMMISSION_RATE / Decimal('100')))
+                    commission_amount = gross_amount - net_amount
+                    agg_data['paid_details']['gross'] += gross_amount
+                    agg_data['paid_details']['commission'] += commission_amount
+                    agg_data['paid_details']['net'] += net_amount
+            
+            # FIXED: Also count coin purchases that might not have CreatorEarning entries yet
+            for coin_purchase in coin_purchases_query:
+                # Check if this coin purchase already has a CreatorEarning entry
+                existing_earning = CreatorEarning.objects.filter(
+                    creator=creator_instance,
+                    audiobook_id=book_id,
+                    earning_type='sale',
+                    transaction_date=coin_purchase.purchase_date,
+                    amount_earned=coin_purchase.creator_earning
+                ).exists()
+                
+                if not existing_earning:
+                    # This coin purchase doesn't have a CreatorEarning entry, add it manually
+                    agg_data['paid_details']['sales'] += 1
+                    agg_data['paid_details']['gross'] += coin_purchase.creator_earning + coin_purchase.platform_commission
+                    agg_data['paid_details']['commission'] += coin_purchase.platform_commission
+                    agg_data['paid_details']['net'] += coin_purchase.creator_earning
+                    
         if not book_obj.is_paid: 
             views_for_book_query = AudiobookViewLog.objects.filter(audiobook_id=book_id) 
             view_earnings_for_this_book_query = CreatorEarning.objects.filter(creator=creator_instance, audiobook_id=book_id, earning_type='view')
@@ -442,7 +536,8 @@ def creator_my_earnings_view(request):
             period_view_earnings_sum = view_earnings_for_this_book_query.aggregate(total=Sum('amount_earned'))['total'] or Decimal('0.00')
             agg_data['free_details']['earnings'] = period_view_earnings_sum
 
-    deleted_audiobook_earnings_query = CreatorEarning.objects.filter(creator=creator_instance, audiobook__isnull=True, earning_type='sale').select_related('purchase')
+    # Handle deleted audiobook earnings
+    deleted_audiobook_earnings_query = CreatorEarning.objects.filter(creator=creator_instance, audiobook__isnull=True, earning_type='sale')
     if ab_filter_start_date: 
         deleted_audiobook_earnings_query = deleted_audiobook_earnings_query.filter(transaction_date__gte=ab_filter_start_date)
     if ab_filter_end_date:
@@ -451,13 +546,32 @@ def creator_my_earnings_view(request):
     for earning in deleted_audiobook_earnings_query:
         unique_deleted_key = f"deleted_{slugify(earning.audiobook_title_at_transaction or 'unknown-title')}_{earning.earning_id.hex[:8]}"
         agg_data = aggregated_earnings_for_list[unique_deleted_key] 
-        agg_data.update({'title': earning.audiobook_title_at_transaction or 'Unknown (Deleted Audiobook)', 'slug': slugify(agg_data['title'] + earning.earning_id.hex[:4]), 'is_active': False, 'is_paid': True, 'status_display': 'Deleted', 'audiobook_object': None})
+        agg_data.update({
+            'title': earning.audiobook_title_at_transaction or 'Unknown (Deleted Audiobook)', 
+            'slug': slugify(agg_data['title'] + earning.earning_id.hex[:4]), 
+            'is_active': False, 
+            'is_paid': True, 
+            'status_display': 'Deleted', 
+            'audiobook_object': None
+        })
+        
         if earning.purchase: 
+            # Stripe purchase
             agg_data['paid_details']['sales'] += 1
             agg_data['paid_details']['gross'] += earning.purchase.amount_paid
             agg_data['paid_details']['commission'] += earning.purchase.platform_fee_amount
             agg_data['paid_details']['net'] += earning.amount_earned
+        else:
+            # Coin purchase
+            agg_data['paid_details']['sales'] += 1
+            net_amount = earning.amount_earned
+            gross_amount = net_amount / (Decimal('1') - (PLATFORM_COMMISSION_RATE / Decimal('100')))
+            commission_amount = gross_amount - net_amount
+            agg_data['paid_details']['gross'] += gross_amount
+            agg_data['paid_details']['commission'] += commission_amount
+            agg_data['paid_details']['net'] += net_amount
             
+    # Sort and finalize the earnings list
     temp_list = list(aggregated_earnings_for_list.values())
     min_date_for_sorting = datetime.min.replace(tzinfo=timezone.get_default_timezone()) if timezone.is_aware(now) else datetime.min
     temp_list.sort(key=lambda x: x['title'].lower() if x['title'] else '')

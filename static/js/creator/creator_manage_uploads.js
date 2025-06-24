@@ -317,94 +317,154 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Helper Function for Document TTS Preview AJAX Call ---
     async function generateDocumentTtsPreview(params) {
-        const {
-            chapterForm,
-            documentInput, docVoiceSelect,
-            playerContainer, player, messageEl,
-            confirmUseBtn, generateBtn, generatedDocUrlInput,
-            lockedDisplay, lockedFilenameSpan
-        } = params;
+  const {
+    chapterForm,
+    documentInput,
+    docVoiceSelect,
+    playerContainer,
+    player,
+    messageEl,
+    confirmUseBtn,
+    generateBtn,
+    generatedDocUrlInput,
+    lockedDisplay,
+    lockedFilenameSpan,
+  } = params
 
-        const docFile = documentInput.files[0];
-        const voiceOptionId = docVoiceSelect.value;
-        const btnTextEl = generateBtn.querySelector('.btn-text');
-        const spinnerEl = generateBtn.querySelector('.spinner');
+  const docFile = documentInput.files[0]
+  const voiceOptionId = docVoiceSelect.value
+  const selectedVoiceDetails = ALL_EDGE_TTS_VOICES_MAP_MANAGE[voiceOptionId]
+  const narratorGender = selectedVoiceDetails ? (selectedVoiceDetails.gender || "").toLowerCase() : ""
 
-        messageEl.textContent = '';
-        playerContainer.classList.add('hidden');
-        player.src = '';
-        if (confirmUseBtn) confirmUseBtn.classList.add('hidden');
-        if (generatedDocUrlInput) generatedDocUrlInput.value = '';
-        if (lockedDisplay) {
-            lockedDisplay.classList.add('hidden-area');
-            lockedDisplay.classList.remove('visible-area');
-        }
+  const btnTextEl = generateBtn.querySelector(".btn-text")
+  const spinnerEl = generateBtn.querySelector(".spinner")
 
-        let isValid = true;
-        if (!docFile) { messageEl.textContent = 'Please select a document file.'; isValid = false; }
-        // FIX: Check if docVoiceSelect.value is actually selected and not "default" or empty
-        if (voiceOptionId === 'default' || !voiceOptionId || (docVoiceSelect.options.length > 0 && docVoiceSelect.selectedIndex === 0 && docVoiceSelect.options[0].value === 'default')) {
-            messageEl.textContent = (messageEl.textContent ? messageEl.textContent + ' ' : '') + 'Select a narrator voice.';
-            isValid = false;
-        }
-        if (docFile) {
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-            const allowedExtensions = ['.pdf', '.doc', '.docx'];
-            const fileExtension = docFile.name.substring(docFile.name.lastIndexOf('.')).toLowerCase();
-            if (docFile.size > maxSize) { messageEl.textContent = 'Document too large (Max 10MB).'; isValid = false;}
-            if (!allowedTypes.includes(docFile.type) && !allowedExtensions.includes(fileExtension)) { messageEl.textContent = 'Invalid document type (PDF, DOC, DOCX).'; isValid = false;}
-        }
+  messageEl.textContent = ""
+  playerContainer.classList.add("hidden")
+  player.src = ""
+  if (confirmUseBtn) confirmUseBtn.classList.add("hidden")
+  if (generatedDocUrlInput) generatedDocUrlInput.value = ""
+  if (lockedDisplay) {
+    lockedDisplay.classList.add("hidden-area")
+    lockedDisplay.classList.remove("visible-area")
+  }
 
-        if (!isValid) {
-            messageEl.className = messageEl.className.replace(/text-(green|indigo|blue)-[0-9a-zA-Z]+/g, 'text-red-600');
-            return;
-        }
+  let isValid = true
+  if (!docFile) {
+    messageEl.textContent = "Please select a document file."
+    isValid = false
+  }
 
-        generateBtn.disabled = true;
-        if(btnTextEl) btnTextEl.classList.add('hidden');
-        if(spinnerEl) spinnerEl.classList.remove('hidden');
-        messageEl.textContent = 'Processing document & generating preview...';
-        messageEl.className = messageEl.className.replace(/text-(red|green)-[0-9a-zA-Z]+/g, 'text-indigo-600');
-
-        const formData = new FormData();
-        formData.append('document_file', docFile);
-        formData.append('tts_voice_id', voiceOptionId);
-        // FIX: The view expects 'language' from the form, not 'audiobook_language'
-        formData.append('language', currentAudiobookLanguageManage);
-        formData.append('csrfmiddlewaretoken', csrfToken);
-
-        try {
-            const response = await fetch(generateDocumentTtsPreviewUrl, { method: 'POST', body: formData, headers: {'X-CSRFToken': csrfToken} });
-            const data = await response.json();
-
-            if (response.ok && data.status === 'success') {
-                player.src = data.audio_url;
-                playerContainer.classList.remove('hidden');
-                messageEl.textContent = `Preview ready! (From: ${data.source_filename || 'document'})`;
-                messageEl.className = messageEl.className.replace(/text-(red|indigo)-[0-9a-zA-Z]+/g, 'text-green-600');
-                if (confirmUseBtn) {
-                    confirmUseBtn.classList.remove('hidden');
-                    confirmUseBtn.dataset.generatedUrl = data.audio_url;
-                    confirmUseBtn.dataset.generatedVoiceId = data.voice_id_used;
-                    confirmUseBtn.dataset.generatedFilename = data.filename || "Generated_Audio_from_Doc.mp3";
-                    confirmUseBtn.dataset.sourceDocumentName = data.source_filename || docFile.name;
-                }
-            } else {
-                messageEl.textContent = `Error: ${data.message || 'Unknown document TTS error.'}`;
-                messageEl.className = messageEl.className.replace(/text-(green|indigo)-[0-9a-zA-Z]+/g, 'text-red-600');
-            }
-        } catch (error) {
-            messageEl.textContent = 'Network error during document TTS preview.';
-            messageEl.className = messageEl.className.replace(/text-(green|indigo)-[0-9a-zA-Z]+/g, 'text-red-600');
-            console.error('Document TTS Preview Fetch Error:', error);
-        } finally {
-            generateBtn.disabled = false;
-            if(btnTextEl) btnTextEl.classList.remove('hidden');
-            if(spinnerEl) spinnerEl.classList.add('hidden');
-            updateChapterPreviewButtonState(chapterForm, true); // isForDocument = true
-        }
+  if (
+    voiceOptionId === "default" ||
+    !voiceOptionId ||
+    (docVoiceSelect.options.length > 0 &&
+      docVoiceSelect.selectedIndex === 0 &&
+      docVoiceSelect.options[0].value === "default")
+  ) {
+    messageEl.textContent = (messageEl.textContent ? messageEl.textContent + " " : "") + "Select a narrator voice."
+    isValid = false
+  } else if (
+    currentAudiobookLanguageManage &&
+    ["English", "Urdu", "Punjabi", "Sindhi"].includes(currentAudiobookLanguageManage)
+  ) {
+    if (!narratorGender) {
+      messageEl.textContent =
+        (messageEl.textContent ? messageEl.textContent + " " : "") +
+        `A voice with a defined gender must be selected for ${currentAudiobookLanguageManage}.`
+      isValid = false
     }
+  }
+
+  if (docFile) {
+    const maxSize = 10 * 1024 * 1024
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]
+    const allowedExtensions = [".pdf", ".doc", ".docx"]
+    const fileExtension = docFile.name.substring(docFile.name.lastIndexOf(".")).toLowerCase()
+    if (docFile.size > maxSize) {
+      messageEl.textContent = "Document too large (Max 10MB)."
+      isValid = false
+    }
+    if (!allowedTypes.includes(docFile.type) && !allowedExtensions.includes(fileExtension)) {
+      messageEl.textContent = "Invalid document type (PDF, DOC, DOCX)."
+      isValid = false
+    }
+  }
+
+  if (!isValid) {
+    messageEl.className = messageEl.className.replace(/text-(green|indigo|blue)-[0-9a-zA-Z]+/g, "text-red-600")
+    return
+  }
+
+  generateBtn.disabled = true
+  if (btnTextEl) btnTextEl.classList.add("hidden")
+  if (spinnerEl) spinnerEl.classList.remove("hidden")
+  messageEl.textContent = "Processing document & generating preview..."
+  messageEl.className = messageEl.className.replace(/text-(red|green)-[0-9a-zA-Z]+/g, "text-indigo-600")
+
+  const formData = new FormData()
+  formData.append("document_file", docFile)
+  formData.append("tts_voice_id", voiceOptionId)
+  formData.append("language", currentAudiobookLanguageManage)
+  formData.append("narrator_gender", narratorGender)
+  formData.append("csrfmiddlewaretoken", csrfToken)
+
+  try {
+    const response = await fetch(generateDocumentTtsPreviewUrl, {
+      method: "POST",
+      body: formData,
+      headers: { "X-CSRFToken": csrfToken },
+    })
+    const data = await response.json()
+
+    if (response.ok && data.status === "success") {
+      player.src = data.audio_url
+      playerContainer.classList.remove("hidden")
+      messageEl.textContent = `Preview ready! (From: ${data.source_filename || "document"})`
+      messageEl.className = messageEl.className.replace(/text-(red|indigo)-[0-9a-zA-Z]+/g, "text-green-600")
+      if (confirmUseBtn) {
+        confirmUseBtn.classList.remove("hidden")
+        confirmUseBtn.dataset.generatedUrl = data.audio_url
+        confirmUseBtn.dataset.generatedVoiceId = data.voice_id_used
+        confirmUseBtn.dataset.generatedFilename = data.filename || "Generated_Audio_from_Doc.mp3"
+        confirmUseBtn.dataset.sourceDocumentName = data.source_filename || docFile.name
+      }
+    } else {
+      let backendErrorMsg = data.message || "Unknown document TTS error."
+      if (data.errors && typeof data.errors === "object") {
+        const errorKey = Object.keys(data.errors)[0]
+        if (
+          errorKey &&
+          data.errors[errorKey] &&
+          Array.isArray(data.errors[errorKey]) &&
+          data.errors[errorKey].length > 0
+        ) {
+          const firstError = data.errors[errorKey][0]
+          if (typeof firstError === "string") {
+            backendErrorMsg = firstError
+          } else if (firstError && firstError.message) {
+            backendErrorMsg = firstError.message
+          }
+        }
+      }
+      messageEl.textContent = `Error: ${backendErrorMsg}`
+      messageEl.className = messageEl.className.replace(/text-(green|indigo)-[0-9a-zA-Z]+/g, "text-red-600")
+    }
+  } catch (error) {
+    messageEl.textContent = "Network error during document TTS preview."
+    messageEl.className = messageEl.className.replace(/text-(green|indigo)-[0-9a-zA-Z]+/g, "text-red-600")
+    console.error("Document TTS Preview Fetch Error:", error)
+  } finally {
+    generateBtn.disabled = false
+    if (btnTextEl) btnTextEl.classList.remove("hidden")
+    if (spinnerEl) spinnerEl.classList.add("hidden")
+    updateChapterPreviewButtonState(chapterForm, true)
+  }
+}
 
 
     // --- Initialize Controls for "Add New Chapter" Form ---

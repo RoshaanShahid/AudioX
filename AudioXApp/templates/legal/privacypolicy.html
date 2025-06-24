@@ -1,0 +1,444 @@
+{% extends "Homepage.html" %}
+{% load static %}
+
+{% block title %}Privacy Policy - {{ block.super }}{% endblock %}
+
+{% block content %}
+<!-- ==================== PRIVACY POLICY PAGE CONTENT ==================== -->
+<div class="min-h-screen bg-white">
+    
+    <!-- Hero Section -->
+    <section class="bg-[#091e65] text-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                    Privacy <span class="text-red-500">Policy</span>
+                </h1>
+                <p class="text-lg text-white leading-relaxed">
+                    Your privacy and data protection are our top priorities
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-6 py-12">
+        <div class="max-w-4xl mx-auto">
+            
+            <!-- Last Updated -->
+            <div class="bg-white border-l-4 border-[#091e65] p-4 mb-8 shadow-lg">
+                <p class="text-sm text-gray-700">
+                    <i class="fas fa-calendar-alt text-[#091e65] mr-2"></i>
+                    <strong>Last Updated:</strong> January 2025
+                </p>
+            </div>
+
+            <!-- Introduction -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Our Commitment to Your Privacy</h2>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    At AudioX, we respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our audiobook platform and services.
+                </p>
+                <div class="bg-[#091e65] text-white p-6 shadow-lg">
+                    <p class="text-white leading-relaxed">
+                        <strong>Our Promise:</strong> We will never sell your personal information to third parties. Your data is used solely to provide and improve our services for you.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Information We Collect -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Information We Collect</h2>
+                
+                <div class="space-y-6">
+                    <div class="bg-white border-2 border-[#091e65] p-6 shadow-lg">
+                        <h3 class="text-xl font-bold text-[#091e65] mb-4 flex items-center">
+                            <i class="fas fa-user mr-3"></i>
+                            Personal Information
+                        </h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li>• <strong>Account Information:</strong> Name, email address, username, password</li>
+                            <li>• <strong>Profile Data:</strong> Profile picture, preferences, language settings</li>
+                            <li>• <strong>Contact Information:</strong> Email address for communications</li>
+                            <li>• <strong>Payment Information:</strong> Billing address, payment method details (processed securely through Stripe)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-2 border-red-500 p-6 shadow-lg">
+                        <h3 class="text-xl font-bold text-red-500 mb-4 flex items-center">
+                            <i class="fas fa-chart-line mr-3"></i>
+                            Usage Information
+                        </h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li>• <strong>Listening History:</strong> Audiobooks played, progress, bookmarks</li>
+                            <li>• <strong>Device Information:</strong> Device type, operating system, browser information</li>
+                            <li>• <strong>App Usage:</strong> Features used, time spent, interaction patterns</li>
+                            <li>• <strong>Location Data:</strong> General location (country/city) for content recommendations</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-2 border-gray-300 p-6 shadow-lg">
+                        <h3 class="text-xl font-bold text-gray-700 mb-4 flex items-center">
+                            <i class="fas fa-cogs mr-3"></i>
+                            Technical Information
+                        </h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li>• <strong>Log Data:</strong> IP address, access times, pages viewed</li>
+                            <li>• <strong>Cookies:</strong> Session cookies, preference cookies, analytics cookies</li>
+                            <li>• <strong>Performance Data:</strong> App crashes, loading times, error reports</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- How We Use Your Information -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">How We Use Your Information</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white border-2 border-[#091e65] p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-[#091e65] mb-3 flex items-center">
+                            <i class="fas fa-play-circle mr-2"></i>
+                            Service Provision
+                        </h3>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li>• Provide access to audiobook content</li>
+                            <li>• Maintain your listening progress</li>
+                            <li>• Process payments and subscriptions</li>
+                            <li>• Provide customer support</li>
+                            <li>• Send service-related notifications</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-2 border-red-500 p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-red-500 mb-3 flex items-center">
+                            <i class="fas fa-magic mr-2"></i>
+                            Personalization
+                        </h3>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li>• Recommend relevant audiobooks</li>
+                            <li>• Customize your experience</li>
+                            <li>• Remember your preferences</li>
+                            <li>• Provide personalized content</li>
+                            <li>• Improve our recommendation algorithms</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-2 border-gray-300 p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            Security & Safety
+                        </h3>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li>• Prevent fraud and abuse</li>
+                            <li>• Protect against security threats</li>
+                            <li>• Verify user identity</li>
+                            <li>• Monitor for suspicious activity</li>
+                            <li>• Enforce our terms of service</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-2 border-green-500 p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-green-500 mb-3 flex items-center">
+                            <i class="fas fa-chart-bar mr-2"></i>
+                            Analytics & Improvement
+                        </h3>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li>• Analyze usage patterns</li>
+                            <li>• Improve our services</li>
+                            <li>• Develop new features</li>
+                            <li>• Optimize performance</li>
+                            <li>• Conduct research and analytics</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Information Sharing -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Information Sharing and Disclosure</h2>
+                
+                <div class="bg-white border-l-4 border-red-500 p-6 mb-6 shadow-lg">
+                    <h3 class="text-xl font-bold text-red-500 mb-3">We DO NOT Sell Your Data</h3>
+                    <p class="text-gray-700 leading-relaxed">
+                        AudioX does not sell, rent, or trade your personal information to third parties for marketing purposes. Your privacy is not for sale.
+                    </p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 p-4 shadow-lg">
+                        <h4 class="font-bold text-gray-800 mb-2 flex items-center">
+                            <i class="fas fa-handshake text-[#091e65] mr-2"></i>
+                            Service Providers
+                        </h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            We share information with trusted service providers who help us operate our platform (payment processing, cloud hosting, analytics). These partners are bound by strict confidentiality agreements.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 p-4 shadow-lg">
+                        <h4 class="font-bold text-gray-800 mb-2 flex items-center">
+                            <i class="fas fa-balance-scale text-[#091e65] mr-2"></i>
+                            Legal Requirements
+                        </h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            We may disclose information when required by law, court order, or to protect our rights, property, or safety of our users.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 p-4 shadow-lg">
+                        <h4 class="font-bold text-gray-800 mb-2 flex items-center">
+                            <i class="fas fa-building text-[#091e65] mr-2"></i>
+                            Business Transfers
+                        </h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            In the event of a merger, acquisition, or sale of assets, user information may be transferred as part of the business transaction.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Security -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Data Security</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white border-l-4 border-[#091e65] p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-[#091e65] mb-3 flex items-center">
+                            <i class="fas fa-lock mr-2"></i>
+                            Encryption & Protection
+                        </h3>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li>• SSL/TLS encryption for data transmission</li>
+                            <li>• Encrypted storage of sensitive data</li>
+                            <li>• Regular security audits and updates</li>
+                            <li>• Secure payment processing via Stripe</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-l-4 border-red-500 p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-red-500 mb-3 flex items-center">
+                            <i class="fas fa-user-shield mr-2"></i>
+                            Access Controls
+                        </h3>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li>• Limited employee access to user data</li>
+                            <li>• Multi-factor authentication for admin accounts</li>
+                            <li>• Regular access reviews and monitoring</li>
+                            <li>• Data minimization principles</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Your Rights -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Your Privacy Rights</h2>
+                
+                <div class="bg-[#091e65] text-white p-6 mb-6 shadow-lg">
+                    <h3 class="text-xl font-bold mb-4">You Have Control Over Your Data</h3>
+                    <p class="text-white leading-relaxed">
+                        We believe you should have control over your personal information. Here are the rights you have regarding your data:
+                    </p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-[#091e65] pl-4 bg-white p-4 shadow-lg">
+                            <h4 class="font-bold text-[#091e65] mb-2">Access Your Data</h4>
+                            <p class="text-gray-700 text-sm">
+                                Request a copy of all personal data we have about you.
+                            </p>
+                        </div>
+                        
+                        <div class="border-l-4 border-red-500 pl-4 bg-white p-4 shadow-lg">
+                            <h4 class="font-bold text-red-500 mb-2">Correct Your Data</h4>
+                            <p class="text-gray-700 text-sm">
+                                Update or correct any inaccurate personal information.
+                            </p>
+                        </div>
+                        
+                        <div class="border-l-4 border-[#091e65] pl-4 bg-white p-4 shadow-lg">
+                            <h4 class="font-bold text-[#091e65] mb-2">Delete Your Data</h4>
+                            <p class="text-gray-700 text-sm">
+                                Request deletion of your personal data (subject to legal requirements).
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-red-500 pl-4 bg-white p-4 shadow-lg">
+                            <h4 class="font-bold text-red-500 mb-2">Data Portability</h4>
+                            <p class="text-gray-700 text-sm">
+                                Export your data in a machine-readable format.
+                            </p>
+                        </div>
+                        
+                        <div class="border-l-4 border-[#091e65] pl-4 bg-white p-4 shadow-lg">
+                            <h4 class="font-bold text-[#091e65] mb-2">Opt-Out</h4>
+                            <p class="text-gray-700 text-sm">
+                                Unsubscribe from marketing communications at any time.
+                            </p>
+                        </div>
+                        
+                        <div class="border-l-4 border-red-500 pl-4 bg-white p-4 shadow-lg">
+                            <h4 class="font-bold text-red-500 mb-2">Restrict Processing</h4>
+                            <p class="text-gray-700 text-sm">
+                                Limit how we use your personal information.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Cookies and Tracking -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Cookies and Tracking</h2>
+                
+                <div class="space-y-6">
+                    <div class="bg-white border-2 border-[#091e65] p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-[#091e65] mb-3">What Are Cookies?</h3>
+                        <p class="text-gray-700 leading-relaxed">
+                            Cookies are small text files stored on your device that help us provide a better user experience. We use both session cookies (deleted when you close your browser) and persistent cookies (remain until deleted or expired).
+                        </p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-white border border-gray-200 p-4 shadow-lg">
+                            <h4 class="font-bold text-[#091e65] mb-2">Essential Cookies</h4>
+                            <p class="text-gray-700 text-sm">
+                                Required for basic functionality like login and security.
+                            </p>
+                        </div>
+                        
+                        <div class="bg-white border border-gray-200 p-4 shadow-lg">
+                            <h4 class="font-bold text-red-500 mb-2">Analytics Cookies</h4>
+                            <p class="text-gray-700 text-sm">
+                                Help us understand how you use our platform to improve it.
+                            </p>
+                        </div>
+                        
+                        <div class="bg-white border border-gray-200 p-4 shadow-lg">
+                            <h4 class="font-bold text-gray-700 mb-2">Preference Cookies</h4>
+                            <p class="text-gray-700 text-sm">
+                                Remember your settings and preferences for a better experience.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Children's Privacy -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Children's Privacy</h2>
+                
+                <div class="bg-white border-2 border-red-500 p-6 shadow-lg">
+                    <h3 class="text-xl font-bold text-red-500 mb-4">Age Restrictions</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        AudioX is intended for users aged 13 and older. We do not knowingly collect personal information from children under 13 years of age.
+                    </p>
+                    <p class="text-gray-700 leading-relaxed">
+                        If we become aware that we have collected personal information from a child under 13, we will take steps to delete such information promptly. Parents who believe their child has provided us with personal information should contact us immediately.
+                    </p>
+                </div>
+            </section>
+
+            <!-- International Transfers -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">International Data Transfers</h2>
+                
+                <div class="bg-white border-2 border-[#091e65] p-6 shadow-lg">
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        AudioX is based in Pakistan, but we may use service providers located in other countries. When we transfer your personal information internationally, we ensure appropriate safeguards are in place to protect your data.
+                    </p>
+                    <div class="bg-gray-50 p-4 border-l-4 border-[#091e65]">
+                        <h4 class="font-bold text-[#091e65] mb-2">Safeguards Include:</h4>
+                        <ul class="space-y-1 text-gray-700 text-sm">
+                            <li>• Standard contractual clauses approved by data protection authorities</li>
+                            <li>• Adequacy decisions by relevant authorities</li>
+                            <li>• Certification schemes and codes of conduct</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Retention -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Data Retention</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white border-l-4 border-[#091e65] p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-[#091e65] mb-3">How Long We Keep Your Data</h3>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li>• Account data: Until account deletion</li>
+                            <li>• Listening history: 3 years after last activity</li>
+                            <li>• Payment records: 7 years for tax purposes</li>
+                            <li>• Support communications: 2 years</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white border-l-4 border-red-500 p-6 shadow-lg">
+                        <h3 class="text-lg font-bold text-red-500 mb-3">Deletion Process</h3>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            When you delete your account or request data deletion, we will remove your personal information within 30 days, except where we're required to retain it for legal, regulatory, or security purposes.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Changes to Policy -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold text-[#091e65] mb-6">Changes to This Privacy Policy</h2>
+                
+                <div class="bg-red-500 text-white p-6 shadow-lg">
+                    <h3 class="text-xl font-bold mb-3">Policy Updates</h3>
+                    <p class="text-white leading-relaxed mb-4">
+                        We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or other factors.
+                    </p>
+                    <p class="text-white text-sm">
+                        We will notify you of significant changes via email or through our platform. Your continued use of AudioX after changes become effective constitutes acceptance of the updated policy.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Contact Information -->
+            <section>
+                <div class="bg-gray-50 border border-gray-200 p-6 shadow-lg">
+                    <h3 class="text-2xl font-bold text-[#091e65] mb-4">Questions About Your Privacy?</h3>
+                    <p class="text-gray-700 mb-4 leading-relaxed">
+                        If you have questions about this Privacy Policy, want to exercise your privacy rights, or need to report a privacy concern, please contact our privacy team.
+                    </p>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-bold text-[#091e65] mb-2">Contact Methods:</h4>
+                            <ul class="space-y-1 text-gray-700 text-sm">
+                                <li>• Email: privacy@audiox.pk</li>
+                                <li>• Support: support@audiox.pk</li>
+                                <li>• Phone: +92-XXX-XXXXXXX</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-red-500 mb-2">Response Time:</h4>
+                            <ul class="space-y-1 text-gray-700 text-sm">
+                                <li>• General inquiries: 2-3 business days</li>
+                                <li>• Privacy requests: 5-10 business days</li>
+                                <li>• Urgent matters: 24-48 hours</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex flex-col sm:flex-row gap-4">
+                        <a href="mailto:privacy@audiox.pk" class="bg-[#091e65] hover:bg-blue-800 text-white font-bold px-6 py-3 transition-colors duration-300 text-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            Contact Privacy Team
+                        </a>
+                        <a href="{% url 'AudioXApp:contact_us' %}" class="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 transition-colors duration-300 text-center">
+                            <i class="fas fa-headset mr-2"></i>
+                            General Support
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

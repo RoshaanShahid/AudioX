@@ -1,116 +1,334 @@
-{% extends "user/myprofile.html" %} {# OR your relevant base template for user sections #}
+{% extends "Homepage.html" %} 
 {% load static %}
-{% load humanize %} {# Keep if used for date formatting or other humanization #}
+{% load humanize %}
 
 {% block title %}{{ page_title|default:"Listening History" }} - AudioX{% endblock %}
 
-{% block head_extra %}
-    {{ block.super }}
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-{% endblock %}
-
 {% block content %}
-<div class="bg-white min-h-screen font-sans antialiased text-[#09065] selection:bg-red-100 selection:text-red-700">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
-        <header class="mb-10 md:mb-12 pb-8 border-b-2 border-[#09065]/10">
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#09065] tracking-tight text-center sm:text-left">
-                {{ page_title|default:"My Listening History" }}
-            </h1>
-        </header>
+<!-- ============================================ -->
+<!-- LISTENING HISTORY PAGE - CLEAN PROFESSIONAL DESIGN -->
+<!-- Brand Colors: #091e65 (Primary Blue) & Red -->
+<!-- Clean, Solid, Professional Layout -->
+<!-- ============================================ -->
 
+<div class="min-h-screen bg-gray-50">
+    <!-- ==================== HEADER SECTION ==================== -->
+    <div class="bg-white border-b-2 border-gray-200">
+        <div class="max-w-6xl mx-auto px-6 py-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2" style="color: #091e65;">Listening History</h1>
+                    <p class="text-gray-600 text-lg">Continue where you left off</p>
+                </div>
+                
+                {% if history_items %}
+                <button id="clearHistoryBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Clear History
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="max-w-6xl mx-auto px-6 py-8">
+        
+        <!-- Error Message Display -->
         {% if error_message %}
-            <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-md mb-8" role="alert">
-                <div class="flex">
-                    <div class="py-1"><svg class="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM11 14a1 1 0 1 0-2 0 1 1 0 0 0 2 0zm0-7a1 1 0 0 0-1-1H9a1 1 0 0 0 0 2v3a1 1 0 0 0 1 1h1a1 1 0 1 0 0-2V7z"/></svg></div>
+        <div class="mb-8">
+            <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg">
+                <div class="flex items-start">
+                    <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mr-4 mt-1">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
                     <div>
-                        <p class="font-bold">Error</p>
-                        <p class="text-sm">{{ error_message }}</p>
+                        <h3 class="text-lg font-semibold text-red-800 mb-2">Error</h3>
+                        <p class="text-red-700">{{ error_message }}</p>
                     </div>
                 </div>
             </div>
+        </div>
         {% endif %}
 
         {% if history_items %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
-                {% for item in history_items %}
-                {# Line 61 (approximate, depends on exact template structure above this loop) is the div below #}
-                <div class="history-item-card bg-white rounded-xl border border-[#09065]/10 flex flex-col group 
-                            shadow-[#09065]/5 shadow-lg 
-                            hover:shadow-[#09065]/10 hover:shadow-xl 
-                            transition-all duration-300 ease-in-out transform hover:-translate-y-1">
-                    <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}" class="block aspect-[3/4] overflow-hidden rounded-t-xl">
+        <!-- ==================== AUDIOBOOKS GRID ==================== -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for item in history_items %}
+            {% if item.audiobook and item.audiobook.slug %}
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden border border-gray-200">
+                
+                <!-- Cover Image Section -->
+                <div class="relative aspect-[3/4]">
+                    <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}" class="block h-full">
                         {% if item.audiobook.cover_image %}
-                            <img src="{{ item.audiobook.cover_image.url }}" alt="{{ item.audiobook.title }} Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out">
+                        <img src="{{ item.audiobook.cover_image.url }}" 
+                             alt="{{ item.audiobook.title }}" 
+                             class="w-full h-full object-cover">
                         {% else %}
-                            <div class="w-full h-full bg-[#09065]/5 flex items-center justify-center p-4">
-                                <img src="https://placehold.co/300x400/09065/FFFFFF?text={{ item.audiobook.title|slice:':15'|urlencode|default:'No%20Cover' }}&font=sans"
-                                     alt="{{ item.audiobook.title }} - No Cover Available"
-                                     class="w-auto h-auto max-w-full max-h-full object-contain opacity-70">
+                        <!-- Default Cover Design -->
+                        <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <div class="text-center p-6">
+                                <div class="w-16 h-16 bg-gray-300 rounded-lg flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                                    </svg>
+                                </div>
+                                <p class="font-semibold text-sm text-gray-700">{{ item.audiobook.title|truncatechars:20 }}</p>
                             </div>
+                        </div>
                         {% endif %}
                     </a>
-                    <div class="p-5 flex-grow flex flex-col">
-                        <h2 class="text-lg font-bold text-[#09065] mb-1 line-clamp-2 group-hover:text-red-600 transition-colors duration-150" title="{{ item.audiobook.title }}">
-                            <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}">
-                                {{ item.audiobook.title }}
-                            </a>
-                        </h2>
-                        {% if item.audiobook.author %}
-                            <p class="text-sm text-[#09065]/70 mb-1 line-clamp-1">By: {{ item.audiobook.author }}</p>
-                        {% endif %}
-                        <p class="text-xs text-[#09065]/60 mb-3">Last listened: {{ item.last_listened_at|date:"M d, Y, P" }}</p>
-
-                        {% if item.audiobook.duration_in_seconds > 0 %}
-                        <div class="w-full bg-[#09065]/10 rounded-full h-2 mb-1 relative">
-                            <div class="bg-red-600 h-2 rounded-full" style="width: {{ item.progress_percentage }}%"></div>
-                        </div>
-                        <p class="text-xs text-[#09065]/70 mb-3">
-                            {{ item.progress_percentage }}% complete
-                            {% if item.current_chapter %}
-                                (Chapter: <span class="truncate font-medium" title="{{item.current_chapter.chapter_name}}">{{ item.current_chapter.chapter_name|truncatechars:20 }}</span>)
+                    
+                    <!-- Progress Badge -->
+                    <div class="absolute top-3 right-3">
+                        <span class="bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded">
+                            {% if item.progress_percentage >= 100 %}
+                                Complete
+                            {% elif item.progress_percentage > 0 %}
+                                {{ item.progress_percentage|floatformat:0 }}%
+                            {% else %}
+                                New
                             {% endif %}
-                        </p>
-                        {% else %}
-                        <p class="text-xs text-[#09065]/70 mb-3">
-                            Progress: {{ item.progress_seconds }}s listened
-                            {% if item.current_chapter %}
-                                (Chapter: {{ item.current_chapter.chapter_name|truncatechars:20 }})
-                            {% endif %}
-                        </p>
-                        {% endif %}
-
-                        <div class="mt-auto pt-3">
-                            <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}"
-                               class="w-full block text-center bg-[#09065] hover:bg-[#09065]/90 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#09065]/70">
-                                {% if item.progress_seconds > 0 and item.progress_percentage < 100 %}
-                                    Continue Listening
-                                {% elif item.progress_percentage >= 100 %}
-                                    Listen Again
-                                {% else %}
-                                    Start Listening
-                                {% endif %}
-                            </a>
-                        </div>
+                        </span>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="text-center py-16">
-                <svg class="mx-auto h-20 w-20 text-[#09065]/20 mb-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25V12m0 0L9 15m3-3L15 15m-3-3V6.75m0 0v-3.75c0-.621.504-1.125 1.125-1.125H15M9 3.75c0 .621-.504 1.125-1.125 1.125H6.75M3 12c0-4.142 3.358-7.5 7.5-7.5S18 7.858 18 12a7.5 7.5 0 01-2.086 5.053" />
-                </svg>
-                <h3 class="mt-4 text-2xl font-semibold text-[#09065] mb-3">No Listening History Yet</h3>
-                <p class="mt-1 text-base text-[#09065]/70 mb-8 max-w-md mx-auto">Your recently played audiobooks and your progress will appear here.</p>
-                <div class="mt-6">
-                   <a href="{% url 'AudioXApp:home' %}" 
-                      class="inline-flex items-center px-8 py-3.5 border border-transparent shadow-md text-base font-semibold rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500/70 transition-all duration-150 ease-in-out transform hover:scale-105">
-                      <svg class="w-5 h-5 mr-2.5 -ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
-                      Browse Audiobooks
-                   </a>
+                
+                <!-- Content Section -->
+                <div class="p-4">
+                    <!-- Title and Author -->
+                    <div class="mb-3">
+                        <h3 class="font-bold text-lg mb-1 line-clamp-2" style="color: #091e65;">
+                            <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}" class="hover:underline">
+                                {{ item.audiobook.title }}
+                            </a>
+                        </h3>
+                        {% if item.audiobook.author %}
+                        <p class="text-gray-600 text-sm">by {{ item.audiobook.author }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Last Listened Info -->
+                    <div class="mb-3 text-sm text-gray-500">
+                        <span>Last listened: {{ item.last_listened_at|date:"M d, Y" }}</span>
+                    </div>
+                    
+                    <!-- Current Chapter Info -->
+                    {% if item.current_chapter %}
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-semibold text-gray-600">Currently on</span>
+                            <span class="text-xs font-semibold px-2 py-1 rounded text-white" style="background-color: #091e65;">Ch. {{ item.current_chapter.chapter_order }}</span>
+                        </div>
+                        <p class="text-sm font-medium line-clamp-1" style="color: #091e65;">{{ item.current_chapter.chapter_name }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Continue Button -->
+                    <a href="{% url 'AudioXApp:audiobook_detail' item.audiobook.slug %}?resume_at={{ item.progress_seconds }}{% if item.current_chapter %}&resume_chapter={{ item.current_chapter.chapter_id }}{% endif %}" 
+                       class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        {% if item.progress_seconds > 0 and item.progress_percentage < 100 %}
+                            Continue Listening
+                        {% elif item.progress_percentage >= 100 %}
+                            Listen Again
+                        {% else %}
+                            Start Listening
+                        {% endif %}
+                    </a>
                 </div>
-           </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        
+        {% else %}
+        <!-- ==================== EMPTY STATE ==================== -->
+        <div class="text-center py-16">
+            <div class="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-6">
+                <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            
+            <h3 class="text-2xl font-bold mb-4" style="color: #091e65;">No Listening History</h3>
+            <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                Start exploring our audiobook collection and your progress will appear here.
+            </p>
+            
+            <a href="{% url 'AudioXApp:home' %}" 
+               class="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200 inline-flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                Browse Audiobooks
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>
-{% endblock %}
+
+<!-- ==================== CLEAR HISTORY MODAL ==================== -->
+<div id="clearHistoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div id="modalContent" class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <!-- Modal Header -->
+        <div class="text-white p-6 rounded-t-lg" style="background-color: #091e65;">
+            <div class="flex items-center">
+                <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mr-4">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold">Clear Listening History</h3>
+                    <p class="text-blue-100">This action cannot be undone</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <h4 class="text-lg font-bold text-gray-900 mb-2">Are you sure?</h4>
+                <p class="text-gray-600">All your listening progress and history records will be permanently deleted.</p>
+            </div>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex space-x-3">
+            <button id="cancelClear" class="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors duration-200">
+                Cancel
+            </button>
+            <button id="confirmClear" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-200">
+                Clear History
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal Elements
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    const modal = document.getElementById('clearHistoryModal');
+    const modalContent = document.getElementById('modalContent');
+    const cancelBtn = document.getElementById('cancelClear');
+    const confirmBtn = document.getElementById('confirmClear');
+
+    // Show Modal Function
+    function showModal() {
+        modal.classList.remove('hidden');
+    }
+
+    // Hide Modal Function
+    function hideModal() {
+        modal.classList.add('hidden');
+    }
+
+    // Event Listeners
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showModal();
+        });
+    }
+
+    cancelBtn.addEventListener('click', hideModal);
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            hideModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            hideModal();
+        }
+    });
+
+    // Confirm Clear History
+    confirmBtn.addEventListener('click', function() {
+        // Show loading state
+        confirmBtn.innerHTML = `
+            <svg class="animate-spin w-4 h-4 mr-2 inline" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Clearing...
+        `;
+        confirmBtn.disabled = true;
+
+        // Make API call to clear history
+        fetch('{% url "AudioXApp:clear_listening_history" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                confirmBtn.innerHTML = `
+                    <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Cleared!
+                `;
+                
+                setTimeout(() => {
+                    hideModal();
+                    location.reload();
+                }, 1500);
+            } else {
+                throw new Error(data.message || 'Failed to clear history');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            confirmBtn.innerHTML = 'Error - Try Again';
+            confirmBtn.className = 'flex-1 px-4 py-2 bg-red-800 text-white font-semibold rounded-lg';
+            
+            setTimeout(() => {
+                confirmBtn.innerHTML = 'Clear History';
+                confirmBtn.className = 'flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-200';
+                confirmBtn.disabled = false;
+            }, 3000);
+        });
+    });
+
+    // Add CSS for line-clamp utility
+    const style = document.createElement('style');
+    style.textContent = `
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .line-clamp-1 {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock content %}

@@ -1,468 +1,427 @@
-{% extends "homepage.html" %}
+{% extends "Homepage.html" %}
 {% load static %}
 
 {% block content %}
-<div class="flex flex-col md:flex-row font-sans h-full">
+<!-- ============================================================================ -->
+<!-- DOCUMENT TO AUDIO FEATURE - CLEAN MODERN DESIGN                             -->
+<!-- Colors: Solid #091e65 and Red Only - No Gradients, Clean & Elegant         -->
+<!-- ============================================================================ -->
 
-    <aside class="w-full md:w-1/3 lg:w-2/5 bg-[#091e65] text-white p-8 sm:p-12 flex flex-col justify-between overflow-y-auto">
-        <div>
-            <div class="mb-12">
-                <a href="{% url 'AudioXApp:home' %}" class="inline-flex items-center space-x-3 mb-3"> {# Ensure 'AudioXApp:home' is your correct homepage URL name #}
-                    <span class="bg-white/20 p-3 rounded-xl">
-                        <svg class="h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+<div class="min-h-screen bg-gray-50">
+    
+    <!-- ======================================== -->
+    <!-- USAGE STATUS BANNER (FREE USERS ONLY)   -->
+    <!-- ======================================== -->
+    {% if user.subscription_type == 'FR' %}
+    <div class="bg-red-600 border-b border-red-700">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-red-700 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                         </svg>
-                    </span>
-                    <h1 class="text-4xl font-extrabold tracking-tight">AudioX</h1>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">FREE Plan Usage</h3>
+                        <p class="text-red-100">
+                            <span id="usage-remaining" class="font-semibold">
+                                {% if usage_status.document_conversions %}{{ usage_status.document_conversions.remaining|default:0 }}{% else %}{{ user.get_remaining_document_conversions|default:0 }}{% endif %}
+                            </span> 
+                            of 
+                            <span class="font-semibold">
+                                {% if usage_status.document_conversions %}{{ usage_status.document_conversions.limit|default:3 }}{% else %}3{% endif %}
+                            </span> 
+                            conversions remaining this month
+                        </p>
+                    </div>
+                </div>
+                <a href="{% url 'AudioXApp:buycoins' %}" class="inline-flex items-center px-6 py-3 bg-white text-red-600 font-bold rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Upgrade to Premium
                 </a>
-                <p class="text-lg text-white/80 leading-relaxed">
-                    Your personal Document-to-Audio suite. Convert, listen, and manage your documents effortlessly.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ======================================== -->
+    <!-- HERO SECTION                             -->
+    <!-- ======================================== -->
+    <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+            <div class="text-center">
+                <!-- Main Icon -->
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-audiox-blue rounded-xl mb-8">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                    </svg>
+                </div>
+                
+                <!-- Main Title -->
+                <h1 class="text-5xl md:text-6xl font-bold text-audiox-blue mb-6">
+                    Document to Audio Converter
+                </h1>
+                
+                <!-- Subtitle -->
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-12">
+                    Transform your documents into high-quality audio with AI-powered narration. 
+                    Support for PDF, DOC, DOCX, and image files.
                 </p>
+                
+                <!-- Feature Pills -->
+                <div class="flex flex-wrap justify-center items-center gap-4">
+                    <div class="bg-gray-100 text-gray-700 px-6 py-2 rounded-full font-semibold">
+                        PDF • DOC • DOCX • Images
+                    </div>
+                    <div class="bg-red-600 text-white px-6 py-2 rounded-full font-semibold">
+                        AI Powered
+                    </div>
+                    <div class="bg-gray-100 text-gray-700 px-6 py-2 rounded-full font-semibold">
+                        Instant Preview
+                    </div>
+                    {% if user.subscription_type == 'PR' %}
+                    <div class="bg-audiox-blue text-white px-6 py-2 rounded-full font-semibold">
+                        PREMIUM
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================== -->
+    <!-- MAIN CONTENT AREA                       -->
+    <!-- ======================================== -->
+    <div class="max-w-4xl mx-auto px-6 lg:px-8 py-12">
+        
+        <!-- ======================================== -->
+        <!-- STEP 1: UPLOAD & CONFIGURE              -->
+        <!-- ======================================== -->
+        <div class="mb-16">
+            <!-- Step Header -->
+            <div class="flex items-center mb-8">
+                <div class="w-10 h-10 bg-red-600 text-white rounded-lg flex items-center justify-center font-bold text-lg mr-4">
+                    1
+                </div>
+                <h2 class="text-3xl font-bold text-audiox-blue">Upload & Configure</h2>
             </div>
 
-            <div class="space-y-6">
-                <div class="flex items-start space-x-3">
-                    <svg class="h-7 w-7 text-white/90 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.5 3.75a2.25 2.25 0 00-2.25 2.25v12a2.25 2.25 0 002.25 2.25h3a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25h-3zm-2.25 2.25V18h7.5V6H8.25zm6.75-1.5h-3a.75.75 0 000 1.5h3a.75.75 0 000-1.5z" clip-rule="evenodd" /></svg>
-                    <div>
-                        <h3 class="text-xl font-semibold">Simple Upload</h3>
-                        <p class="text-white/70 text-sm">Easily select your PDF, DOC, or DOCX document.</p>
-                    </div>
+            <!-- Main Upload Card -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <!-- Card Header -->
+                <div class="bg-audiox-blue px-8 py-6">
+                    <h3 class="text-2xl font-bold text-white mb-2">Document Settings</h3>
+                    <p class="text-blue-100">Choose your document and configure audio preferences</p>
                 </div>
-                <div class="flex items-start space-x-3">
-                    <svg class="h-7 w-7 text-white/90 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 3.75A1.5 1.5 0 006 5.25v13.5A1.5 1.5 0 007.5 20.25h9a1.5 1.5 0 001.5-1.5V5.25A1.5 1.5 0 0016.5 3.75h-9zm-1.5 1.5a3 3 0 013-3h9a3 3 0 013 3v13.5a3 3 0 01-3 3h-9a3 3 0 01-3-3V5.25z" /><path d="M8.25 7.5a.75.75 0 01.75-.75h6a.75.75 0 010 1.5h-6a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H9z" /></svg>
-                    <div>
-                        <h3 class="text-xl font-semibold">Language & Narrator</h3>
-                        <p class="text-white/70 text-sm">Choose language and preferred narrator voice.</p>
+
+                <!-- Form Content -->
+                <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:general_generate_audio_from_document' %}" class="p-8 space-y-8">
+                    {% csrf_token %}
+                    
+                    <!-- File Upload Section -->
+                    <div class="space-y-4">
+                        <label class="block text-xl font-bold text-audiox-blue">
+                            Document File
+                            <span class="text-red-600 ml-1">*</span>
+                        </label>
+                        
+                        <!-- Upload Area -->
+                        <div class="relative">
+                            <div id="fileUploadArea" class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-audiox-blue transition-colors duration-200 bg-gray-50 cursor-pointer">
+                                <div class="w-16 h-16 bg-audiox-blue rounded-lg flex items-center justify-center mx-auto mb-6">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-2xl font-bold text-audiox-blue mb-3">Drop your document here</h4>
+                                <p class="text-lg text-gray-600 mb-6">or click to browse files</p>
+                                <div class="inline-flex items-center bg-red-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-red-700 transition-colors duration-200">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    Choose File
+                                </div>
+                                <p class="text-sm text-gray-500 mt-4 font-medium">
+                                    Supported: PDF, DOC, DOCX, JPG, PNG (Max 10MB)
+                                </p>
+                            </div>
+                            <!-- Hidden File Input -->
+                            <input type="file" id="{{ form.document_file.id_for_label }}" name="{{ form.document_file.name }}" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+                        </div>
+                        
+                        <!-- File Selection Display -->
+                        <div id="fileSelectionDisplay" class="hidden bg-green-50 border-2 border-green-200 rounded-lg p-6">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-grow">
+                                    <h4 class="text-lg font-bold text-green-800 mb-2">File Selected Successfully!</h4>
+                                    <div class="space-y-1">
+                                        <p class="text-green-700"><span class="font-semibold">Filename:</span> <span id="selectedFileName">-</span></p>
+                                        <p class="text-green-700"><span class="font-semibold">File Size:</span> <span id="selectedFileSize">-</span></p>
+                                    </div>
+                                </div>
+                                <button type="button" id="removeFileBtn" class="text-green-600 hover:text-green-800 p-2 hover:bg-green-100 rounded-lg transition-colors duration-200">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- File Upload Errors -->
+                        <div class="text-red-600 font-semibold error-message-file">
+                            {% if form.document_file.errors %}
+                                {% for error in form.document_file.errors %}
+                                    <p class="bg-red-50 border border-red-200 rounded-lg p-3">{{ error }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
                     </div>
+
+                    <!-- Language & Voice Selection -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Language Selection -->
+                        <div class="space-y-4">
+                            <label class="block text-xl font-bold text-audiox-blue">
+                                Audio Language
+                                <span class="text-red-600 ml-1">*</span>
+                            </label>
+                            <div class="relative">
+                                <select id="{{ form.language.id_for_label }}" name="{{ form.language.name }}" class="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-lg bg-white focus:border-audiox-blue focus:ring-2 focus:ring-blue-100 transition-all duration-200 appearance-none cursor-pointer font-semibold text-audiox-blue" required>
+                                    <option value="" class="text-gray-400">Select Language</option>
+                                    {% for value, label in form.language.field.choices %}
+                                        {% if value %}
+                                            <option value="{{ value }}" class="text-audiox-blue">{{ label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="text-red-600 font-semibold error-message-lang">
+                                {% if form.language.errors %}
+                                    {% for error in form.language.errors %}
+                                        <p class="bg-red-50 border border-red-200 rounded-lg p-3">{{ error }}</p>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Narrator Voice Selection -->
+                        <div id="narratorGenderContainer" class="space-y-4 hidden">
+                            <label class="block text-xl font-bold text-audiox-blue">
+                                Narrator Voice
+                                <span id="narratorGenderRequiredAsterisk" class="text-red-600 ml-1 hidden">*</span>
+                            </label>
+                            <div class="relative">
+                                <select id="{{ form.narrator_gender.id_for_label }}" name="{{ form.narrator_gender.name }}" class="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-lg bg-white focus:border-audiox-blue focus:ring-2 focus:ring-blue-100 transition-all duration-200 appearance-none cursor-pointer font-semibold text-audiox-blue">
+                                    <option value="" class="text-gray-400">Select Voice</option>
+                                    {% for value, label in form.narrator_gender.field.choices %}
+                                        {% if value %}
+                                            <option value="{{ value }}" class="text-audiox-blue">{{ label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="text-red-600 font-semibold error-message-gender">
+                                {% if form.narrator_gender.errors %}
+                                    {% for error in form.narrator_gender.errors %}
+                                        <p class="bg-red-50 border border-red-200 rounded-lg p-3">{{ error }}</p>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Errors -->
+                    <div class="text-red-600 font-semibold error-message-nonfield">
+                        {% if form.non_field_errors %}
+                            {% for error in form.non_field_errors %}
+                                <p class="bg-red-50 border border-red-200 rounded-lg p-3">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Generate Button -->
+                    <div class="pt-4">
+                        <button type="submit" id="convertButton" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xl">
+                            <div class="flex items-center justify-center space-x-3">
+                                <svg class="w-6 h-6 button-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                                </svg>
+                                <span class="button-text">Generate Audio</span>
+                                <div class="button-loader hidden">
+                                    <div class="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ======================================== -->
+        <!-- STEP 2: AUDIO PREVIEW & DOWNLOAD        -->
+        <!-- ======================================== -->
+        <div id="audioPreviewSection" class="hidden mb-16">
+            <!-- Step Header -->
+            <div class="flex items-center mb-8">
+                <div class="w-10 h-10 bg-red-600 text-white rounded-lg flex items-center justify-center font-bold text-lg mr-4">
+                    2
                 </div>
-                <div class="flex items-start space-x-3">
-                    <svg class="h-7 w-7 text-white/90 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm14.024-.983a1.125 1.125 0 010 1.966l-5.603 3.113A1.125 1.125 0 019 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113z" clip-rule="evenodd" /></svg>
-                    <div>
-                        <h3 class="text-xl font-semibold">Instant Audio</h3>
-                        <p class="text-white/70 text-sm">Listen directly or download your audio file.</p>
+                <h2 class="text-3xl font-bold text-audiox-blue">Preview & Download</h2>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <!-- Card Header -->
+                <div class="bg-green-600 px-8 py-6">
+                    <h3 class="text-2xl font-bold text-white mb-2">🎉 Your Audio is Ready!</h3>
+                    <p class="text-green-100">Preview your audio and customize the download</p>
+                </div>
+
+                <div class="p-8 space-y-8">
+                    <!-- Audio Player Section -->
+                    <div class="bg-gray-50 rounded-lg p-8 border border-gray-200">
+                        <div class="flex items-center justify-center mb-6">
+                            <div class="w-20 h-20 bg-audiox-blue rounded-full flex items-center justify-center">
+                                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <audio id="audioPlayer" controls class="w-full h-12 rounded-lg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+
+                    <!-- Custom Filename Section -->
+                    <div class="space-y-4">
+                        <label for="customFilename" class="block text-xl font-bold text-audiox-blue">
+                            Custom Filename (Optional)
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="customFilename" placeholder="Enter custom filename (without extension)" class="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-lg bg-white focus:border-audiox-blue focus:ring-2 focus:ring-blue-100 transition-all duration-200 font-semibold text-audiox-blue pr-16" />
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                <span class="text-gray-600 font-bold">.mp3</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">Leave empty to use the original document name</p>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="space-y-4">
+                        <!-- Download Button -->
+                        <button type="button" id="downloadAudioBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg transition-colors duration-200 text-xl">
+                            <div class="flex items-center justify-center space-x-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span>Download Audio File</span>
+                            </div>
+                        </button>
+
+                        <!-- Generate Another Button -->
+                        <button type="button" id="generateAnotherBtn" class="w-full bg-audiox-blue hover:bg-blue-800 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200">
+                            <div class="flex items-center justify-center space-x-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                <span>Generate Another Audio</span>
+                            </div>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-        <footer class="mt-12 text-center text-sm text-white/60">
-            <p>&copy; {% now "Y" %} AudioXApp. All rights reserved.</p>
-            <p>An Innovation by AudioX.</p>
-        </footer>
-    </aside>
 
-    <main class="w-full md:w-2/3 lg:w-3/5 bg-white flex-1 p-8 sm:p-12 lg:p-16 overflow-y-auto">
-        <header class="mb-10 md:mb-12">
-            <h2 class="text-4xl font-bold text-gray-800">Generate Audio from Document</h2>
-            <p class="text-lg text-gray-500 mt-2">Upload your PDF, DOC, or DOCX document and convert it to audio.</p>
-        </header>
-
-        <section id="uploadSection" class="mb-12">
-            <div class="flex items-center mb-6">
-                <span class="flex items-center justify-center w-10 h-10 border-2 border-[#091e65] text-[#091e65] rounded-lg text-xl font-bold mr-4">1</span>
-                <h3 class="text-2xl font-semibold text-gray-700">Upload & Configure</h3>
-            </div>
-            {# The form action points to the URL name for the view that handles GET and POST #}
-            <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'AudioXApp:creator_generate_audio_from_document' %}" class="space-y-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
-                {% csrf_token %}
-                <div>
-                    <label for="{{ form.document_file.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                        {{ form.document_file.label|default:"Document (PDF, DOC, DOCX)" }}
-                        <span class="text-red-500">*</span>
-                    </label>
-                    {{ form.document_file }} {# Renders the file input field #}
-                    <script>
-                        // Apply styling to Django form field if needed, or rely on global styles
-                        var fileInput = document.getElementById("{{ form.document_file.id_for_label }}");
-                        if (fileInput) {
-                            fileInput.className = 'block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:border-[#091e65] focus:ring-2 focus:ring-[#091e65]/50 file:mr-4 file:py-2.5 file:px-5 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#091e65] file:text-white hover:file:bg-[#0d2a8a] file:transition-colors file:duration-150 p-1';
-                        }
-                    </script>
-                    {% if form.document_file.help_text %}
-                        <p class="text-xs text-gray-500 mt-1.5">{{ form.document_file.help_text }}</p>
-                    {% endif %}
-                    <div class="text-red-600 text-xs font-medium mt-1.5 error-message-file">
-                        {% if form.document_file.errors %}
-                            {% for error in form.document_file.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        {% endif %}
+        <!-- ======================================== -->
+        <!-- ERROR MESSAGE DISPLAY                   -->
+        <!-- ======================================== -->
+        <div id="generalErrorMessage" class="hidden mb-8">
+            <div class="bg-red-50 border-2 border-red-200 rounded-lg p-6">
+                <div class="flex items-start space-x-4">
+                    <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
                     </div>
-                </div>
-
-                <div>
-                    <label for="{{ form.language.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                        {{ form.language.label|default:"Audio Language" }}
-                        <span class="text-red-500">*</span>
-                    </label>
-                    <div class="relative">
-                        {{ form.language }} {# Renders the language select field #}
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
-                        </div>
+                    <div>
+                        <h4 class="text-lg font-bold text-red-800 mb-2">Error Occurred</h4>
+                        <p id="generalErrorTextContent" class="text-red-700 font-medium"></p>
                     </div>
-                    <script>
-                        var langSelect = document.getElementById("{{ form.language.id_for_label }}");
-                        if (langSelect) {
-                            langSelect.className = 'block w-full p-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] appearance-none pr-10';
-                        }
-                    </script>
-                    <div class="text-red-600 text-xs font-medium mt-1.5 error-message-lang">
-                        {% if form.language.errors %}
-                            {% for error in form.language.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div id="narratorGenderContainer" class="hidden"> {# Initially hidden, JS will show/hide #}
-                    <label for="{{ form.narrator_gender.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                        {{ form.narrator_gender.label|default:"Narrator Gender" }}
-                        <span id="narratorGenderRequiredAsterisk" class="text-red-500 hidden">*</span> {# JS will show this if field becomes required #}
-                    </label>
-                    <div class="relative">
-                        {{ form.narrator_gender }} {# Renders the gender select field #}
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.29a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
-                        </div>
-                    </div>
-                    <script>
-                        var genderSelectEl = document.getElementById("{{ form.narrator_gender.id_for_label }}");
-                        if (genderSelectEl) {
-                            genderSelectEl.className = 'block w-full p-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] appearance-none pr-10';
-                        }
-                    </script>
-                    <div class="text-red-600 text-xs font-medium mt-1.5 error-message-gender">
-                        {% if form.narrator_gender.errors %}
-                            {% for error in form.narrator_gender.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="text-red-600 text-sm font-medium error-message-nonfield">
-                    {% if form.non_field_errors %} {# Display non-field errors (e.g., from form.clean()) #}
-                        {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-
-                <button type="submit" id="convertButton"
-                        class="w-full flex items-center justify-center bg-white text-[#091e65] border-2 border-[#091e65] hover:bg-[#091e65] hover:text-white font-semibold py-3 px-6 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#091e65]/30 transition-all duration-200 ease-in-out transform active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed text-base group">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2.5 button-icon transition-colors duration-200 ease-in-out">
-                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                    </svg>
-                    <span class="button-text">Generate Audio</span>
-                    <svg class="button-loader hidden animate-spin ml-3 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </button>
-            </form>
-        </section>
-
-        <section id="generatedAudioSection" class="mb-12 hidden">
-            <div class="flex items-center mb-6">
-                <span class="flex items-center justify-center w-10 h-10 border-2 border-[#091e65] text-[#091e65] rounded-lg text-xl font-bold mr-4">2</span>
-                <h3 class="text-2xl font-semibold text-gray-700">Listen & Finalize</h3>
-            </div>
-            <div class="p-6 bg-gray-50 rounded-xl border border-gray-200 space-y-6">
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                    <audio id="audioPlayer" controls class="w-full rounded-md"></audio>
-                </div>
-                <div>
-                    <label for="audioDurationDisplay" class="block text-sm font-medium text-gray-700 mb-1">Audio Duration:</label>
-                    <p id="audioDurationDisplay" class="text-base text-gray-700 font-semibold bg-white p-3 rounded-md border border-gray-200 inline-flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2 text-gray-400"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>
-                        Calculating...
-                    </p>
-                </div>
-                <div>
-                    <label for="chapterNameInput" class="block text-sm font-medium text-gray-700 mb-2">Audio Filename (for download):</label>
-                    <input type="text" id="chapterNameInput" class="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#091e65]/50 focus:border-[#091e65] bg-white" placeholder="e.g., My_Audio_Chapter_1">
                 </div>
             </div>
-        </section>
-
-        <section id="downloadButtonSection" class="mt-6 hidden"> {# Added mt-6 for spacing #}
-            <button id="downloadButton"
-                    class="w-full flex items-center justify-center bg-[#091e65] text-white hover:bg-[#0d2a8a] font-semibold py-3.5 px-6 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#091e65]/30 transition-colors duration-200 ease-in-out text-base">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2.5">
-                    <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" />
-                    <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
-                </svg>
-                Download Audio
-            </button>
-        </section>
-
-        {# General error message display area (for non-field errors or fallback) #}
-        <div id="generalErrorMessage" class="mt-8 text-red-700 font-medium hidden p-4 bg-red-50 border border-red-300 rounded-lg text-sm items-center justify-start">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2.5 flex-shrink-0">
-                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-            </svg>
-            <span id="generalErrorTextContent" class="flex-1"></span>
         </div>
-    </main>
+    </div>
+
+    <!-- ======================================== -->
+    <!-- FEATURES SHOWCASE                       -->
+    <!-- ======================================== -->
+    <div class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 py-16">
+            <!-- Section Header -->
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-audiox-blue mb-4">Why Choose Our Converter?</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Experience premium document-to-audio conversion with cutting-edge AI technology</p>
+            </div>
+
+            <!-- Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Feature 1: Speed -->
+                <div class="bg-gray-50 rounded-xl p-8 text-center border border-gray-200">
+                    <div class="w-16 h-16 bg-red-600 rounded-lg flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-audiox-blue mb-4">Lightning Fast</h3>
+                    <p class="text-gray-600">Convert documents to premium audio in seconds with our optimized AI processing engine</p>
+                </div>
+
+                <!-- Feature 2: Quality -->
+                <div class="bg-gray-50 rounded-xl p-8 text-center border border-gray-200">
+                    <div class="w-16 h-16 bg-audiox-blue rounded-lg flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138 3.42 3.42 0 001.946-.806z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-audiox-blue mb-4">Premium Quality</h3>
+                    <p class="text-gray-600">Professional-grade AI voices with natural pronunciation and crystal-clear audio output</p>
+                </div>
+
+                <!-- Feature 3: Security -->
+                <div class="bg-gray-50 rounded-xl p-8 text-center border border-gray-200">
+                    <div class="w-16 h-16 bg-red-600 rounded-lg flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-audiox-blue mb-4">Secure & Private</h3>
+                    <p class="text-gray-600">Your documents are processed securely and deleted immediately after conversion</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('uploadForm');
-    const audioPlayer = document.getElementById('audioPlayer');
-    
-    // Specific error message divs next to fields (or use Django's default rendering)
-    const fileErrorDiv = document.querySelector('.error-message-file');
-    const langErrorDiv = document.querySelector('.error-message-lang');
-    const genderErrorDiv = document.querySelector('.error-message-gender');
-    const nonFieldErrorDiv = document.querySelector('.error-message-nonfield'); // For form.non_field_errors()
-
-    // General error display area
-    const generalErrorMessageDiv = document.getElementById('generalErrorMessage');
-    const generalErrorTextContentSpan = document.getElementById('generalErrorTextContent');
-
-    const convertButton = document.getElementById('convertButton');
-    const buttonText = convertButton.querySelector('.button-text');
-    const buttonLoader = convertButton.querySelector('.button-loader');
-    const buttonIcon = convertButton.querySelector('.button-icon');
-
-    const generatedAudioSection = document.getElementById('generatedAudioSection');
-    const audioDurationElement = document.getElementById('audioDurationDisplay');
-    const chapterNameInput = document.getElementById('chapterNameInput'); // Filename input for download
-
-    const downloadButtonSection = document.getElementById('downloadButtonSection');
-    const downloadButton = document.getElementById('downloadButton');
-
-    const languageSelect = document.getElementById("{{ form.language.id_for_label }}"); // Use Django form field ID
-    const narratorGenderContainer = document.getElementById('narratorGenderContainer');
-    const narratorGenderSelect = document.getElementById("{{ form.narrator_gender.id_for_label }}"); // Use Django form field ID
-    const narratorGenderRequiredAsterisk = document.getElementById('narratorGenderRequiredAsterisk');
-
-    const narratorDisplayNames = {
-        'English': { 
-            male: "Male (Engaging, Clear)",
-            female: "Female (Expressive, Warm)"
-        },
-        'Urdu': { 
-            male: "Male (Asad - Standard)",
-            female: "Female (Uzma - Standard)"
-        }
-    };
-
-    let currentAudioBlob = null; 
-    let currentAudioUrl = null;  
-
-    function clearAllErrorMessages() {
-        if (fileErrorDiv) fileErrorDiv.textContent = '';
-        if (langErrorDiv) langErrorDiv.textContent = '';
-        if (genderErrorDiv) genderErrorDiv.textContent = '';
-        if (nonFieldErrorDiv) nonFieldErrorDiv.innerHTML = '';
-
-        if (generalErrorMessageDiv) {
-            generalErrorMessageDiv.classList.add('hidden');
-            generalErrorMessageDiv.classList.remove('flex');
-        }
-        if (generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = '';
-    }
-
-    function displayFieldError(fieldKey, errors) {
-        const errorContent = errors.map(err => err.message || err).join(' ');
-        if (fieldKey === 'document_file' && fileErrorDiv) fileErrorDiv.textContent = errorContent;
-        else if (fieldKey === 'language' && langErrorDiv) langErrorDiv.textContent = errorContent;
-        else if (fieldKey === 'narrator_gender' && genderErrorDiv) genderErrorDiv.textContent = errorContent;
-        else if (fieldKey === '__all__' && nonFieldErrorDiv) {
-            nonFieldErrorDiv.innerHTML = errors.map(err => `<p>${err.message || err}</p>`).join('');
-        }
-        else { 
-            if (generalErrorTextContentSpan) {
-                generalErrorTextContentSpan.textContent = (generalErrorTextContentSpan.textContent ? generalErrorTextContentSpan.textContent + '; ' : '') + `${fieldKey}: ${errorContent}`;
-            }
-            if (generalErrorMessageDiv) {
-                generalErrorMessageDiv.classList.remove('hidden');
-                generalErrorMessageDiv.classList.add('flex');
-            }
-        }
-    }
-
-    function updateNarratorGenderOptions() {
-        const selectedLang = languageSelect.value; 
-        const genderOptionsConfig = narratorDisplayNames[selectedLang]; 
-
-        for (let i = 0; i < narratorGenderSelect.options.length; i++) {
-            const option = narratorGenderSelect.options[i];
-            if (option.value === "") continue; 
-
-            if (genderOptionsConfig && genderOptionsConfig[option.value]) {
-                option.textContent = genderOptionsConfig[option.value];
-            } else { 
-                option.textContent = option.value.charAt(0).toUpperCase() + option.value.slice(1); 
-            }
-        }
-    }
-
-    function toggleNarratorGenderField() {
-        const selectedLang = languageSelect.value; 
-        const languagesRequiringGender = ['English', 'Urdu']; 
-
-        if (languagesRequiringGender.includes(selectedLang)) {
-            narratorGenderContainer.classList.remove('hidden');
-            narratorGenderSelect.required = true; 
-            if (narratorGenderRequiredAsterisk) narratorGenderRequiredAsterisk.classList.remove('hidden');
-            updateNarratorGenderOptions();
-        } else {
-            narratorGenderContainer.classList.add('hidden');
-            narratorGenderSelect.required = false;
-            narratorGenderSelect.value = ''; 
-            if (narratorGenderRequiredAsterisk) narratorGenderRequiredAsterisk.classList.add('hidden');
-        }
-    }
-
-    if (languageSelect && narratorGenderContainer && narratorGenderSelect) {
-        languageSelect.addEventListener('change', toggleNarratorGenderField);
-        toggleNarratorGenderField(); 
-    }
-
-    async function processDocumentForAudio(event) {
-        event.preventDefault();
-        const formData = new FormData(form);
-        clearAllErrorMessages();
-
-        generatedAudioSection.classList.add('hidden');
-        downloadButtonSection.classList.add('hidden');
-        if(audioPlayer) audioPlayer.classList.add('hidden');
-        if (currentAudioUrl && currentAudioUrl.startsWith('blob:')) { URL.revokeObjectURL(currentAudioUrl); }
-        if(audioPlayer) audioPlayer.src = '';
-        currentAudioBlob = null; currentAudioUrl = null;
-        
-        const durationIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2 text-gray-400"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>`;
-        if(audioDurationElement) {
-            audioDurationElement.innerHTML = `${durationIconSvg} Calculating...`;
-            audioDurationElement.className = 'text-base text-gray-700 font-semibold bg-white p-3 rounded-md border border-gray-200 inline-flex items-center';
-        }
-
-        if(buttonText) buttonText.classList.add('hidden');
-        if(buttonIcon) buttonIcon.classList.add('hidden');
-        if(buttonLoader) buttonLoader.classList.remove('hidden');
-        convertButton.disabled = true;
-        convertButton.classList.add('disabled:opacity-60', 'disabled:cursor-not-allowed');
-
-        try {
-            const response = await fetch(form.action, {
-                method: form.method, body: formData, headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
-            });
-
-            const data = await response.json(); // Always expect JSON now
-
-            if (response.ok && data.status === 'success') {
-                currentAudioUrl = data.audio_url; // Store the server URL
-                if(audioPlayer) {
-                    audioPlayer.src = currentAudioUrl;
-                    audioPlayer.classList.remove('hidden');
-                }
-                generatedAudioSection.classList.remove('hidden');
-                downloadButtonSection.classList.remove('hidden');
-                
-                if(audioPlayer && audioDurationElement) {
-                    audioPlayer.onloadedmetadata = () => {
-                        const duration = audioPlayer.duration;
-                        audioDurationElement.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
-                        if (isFinite(duration)) {
-                            const minutes = Math.floor(duration / 60);
-                            const seconds = Math.floor(duration % 60).toString().padStart(2, '0');
-                            audioDurationElement.innerHTML = `${durationIconSvg} ${minutes} min ${seconds} sec`;
-                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-green-50 text-green-700 border-green-200';
-                        } else {
-                            audioDurationElement.innerHTML = `${durationIconSvg} Duration N/A`;
-                            audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-yellow-50 text-yellow-700 border-yellow-200';
-                        }
-                    };
-                    audioPlayer.onerror = () => {
-                        audioDurationElement.innerHTML = `${durationIconSvg} Error loading audio`;
-                        audioDurationElement.className = 'text-base font-semibold p-3 rounded-md border inline-flex items-center bg-red-50 text-red-700 border-red-200';
-                    }
-                }
-
-                let defaultFilename = "generated_audio";
-                if (data.filename) { 
-                    defaultFilename = data.filename.substring(0, data.filename.lastIndexOf('.'));
-                } else { 
-                    const fileInputField = document.getElementById("{{ form.document_file.id_for_label }}");
-                    if (fileInputField && fileInputField.files && fileInputField.files[0]) {
-                        const completeFileName = fileInputField.files[0].name;
-                        const lastDotIndex = completeFileName.lastIndexOf('.');
-                        if (lastDotIndex > 0) {
-                            defaultFilename = completeFileName.substring(0, lastDotIndex).replace(/[\s_]+/g, '_').replace(/[^\w-]/g, '');
-                        } else {
-                            defaultFilename = completeFileName.replace(/[\s_]+/g, '_').replace(/[^\w-]/g, '');
-                        }
-                    }
-                }
-                if (chapterNameInput) chapterNameInput.value = defaultFilename;
-
-            } else { 
-                clearAllErrorMessages();
-                let backendErrorMsg = data.message || `Error (Status: ${response.status}). Please check the form and try again.`;
-                if (data.errors) { 
-                    for (const field in data.errors) {
-                        displayFieldError(field, data.errors[field]);
-                    }
-                    // Only show general if no specific field errors were shown from data.errors, or if it's a non_field_error
-                    if (!Object.keys(data.errors).some(k => k !== '__all__') || data.errors['__all__']) {
-                         if (generalErrorTextContentSpan && !data.errors['__all__']) generalErrorTextContentSpan.textContent = backendErrorMsg; // Avoid duplicating __all__
-                         if (generalErrorMessageDiv && !data.errors['__all__']) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
-                    }
-                } else {
-                    if (generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = backendErrorMsg;
-                    if (generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
-                }
-            }
-
-        } catch (error) {
-            console.error('Network or Fetch error:', error);
-            clearAllErrorMessages();
-            if(generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = 'A network error occurred. Please check your connection and try again. Details: ' + error.message;
-            if(generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
-        } finally {
-            if(buttonText) buttonText.classList.remove('hidden');
-            if(buttonIcon) buttonIcon.classList.remove('hidden');
-            if(buttonLoader) buttonLoader.classList.add('hidden');
-            convertButton.disabled = false;
-            convertButton.classList.remove('disabled:opacity-60', 'disabled:cursor-not-allowed');
-        }
-    }
-
-    if (form) {
-        form.addEventListener('submit', processDocumentForAudio);
-    }
-
-    if (downloadButton) {
-        downloadButton.addEventListener('click', () => {
-            if (currentAudioUrl) { 
-                const link = document.createElement('a');
-                link.href = currentAudioUrl; 
-
-                let chapterName = chapterNameInput.value.trim().replace(/[\s]+/g, '_').replace(/[^\w-]/g, '');
-                if (!chapterName) chapterName = "generated_audio_output";
-                
-                let extension = '.mp3'; 
-                // Try to infer extension from the URL if currentAudioBlob is not set (it won't be from server URL)
-                if (currentAudioUrl.includes('.')) {
-                    const urlExt = currentAudioUrl.substring(currentAudioUrl.lastIndexOf('.'));
-                    if (['.mp3', '.wav', '.ogg', '.m4a'].includes(urlExt.toLowerCase())) { // Check against common extensions
-                        extension = urlExt;
-                    }
-                }
-                link.download = `${chapterName}${extension}`;
-                document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            } else {
-                if(generalErrorTextContentSpan) generalErrorTextContentSpan.textContent = 'No audio data available to download.';
-                if(generalErrorMessageDiv) { generalErrorMessageDiv.classList.remove('hidden'); generalErrorMessageDiv.classList.add('flex'); }
-                downloadButtonSection.classList.add('hidden');
-            }
-        });
-    }
-});
-</script>
-
-{% endblock content %}
+<!-- ======================================== -->
+<!-- JAVASCRIPT INITIALIZATION               -->
+<!-- ======================================== -->
+<script src="{% static 'js/document-to-audio.js' %}"></script>
+{% endblock %}

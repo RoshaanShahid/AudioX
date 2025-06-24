@@ -6,265 +6,332 @@
 {% block title %}Billing History - AudioX{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-slate-100 font-sans antialiased">
+<!-- ============================================ -->
+<!-- BILLING HISTORY PAGE - CLEAN PROFESSIONAL DESIGN -->
+<!-- Brand Colors: #091e65 (Primary Blue) & Red -->
+<!-- Clean, Solid, Professional Layout -->
+<!-- ============================================ -->
 
-    {# Header Section - Clean & Themed #}
-    <div class="bg-[#091e65] shadow-lg">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
-            <div class="inline-block bg-white/15 p-3.5 rounded-lg shadow-md mb-4">
-                <i class="fas fa-receipt text-3xl text-white"></i>
-            </div>
-            <div>
-                <h1 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-                    Billing History
-                </h1>
-                <p class="text-sm sm:text-base text-blue-300 mt-2 max-w-xl mx-auto">
-                    Your Comprehensive Transaction Overview
-                </p>
-                <p class="text-sm sm:text-base text-white mt-3 max-w-xl mx-auto">
-                    Review all your payments, subscriptions, and purchases with AudioX.
-                </p>
+<div class="min-h-screen bg-gray-50">
+    <!-- ==================== HEADER SECTION ==================== -->
+    <div class="bg-white border-b-2 border-gray-200">
+        <div class="max-w-6xl mx-auto px-6 py-8">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2" style="color: #091e65;">Billing History</h1>
+                    <p class="text-gray-600 text-lg">Your comprehensive transaction overview</p>
+                    <p class="text-gray-500 text-sm mt-1">Review all your payments, subscriptions, and purchases with AudioX</p>
+                </div>
+                
+                <!-- Download Statement Button -->
+                <button id="open-pdf-modal-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m-6 8h8a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Download Statement
+                </button>
             </div>
         </div>
     </div>
 
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-12">
-
-        {# Display Django Messages if any #}
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="max-w-6xl mx-auto px-6 py-8">
+        
+        <!-- ==================== DJANGO MESSAGES ==================== -->
         {% if messages %}
-            <div class="max-w-3xl mx-auto mb-8 space-y-4">
-                {% for message in messages %}
-                    <div class="rounded-md p-4 shadow-md border-l-4
-                        {% if message.tags == 'success' %} bg-green-50 border-green-500 text-green-700
-                        {% elif message.tags == 'error' %} bg-red-50 border-red-500 text-red-700
-                        {% else %} bg-blue-50 border-[#091e65] text-[#091e65] {% endif %}">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} h-5 w-5
-                                {% if message.tags == 'success' %} text-green-500
-                                {% elif message.tags == 'error' %} text-red-500
-                                {% else %} text-[#091e65] {% endif %}"></i>
-                            </div>
-                            <p class="ml-3 text-sm font-medium">
-                                {{ message }}
-                            </p>
-                        </div>
+        <div class="mb-8 space-y-4">
+            {% for message in messages %}
+            <div class="rounded-lg p-4 border-l-4 {% if message.tags == 'success' %}bg-green-50 border-green-500{% elif message.tags == 'error' %}bg-red-50 border-red-500{% else %}bg-blue-50 border-blue-500{% endif %}">
+                <div class="flex items-start">
+                    <div class="w-5 h-5 mt-0.5 mr-3 {% if message.tags == 'success' %}text-green-600{% elif message.tags == 'error' %}text-red-600{% else %}text-blue-600{% endif %}">
+                        {% if message.tags == 'success' %}
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        {% elif message.tags == 'error' %}
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        {% else %}
+                        <svg fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                        {% endif %}
                     </div>
-                {% endfor %}
+                    <p class="text-sm font-medium {% if message.tags == 'success' %}text-green-800{% elif message.tags == 'error' %}text-red-800{% else %}text-blue-800{% endif %}">
+                        {{ message }}
+                    </p>
+                </div>
             </div>
+            {% endfor %}
+        </div>
         {% endif %}
 
-        {# Billing History Section #}
-        <div class="max-w-3xl mx-auto">
-            <div class="bg-white p-5 sm:p-8 rounded-xl shadow-xl border border-gray-200/60">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200 gap-4">
-                    <h2 class="text-xl sm:text-2xl font-semibold text-gray-700">
-                        Transaction Log
-                    </h2>
-                    <button id="open-pdf-modal-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md bg-[#091e65] px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 transition-colors duration-150 ease-in-out group">
-                        <i class="fas fa-file-pdf h-4 w-4"></i>
-                        Download Statement
-                    </button>
-                </div>
+        <!-- ==================== TRANSACTION LOG SECTION ==================== -->
+        <div class="bg-white rounded-lg shadow-md border border-gray-200">
+            <!-- Section Header -->
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-bold" style="color: #091e65;">Transaction Log</h2>
+            </div>
 
-                <form method="GET" action="{% url 'AudioXApp:billing_history' %}" class="mb-8 p-4 bg-slate-50 rounded-lg border border-slate-200 shadow-sm">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
+            <!-- ==================== DATE FILTER FORM ==================== -->
+            <div class="p-6 bg-gray-50 border-b border-gray-200">
+                <form method="GET" action="{% url 'AudioXApp:billing_history' %}">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <!-- Start Date -->
                         <div>
-                            <label for="start_date" class="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+                            <label for="start_date" class="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
                             <input type="date" name="start_date" id="start_date" value="{{ request.GET.start_date }}"
-                                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-[#091e65] focus:border-[#091e65]">
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
                         </div>
+                        
+                        <!-- End Date -->
                         <div>
-                            <label for="end_date" class="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+                            <label for="end_date" class="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
                             <input type="date" name="end_date" id="end_date" value="{{ request.GET.end_date }}"
-                                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-[#091e65] focus:border-[#091e65]">
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
                         </div>
-                        <div class="flex flex-col sm:flex-row gap-2 sm:col-span-2 md:col-span-1">
-                            <button type="submit"
-                                    class="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-[#091e65] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:ring-offset-2 transition-colors">
-                                <i class="fas fa-filter h-3.5 w-3.5"></i>Filter
+                        
+                        <!-- Filter Button -->
+                        <div>
+                            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                                </svg>
+                                Filter
                             </button>
-                            <a href="{% url 'AudioXApp:billing_history' %}"
-                               class="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors">
-                                <i class="fas fa-times h-3.5 w-3.5"></i>Clear
+                        </div>
+                        
+                        <!-- Clear Button -->
+                        <div>
+                            <a href="{% url 'AudioXApp:billing_history' %}" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Clear
                             </a>
                         </div>
                     </div>
                 </form>
+            </div>
 
+            <!-- ==================== BILLING ITEMS LIST ==================== -->
+            <div class="p-6">
                 {% if billing_items %}
-                    <div id="billing-statement-content"> {# Wrapper for PDF content #}
-                        {# This header is only for the PDF, styled via Tailwind classes, made visible by JS before capture #}
-                        <div class="print-header p-6 mb-6 border-b-4 border-double border-theme-primary hidden bg-white">
-                            <div class="flex justify-between items-center mb-4">
-                                <div class="flex items-center gap-2">
-                                     {# --- UPDATED LOGO FOR PDF using Tailwind classes --- #}
-                                     <div class="flex items-baseline">
-                                        <span class="text-3xl font-extrabold tracking-tight text-theme-primary">AUDIO</span>
-                                        <span class="text-3xl font-extrabold tracking-tight text-theme-error">X</span> 
-                                        <div class="w-2.5 h-2.5 bg-theme-secondary rounded-full ml-1.5 self-end mb-1"></div> 
-                                     </div>
-                                     {# --- END UPDATED LOGO FOR PDF --- #}
-                                </div>
-                                <div class="text-right">
-                                     <p class="text-xs text-gray-500">Generated: {% now "M d, Y, P" %}</p>
-                                     {% if request.GET.start_date or request.GET.end_date %}
-                                     <p class="text-xs text-gray-500 mt-0.5"><span class="font-semibold">Period:</span>
-                                         {% if request.GET.start_date %}{{ request.GET.start_date }}{% else %}Beginning{% endif %}
-                                         to
-                                         {% if request.GET.end_date %}{{ request.GET.end_date }}{% else %}Present{% endif %}
-                                     </p>
-                                     {% endif %}
+                <div id="billing-statement-content">
+                    <!-- PDF Header (Hidden by default, shown during PDF generation) -->
+                    <div class="print-header p-6 mb-6 border-b-2 border-gray-300 hidden bg-white">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center">
+                                <div class="flex items-baseline">
+                                    <span class="text-2xl font-bold" style="color: #091e65;">AUDIO</span>
+                                    <span class="text-2xl font-bold text-red-600">X</span>
+                                    <div class="w-2 h-2 bg-red-600 rounded-full ml-1 mb-1"></div>
                                 </div>
                             </div>
-                             <div class="text-center mb-3">
-                                <p class="text-lg font-semibold text-gray-700">Billing Statement</p>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4 text-xs text-gray-700 pt-3 border-t border-gray-200">
-                                <div>
-                                    <p><strong class="text-gray-800">Account Name:</strong> {{ user.full_name|default:user.username }}</p>
-                                    <p><strong class="text-gray-800">User ID:</strong> {{ user.user_id }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p><strong class="text-gray-800">Email:</strong> {{ user.email }}</p>
-                                </div>
+                            <div class="text-right text-sm text-gray-600">
+                                <p>Generated: {% now "M d, Y, P" %}</p>
+                                {% if request.GET.start_date or request.GET.end_date %}
+                                <p class="mt-1">
+                                    <span class="font-semibold">Period:</span>
+                                    {% if request.GET.start_date %}{{ request.GET.start_date }}{% else %}Beginning{% endif %}
+                                    to
+                                    {% if request.GET.end_date %}{{ request.GET.end_date }}{% else %}Present{% endif %}
+                                </p>
+                                {% endif %}
                             </div>
                         </div>
+                        <div class="text-center mb-4">
+                            <h2 class="text-lg font-bold text-gray-800">Billing Statement</h2>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 text-sm text-gray-700 pt-4 border-t border-gray-200">
+                            <div>
+                                <p><strong>Account Name:</strong> {{ user.full_name|default:user.username }}</p>
+                                <p><strong>User ID:</strong> {{ user.user_id }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p><strong>Email:</strong> {{ user.email }}</p>
+                            </div>
+                        </div>
+                    </div>
 
-                        <ul id="billing-list" role="list" class="space-y-5">
-                            {% for item in billing_items %}
-                            <li class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-200/90 group">
-                                <div class="flex">
-                                    <div class="w-2 flex-shrink-0 rounded-l-lg
-                                        {% if item.type == 'Audiobook Purchase' %} bg-purple-500
-                                        {% elif item.type == 'Subscription' %} bg-sky-500
-                                        {% elif item.type == 'Coin Purchase' %} bg-amber-500
-                                        {% elif item.type == 'Subscription Redeemed' %} bg-emerald-500
-                                        {% else %} bg-slate-500 {% endif %}">
+                    <!-- Transaction Items -->
+                    <ul id="billing-list" class="space-y-4">
+                        {% for item in billing_items %}
+                        <li class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                            <div class="flex">
+                                <!-- Color Indicator -->
+                                <div class="w-1 flex-shrink-0 rounded-l-lg {% if item.type == 'Audiobook Purchase' %}bg-purple-600{% elif item.type == 'Subscription' %}bg-blue-600{% elif item.type == 'Coin Purchase' %}bg-yellow-600{% elif item.type == 'Subscription Redeemed' %}bg-green-600{% else %}bg-gray-600{% endif %}">
+                                </div>
+                                
+                                <!-- Content -->
+                                <div class="flex-1 p-5">
+                                    <div class="flex flex-col lg:flex-row justify-between items-start gap-4">
+                                        <!-- Transaction Details -->
+                                        <div class="flex-grow">
+                                            <span class="text-xs font-bold uppercase tracking-wider {% if item.type == 'Audiobook Purchase' %}text-purple-600{% elif item.type == 'Subscription' %}text-blue-600{% elif item.type == 'Coin Purchase' %}text-yellow-600{% elif item.type == 'Subscription Redeemed' %}text-green-600{% else %}text-gray-600{% endif %}">
+                                                {{ item.type }}
+                                            </span>
+                                            <h3 class="text-lg font-bold text-gray-900 mt-1 mb-2">
+                                                {{ item.description|truncatewords:12 }}
+                                            </h3>
+                                            <p class="text-sm text-gray-500">
+                                                {% timezone "Asia/Karachi" %}{{ item.date|date:"M d, Y, P" }}{% endtimezone %}
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- Amount -->
+                                        <div class="text-right">
+                                            <p class="text-xl font-bold text-gray-900">
+                                                PKR {{ item.amount_pkr|floatformat:2|intcomma }}
+                                            </p>
+                                            {% if item.coins_received %}
+                                            <p class="text-sm text-green-600 font-semibold">
+                                                (+{{ item.coins_received|intcomma }} Coins)
+                                            </p>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    <div class="flex-1 p-4 sm:p-5">
-                                        <div class="flex flex-col sm:flex-row justify-between items-start gap-2">
-                                            <div class="flex-grow min-w-0">
-                                                <span class="text-xs font-semibold uppercase tracking-wider
-                                                    {% if item.type == 'Audiobook Purchase' %} text-purple-600
-                                                    {% elif item.type == 'Subscription' %} text-sky-600
-                                                    {% elif item.type == 'Coin Purchase' %} text-amber-600
-                                                    {% elif item.type == 'Subscription Redeemed' %} text-emerald-600
-                                                    {% else %} text-slate-600 {% endif %}">
-                                                    {{ item.type }}
-                                                </span>
-                                                <h3 class="text-md sm:text-lg font-semibold text-gray-800 mt-0.5 group-hover:text-[#091e65] transition-colors" title="{{ item.description }}">
-                                                    {{ item.description|truncatewords:12 }}
-                                                </h3>
-                                                <p class="text-xs text-gray-500 mt-1">
-                                                    {% timezone "Asia/Karachi" %}{{ item.date|date:"M d, Y, P" }}{% endtimezone %}
-                                                </p>
-                                            </div>
-                                            <div class="text-left sm:text-right mt-2 sm:mt-0 flex-shrink-0">
-                                                <p class="text-lg sm:text-xl font-bold text-gray-900">
-                                                    PKR {{ item.amount_pkr|floatformat:2|intcomma }}
-                                                </p>
-                                                {% if item.coins_received %}
-                                                    <p class="text-xs text-green-600 font-medium">
-                                                        (+{{ item.coins_received|intcomma }} Coins)
-                                                    </p>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="mt-3 pt-3 border-t border-gray-200/70 flex flex-col sm:flex-row justify-between items-center gap-2">
-                                            {% if item.status %}
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium
-                                                    {% if item.status_class %}{{ item.status_class }}{% else %}bg-gray-100 text-gray-600{% endif %}">
-                                                    <i class="fas {% if item.status == 'Completed' %}fa-check-circle mr-1.5 text-green-500{% elif 'Pending' in item.status %}fa-hourglass-half mr-1.5 text-yellow-500{% elif 'Failed' in item.status or 'Rejected' in item.status %}fa-times-circle mr-1.5 text-red-500{% else %}fa-info-circle mr-1.5 text-gray-500{% endif %}"></i>
-                                                    {{ item.status }}
-                                                </span>
+                                    
+                                    <!-- Status and Actions -->
+                                    <div class="mt-4 pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                        <!-- Status Badge -->
+                                        {% if item.status %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold {% if item.status == 'Completed' %}bg-green-100 text-green-800{% elif 'Pending' in item.status %}bg-yellow-100 text-yellow-800{% elif 'Failed' in item.status or 'Rejected' in item.status %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {% if item.status == 'Completed' %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            {% elif 'Pending' in item.status %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            {% elif 'Failed' in item.status or 'Rejected' in item.status %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                            </svg>
                                             {% else %}
-                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700">
-                                                    <i class="fas fa-check-circle mr-1.5 text-green-500"></i>Completed
-                                                </span>
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                            </svg>
                                             {% endif %}
-                                            {% if item.details_url %}
-                                                <a href="{{ item.details_url }}" class="text-xs font-semibold text-[#091e65] hover:text-blue-700 hover:underline transition-colors flex items-center gap-1">
-                                                    View Details <i class="fas fa-angle-right text-xs ml-0.5"></i>
-                                                </a>
-                                            {% endif %}
-                                        </div>
+                                            {{ item.status }}
+                                        </span>
+                                        {% else %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-semibold bg-green-100 text-green-800">
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            Completed
+                                        </span>
+                                        {% endif %}
+                                        
+                                        <!-- Details Link -->
+                                        {% if item.details_url %}
+                                        <a href="{{ item.details_url }}" class="text-sm font-semibold hover:underline transition-colors duration-200 flex items-center" style="color: #091e65;">
+                                            View Details
+                                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </a>
+                                        {% endif %}
                                     </div>
                                 </div>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
                 {% else %}
-                    <div class="text-center py-16 px-6">
-                        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-slate-200 text-[#091e65] mb-6 shadow-md">
-                            <i class="fas fa-archive text-4xl opacity-70"></i>
-                        </div>
-                        <h3 class="mt-4 text-xl font-semibold text-gray-700 tracking-tight">No Transactions Found</h3>
-                        {% if request.GET.start_date or request.GET.end_date %}
-                            <p class="mt-2 text-sm text-gray-500 max-w-sm mx-auto">
-                                There are no transactions matching your selected date range. Try adjusting the dates or clearing the filter.
-                            </p>
-                        {% else %}
-                            <p class="mt-2 text-sm text-gray-500 max-w-sm mx-auto">
-                                Your financial activities with AudioX will be listed here as they occur.
-                            </p>
-                        {% endif %}
-                        <div class="mt-8">
-                            <a href="{% url 'AudioXApp:home' %}" class="inline-flex items-center justify-center gap-2 rounded-md bg-[#091e65] px-6 py-2.5 text-sm font-medium text-white shadow-lg hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#091e65] transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95">
-                                <i class="fas fa-home text-xs mr-1"></i> Go to Homepage
-                            </a>
-                        </div>
+                <!-- ==================== EMPTY STATE ==================== -->
+                <div class="text-center py-16">
+                    <div class="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
                     </div>
+                    
+                    <h3 class="text-2xl font-bold mb-4" style="color: #091e65;">No Transactions Found</h3>
+                    {% if request.GET.start_date or request.GET.end_date %}
+                    <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                        There are no transactions matching your selected date range. Try adjusting the dates or clearing the filter.
+                    </p>
+                    {% else %}
+                    <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                        Your financial activities with AudioX will be listed here as they occur.
+                    </p>
+                    {% endif %}
+                    
+                    <a href="{% url 'AudioXApp:home' %}" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200 inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        Go to Homepage
+                    </a>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-{# --- Custom PDF Filename Modal --- #}
-<div id="pdf-filename-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-gray-900/70 backdrop-blur-sm p-4 transition-opacity duration-300 ease-out opacity-0">
-    <div id="pdf-filename-modal-content" class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 sm:p-8 transform transition-all duration-300 ease-out scale-95 opacity-0">
-        <div class="flex justify-between items-center mb-5">
-            <h3 class="text-xl font-semibold text-theme-primary">Download Statement</h3> {# Use theme-primary #}
-            <button id="close-pdf-filename-modal" type="button" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <i class="fas fa-times text-lg"></i>
-            </button>
+<!-- ==================== PDF FILENAME MODAL ==================== -->
+<div id="pdf-filename-modal" class="fixed inset-0 z-50 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div id="pdf-filename-modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold" style="color: #091e65;">Download Statement</h3>
+                <button id="close-pdf-filename-modal" type="button" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
         </div>
-        <div>
-            <label for="pdf-filename-input" class="block text-sm font-medium text-gray-700 mb-1.5">Enter PDF Filename</label>
+        
+        <!-- Modal Body -->
+        <div class="p-6">
+            <label for="pdf-filename-input" class="block text-sm font-semibold text-gray-700 mb-2">Enter PDF Filename</label>
             <input type="text" id="pdf-filename-input"
-                   class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-theme-primary/50 focus:border-theme-primary" {# Use theme-primary #}
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                    placeholder="Statement_Filename">
-            <p id="pdf-filename-error" class="text-xs text-red-500 mt-1.5 hidden">Filename cannot be empty.</p>
+            <p id="pdf-filename-error" class="text-sm text-red-600 mt-2 hidden">Filename cannot be empty.</p>
         </div>
-        <div class="mt-6 flex justify-end gap-3">
-            <button id="cancel-pdf-filename" type="button" class="px-5 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors shadow-sm">
+        
+        <!-- Modal Footer -->
+        <div class="p-6 bg-gray-50 border-t border-gray-200 rounded-b-lg flex justify-end gap-3">
+            <button id="cancel-pdf-filename" type="button" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors duration-200">
                 Cancel
             </button>
-            <button id="confirm-pdf-filename" type="button" class="px-5 py-2 text-sm font-medium text-white bg-theme-primary hover:bg-theme-primary-hover rounded-lg transition-colors shadow-md hover:shadow-lg"> {# Use theme-primary #}
-                <i class="fas fa-download mr-2"></i>Download
+            <button id="confirm-pdf-filename" type="button" class="px-5 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m-6 8h8a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                Download
             </button>
         </div>
     </div>
 </div>
 
-{# --- Custom PDF Loading Modal --- #}
-<div id="pdf-loading-modal" class="fixed inset-0 z-[110] hidden items-center justify-center bg-gray-900/80 backdrop-blur-md p-4 transition-opacity duration-300 ease-out opacity-0">
-    <div class="bg-white rounded-xl shadow-2xl p-8 text-center">
-        {# UPDATED LOADER using Tailwind animate-pulse #}
-        <div class="mb-5 inline-flex space-x-1.5">
-            <div class="h-3 w-3 bg-theme-primary rounded-full animate-pulse"></div>
-            <div class="h-3 w-3 bg-theme-primary rounded-full animate-pulse [animation-delay:0.2s]"></div>
-            <div class="h-3 w-3 bg-theme-primary rounded-full animate-pulse [animation-delay:0.4s]"></div>
+<!-- ==================== PDF LOADING MODAL ==================== -->
+<div id="pdf-loading-modal" class="fixed inset-0 z-50 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl p-8 text-center">
+        <div class="mb-4">
+            <div class="inline-flex space-x-1">
+                <div class="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
+                <div class="w-3 h-3 bg-red-600 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
+                <div class="w-3 h-3 bg-red-600 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div>
+            </div>
         </div>
-        <h3 class="text-lg font-semibold text-gray-800">Generating PDF Statement</h3>
-        <p class="text-sm text-gray-600 mt-1">Please wait, this may take a moment...</p>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Generating PDF Statement</h3>
+        <p class="text-sm text-gray-600">Please wait, this may take a moment...</p>
     </div>
 </div>
 
-{# --- Custom PDF Success/Error Toast (Simple Example) --- #}
-<div id="pdf-status-toast" class="fixed bottom-5 right-5 z-[120] hidden p-4 rounded-lg shadow-xl text-sm font-medium transition-all duration-300 ease-out translate-y-10 opacity-0">
+<!-- ==================== PDF STATUS TOAST ==================== -->
+<div id="pdf-status-toast" class="fixed bottom-5 right-5 z-50 hidden p-4 rounded-lg shadow-lg text-sm font-semibold transition-all duration-300">
     <span id="pdf-status-toast-message"></span>
 </div>
 
@@ -276,19 +343,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Billing History JS (Pure Tailwind & Updated PDF Logo) Loaded.");
+    console.log("Billing History JS Loaded.");
 
-    const listItems = document.querySelectorAll('#billing-list > li');
-    listItems.forEach((el, index) => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(10px)';
-        el.style.transition = `opacity 0.4s ease-out ${index * 70}ms, transform 0.4s ease-out ${index * 70}ms`;
-        setTimeout(() => {
-            el.style.opacity = '1';
-            el.style.transform = 'translateY(0)';
-        }, 50);
-    });
-
+    // ==================== ELEMENT SELECTORS ====================
     const openPdfModalBtn = document.getElementById('open-pdf-modal-btn');
     const pdfFilenameModal = document.getElementById('pdf-filename-modal');
     const pdfFilenameModalContent = document.getElementById('pdf-filename-modal-content');
@@ -297,43 +354,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmPdfFilenameBtn = document.getElementById('confirm-pdf-filename');
     const pdfFilenameInput = document.getElementById('pdf-filename-input');
     const pdfFilenameError = document.getElementById('pdf-filename-error');
-
     const pdfLoadingModal = document.getElementById('pdf-loading-modal');
     const pdfStatusToast = document.getElementById('pdf-status-toast');
     const pdfStatusToastMessage = document.getElementById('pdf-status-toast-message');
 
+    // ==================== MODAL FUNCTIONS ====================
+    function showModal(modal) {
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    function hideModal(modal) {
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    // ==================== PDF MODAL EVENT LISTENERS ====================
     if (openPdfModalBtn) {
         openPdfModalBtn.addEventListener('click', () => {
             pdfFilenameInput.value = `AudioX_Billing_Statement_{{ user.username }}_{% now "Ymd" %}`;
             pdfFilenameError.classList.add('hidden');
-            pdfFilenameModal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                pdfFilenameModal.classList.remove('opacity-0');
-                pdfFilenameModalContent.classList.remove('opacity-0', 'scale-95');
-                pdfFilenameModalContent.classList.add('opacity-100', 'scale-100');
-            });
+            showModal(pdfFilenameModal);
         });
     }
 
-    function closeFilenameModal() {
-        pdfFilenameModalContent.classList.remove('opacity-100', 'scale-100');
-        pdfFilenameModalContent.classList.add('opacity-0', 'scale-95');
-        pdfFilenameModal.classList.add('opacity-0');
-        setTimeout(() => {
-            pdfFilenameModal.classList.add('hidden');
-        }, 300);
+    if (closePdfFilenameModalBtn) {
+        closePdfFilenameModalBtn.addEventListener('click', () => hideModal(pdfFilenameModal));
     }
 
-    if (closePdfFilenameModalBtn) closePdfFilenameModalBtn.addEventListener('click', closeFilenameModal);
-    if (cancelPdfFilenameBtn) cancelPdfFilenameBtn.addEventListener('click', closeFilenameModal);
+    if (cancelPdfFilenameBtn) {
+        cancelPdfFilenameBtn.addEventListener('click', () => hideModal(pdfFilenameModal));
+    }
+
     if (pdfFilenameModal) {
         pdfFilenameModal.addEventListener('click', function(event) {
             if (event.target === pdfFilenameModal) {
-                closeFilenameModal();
+                hideModal(pdfFilenameModal);
             }
         });
     }
 
+    // ==================== PDF GENERATION ====================
     if (confirmPdfFilenameBtn) {
         confirmPdfFilenameBtn.addEventListener('click', () => {
             const filenameValue = pdfFilenameInput.value.trim();
@@ -343,32 +406,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             pdfFilenameError.classList.add('hidden');
             const finalFilename = filenameValue.endsWith('.pdf') ? filenameValue : filenameValue + '.pdf';
-            closeFilenameModal();
+            hideModal(pdfFilenameModal);
             setTimeout(() => generatePdf(finalFilename), 300);
         });
     }
-    
+
+    // ==================== TOAST NOTIFICATION ====================
     function showToast(message, type = 'success') {
         pdfStatusToastMessage.textContent = message;
-        pdfStatusToast.classList.remove('bg-green-500', 'bg-red-500', 'hidden', 'opacity-0', 'translate-y-10');
+        pdfStatusToast.classList.remove('bg-green-600', 'bg-red-600', 'hidden');
+        
         if (type === 'success') {
-            pdfStatusToast.classList.add('bg-green-500', 'text-white');
+            pdfStatusToast.classList.add('bg-green-600', 'text-white');
         } else {
-            pdfStatusToast.classList.add('bg-red-500', 'text-white');
+            pdfStatusToast.classList.add('bg-red-600', 'text-white');
         }
+        
         pdfStatusToast.classList.remove('hidden');
-        requestAnimationFrame(() => {
-            pdfStatusToast.classList.remove('opacity-0', 'translate-y-10');
-            pdfStatusToast.classList.add('opacity-100', 'translate-y-0');
-        });
 
         setTimeout(() => {
-            pdfStatusToast.classList.remove('opacity-100', 'translate-y-0');
-            pdfStatusToast.classList.add('opacity-0', 'translate-y-10');
-            setTimeout(() => pdfStatusToast.classList.add('hidden'), 300);
+            hideModal(pdfStatusToast);
         }, 4000);
     }
 
+    // ==================== PDF GENERATION FUNCTION ====================
     function generatePdf(filename) {
         const { jsPDF } = window.jspdf;
         const contentToPrint = document.getElementById('billing-statement-content');
@@ -378,13 +439,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        pdfLoadingModal.classList.remove('hidden');
-        requestAnimationFrame(() => pdfLoadingModal.classList.remove('opacity-0'));
+        showModal(pdfLoadingModal);
 
         const pdfHeaderElement = contentToPrint.querySelector('.print-header');
         if (pdfHeaderElement) {
             pdfHeaderElement.classList.remove('hidden');
-            pdfHeaderElement.classList.add('block'); 
+            pdfHeaderElement.classList.add('block');
         }
 
         html2canvas(contentToPrint, {
@@ -453,8 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             pdf.save(filename);
             
-            pdfLoadingModal.classList.add('opacity-0');
-            setTimeout(() => pdfLoadingModal.classList.add('hidden'), 300);
+            hideModal(pdfLoadingModal);
             showToast(`Statement '${filename}' downloaded successfully.`, 'success');
 
         }).catch(err => {
@@ -463,8 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 pdfHeaderElement.classList.remove('block');
             }
             console.error("Error generating PDF:", err);
-            pdfLoadingModal.classList.add('opacity-0');
-            setTimeout(() => pdfLoadingModal.classList.add('hidden'), 300);
+            hideModal(pdfLoadingModal);
             showToast('PDF Generation Error. Please try again.', 'error');
         });
     }
