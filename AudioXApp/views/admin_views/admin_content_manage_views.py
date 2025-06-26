@@ -1,7 +1,7 @@
 # AudioXApp/views/admin_views/admin_content_manage_views.py
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required # Keep this import for now, as other admin_views files might still use it
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib import messages
 from django.urls import reverse
@@ -22,7 +22,7 @@ from werkzeug.datastructures import MultiDict
 # EXISTING VIEWS (No changes needed to these)
 # ==============================================================================
 
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_add_audiobook_view(request):
     """
@@ -92,7 +92,7 @@ def admin_add_audiobook_view(request):
     return render(request, 'admin/manage_content/admin_add_audiobook.html', context)
 
 
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_edit_platform_audiobook(request, audiobook_id):
     """
@@ -187,7 +187,7 @@ def admin_edit_platform_audiobook(request, audiobook_id):
     return render(request, 'admin/manage_content/admin_edit_audiobook.html', context)
 
 
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_manage_content_view(request):
     total_audiobooks = Audiobook.objects.count()
@@ -227,7 +227,7 @@ def admin_manage_content_view(request):
     return render(request, 'admin/manage_content/manage_content.html', context)
 
 
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_creator_content_list_view(request):
     search_query = request.GET.get('q', '').strip()
@@ -247,7 +247,7 @@ def admin_creator_content_list_view(request):
     return render(request, 'admin/manage_content/admin_creator_content_list.html', context)
 
 
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_platform_content_list_view(request):
     search_query = request.GET.get('q', '').strip()
@@ -262,7 +262,7 @@ def admin_platform_content_list_view(request):
     return render(request, 'admin/manage_content/admin_platform_content_list.html', context)
 
 
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_all_content_list_view(request):
     search_query = request.GET.get('q', '').strip()
@@ -286,7 +286,7 @@ def admin_all_content_list_view(request):
     return render(request, 'admin/manage_content/admin_all_content_list.html', context)
 
 
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_creator_audiobook_detail_view(request, audiobook_id):
     audiobook = get_object_or_404(Audiobook.objects.select_related('creator__user', 'takedown_by').prefetch_related('chapters'), audiobook_id=audiobook_id)
@@ -294,7 +294,7 @@ def admin_creator_audiobook_detail_view(request, audiobook_id):
     return render(request, 'admin/manage_content/admin_creator_audiobook_detail.html', context)
 
 @require_POST
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_takedown_audiobook_view(request, audiobook_id):
     audiobook = get_object_or_404(Audiobook, audiobook_id=audiobook_id)
@@ -307,7 +307,7 @@ def admin_takedown_audiobook_view(request, audiobook_id):
 
 
 @require_POST
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_reinstate_audiobook_view(request, audiobook_id):
     audiobook = get_object_or_404(Audiobook, audiobook_id=audiobook_id)
@@ -317,7 +317,7 @@ def admin_reinstate_audiobook_view(request, audiobook_id):
     return redirect(redirect_url)
 
 @require_POST
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def delete_platform_audiobook(request, audiobook_id):
     audiobook = get_object_or_404(Audiobook, audiobook_id=audiobook_id, creator__isnull=True)
@@ -330,7 +330,7 @@ def delete_platform_audiobook(request, audiobook_id):
     return redirect('AudioXApp:admin_platform_content_list')
 
 
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_moderation_queue_view(request):
     """
@@ -357,7 +357,7 @@ def admin_moderation_queue_view(request):
 
 
 @require_POST
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_approve_audiobook_view(request, audiobook_id):
     """
@@ -387,7 +387,7 @@ def admin_approve_audiobook_view(request, audiobook_id):
 
 
 @require_POST
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_reject_audiobook_view(request, audiobook_id):
     """
@@ -422,7 +422,7 @@ def admin_reject_audiobook_view(request, audiobook_id):
 
 
 # THIS VIEW IS UPDATED FOR THE NEW TABBED INTERFACE
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_manage_keywords_view(request):
     """
@@ -476,7 +476,7 @@ def admin_manage_keywords_view(request):
 
 # THIS VIEW IS UPDATED
 @require_POST
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content')
 def admin_delete_keyword_view(request, keyword_id):
     """
@@ -498,7 +498,7 @@ def admin_delete_keyword_view(request, keyword_id):
     return redirect('AudioXApp:admin_manage_keywords')
 
 
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content', 'manage_support')
 def admin_content_reports_list_view(request):
     """
@@ -529,7 +529,7 @@ def admin_content_reports_list_view(request):
 
 
 @require_POST
-@login_required
+# REMOVED @login_required
 @decorators.admin_role_required('full_access', 'manage_content', 'manage_support')
 def admin_resolve_reports_view(request, audiobook_id):
     """
