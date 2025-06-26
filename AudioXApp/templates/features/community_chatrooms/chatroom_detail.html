@@ -4,128 +4,54 @@
 
 {% block page_title %}{{ chat_room.name }} - Chat Room{% endblock page_title %}
 
-{% block extra_chat_head %}
-<style>
-    .chat-area-height {
-        height: calc(100vh - 16rem - 5rem); /* Adjust based on your header/footer/padding */
-        max-height: 600px; 
-    }
-    .message-bubble {
-        max-width: 75%; 
-        padding: 0.625rem 1rem; 
-        border-radius: 0.75rem; 
-        word-wrap: break-word;
-        line-height: 1.6;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .message-meta {
-        font-size: 0.65rem; 
-        margin-top: 0.25rem;
-        display: block; 
-    }
-    .recommendation-card img {
-        width: 32px; 
-        height: 32px;
-        object-fit: cover;
-        border-radius: 0.25rem;
-        margin-right: 0.5rem; 
-    }
-    .system-message {
-        width: 100%;
-        text-align: center;
-        font-size: 0.8rem;
-        color: #9CA3AF; /* Tailwind gray-400 */
-        padding: 0.25rem 0;
-        font-style: italic;
-    }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #F3F4F6; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
-
-    #feedbackPopup.popup-visible, #leaveRoomModal.modal-visible {
-        opacity: 1; transform: translateY(0); visibility: visible;
-    }
-    #feedbackPopup, #leaveRoomModal {
-        opacity: 0; transform: translateY(-20px); visibility: hidden;
-        transition: opacity 0.3s ease-out, transform 0.3s ease-out, visibility 0.3s;
-    }
-    #leaveRoomModal { transform: scale(0.95); }
-    #leaveRoomModal.modal-visible { transform: scale(1); }
-    .modal-overlay { transition: opacity 0.3s ease-out; }
-
-    .status-badge-header {
-        padding: 0.125rem 0.5rem; /* py-0.5 px-2 */
-        font-size: 0.7rem; /* Smaller than text-xs */
-        font-weight: 600;
-        border-radius: 9999px; /* rounded-full */
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-left: 0.5rem; /* ml-2 */
-    }
-    .status-active-header {
-        background-color: #DEF7EC; /* Tailwind green-100 */
-        color: #03543F; /* Tailwind green-800 */
-    }
-    .status-closed-header {
-        background-color: #FEE2E2; /* Tailwind red-100 */
-        color: #991B1B; /* Tailwind red-800 */
-    }
-    .room-closed-banner {
-        background-color: #FFFBEB; /* Tailwind yellow-50 */
-        color: #92400E; /* Tailwind yellow-700 */
-        border-color: #FDE68A; /* Tailwind yellow-300 */
-    }
-</style>
-{% endblock extra_chat_head %}
-
 {% block chat_content %}
 
-{# Custom Feedback Popup HTML #}
-<div id="feedbackPopup" class="fixed top-5 right-5 z-[1000] p-4 rounded-lg shadow-xl text-white max-w-md md:max-w-lg hidden" role="alert">
-    <div class="flex items-start">
+{# Premium Feedback Popup #}
+<div id="feedbackPopup" class="fixed top-5 right-5 z-[1000] p-4 rounded-xl shadow-2xl text-white max-w-sm hidden transform transition-all duration-300 ease-out" role="alert">
+    <div class="flex items-start space-x-3">
         <div id="popupIconContainer" class="flex-shrink-0"></div>
-        <div class="ml-3 flex-grow">
-            <p id="popupMessage" class="text-sm font-medium">Popup message goes here.</p>
+        <div class="flex-grow">
+            <p id="popupMessage" class="text-sm font-semibold">Popup message goes here.</p>
         </div>
-        <div class="ml-auto pl-3">
-            <div class="-mx-1.5 -my-1.5">
-                <button type="button" id="popupClose" class="inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2">
-                    <span class="sr-only">Dismiss</span>
-                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                </button>
-            </div>
-        </div>
+        <button type="button" id="popupClose" class="flex-shrink-0 p-1 rounded-lg hover:bg-white hover:bg-opacity-20 transition-colors duration-200">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
     </div>
 </div>
 
-{# Custom Leave Room Confirmation Modal #}
+{# Premium Leave Room Modal #}
 <div id="leaveRoomModal" class="fixed inset-0 z-[1050] flex items-center justify-center p-4 hidden" aria-labelledby="leaveModalTitle" role="dialog" aria-modal="true">
-    <div id="leaveRoomModalOverlay" class="fixed inset-0 bg-black bg-opacity-60 modal-overlay opacity-0"></div>
-    <div class="bg-white rounded-xl shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full overflow-hidden relative z-10">
-        <div class="px-6 py-5">
-            <div class="flex items-start">
-                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <svg class="h-6 w-6 text-audiox-red" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+    <div id="leaveRoomModalOverlay" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300"></div>
+    <div class="bg-white rounded-2xl shadow-2xl transform transition-all duration-300 sm:max-w-md sm:w-full overflow-hidden relative z-10">
+        <div class="p-6">
+            <div class="flex items-start space-x-4">
+                <div class="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
                 </div>
-                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 class="text-lg leading-6 font-bold text-audiox-blue" id="leaveModalTitle">Leave Chat Room</h3>
-                    <div class="mt-2">
-                        <p class="text-sm text-audiox-gray-dark" id="leaveModalMessage">Are you sure you want to leave this chat room?</p>
-                    </div>
+                <div class="flex-grow">
+                    <h3 class="text-lg font-bold text-gray-900 mb-2" id="leaveModalTitle">Leave Chat Room</h3>
+                    <p class="text-gray-600 text-sm" id="leaveModalMessage">Are you sure you want to leave this chat room?</p>
                 </div>
             </div>
         </div>
-        <div class="bg-audiox-gray-light px-6 py-4 sm:flex sm:flex-row-reverse rounded-b-xl">
-            <button type="button" id="confirmLeaveButton" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-md px-4 py-2.5 bg-audiox-red text-base font-semibold text-white hover:bg-audiox-red-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-audiox-red sm:ml-3 sm:w-auto sm:text-sm transition-colors">Confirm Leave</button>
-            <button type="button" id="cancelLeaveButton" class="mt-3 w-full inline-flex justify-center rounded-lg border border-audiox-gray-medium shadow-sm px-4 py-2.5 bg-white text-base font-semibold text-audiox-gray-dark hover:bg-audiox-gray-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-audiox-blue sm:mt-0 sm:w-auto sm:text-sm transition-colors">Cancel</button>
+        <div class="bg-gray-50 px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-3">
+            <button type="button" id="cancelLeaveButton" class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                Cancel
+            </button>
+            <button type="button" id="confirmLeaveButton" class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200">
+                Leave Room
+            </button>
         </div>
     </div>
 </div>
 
-
-<div class="w-full">
-    <div class="flex flex-col lg:flex-row gap-x-6 w-full h-full" 
+{# Main Chat Container #}
+<div class="h-screen bg-gray-100 flex flex-col">
+    <div class="flex-1 flex overflow-hidden" 
          id="chat-container"
          data-room-id="{{ chat_room.room_id }}" 
          data-current-user-id="{{ request.user.user_id|stringformat:'s' }}"
@@ -135,179 +61,199 @@
          data-room-status="{{ chat_room.status }}">
 
         {# Main Chat Area #}
-        <div class="flex-grow flex flex-col bg-white rounded-xl shadow-lg border border-audiox-gray-medium overflow-hidden mb-6 lg:mb-0">
-            {# Room Header #}
-            <div class="p-4 border-b border-audiox-gray-medium">
+        <div class="flex-1 flex flex-col bg-white">
+            {# Chat Header - Always Visible #}
+            <div class="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-4">
                         {% if chat_room.cover_image %}
-                            <img src="{{ chat_room.cover_image.url }}" alt="{{ chat_room.name }} cover" class="w-10 h-10 rounded-md object-cover">
+                            <img src="{{ chat_room.cover_image.url }}" alt="{{ chat_room.name }}" class="w-10 h-10 rounded-lg object-cover">
+                        {% else %}
+                            <div class="w-10 h-10 bg-[#091e65] rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                            </div>
                         {% endif %}
                         <div>
-                            <div class="flex items-center">
-                                <h1 class="text-xl font-bold text-audiox-blue">{{ chat_room.name }}</h1>
-                                <span class="status-badge-header {% if chat_room.status == chat_room.RoomStatusChoices.ACTIVE %}status-active-header{% elif chat_room.status == chat_room.RoomStatusChoices.CLOSED %}status-closed-header{% else %}bg-gray-200 text-gray-700{% endif %}">
+                            <h1 class="text-xl font-bold text-gray-900">{{ chat_room.name }}</h1>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if chat_room.status == chat_room.RoomStatusChoices.ACTIVE %}bg-green-100 text-green-800{% elif chat_room.status == chat_room.RoomStatusChoices.CLOSED %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-700{% endif %}">
                                     {{ chat_room.get_status_display }}
                                 </span>
+                                {% if chat_room.language %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#091e65] text-white">
+                                        {{ chat_room.get_language_display }}
+                                    </span>
+                                {% endif %}
                             </div>
                             {% if chat_room.description %}
-                                <p class="text-xs text-audiox-gray mt-0.5">{{ chat_room.description|truncatewords:20 }}</p>
-                            {% endif %}
-                            {% if chat_room.language %}
-                                 <span class="text-xs text-white bg-audiox-blue px-1.5 py-0.5 rounded-full inline-block mt-1">
-                                     {{ chat_room.get_language_display }}
-                                 </span>
+                                <p class="text-sm text-gray-600 mt-1">{{ chat_room.description|truncatewords:15 }}</p>
                             {% endif %}
                         </div>
                     </div>
                     {% if user.is_authenticated and chat_room and chat_room.is_open_for_interaction and current_user_membership and current_user_membership.status == current_user_membership.StatusChoices.ACTIVE %}
                         <button type="button" id="triggerLeaveRoomModalButton"
-                                class="px-3 py-2 rounded-md text-sm font-medium text-audiox-red hover:bg-red-50 border border-audiox-red transition-colors ml-auto">
+                                class="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors duration-200">
                             Leave Room
                         </button>
                         <form method="POST" action="{% url 'AudioXApp:chatroom_leave' room_id=chat_room.room_id %}" id="leave-room-form" class="hidden">
                             {% csrf_token %}
                         </form>
-                    {% elif chat_room.owner == request.user and not chat_room.is_open_for_interaction %} {# Owner viewing their closed room #}
-                         <span class="px-3 py-2 rounded-md text-sm font-medium text-audiox-gray border border-audiox-gray-medium ml-auto">Room Closed</span>
+                    {% elif chat_room.owner == request.user and not chat_room.is_open_for_interaction %}
+                        <span class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-500 bg-gray-50">
+                            Room Closed
+                        </span>
                     {% endif %}
                 </div>
             </div>
 
             {% if not chat_room.is_open_for_interaction %}
-            <div class="p-4 border-b border-yellow-300 bg-yellow-50 text-yellow-700 room-closed-banner">
+            <div class="bg-red-50 border-b border-red-200 px-6 py-3">
                 <div class="flex items-center">
-                    <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <svg class="h-5 w-5 text-red-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                     </svg>
-                    <p class="text-sm font-medium">This chat room is closed. No new messages can be sent.</p>
+                    <p class="text-sm font-medium text-red-800">This chat room is closed. No new messages can be sent.</p>
                 </div>
             </div>
             {% endif %}
 
-            <div id="chat-log-container" class="flex-grow p-4 overflow-y-auto custom-scrollbar chat-area-height">
-                <div id="chat-log" class="space-y-3 w-full">
+            {# Messages Area #}
+            <div id="chat-log-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                <div id="chat-log" class="space-y-3">
                     {% for msg in chat_log_entries %} 
-                        <div class="message-wrapper flex {% if msg.user.user_id == request.user.user_id %}justify-end{% else %}justify-start{% endif %}">
-                            <div class="message-bubble {% if msg.user.user_id == request.user.user_id %}bg-audiox-red text-white rounded-br-none{% else %}bg-audiox-gray-light text-audiox-gray-dark rounded-bl-none{% endif %}">
-                                {% if msg.user and msg.user.user_id != request.user.user_id %}
-                                <p class="text-xs font-semibold {% if msg.user.user_id == request.user.user_id %}text-red-100{% else %}text-audiox-blue{% endif %} mb-0.5">
-                                    {{ msg.user.full_name|default:msg.user.username }}
-                                </p>
-                                {% endif %}
-                                {% if msg.message_type == "audiobook_recommendation" and msg.recommended_audiobook %}
-                                    <p class="text-sm mb-1 {% if msg.user.user_id == request.user.user_id %}italic{% else %}italic text-audiox-gray{% endif %}">Recommends:</p>
-                                    <a href="{{ msg.recommended_audiobook.get_absolute_url|default:'#' }}" target="_blank" 
-                                       class="flex items-center p-2 rounded-md my-1 hover:bg-opacity-20 {% if msg.user.user_id == request.user.user_id %}bg-red-500 bg-opacity-75{% else %}bg-audiox-blue bg-opacity-10{% endif %} transition-colors">
-                                        {% if msg.recommended_audiobook.cover_image %}
-                                        <img src="{{ msg.recommended_audiobook.cover_image.url }}" alt="{{ msg.recommended_audiobook.title }} cover" class="w-8 h-8 rounded object-cover mr-2 flex-shrink-0">
-                                        {% else %}
-                                        <div class="w-8 h-8 bg-audiox-gray-medium rounded mr-2 flex items-center justify-center text-audiox-gray-dark text-xs flex-shrink-0">?</div>
-                                        {% endif %}
-                                        <div class="min-w-0">
-                                            <p class="text-sm font-semibold truncate {% if msg.user.user_id == request.user.user_id %}text-white{% else %}text-audiox-blue{% endif %}">{{ msg.recommended_audiobook.title }}</p>
-                                            <p class="text-xs truncate {% if msg.user.user_id == request.user.user_id %}text-red-100{% else %}text-audiox-gray{% endif %}">by {{ msg.recommended_audiobook.author|default:"N/A" }}</p>
-                                        </div>
-                                    </a>
-                                    {% if msg.content and msg.content != msg.recommended_audiobook.audiobook_id|stringformat:"s" %}
-                                        <p class="mt-1 text-sm">{{ msg.content|linebreaksbr }}</p>
-                                    {% endif %}
-                                {% else %}
-                                    <p>{{ msg.content|linebreaksbr }}</p>
-                                {% endif %}
-                                <p class="message-meta text-right {% if msg.user.user_id == request.user.user_id %}text-red-100 opacity-75{% else %}text-audiox-gray opacity-75{% endif %}">
-                                    {{ msg.timestamp|naturaltime }}
-                                </p>
+                        {% if msg.message_type == 'system' or msg.message_type == 'user_joined' or msg.message_type == 'user_left' or msg.message_type == 'room_closed' %}
+                            <div class="flex justify-center">
+                                <div class="bg-gray-200 text-gray-600 text-xs font-medium px-3 py-1 rounded-full">
+                                    {{ msg.content }}
+                                </div>
                             </div>
-                        </div>
+                        {% else %}
+                            <div class="flex {% if msg.user.user_id == request.user.user_id %}justify-end{% else %}justify-start{% endif %}">
+                                <div class="max-w-xs lg:max-w-md">
+                                    {% if msg.user and msg.user.user_id != request.user.user_id %}
+                                    <div class="flex items-center space-x-2 mb-1">
+                                        <img src="{% if msg.user.profile_pic %}{{ msg.user.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}" 
+                                             alt="{{ msg.user.username }}" 
+                                             class="w-6 h-6 rounded-full object-cover">
+                                        <span class="text-xs font-semibold text-[#091e65]">
+                                            {{ msg.user.full_name|default:msg.user.username }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="{% if msg.user.user_id == request.user.user_id %}bg-red-600 text-white rounded-2xl rounded-br-md{% else %}bg-white text-gray-900 rounded-2xl rounded-bl-md border border-gray-200{% endif %} px-4 py-3 shadow-sm">
+                                        <p class="text-sm">{{ msg.content|linebreaksbr }}</p>
+                                        <p class="text-xs {% if msg.user.user_id == request.user.user_id %}text-red-100{% else %}text-gray-500{% endif %} mt-1 text-right">
+                                            {{ msg.timestamp|naturaltime }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
                     {% empty %}
-                        <div id="no-messages-placeholder" class="text-center text-audiox-gray py-10">
-                            No messages yet. {% if chat_room.is_open_for_interaction %}Start the conversation!{% else %}This room is closed.{% endif %}
+                        <div id="no-messages-placeholder" class="flex flex-col items-center justify-center py-12 text-center">
+                            <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">No messages yet</h3>
+                            <p class="text-gray-500">
+                                {% if chat_room.is_open_for_interaction %}
+                                    Start the conversation!
+                                {% else %}
+                                    This room is closed.
+                                {% endif %}
+                            </p>
                         </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <div class="p-4 border-t border-audiox-gray-medium {% if not chat_room.is_open_for_interaction %}bg-gray-200{% else %}bg-audiox-gray-light{% endif %}">
-                <form id="chat-message-form" class="flex items-center gap-3">
+            {# Message Input #}
+            <div class="bg-white border-t border-gray-200 p-4">
+                <form id="chat-message-form" class="flex items-center space-x-3">
                     <input type="text" id="chat-message-input"
-                           class="flex-grow px-4 py-2.5 rounded-lg border border-audiox-gray-medium bg-white text-audiox-gray-dark focus:ring-1 focus:ring-audiox-blue focus:border-audiox-blue focus:outline-none transition-colors
-                                  {% if not chat_room.is_open_for_interaction %}cursor-not-allowed opacity-70{% endif %}"
+                           class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none {% if not chat_room.is_open_for_interaction %}bg-gray-100 cursor-not-allowed{% endif %}"
                            placeholder="{% if chat_room.is_open_for_interaction %}Type your message...{% else %}This room is closed.{% endif %}" 
                            autocomplete="off"
                            {% if not chat_room.is_open_for_interaction %}disabled{% endif %}>
                     <button type="submit" id="chat-message-submit"
-                            class="px-5 py-2.5 text-sm font-semibold text-white bg-audiox-red hover:bg-audiox-red-dark rounded-lg transition-colors shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-audiox-red focus:ring-offset-2
-                                   {% if not chat_room.is_open_for_interaction %}opacity-50 cursor-not-allowed{% endif %}"
+                            class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 {% if not chat_room.is_open_for_interaction %}opacity-50 cursor-not-allowed{% endif %}"
                             {% if not chat_room.is_open_for_interaction %}disabled{% endif %}>
                         Send
                     </button>
                 </form>
-                {% if free_audiobooks and chat_room.is_open_for_interaction %}
-                <div class="mt-3">
-                    <label for="audiobook-recommend-select" class="text-xs text-audiox-gray-dark mb-1 block">Recommend a free audiobook:</label>
-                    <div class="flex gap-2 items-center">
-                        <select id="audiobook-recommend-select" 
-                                class="flex-grow px-3 py-1.5 rounded-md border border-audiox-gray-medium bg-white text-audiox-gray-dark focus:ring-1 focus:ring-audiox-blue focus:border-audiox-blue focus:outline-none text-sm custom-scrollbar">
-                            <option value="" class="text-audiox-gray">Select an audiobook...</option>
-                            {% for abook in free_audiobooks %}
-                            <option value="{{ abook.audiobook_id }}" data-title="{{ abook.title }}" data-author="{{ abook.author|default:"N/A" }}" data-cover-url="{% if abook.cover_image %}{{ abook.cover_image.url }}{% else %}{% static 'img/default_book_cover.png' %}{% endif %}">
-                                {{ abook.title }} (by {{abook.author|default:'Unknown'}})
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <button type="button" id="send-recommendation-button" 
-                                class="px-3 py-1.5 text-xs font-medium text-white bg-audiox-blue hover:bg-opacity-80 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-audiox-blue focus:ring-offset-1">
-                            Recommend
-                        </button>
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
 
-        <aside class="lg:w-72 xl:w-80 flex-shrink-0 bg-white p-4 rounded-xl shadow-lg border border-audiox-gray-medium chat-area-height overflow-y-auto custom-scrollbar">
-            <h2 class="text-lg font-bold text-audiox-blue mb-3 pb-2 border-b border-audiox-gray-medium">
-                Room Members ({{ members.count }})
-            </h2>
-            <ul id="member-list" class="space-y-2 text-sm">
-                {% for member_obj in members %}
-                <li class="flex items-center p-2 rounded-md hover:bg-audiox-gray-light transition-colors group">
-                    <img src="{% if member_obj.user.profile_pic %}{{ member_obj.user.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}" 
-                         alt="{{ member_obj.user.username }}" 
-                         class="w-8 h-8 rounded-full mr-2.5 object-cover border border-audiox-gray-light">
-                    <span class="text-audiox-gray-dark group-hover:text-audiox-blue truncate">{{ member_obj.user.full_name|default:member_obj.user.username }}</span>
-                    {% if member_obj.role == "admin" or chat_room.owner == member_obj.user %}
-                        <span class="ml-auto text-xs px-2 py-0.5 rounded-full {% if chat_room.owner == member_obj.user %}bg-audiox-red{% else %}bg-audiox-blue{% endif %} text-white font-semibold">
-                            {% if chat_room.owner == member_obj.user %}Owner{% else %}Admin{% endif %}
-                        </span>
-                    {% endif %}
-                </li>
-                {% empty %}
-                <li class="text-audiox-gray text-xs italic">No active members listed.</li>
-                {% endfor %}
-            </ul>
+        {# Sidebar #}
+        <div class="w-80 bg-white border-l border-gray-200 flex flex-col">
+            {# Sidebar Header #}
+            <div class="bg-[#091e65] px-6 py-4">
+                <h2 class="text-lg font-bold text-white flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                    </svg>
+                    Room Members ({{ members.count }})
+                </h2>
+            </div>
+            
+            {# Members List #}
+            <div class="flex-1 overflow-y-auto p-4">
+                <ul id="member-list" class="space-y-2">
+                    {% for member_obj in members %}
+                    <li class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                        <img src="{% if member_obj.user.profile_pic %}{{ member_obj.user.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}" 
+                             alt="{{ member_obj.user.username }}" 
+                             class="w-10 h-10 rounded-full object-cover mr-3">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-gray-900 truncate">
+                                {{ member_obj.user.full_name|default:member_obj.user.username }}
+                            </p>
+                        </div>
+                        {% if member_obj.role == "admin" or chat_room.owner == member_obj.user %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if chat_room.owner == member_obj.user %}bg-red-100 text-red-800{% else %}bg-[#091e65] text-white{% endif %}">
+                                {% if chat_room.owner == member_obj.user %}OWNER{% else %}ADMIN{% endif %}
+                            </span>
+                        {% endif %}
+                    </li>
+                    {% empty %}
+                    <li class="text-center py-8">
+                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-sm text-gray-500">No members found</p>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
 
-            {# MODIFIED: Using the pre-calculated 'can_invite_users' boolean flag from the view #}
+            {# Invite Section #}
             {% if can_invite_users %}
-            <div class="mt-6 pt-4 border-t border-audiox-gray-medium">
-                <h3 class="text-md font-semibold text-audiox-blue mb-3">Invite User to Room</h3>
+            <div class="border-t border-gray-200 p-4">
+                <h3 class="text-sm font-bold text-[#091e65] mb-3 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Invite User
+                </h3>
                 <form method="POST" action="{% url 'AudioXApp:chatroom_invite_user' room_id=chat_room.room_id %}" class="space-y-3">
                     {% csrf_token %}
-                    <div>
-                        <label for="invite_email" class="sr-only">Email address</label>
-                        <input type="email" name="email" id="invite_email" required
-                               class="w-full px-3 py-2 text-sm rounded-md border bg-white text-audiox-gray-dark focus:ring-1 focus:outline-none transition-colors border-audiox-gray-medium focus:border-audiox-blue focus:ring-audiox-blue"
-                               placeholder="Enter user's email">
-                    </div>
+                    <input type="email" name="email" id="invite_email" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none"
+                           placeholder="Enter user's email">
                     <button type="submit"
-                            class="w-full px-4 py-2 text-xs font-medium text-white bg-audiox-blue hover:bg-opacity-80 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-audiox-blue focus:ring-offset-1">
+                            class="w-full px-4 py-2 text-sm font-semibold text-white bg-[#091e65] rounded-lg hover:bg-[#0a1f5c] transition-colors duration-200">
                         Send Invitation
                     </button>
                 </form>
             </div>
             {% endif %}
-        </aside>
+        </div>
     </div>
 </div>
 
@@ -328,43 +274,37 @@ document.addEventListener('DOMContentLoaded', function () {
     let popupTimeout;
 
     const icons = { 
-        success: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
-        error: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 9A9 9 0 1112 3v-.75m9 3.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>',
-        warning: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>',
-        info: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>'
+        success: '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+        error: '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 9A9 9 0 1112 3v-.75m9 3.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>',
+        warning: '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>',
+        info: '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>'
     };
     const bgColors = { 
         success: 'bg-green-600', error: 'bg-red-600',
         warning: 'bg-yellow-500', info: 'bg-blue-600'
     };
-    const closeButtonRingColors = {
-        success: 'focus:ring-offset-green-600', error: 'focus:ring-offset-red-600',
-        warning: 'focus:ring-offset-yellow-500', info: 'focus:ring-offset-blue-600'
-    };
 
     function showPopup(type, message) {
-        if (!feedbackPopup || !popupMessage || !popupIconContainer || !popupCloseButton) return;
+        if (!feedbackPopup || !popupMessage || !popupIconContainer) return;
         if (popupTimeout) clearTimeout(popupTimeout);
+        
         Object.values(bgColors).forEach(cls => feedbackPopup.classList.remove(cls));
-        Object.values(closeButtonRingColors).forEach(cls => popupCloseButton.classList.remove(cls.replace('focus:ring-offset-', '')));
+        
         popupMessage.textContent = message;
         popupIconContainer.innerHTML = icons[type] || icons['info'];
         feedbackPopup.classList.add(bgColors[type] || bgColors['info']);
-        const currentIconSvg = popupIconContainer.querySelector('svg');
-        if (currentIconSvg) currentIconSvg.classList.add('text-white');
-        popupCloseButton.classList.add('hover:bg-white', 'hover:bg-opacity-25', 'focus:ring-white');
-        const ringColor = closeButtonRingColors[type] || closeButtonRingColors['info'];
-        ringColor.split(' ').forEach(cls => popupCloseButton.classList.add(cls));
-        feedbackPopup.classList.remove('hidden', 'opacity-0', 'transform', 'translate-y-[-20px]');
-        requestAnimationFrame(() => { feedbackPopup.classList.add('popup-visible'); });
-        popupTimeout = setTimeout(hidePopup, 7000);
+        
+        feedbackPopup.classList.remove('hidden');
+        popupTimeout = setTimeout(hidePopup, 5000);
     }
+    
     function hidePopup() {
         if (!feedbackPopup) return;
-        feedbackPopup.classList.remove('popup-visible');
-        setTimeout(() => { feedbackPopup.classList.add('hidden'); }, 300);
+        feedbackPopup.classList.add('hidden');
     }
+    
     if (popupCloseButton) popupCloseButton.addEventListener('click', hidePopup);
+    
     const feedbackDataElement = document.getElementById('popup-feedback-script-data');
     if (feedbackDataElement && feedbackDataElement.textContent) {
         try {
@@ -372,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (feedbackData && feedbackData.text && feedbackData.type) {
                 setTimeout(() => { showPopup(feedbackData.type, feedbackData.text); }, 100);
             }
-        } catch (e) { /* console.error("Error parsing feedback data:", e); */ }
+        } catch (e) { }
     }
     
     const leaveRoomModal = document.getElementById('leaveRoomModal');
@@ -392,22 +332,17 @@ document.addEventListener('DOMContentLoaded', function () {
             leaveModalMessage.textContent = "Are you sure you want to leave this chat room? You will need a new invitation to rejoin.";
         }
         leaveRoomModal.classList.remove('hidden');
-        leaveRoomModalOverlay.classList.remove('opacity-0');
-        leaveRoomModalOverlay.classList.add('opacity-100');
-        requestAnimationFrame(() => { leaveRoomModal.classList.add('modal-visible'); });
     }
+    
     function hideLeaveModal() {
         if (!leaveRoomModal) return;
-        leaveRoomModalOverlay.classList.remove('opacity-100');
-        leaveRoomModalOverlay.classList.add('opacity-0');
-        leaveRoomModal.classList.remove('modal-visible');
-        setTimeout(() => { leaveRoomModal.classList.add('hidden'); }, 300); 
+        leaveRoomModal.classList.add('hidden');
     }
+    
     if (triggerLeaveButton) { triggerLeaveButton.addEventListener('click', function(event) { event.preventDefault(); showLeaveModal(); }); }
     if (confirmLeaveButton && leaveRoomForm) { confirmLeaveButton.addEventListener('click', function() { hideLeaveModal(); leaveRoomForm.submit(); });}
     if (cancelLeaveButton) { cancelLeaveButton.addEventListener('click', hideLeaveModal); }
     if (leaveRoomModalOverlay) { leaveRoomModalOverlay.addEventListener('click', hideLeaveModal); }
-    document.addEventListener('keydown', function(event) { if (event.key === 'Escape' && leaveRoomModal && !leaveRoomModal.classList.contains('hidden')) { hideLeaveModal(); } });
 
     if (chatContainer) {
         const roomId = chatContainer.dataset.roomId;
@@ -418,8 +353,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const messageInput = document.getElementById('chat-message-input');
         const messageForm = document.getElementById('chat-message-form');
         const noMessagesPlaceholder = document.getElementById('no-messages-placeholder');
-        const recommendSelect = document.getElementById('audiobook-recommend-select');
-        const recommendButton = document.getElementById('send-recommendation-button');
 
         function scrollToBottom() {
             setTimeout(() => { if(chatLogContainer) chatLogContainer.scrollTop = chatLogContainer.scrollHeight; }, 50);
@@ -456,30 +389,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (noMessagesPlaceholder && chatLog.children.length === 1 && noMessagesPlaceholder.parentNode) { 
                         noMessagesPlaceholder.remove();
                     }
-                    if (data.type === 'system_message' || data.type === 'room_closed') { 
+                    
+                    if (data.type === 'system_message' || data.type === 'room_closed' || data.type === 'user_joined' || data.type === 'user_left') { 
                         appendSystemMessageToLog(data); 
                         if(data.type === 'room_closed' && messageInput && messageForm){
                             messageInput.disabled = true;
                             messageInput.placeholder = "This room is now closed.";
                             messageForm.querySelector('button[type="submit"]').disabled = true;
-                            if(recommendSelect) recommendSelect.disabled = true;
-                            if(recommendButton) recommendButton.disabled = true;
-                            // Optionally, update the header status badge dynamically here too
-                            const headerStatusBadge = document.querySelector('.status-badge-header');
-                            if(headerStatusBadge) {
-                                headerStatusBadge.textContent = 'Closed';
-                                headerStatusBadge.classList.remove('status-active-header');
-                                headerStatusBadge.classList.add('status-closed-header');
-                            }
-                            const roomClosedBanner = document.querySelector('.room-closed-banner'); // You'd need to add this element or show it
-                            if(roomClosedBanner) roomClosedBanner.classList.remove('hidden');
-
                         }
-                    } else if (data.type === 'text' || data.type === 'audiobook_recommendation') { 
+                    } else if (data.type === 'text') { 
                         appendMessageToLog(data); 
                     }
                     scrollToBottom();
-                } catch (error) { /* console.error("Error processing message data:", error, "Raw data:", e.data); */ }
+                } catch (error) { }
             };
         } else { 
              if (messageInput) {
@@ -490,8 +412,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (submitButton) {
                 submitButton.disabled = true;
             }
-            if(recommendSelect) recommendSelect.disabled = true;
-            if(recommendButton) recommendButton.disabled = true;
         }
 
         function formatTimestamp(isoString) { 
@@ -505,45 +425,66 @@ document.addEventListener('DOMContentLoaded', function () {
         function appendMessageToLog(data) { 
             if (!chatLog) return;
             const isCurrentUser = data.user_id === currentUserId;
-            const messageWrapperDiv = document.createElement('div');
-            messageWrapperDiv.classList.add('message-wrapper', 'flex', isCurrentUser ? 'justify-end' : 'justify-start');
-            const messageBubbleDiv = document.createElement('div');
-            messageBubbleDiv.classList.add('message-bubble', isCurrentUser ? 'bg-audiox-red' : 'bg-audiox-gray-light', isCurrentUser ? 'text-white' : 'text-audiox-gray-dark', isCurrentUser ? 'rounded-br-none' : 'rounded-bl-none');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('flex', isCurrentUser ? 'justify-end' : 'justify-start');
+            
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('max-w-xs', 'lg:max-w-md');
+            
             if (data.username && !isCurrentUser) {
-                const userNameP = document.createElement('p');
-                userNameP.classList.add('text-xs', 'font-semibold', 'mb-0.5', 'text-audiox-blue');
-                userNameP.textContent = data.username;
-                messageBubbleDiv.appendChild(userNameP);
+                const userInfo = document.createElement('div');
+                userInfo.classList.add('flex', 'items-center', 'space-x-2', 'mb-1');
+                userInfo.innerHTML = `
+                    <img src="${data.avatar_url || '/static/img/default_avatar.png'}" 
+                         alt="${data.username}" 
+                         class="w-6 h-6 rounded-full object-cover">
+                    <span class="text-xs font-semibold text-[#091e65]">${data.username}</span>
+                `;
+                messageContent.appendChild(userInfo);
             }
-            let messageContentHtml = '';
-            if (data.type === 'audiobook_recommendation' && data.recommended_audiobook) {
-                const rec = data.recommended_audiobook;
-                messageContentHtml += `<p class="text-sm mb-1 ${isCurrentUser ? 'italic' : 'italic text-audiox-gray'}">Recommends:</p>`;
-                messageContentHtml += `<a href="${rec.url || '#'}" target="_blank" class="flex items-center p-2 rounded-md my-1 hover:bg-opacity-20 ${isCurrentUser ? 'bg-red-500 bg-opacity-75' : 'bg-audiox-blue bg-opacity-10'} transition-colors">`;
-                messageContentHtml += rec.cover_image_url ? `<img src="${rec.cover_image_url}" alt="${rec.title} cover" class="w-8 h-8 rounded object-cover mr-2 flex-shrink-0">` : `<div class="w-8 h-8 bg-audiox-gray-medium rounded mr-2 flex items-center justify-center text-audiox-gray-dark text-xs flex-shrink-0">?</div>`;
-                messageContentHtml += `<div class="min-w-0"><p class="text-sm font-semibold truncate ${isCurrentUser ? 'text-white' : 'text-audiox-blue'}">${rec.title}</p><p class="text-xs truncate ${isCurrentUser ? 'text-red-100' : 'text-audiox-gray'}">by ${rec.author || "N/A"}</p></div></a>`;
-                if (data.content && data.content !== String(rec.id)) messageContentHtml += `<p class="mt-1 text-sm">${data.content.replace(/\n/g, '<br>')}</p>`;
-            } else { messageContentHtml += (data.content || '').replace(/\n/g, '<br>'); }
-            const tempDiv = document.createElement('div'); tempDiv.innerHTML = messageContentHtml; 
-            while(tempDiv.firstChild) messageBubbleDiv.appendChild(tempDiv.firstChild);
-            const timestampP = document.createElement('p');
-            timestampP.classList.add('message-meta', 'text-right', 'opacity-75', isCurrentUser ? 'text-red-100' : 'text-audiox-gray');
-            timestampP.textContent = data.timestamp ? formatTimestamp(data.timestamp) : 'sending...';
-            messageBubbleDiv.appendChild(timestampP);
-            messageWrapperDiv.appendChild(messageBubbleDiv);
-            chatLog.appendChild(messageWrapperDiv); 
+            
+            const bubble = document.createElement('div');
+            bubble.classList.add('px-4', 'py-3', 'shadow-sm');
+            if (isCurrentUser) {
+                bubble.classList.add('bg-red-600', 'text-white', 'rounded-2xl', 'rounded-br-md');
+            } else {
+                bubble.classList.add('bg-white', 'text-gray-900', 'rounded-2xl', 'rounded-bl-md', 'border', 'border-gray-200');
+            }
+            
+            const messageText = document.createElement('p');
+            messageText.classList.add('text-sm');
+            messageText.innerHTML = (data.content || '').replace(/\n/g, '<br>');
+            bubble.appendChild(messageText);
+            
+            const timestamp = document.createElement('p');
+            timestamp.classList.add('text-xs', 'mt-1', 'text-right');
+            timestamp.classList.add(isCurrentUser ? 'text-red-100' : 'text-gray-500');
+            timestamp.textContent = data.timestamp ? formatTimestamp(data.timestamp) : 'sending...';
+            bubble.appendChild(timestamp);
+            
+            messageContent.appendChild(bubble);
+            messageDiv.appendChild(messageContent);
+            chatLog.appendChild(messageDiv);
         }
 
         function appendSystemMessageToLog(data) { 
             if (!chatLog) return;
-            const messageDiv = document.createElement('div'); messageDiv.classList.add('system-message'); 
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('flex', 'justify-center');
+            
+            const systemBubble = document.createElement('div');
+            systemBubble.classList.add('bg-gray-200', 'text-gray-600', 'text-xs', 'font-medium', 'px-3', 'py-1', 'rounded-full');
+            
             let content = '';
             if (data.event_type === 'user_joined' || data.type === 'user_joined') content = `${data.username || 'A user'} has joined the room.`;
             else if (data.event_type === 'user_left' || data.type === 'user_left') content = `${data.username || 'A user'} has left the room.`;
             else if (data.type === 'room_closed') content = data.message || 'This room has been closed.'; 
             else content = data.message || 'System notification';
-            messageDiv.textContent = content;
-            chatLog.appendChild(messageDiv); 
+            
+            systemBubble.textContent = content;
+            messageDiv.appendChild(systemBubble);
+            chatLog.appendChild(messageDiv);
         }
 
         if (messageForm && roomStatus === 'active') { 
@@ -559,25 +500,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
         }
-        if (recommendButton && recommendSelect && roomStatus === 'active') { 
-            recommendButton.addEventListener('click', function() {
-                const audiobookId = recommendSelect.value; const commentText = messageInput.value.trim();
-                if (audiobookId) {
-                    const payload = {'type': 'audiobook_recommendation', 'audiobook_id': audiobookId, 'comment': commentText };
-                     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
-                        chatSocket.send(JSON.stringify(payload));
-                    } else {
-                        showPopup('error', 'Not connected to chat. Please refresh.');
-                    }
-                    recommendSelect.value = ''; 
-                    if (commentText) messageInput.value = ''; 
-                    messageInput.focus();
-                } else { 
-                    showPopup('warning', "Please select an audiobook to recommend.");
-                }
-            });
-        }
-    } else { /* console.warn("Chat JS: chat-container not found."); */ }
+    }
 });
 </script>
 {% endblock extra_chat_scripts %}

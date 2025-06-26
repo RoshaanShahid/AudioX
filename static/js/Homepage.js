@@ -2,10 +2,10 @@
  * ==================== AUDIOX HOMEPAGE JAVASCRIPT ====================
  *
  * This file contains all the JavaScript functionality for the AudioX homepage
- * including search filters, language selector, menu interactions, and modals.
+ * including search filters, new compact language selector, menu interactions, and modals.
  *
  * Author: AudioX Development Team
- * Version: 2.0
+ * Version: 3.1 - FIXED
  * Last Updated: 2024
  */
 
@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || ""
 
   // Search Filter State Management
-  let currentFilters = {
+  const currentFilters = {
     language: "",
     genre: "",
     creator: "",
@@ -84,16 +84,16 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  // ==================== PREMIUM LANGUAGE SELECTOR ====================
+  // ==================== SIMPLE LANGUAGE SELECTOR ====================
 
-  function initializeLanguageSelector() {
-    const languageSelectorBtn = document.getElementById("language-selector-btn")
-    const languageDropdown = document.getElementById("language-dropdown")
-    const selectedLanguageText = document.getElementById("selected-language-text")
-    const languageChevron = document.getElementById("language-chevron")
-    const languageOptions = document.querySelectorAll(".language-option")
+  function initializeNewLanguageSelector() {
+    const newLanguageBtn = document.getElementById("new-language-btn")
+    const newLanguageDropdown = document.getElementById("new-language-dropdown")
+    const newSelectedLanguage = document.getElementById("new-selected-language")
+    const newLanguageChevron = document.getElementById("new-language-chevron")
+    const newLanguageOptions = document.querySelectorAll(".new-language-option")
 
-    if (!languageSelectorBtn || !languageDropdown) return
+    if (!newLanguageBtn || !newLanguageDropdown) return
 
     // Set initial language based on current page
     function setInitialLanguage() {
@@ -102,27 +102,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (path.startsWith("/urdu/")) {
         currentLanguage = "Urdu"
-        selectedLanguageText.textContent = "اردو"
+        newSelectedLanguage.textContent = "اردو"
       } else if (path.startsWith("/punjabi/")) {
         currentLanguage = "Punjabi"
-        selectedLanguageText.textContent = "پنجابی"
+        newSelectedLanguage.textContent = "پنجابی"
       } else if (path.startsWith("/sindhi/")) {
         currentLanguage = "Sindhi"
-        selectedLanguageText.textContent = "سنڌي"
+        newSelectedLanguage.textContent = "سنڌي"
       } else {
-        selectedLanguageText.textContent = "English"
+        newSelectedLanguage.textContent = "English"
       }
 
       // Update check marks
-      languageOptions.forEach((option) => {
-        const checkIcon = document.getElementById(`check-${option.dataset.language}`)
+      newLanguageOptions.forEach((option) => {
+        const checkIcon = document.getElementById(`new-check-${option.dataset.language}`)
         if (checkIcon) {
           if (option.dataset.language === currentLanguage) {
-            checkIcon.classList.remove("opacity-0")
-            checkIcon.classList.add("opacity-100")
+            checkIcon.classList.remove("hidden")
           } else {
-            checkIcon.classList.remove("opacity-100")
-            checkIcon.classList.add("opacity-0")
+            checkIcon.classList.add("hidden")
           }
         }
       })
@@ -130,45 +128,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Toggle dropdown
     function toggleLanguageDropdown() {
-      // Ensure side menu is closed first
-      const slideMenu = document.getElementById("slide-menu")
-      if (!slideMenu.classList.contains("-translate-x-full")) {
-        return // Don't open language dropdown if side menu is open
-      }
+      const isHidden = newLanguageDropdown.classList.contains("hidden")
 
-      const isVisible = !languageDropdown.classList.contains("opacity-0")
-
-      if (isVisible) {
-        hideLanguageDropdown()
+      if (isHidden) {
+        newLanguageDropdown.classList.remove("hidden")
+        newLanguageChevron.classList.add("rotate-180")
       } else {
-        showLanguageDropdown()
+        newLanguageDropdown.classList.add("hidden")
+        newLanguageChevron.classList.remove("rotate-180")
       }
-    }
-
-    // Show dropdown
-    function showLanguageDropdown() {
-      languageDropdown.classList.remove("opacity-0", "invisible", "scale-95")
-      languageDropdown.classList.add("opacity-100", "visible", "scale-100")
-      languageChevron.classList.add("rotate-180")
-      languageSelectorBtn.setAttribute("aria-expanded", "true")
-    }
-
-    // Hide dropdown
-    function hideLanguageDropdown() {
-      languageDropdown.classList.remove("opacity-100", "visible", "scale-100")
-      languageDropdown.classList.add("opacity-0", "invisible", "scale-95")
-      languageChevron.classList.remove("rotate-180")
-      languageSelectorBtn.setAttribute("aria-expanded", "false")
     }
 
     // Event listeners
-    languageSelectorBtn.addEventListener("click", (e) => {
+    newLanguageBtn.addEventListener("click", (e) => {
       e.stopPropagation()
       toggleLanguageDropdown()
     })
 
     // Language option clicks
-    languageOptions.forEach((option) => {
+    newLanguageOptions.forEach((option) => {
       option.addEventListener("click", (e) => {
         e.preventDefault()
         const language = option.dataset.language
@@ -182,53 +160,86 @@ document.addEventListener("DOMContentLoaded", () => {
           Sindhi: "سنڌي",
         }
 
-        selectedLanguageText.textContent = languageTexts[language]
+        newSelectedLanguage.textContent = languageTexts[language]
 
         // Update check marks
-        languageOptions.forEach((opt) => {
-          const checkIcon = document.getElementById(`check-${opt.dataset.language}`)
+        newLanguageOptions.forEach((opt) => {
+          const checkIcon = document.getElementById(`new-check-${opt.dataset.language}`)
           if (checkIcon) {
             if (opt.dataset.language === language) {
-              checkIcon.classList.remove("opacity-0")
-              checkIcon.classList.add("opacity-100")
+              checkIcon.classList.remove("hidden")
             } else {
-              checkIcon.classList.remove("opacity-100")
-              checkIcon.classList.add("opacity-0")
+              checkIcon.classList.add("hidden")
             }
           }
         })
 
-        hideLanguageDropdown()
+        newLanguageDropdown.classList.add("hidden")
+        newLanguageChevron.classList.remove("rotate-180")
 
         // Navigate to selected language page
         window.location.href = url
       })
     })
 
-    // Close dropdown when clicking outside - improve this section
+    // Close dropdown when clicking outside
     document.addEventListener("click", (e) => {
-      // Only close language dropdown if click is not on side menu elements
-      const slideMenu = document.getElementById("slide-menu")
-      const menuBackdrop = document.getElementById("slide-menu-backdrop")
-      if (
-        !languageSelectorBtn.contains(e.target) &&
-        !languageDropdown.contains(e.target) &&
-        !slideMenu.contains(e.target) &&
-        !menuBackdrop.contains(e.target)
-      ) {
-        hideLanguageDropdown()
-      }
-    })
-
-    // Close dropdown on escape key
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        hideLanguageDropdown()
+      if (!newLanguageBtn.contains(e.target) && !newLanguageDropdown.contains(e.target)) {
+        newLanguageDropdown.classList.add("hidden")
+        newLanguageChevron.classList.remove("rotate-180")
       }
     })
 
     // Initialize language on page load
     setInitialLanguage()
+  }
+
+  // ==================== VOICE SEARCH FUNCTIONALITY ====================
+
+  function initializeVoiceSearch() {
+    const voiceSearchBtn = document.getElementById("voice-search-btn")
+    const voiceSearchBtnMobile = document.getElementById("voice-search-btn-mobile")
+    const searchInput = document.getElementById("search-input")
+    const searchInputMobile = document.getElementById("search-input-mobile")
+
+    function startVoiceSearch(inputElement) {
+      if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+        const recognition = new SpeechRecognition()
+
+        recognition.continuous = false
+        recognition.interimResults = false
+        recognition.lang = "en-US"
+
+        recognition.onstart = () => {
+          console.log("Voice search started")
+        }
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript
+          inputElement.value = transcript
+          // Trigger search
+          currentFilters.query = transcript
+          performSearch()
+        }
+
+        recognition.onerror = (event) => {
+          console.error("Voice search error:", event.error)
+        }
+
+        recognition.start()
+      } else {
+        alert("Voice search is not supported in your browser")
+      }
+    }
+
+    if (voiceSearchBtn && searchInput) {
+      voiceSearchBtn.addEventListener("click", () => startVoiceSearch(searchInput))
+    }
+
+    if (voiceSearchBtnMobile && searchInputMobile) {
+      voiceSearchBtnMobile.addEventListener("click", () => startVoiceSearch(searchInputMobile))
+    }
   }
 
   // ==================== SEARCH FILTER FUNCTIONS ====================
@@ -327,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function clearAllFilters() {
-    currentFilters = {
+    const currentFilters = {
       language: "",
       genre: "",
       creator: "",
@@ -478,7 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function openSlideMenu() {
       if (!slideMenu || !menuBackdrop) return
-      menuBackdrop.classList.remove("hidden", "pointer-events-none") // Add pointer-events-none here
+      menuBackdrop.classList.remove("hidden", "pointer-events-none")
       document.body.style.overflow = "hidden"
       requestAnimationFrame(() => {
         slideMenu.classList.remove("-translate-x-full")
@@ -494,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
       menuBackdrop.classList.add("opacity-0")
       setTimeout(() => {
         menuBackdrop.classList.add("hidden")
-        menuBackdrop.classList.add("pointer-events-none") // Add this line
+        menuBackdrop.classList.add("pointer-events-none")
         document.body.style.overflow = ""
       }, 300)
     }
@@ -726,98 +737,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ==================== VOICE SEARCH ====================
-
-  function initializeVoiceSearch() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    let recognition
-
-    if (SpeechRecognition) {
-      recognition = new SpeechRecognition()
-      recognition.continuous = false
-      recognition.interimResults = false
-
-      recognition.onstart = () => {
-        SwalStyled.fire({
-          title: "Listening...",
-          imageUrl: "/static/img/microphone-icon.png",
-          imageWidth: 60,
-          imageHeight: 60,
-          imageAlt: "Microphone listening",
-          showConfirmButton: false,
-          allowOutsideClick: false,
-          customClass: {
-            popup: "rounded-xl shadow-lg font-sans border border-gray-100 bg-white w-auto max-w-xs",
-            title: "text-lg font-semibold text-[#091e65] pt-5 px-5 pb-4 text-center",
-            image: "mx-auto mb-2 animate-pulse",
-          },
-          timer: 10000,
-          timerProgressBar: true,
-        })
-      }
-
-      recognition.onresult = (event) => {
-        Swal.close()
-        const transcript = event.results[0][0].transcript
-        const currentSearchInputId = recognition.currentSearchInputId
-        const searchInput = document.getElementById(currentSearchInputId)
-
-        if (searchInput) {
-          searchInput.value = transcript
-          currentFilters.query = transcript
-          performSearch()
-        }
-      }
-
-      recognition.onerror = (event) => {
-        Swal.close()
-        let errorMessage = "Voice search error. Please try again."
-        if (event.error === "no-speech") {
-          errorMessage = "No speech detected. Please try again."
-        } else if (event.error === "not-allowed") {
-          errorMessage = "Microphone access denied. Please allow microphone access."
-        }
-        SwalStyled.fire({ title: "Voice Search Failed", text: errorMessage, icon: "error" })
-      }
-
-      recognition.onend = () => {
-        if (Swal.isVisible()) {
-          Swal.close()
-        }
-      }
-    }
-
-    const initiateVoiceSearch = (buttonId, inputId) => {
-      const btn = document.getElementById(buttonId)
-      const input = document.getElementById(inputId)
-
-      if (!btn || !input) return
-
-      btn.addEventListener("click", () => {
-        if (!SpeechRecognition) {
-          SwalStyled.fire({
-            title: "Voice Search Not Supported",
-            text: "Your browser does not support voice input.",
-            icon: "warning",
-          })
-          return
-        }
-
-        recognition.currentSearchInputId = inputId
-        recognition.lang = "en-US"
-
-        try {
-          recognition.start()
-        } catch (e) {
-          SwalStyled.fire({ title: "Voice Search Error", text: "Could not start voice input.", icon: "error" })
-        }
-      })
-    }
-
-    initiateVoiceSearch("voice-search-btn", "search-input")
-    initiateVoiceSearch("voice-search-btn-mobile", "search-input-mobile")
-  }
-
   // ==================== SUBMENU FUNCTIONALITY ====================
 
   function initializeSubmenus() {
@@ -957,18 +876,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==================== MAIN INITIALIZATION ====================
 
   // Initialize all components
-  initializeLanguageSelector()
+  initializeNewLanguageSelector() // Simple language selector
+  initializeVoiceSearch() // Voice search functionality
   initializeMenus()
   initializeProfileDropdown()
   initializeSearch()
-  initializeLanguageFilters()
-  initializeFilterDropdowns()
-  initializeMobileFilters()
-  initializeVoiceSearch()
   initializeSubmenus()
   initializeCreatorModal()
   initializeCreatorDashboard()
   initializeFilters()
 
-  console.log("AudioX Homepage JavaScript initialized successfully")
+  console.log("AudioX Homepage JavaScript v3.1 - FIXED - initialized successfully")
 })

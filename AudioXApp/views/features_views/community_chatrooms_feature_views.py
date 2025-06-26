@@ -10,7 +10,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError, ObjectDoesNotExist
 from django.db import IntegrityError, transaction
 from django.http import Http404, JsonResponse
-from django.utils import timezone 
+from django.utils import timezone
 
 from AudioXApp.models import ChatRoom, ChatRoomMember, User, Audiobook, ChatRoomInvitation, ChatMessage
 
@@ -25,7 +25,7 @@ class ChatroomWelcomeView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         context = {
-            'on_chatroom_welcome_page': True, 
+            'on_chatroom_welcome_page': True,
             'on_explore_chatrooms_page': False,
             'on_my_rooms_page': False,
             'on_joined_rooms_page': False,
@@ -47,15 +47,15 @@ class CommunityChatroomHomeView(LoginRequiredMixin, View):
             num_members=Count('room_memberships__user', filter=Q(room_memberships__status=ChatRoomMember.StatusChoices.ACTIVE), distinct=True)
         ).select_related('owner').order_by('-created_at')
         
-        form_errors = request.session.pop('create_room_form_errors', None) 
+        form_errors = request.session.pop('create_room_form_errors', None)
         form_values = request.session.pop('create_room_form_values', None)
-        popup_feedback = request.session.pop('invitation_response_feedback', None) 
+        popup_feedback = request.session.pop('invitation_response_feedback', None)
         home_popup_feedback = request.session.pop('room_action_feedback', popup_feedback)
 
         context = {
             'chat_rooms': chat_rooms_query,
-            'on_chatroom_list_page': True, 
-            'on_explore_chatrooms_page': True, 
+            'on_chatroom_list_page': True,
+            'on_explore_chatrooms_page': True,
             'form_errors': form_errors,
             'form_values': form_values,
             'popup_feedback': home_popup_feedback,
@@ -85,7 +85,7 @@ class CreateChatRoomView(LoginRequiredMixin, View):
 
         if not room_name: errors['name'] = 'Chat room name cannot be empty.'
         elif len(room_name) > 100: errors['name'] = 'Chat room name cannot exceed 100 characters.'
-        elif ChatRoom.objects.filter(name__iexact=room_name, status=ChatRoom.RoomStatusChoices.ACTIVE).exists(): 
+        elif ChatRoom.objects.filter(name__iexact=room_name, status=ChatRoom.RoomStatusChoices.ACTIVE).exists():
             errors['name'] = 'An active chat room with this name already exists.'
         if not room_description: errors['description'] = 'Description cannot be empty.'
         elif len(room_description) > 500: errors['description'] = 'Description cannot exceed 500 characters.'
@@ -94,23 +94,23 @@ class CreateChatRoomView(LoginRequiredMixin, View):
         elif room_language not in valid_language_codes: errors['language'] = 'Invalid language selected.'
 
         if errors:
-            messages.error(request, "Please correct the errors below.") 
+            messages.error(request, "Please correct the errors below.")
             context = {'form_values': form_values, 'form_errors': errors, 'language_choices': ChatRoom.LANGUAGE_CHOICES}
             return render(request, self.template_name, context)
         try:
             chat_room = ChatRoom(
-                name=room_name, 
-                description=room_description, 
-                language=room_language, 
-                owner=request.user, 
+                name=room_name,
+                description=room_description,
+                language=room_language,
+                owner=request.user,
                 cover_image=room_cover_image,
                 status=ChatRoom.RoomStatusChoices.ACTIVE
             )
             chat_room.save()
             
             ChatRoomMember.objects.update_or_create(
-                room=chat_room, 
-                user=request.user, 
+                room=chat_room,
+                user=request.user,
                 defaults={'role': ChatRoomMember.RoleChoices.ADMIN, 'status': ChatRoomMember.StatusChoices.ACTIVE, 'left_at': None}
             )
             
@@ -136,23 +136,41 @@ class ChatRoomDetailView(LoginRequiredMixin, View):
         
         membership = ChatRoomMember.objects.filter(room=chat_room, user=request.user).first()
 
-        if not membership or membership.status != ChatRoomMember.StatusChoices.ACTIVE:
+        # Check if the user is already an active member
+        is_active_member = membership and membership.status == ChatRoomMember.StatusChoices.ACTIVE
+
+        if not is_active_member:
+            # The owner should always be able to enter and have their membership reactivated.
             if chat_room.owner == request.user:
-                if not membership:
-                    membership, _ = ChatRoomMember.objects.update_or_create(
-                        room=chat_room, user=request.user,
-                        defaults={'role': ChatRoomMember.RoleChoices.ADMIN, 'status': ChatRoomMember.StatusChoices.ACTIVE, 'left_at': None}
-                    )
-                elif membership.status != ChatRoomMember.StatusChoices.ACTIVE:
-                    membership.status = ChatRoomMember.StatusChoices.ACTIVE
-                    membership.role = ChatRoomMember.RoleChoices.ADMIN 
-                    membership.left_at = None
-                    membership.save(update_fields=['status', 'role', 'left_at'])
+                membership, _ = ChatRoomMember.objects.update_or_create(
+                    room=chat_room, user=request.user,
+                    defaults={'role': ChatRoomMember.RoleChoices.ADMIN, 'status': ChatRoomMember.StatusChoices.ACTIVE, 'left_at': None}
+                )
+            
+            # Nobody can enter a closed room.
             elif chat_room.status == ChatRoom.RoomStatusChoices.CLOSED:
                 request.session['room_action_feedback'] = {'type': 'info', 'text': f"The chat room '{chat_room.name}' is closed."}
                 return redirect(reverse('AudioXApp:chatroom_home'))
-            else: 
-                request.session['room_action_feedback'] = {'type': 'error', 'text': f"You are not an active member of '{chat_room.name}'. You might need an invitation to join or rejoin."}
+
+            # If a membership record exists, it means the user was once a member and has left. They now need an invitation.
+            elif membership:
+                request.session['room_action_feedback'] = {'type': 'error', 'text': f"You have previously left '{chat_room.name}' and require an invitation to rejoin."}
+                return redirect(reverse('AudioXApp:chatroom_home'))
+            
+            # If no membership record exists at all and the room is active, it's a first-time join.
+            elif not membership and chat_room.status == ChatRoom.RoomStatusChoices.ACTIVE:
+                membership = ChatRoomMember.objects.create(
+                    room=chat_room,
+                    user=request.user,
+                    role=ChatRoomMember.RoleChoices.MEMBER,
+                    status=ChatRoomMember.StatusChoices.ACTIVE
+                )
+                # Set feedback for a successful first-time join.
+                popup_feedback = {'type': 'success', 'text': f"Welcome! You have successfully joined '{chat_room.name}'."}
+
+            # A catch-all for any other state; redirects and requires an invitation.
+            else:
+                request.session['room_action_feedback'] = {'type': 'error', 'text': f"You cannot join '{chat_room.name}' at this time. An invitation may be required."}
                 return redirect(reverse('AudioXApp:chatroom_home'))
         
         can_invite_users = False
@@ -195,10 +213,10 @@ class LeaveChatRoomView(LoginRequiredMixin, View):
             chat_room.save(update_fields=['status', 'updated_at'])
 
             ChatRoomMember.objects.filter(
-                room=chat_room, 
+                room=chat_room,
                 status=ChatRoomMember.StatusChoices.ACTIVE
             ).update(
-                status=ChatRoomMember.StatusChoices.ROOM_DISMISSED, 
+                status=ChatRoomMember.StatusChoices.ROOM_DISMISSED,
                 left_at=now
             )
             
@@ -227,7 +245,7 @@ class LeaveChatRoomView(LoginRequiredMixin, View):
                 request.session['room_action_feedback'] = {'type': 'success', 'text': f"You have left the room: {chat_room.name}."}
             elif membership.status == ChatRoomMember.StatusChoices.LEFT:
                 request.session['room_action_feedback'] = {'type': 'info', 'text': f"You have already left the room: {chat_room.name}."}
-            else: 
+            else:
                 request.session['room_action_feedback'] = {'type': 'info', 'text': f"Your status in '{chat_room.name}' is '{membership.get_status_display()}'."}
             return redirect(redirect_url_home)
         except ChatRoomMember.DoesNotExist:
@@ -275,8 +293,8 @@ class InviteUserToChatRoomView(LoginRequiredMixin, View):
                         try:
                             ChatRoomInvitation.objects.create(room=chat_room, invited_by=request.user, invited_user=target_user)
                             feedback_for_session = {'type': 'success', 'text': f"Invitation sent to {target_user.full_name} ({invited_email})."}
-                        except IntegrityError: 
-                            feedback_for_session = {'type': 'warning', 'text': f"Pending invitation already exists for '{target_user.full_name}'."} 
+                        except IntegrityError:
+                            feedback_for_session = {'type': 'warning', 'text': f"Pending invitation already exists for '{target_user.full_name}'."}
                         except Exception as e:
                             logger.error(f"Error creating invitation for {invited_email} to room {room_id}: {e}", exc_info=True)
                             feedback_for_session = {'type': 'error', 'text': "Could not send invitation due to a server error."}
@@ -294,15 +312,15 @@ class ChatInvitationsListView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         popup_feedback = request.session.pop('invitation_response_feedback', None)
         pending_invitations = ChatRoomInvitation.objects.filter(
-            invited_user=request.user, 
+            invited_user=request.user,
             status=ChatRoomInvitation.StatusChoices.PENDING,
-            room__status=ChatRoom.RoomStatusChoices.ACTIVE 
+            room__status=ChatRoom.RoomStatusChoices.ACTIVE
         ).select_related('room', 'invited_by').order_by('-created_at')
         context = {
-            'pending_invitations': pending_invitations, 
-            'on_chat_invitations_page': True, 
+            'pending_invitations': pending_invitations,
+            'on_chat_invitations_page': True,
             'popup_feedback': popup_feedback,
-            'on_explore_chatrooms_page': False 
+            'on_explore_chatrooms_page': False
         }
         return render(request, self.template_name, context)
 
@@ -311,25 +329,25 @@ class RespondToChatInvitationView(LoginRequiredMixin, View):
     @transaction.atomic
     def post(self, request, invitation_id, *args, **kwargs):
         action = request.POST.get('action', '').lower()
-        feedback_for_session = None 
+        feedback_for_session = None
         redirect_page = reverse_lazy('AudioXApp:chat_invitations')
 
         try:
-            invitation = get_object_or_404(ChatRoomInvitation.objects.select_related('room'), 
-                                           invitation_id=invitation_id, 
-                                           invited_user=request.user, 
+            invitation = get_object_or_404(ChatRoomInvitation.objects.select_related('room'),
+                                           invitation_id=invitation_id,
+                                           invited_user=request.user,
                                            status=ChatRoomInvitation.StatusChoices.PENDING)
             chat_room = invitation.room
 
             if not chat_room.is_open_for_interaction:
                 feedback_for_session = {'type': 'error', 'text': f"Cannot join '{chat_room.name}' as it is currently closed."}
-                invitation.status = ChatRoomInvitation.StatusChoices.EXPIRED 
+                invitation.status = ChatRoomInvitation.StatusChoices.EXPIRED
                 invitation.save(update_fields=['status','updated_at'])
             elif action == 'accept':
                 try:
                     ChatRoomMember.objects.update_or_create(
-                        room=chat_room, 
-                        user=request.user, 
+                        room=chat_room,
+                        user=request.user,
                         defaults={'role': ChatRoomMember.RoleChoices.MEMBER, 'status': ChatRoomMember.StatusChoices.ACTIVE, 'left_at': None}
                     )
                     invitation.status = ChatRoomInvitation.StatusChoices.ACCEPTED
@@ -338,7 +356,7 @@ class RespondToChatInvitationView(LoginRequiredMixin, View):
                     redirect_page = reverse('AudioXApp:chatroom_detail', kwargs={'room_id': chat_room.room_id})
                 except Exception as e:
                     logger.error(f"Error accepting invitation {invitation_id}: {e}", exc_info=True)
-                    feedback_for_session = {'type': 'error', 'text': "Error joining room."} 
+                    feedback_for_session = {'type': 'error', 'text': "Error joining room."}
             elif action == 'decline':
                 try:
                     invitation.status = ChatRoomInvitation.StatusChoices.DECLINED
@@ -359,7 +377,7 @@ class RespondToChatInvitationView(LoginRequiredMixin, View):
 
 class MyChatRoomsView(LoginRequiredMixin, View):
     login_url = reverse_lazy('account_login')
-    template_name = 'features/community_chatrooms/my_chatrooms.html' 
+    template_name = 'features/community_chatrooms/my_chatrooms.html'
 
     def get(self, request, *args, **kwargs):
         my_rooms = ChatRoom.objects.filter(owner=request.user).annotate(
@@ -370,7 +388,7 @@ class MyChatRoomsView(LoginRequiredMixin, View):
 
         context = {
             'my_chat_rooms': my_rooms,
-            'on_my_rooms_page': True, 
+            'on_my_rooms_page': True,
             'popup_feedback': popup_feedback,
             'on_explore_chatrooms_page': False
         }
@@ -383,10 +401,10 @@ class JoinedChatRoomsView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         joined_memberships = ChatRoomMember.objects.filter(
             user=request.user,
-            status=ChatRoomMember.StatusChoices.ACTIVE, 
-            room__status=ChatRoom.RoomStatusChoices.ACTIVE 
+            status=ChatRoomMember.StatusChoices.ACTIVE,
+            room__status=ChatRoom.RoomStatusChoices.ACTIVE
         ).exclude(
-            room__owner=request.user 
+            room__owner=request.user
         ).select_related('room', 'room__owner').order_by('-joined_at')
 
         joined_chat_rooms_with_data = []
@@ -398,8 +416,8 @@ class JoinedChatRoomsView(LoginRequiredMixin, View):
         popup_feedback = request.session.pop('joined_rooms_feedback', None)
 
         context = {
-            'joined_chat_rooms': joined_chat_rooms_with_data, 
-            'on_joined_rooms_page': True, 
+            'joined_chat_rooms': joined_chat_rooms_with_data,
+            'on_joined_rooms_page': True,
             'popup_feedback': popup_feedback,
             'on_explore_chatrooms_page': False
         }
@@ -413,28 +431,28 @@ class PastChatRoomsView(LoginRequiredMixin, View):
         past_memberships = ChatRoomMember.objects.filter(
             user=request.user,
             status__in=[ChatRoomMember.StatusChoices.LEFT, ChatRoomMember.StatusChoices.ROOM_DISMISSED]
-        ).select_related('room', 'room__owner').order_by('-left_at') 
+        ).select_related('room', 'room__owner').order_by('-left_at')
 
         past_rooms_data = []
         for membership in past_memberships:
             room = membership.room
-            if room: 
+            if room:
                 room.num_members = room.room_memberships.filter(status=ChatRoomMember.StatusChoices.ACTIVE).count()
                 past_rooms_data.append({
-                    'room': room, 
+                    'room': room,
                     'left_at': membership.left_at,
-                    'status_when_left': membership.get_status_display() 
+                    'status_when_left': membership.get_status_display()
                 })
 
-        history_tracking_implemented = True 
+        history_tracking_implemented = True
         popup_feedback = request.session.pop('past_rooms_feedback', None)
         feature_message = None
         if not past_rooms_data:
             feature_message = "You have no past chat rooms in your history."
         
         context = {
-            'past_chat_rooms_data': past_rooms_data, 
-            'on_past_rooms_page': True, 
+            'past_chat_rooms_data': past_rooms_data,
+            'on_past_rooms_page': True,
             'popup_feedback': popup_feedback,
             'history_tracking_implemented': history_tracking_implemented,
             'feature_message': feature_message,

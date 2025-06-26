@@ -548,10 +548,10 @@ def admin_user_activity_log_view(request, user_id=None):
             audiobook_title = item.audiobook.title if item.audiobook else "Audiobook (Deleted or ID missing)"
             activities.append({'timestamp': item.added_at,'type': 'Library','details': f'Added "{audiobook_title}" to library.','icon': 'fas fa-bookmark text-pink-500'})
         # Listening History
-        for history in ListeningHistory.objects.filter(user=target_user_instance).select_related('audiobook', 'current_chapter').order_by('-last_listened_at')[:50]:
-            audiobook_title = history.audiobook.title if history.audiobook else "Audiobook (Deleted or ID missing)"
-            chapter_name = f", Chapter: {history.current_chapter.chapter_name}" if history.current_chapter else ""
-            activities.append({'timestamp': history.last_listened_at,'type': 'Listening','details': f'Listened to "{audiobook_title}"{chapter_name}. Progress: {timedelta(seconds=history.progress_seconds)} (Overall: {history.progress_percentage}%).','icon': 'fas fa-headphones-alt text-indigo-500'})
+        for history in ListeningHistory.objects.filter(user=target_user_instance).select_related('chapter', 'chapter__audiobook').order_by('-last_listened_at')[:50]:
+            audiobook_title = history.chapter.audiobook.title if history.chapter and history.chapter.audiobook else "Audiobook (Deleted or ID missing)"
+            chapter_name = f", Chapter: {history.chapter.chapter_name}" if history.chapter else ""
+            activities.append({'timestamp': history.last_listened_at,'type': 'Listening','details': f'Listened to "{audiobook_title}"{chapter_name}. Progress: {timedelta(seconds=int(history.last_position_seconds or 0))} (Overall: N/A%).','icon': 'fas fa-headphones-alt text-indigo-500'})
         # Reviews
         for review in Review.objects.filter(user=target_user_instance).select_related('audiobook').order_by('created_at'):
             audiobook_title = review.audiobook.title if review.audiobook else "Audiobook (Deleted or ID missing)"

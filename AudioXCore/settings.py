@@ -1,7 +1,7 @@
 # AudioXCore/settings.py
 
-from pathlib import Path
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 import logging
 import logging.config
@@ -9,40 +9,52 @@ from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse_lazy
 from decimal import Decimal
 
-# --- Initial Setup & Environment Variables ---
-logger = logging.getLogger(__name__)
-
+# =============================================================================
+#  INITIAL SETUP & ENVIRONMENT CONFIGURATION
+# =============================================================================
+# --- Path Setup ---
 BASE_DIR = Path(__file__).resolve().parent.parent
-dotenv_path = BASE_DIR / '.env'
 
+# --- Load Environment Variables ---
+# Loads variables from the .env file in the project's base directory.
+dotenv_path = BASE_DIR / '.env'
 if dotenv_path.exists():
     load_dotenv(dotenv_path=dotenv_path, override=True)
 else:
-    logger.warning(f"WARNING: .env file not found at {dotenv_path}.")
+    # Use a basic logger here before the full logging config is set up.
+    logging.basicConfig()
+    logging.warning(f"WARNING: .env file not found at {dotenv_path}.")
 
-# --- Core Django Settings ---
+# =============================================================================
+#  CORE DJANGO SETTINGS
+# =============================================================================
+# --- Security ---
+# In production, SECRET_KEY and ALLOWED_HOSTS must be set in the .env file.
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 if not SECRET_KEY and not DEBUG:
-    raise ImproperlyConfigured("CRITICAL (PRODUCTION): DJANGO_SECRET_KEY not set.")
+    raise ImproperlyConfigured("CRITICAL (PRODUCTION): DJANGO_SECRET_KEY not set in .env file.")
 elif not SECRET_KEY and DEBUG:
-    logger.warning("Warning (DEBUG): DJANGO_SECRET_KEY not set. Using insecure dummy key.")
-    SECRET_KEY = 'django-insecure-dummy-key-for-debug-set-a-real-one-in-env'
+    SECRET_KEY = 'django-insecure-dummy-key-for-local-debug-only'
+    logging.warning("Warning (DEBUG): DJANGO_SECRET_KEY not set. Using an insecure dummy key.")
 
-ALLOWED_HOSTS_STRING = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost' if DEBUG else None)
+ALLOWED_HOSTS_STRING = os.getenv('DJANGO_ALLOWED_HOSTS')
 if not ALLOWED_HOSTS_STRING and not DEBUG:
-    raise ImproperlyConfigured("CRITICAL (PRODUCTION): DJANGO_ALLOWED_HOSTS not set.")
+    raise ImproperlyConfigured("CRITICAL (PRODUCTION): DJANGO_ALLOWED_HOSTS not set in .env file.")
 
-ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STRING.split(',') if host.strip()] if ALLOWED_HOSTS_STRING else []
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STRING.split(',')] if ALLOWED_HOSTS_STRING else []
 if DEBUG:
     ALLOWED_HOSTS.extend(['127.0.0.1', 'localhost'])
-    ALLOWED_HOSTS = list(set(ALLOWED_HOSTS))
+    ALLOWED_HOSTS = list(set(ALLOWED_HOSTS)) # Ensure uniqueness
 
 # --- Application Definition ---
 INSTALLED_APPS = [
+    # ASGI/Channels
     'daphne',
     'channels',
+
+    # Django Core
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,20 +62,22 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    
-    # Custom Application
-    'AudioXApp',
-    
-    # Third-Party Apps
     'django.contrib.humanize',
+
+    # Custom Application
+    'AudioXApp.apps.AudioxappConfig', # Use AppConfig for signal registration
+
+    # Third-Party Apps
     'mathfilters',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'django_celery_beat',
+
+    # Allauth for authentication
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    'rest_framework',
-    'rest_framework.authtoken',
-    'django_celery_beat',
 ]
 
 # --- Middleware Configuration ---
@@ -76,13 +90,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
-    'AudioXApp.middleware.ProfileCompletionMiddleware',
+    'allauth.account.middleware.AccountMiddleware',          # Django Allauth middleware
+    'AudioXApp.middleware.ProfileCompletionMiddleware',      # Custom middleware
 ]
 
-# --- URL and Template Configuration ---
+# --- URL & Template Configuration ---
 ROOT_URLCONF = 'AudioXCore.urls'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -103,7 +116,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'AudioXCore.wsgi.application'
 ASGI_APPLICATION = 'AudioXCore.asgi.application'
 
-# --- Database Configuration ---
+# =============================================================================
+#  DATABASE CONFIGURATION
+# =============================================================================
+# Uses PostgreSQL connection details from the .env file.
 DB_NAME = os.getenv('DB_NAME')
 DB_USER = os.getenv('DB_USER')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
@@ -113,7 +129,7 @@ DB_ENGINE = os.getenv('DB_ENGINE', 'django.db.backends.postgresql')
 DB_SCHEMA = os.getenv('DB_SCHEMA', 'public')
 
 if not all([DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT]) and not DEBUG:
-    logger.warning("Production Database connection details might be missing or incomplete.")
+    logging.warning("Warning (PRODUCTION): Database connection details may be incomplete in .env file.")
 
 DATABASES = {
     'default': {
@@ -125,9 +141,16 @@ DATABASES = {
         'PORT': DB_PORT,
     }
 }
+# Set search path for non-public PostgreSQL schemas
 if DB_ENGINE == 'django.db.backends.postgresql' and DB_SCHEMA and DB_SCHEMA.lower() != 'public':
     DATABASES['default'].setdefault('OPTIONS', {})['options'] = f'-c search_path={DB_SCHEMA},public'
 
+# --- Default primary key type ---
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# =============================================================================
+#  AUTHENTICATION & AUTHORIZATION
+# =============================================================================
 # --- Password Validation ---
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -136,139 +159,40 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# --- Internationalization ---
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Karachi'
-USE_I18N = True
-USE_TZ = True
-
-# --- Static and Media Files ---
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_collected')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-os.makedirs(STATIC_ROOT, exist_ok=True)
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-os.makedirs(MEDIA_ROOT, exist_ok=True)
-
-TEMP_TTS_PREVIEWS_DIR_NAME = 'temp_tts_previews'
-
-# --- Default primary key type ---
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# --- Custom User Model & Auth ---
+# --- Custom User Model & Auth URLs ---
 AUTH_USER_MODEL = 'AudioXApp.User'
 LOGIN_URL = reverse_lazy('account_login')
-MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
-
-# --- Email Configuration ---
-EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'webmaster@localhost')
-
-if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend':
-    if not all([EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD]) and not DEBUG:
-        logger.warning("Production Email (SMTP) settings not fully configured.")
-elif DEBUG and EMAIL_BACKEND != 'django.core.mail.backends.console.EmailBackend':
-    logger.info(f"Email backend is set to {EMAIL_BACKEND}. For development, consider 'django.core.mail.backends.console.EmailBackend'.")
-
-# --- Caching Configuration ---
-CACHE_LOCATION_PATH = os.path.join(BASE_DIR, 'django_cache_data')
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': CACHE_LOCATION_PATH,
-        'TIMEOUT': 3600,
-        'OPTIONS': {'MAX_ENTRIES': 1000}
-    }
-}
-try:
-    os.makedirs(CACHE_LOCATION_PATH, exist_ok=True)
-    logger.info(f"DJANGO CACHE: Using FileBasedCache. Location: {CACHE_LOCATION_PATH}")
-except OSError as e:
-    logger.error(f"DJANGO CACHE: Could not create/access cache directory {CACHE_LOCATION_PATH}: {e}")
-
-# --- Channels Configuration (UPDATED FOR IN-MEMORY) ---
-# The following Redis settings are no longer needed if using InMemoryChannelLayer,
-# but are kept commented for reference if you switch back to Redis later.
-# REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-# REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer', # Changed to in-memory
-    },
-}
-
-# --- Celery Configuration ---
-# The EAGER setting forces Celery to run tasks locally and synchronously,
-# completely bypassing the need for Redis or a separate worker. This is for development and testing only.
-CELERY_TASK_ALWAYS_EAGER = True
-# If you are not using Redis for Channels, these Celery broker/backend URLs will also not use Redis
-# if CELERY_TASK_ALWAYS_EAGER is True. If you set CELERY_TASK_ALWAYS_EAGER to False,
-# and you don't have Redis running, you would need to change these to a different broker or backend,
-# or uncomment them only when Redis is active.
-# CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/0')
-# CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', f'redis://{REDIS_HOST}:{REDIS_PORT}/1')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-
-# --- Stripe Configuration ---
-STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
-STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
-STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
-STRIPE_PRICE_ID_COINS_250 = os.getenv('STRIPE_PRICE_ID_COINS_250')
-STRIPE_PRICE_ID_COINS_500 = os.getenv('STRIPE_PRICE_ID_COINS_500')
-STRIPE_PRICE_ID_COINS_1000 = os.getenv('STRIPE_PRICE_ID_COINS_1000')
-STRIPE_PRICE_ID_SUB_MONTHLY = os.getenv('STRIPE_PRICE_ID_SUB_MONTHLY')
-STRIPE_PRICE_ID_SUB_ANNUAL = os.getenv('STRIPE_PRICE_ID_SUB_ANNUAL')
-
-if not all([STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY]) and not DEBUG:
-    logger.warning("Production Stripe keys might be missing.")
-if not STRIPE_WEBHOOK_SECRET and not DEBUG:
-    logger.warning("Production Stripe Webhook Secret is missing.")
-if not all([STRIPE_PRICE_ID_COINS_250, STRIPE_PRICE_ID_COINS_500, STRIPE_PRICE_ID_COINS_1000, STRIPE_PRICE_ID_SUB_MONTHLY, STRIPE_PRICE_ID_SUB_ANNUAL]):
-    logger.warning("One or more Stripe Price IDs are missing.")
-
-if STRIPE_SECRET_KEY:
-    import stripe
-    stripe.api_key = STRIPE_SECRET_KEY
-else:
-    logger.warning("Stripe API secret key is not set.")
+LOGIN_REDIRECT_URL = reverse_lazy('AudioXApp:home')
+LOGOUT_REDIRECT_URL = reverse_lazy('AudioXApp:home')
 
 # --- Django Allauth Configuration ---
+# NOTE: The following settings have been updated to resolve deprecation warnings.
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 SITE_ID = 1
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
+# User authentication and signup settings
+ACCOUNT_LOGIN_METHODS = ['email']             # Replaces ACCOUNT_AUTHENTICATION_METHOD
+ACCOUNT_SIGNUP_FIELDS = ['full_name', 'username'] # Fields required at signup
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_EMAIL_VERIFICATION = os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'none')
+ACCOUNT_USERNAME_REQUIRED = True              # Set based on inclusion in ACCOUNT_SIGNUP_FIELDS
+ACCOUNT_EMAIL_VERIFICATION = os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'none') # 'none', 'optional', or 'mandatory'
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-ACCOUNT_SIGNUP_FIELDS = ("full_name", "username")
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_LOGIN_ON_GET = True
 ACCOUNT_LOGOUT_ON_GET = True
+
+# Custom adapters for handling signup logic
 ACCOUNT_ADAPTER = 'AudioXApp.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'AudioXApp.adapters.CustomSocialAccountAdapter'
-LOGIN_REDIRECT_URL = reverse_lazy('AudioXApp:home')
-LOGOUT_REDIRECT_URL = reverse_lazy('AudioXApp:home')
 
+# Social Account (Google) specific settings
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
@@ -282,6 +206,112 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+# =============================================================================
+#  INTERNATIONALIZATION & STATIC/MEDIA FILES
+# =============================================================================
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'Asia/Karachi'
+USE_I18N = True
+USE_TZ = True
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+os.makedirs(STATIC_ROOT, exist_ok=True)
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+
+# =============================================================================
+#  ASYNCHRONOUS, CACHING & BACKGROUND TASKS
+# =============================================================================
+# --- Caching Configuration ---
+CACHE_LOCATION_PATH = BASE_DIR / 'django_cache_data'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': CACHE_LOCATION_PATH,
+        'TIMEOUT': 3600, # 1 hour
+        'OPTIONS': {'MAX_ENTRIES': 1000}
+    }
+}
+os.makedirs(CACHE_LOCATION_PATH, exist_ok=True)
+
+# --- Channels Configuration ---
+# Using in-memory layer for development. For production, switch to 'channels_redis'.
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+# To use Redis in production, uncomment the following:
+# REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
+# REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [(REDIS_HOST, REDIS_PORT)],
+#         },
+#     },
+# }
+
+# --- Celery Configuration ---
+# Forcing synchronous execution for development simplicity. Set to False for production.
+CELERY_TASK_ALWAYS_EAGER = True
+# For production with a message broker like Redis, set EAGER to False and configure URLs:
+# CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/0')
+# CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', f'redis://{REDIS_HOST}:{REDIS_PORT}/1')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# =============================================================================
+#  THIRD-PARTY SERVICES & API KEYS
+# =============================================================================
+# --- Email Configuration ---
+EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'noreply@audiox.com')
+
+if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and not all([EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD]) and not DEBUG:
+    logging.warning("Warning (PRODUCTION): SMTP Email settings are not fully configured in .env file.")
+
+# --- Stripe Configuration ---
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
+STRIPE_PRICE_ID_COINS_250 = os.getenv('STRIPE_PRICE_ID_COINS_250')
+STRIPE_PRICE_ID_COINS_500 = os.getenv('STRIPE_PRICE_ID_COINS_500')
+STRIPE_PRICE_ID_COINS_1000 = os.getenv('STRIPE_PRICE_ID_COINS_1000')
+STRIPE_PRICE_ID_SUB_MONTHLY = os.getenv('STRIPE_PRICE_ID_SUB_MONTHLY')
+STRIPE_PRICE_ID_SUB_ANNUAL = os.getenv('STRIPE_PRICE_ID_SUB_ANNUAL')
+
+if STRIPE_SECRET_KEY:
+    import stripe
+    stripe.api_key = STRIPE_SECRET_KEY
+else:
+    logging.warning("Warning: Stripe API secret key is not set in .env file.")
+
+# --- AI Service Keys (Google) ---
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GOOGLE_CREDENTIALS_FILE_NAME = os.getenv('GOOGLE_CREDENTIALS_FILE_NAME')
+if GOOGLE_CREDENTIALS_FILE_NAME:
+    GOOGLE_APPLICATION_CREDENTIALS = BASE_DIR / GOOGLE_CREDENTIALS_FILE_NAME
+    if not GOOGLE_APPLICATION_CREDENTIALS.exists():
+        logging.error(f"FATAL: Google credentials file '{GOOGLE_CREDENTIALS_FILE_NAME}' not found.")
+else:
+    GOOGLE_APPLICATION_CREDENTIALS = None
+    logging.warning("Warning: GOOGLE_CREDENTIALS_FILE_NAME not set. Google Cloud services will be unavailable.")
+
 # --- Django REST Framework Configuration ---
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -293,40 +323,18 @@ REST_FRAMEWORK = {
     ],
 }
 
-# --- Logging Configuration ---
-LOGGING_CONFIG = None
-logging.config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(module)s %(process)d %(thread)d :: %(message)s",
-            'datefmt': "%Y-%m-%d %H:%M:%S"
-        },
-        'simple': {'format': '%(levelname)s %(message)s'},
-    },
-    'handlers': {
-        'console': {'level': 'DEBUG' if DEBUG else 'INFO', 'class': 'logging.StreamHandler', 'formatter': 'verbose'},
-    },
-    'loggers': {
-        'django': {'handlers': ['console'], 'propagate': True, 'level': 'INFO'},
-        'django.request': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
-        'AudioXApp': {'handlers': ['console'], 'level': 'DEBUG' if DEBUG else 'INFO', 'propagate': False},
-        'allauth': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
-        'stripe': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
-        'channels': {'handlers': ['console'], 'level': 'DEBUG' if DEBUG else 'INFO', 'propagate': False},
-        'celery': {'handlers': ['console'], 'level': 'DEBUG' if DEBUG else 'INFO', 'propagate': True},
-        'rest_framework': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
-    },
-    'root': {'handlers': ['console'], 'level': 'INFO'}
-})
+# =============================================================================
+#  CUSTOM APPLICATION SETTINGS
+# =============================================================================
+TEMP_TTS_PREVIEWS_DIR_NAME = 'temp_tts_previews'
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
-# --- Custom Application Settings ---
 PROFILE_COMPLETION_EXEMPT_URLS = [
     reverse_lazy('AudioXApp:complete_profile'),
     reverse_lazy('account_logout'),
     reverse_lazy('AudioXApp:my_downloads'),
 ]
+
 ADMIN_URL_PATH = os.getenv('DJANGO_ADMIN_URL', 'admin/')
 if not ADMIN_URL_PATH.endswith('/'):
     ADMIN_URL_PATH += '/'
@@ -336,6 +344,8 @@ MIN_CREATOR_WITHDRAWAL_AMOUNT = Decimal(os.getenv('MIN_CREATOR_WITHDRAWAL_AMOUNT
 WITHDRAWAL_REQUEST_COOLDOWN_DAYS = int(os.getenv('WITHDRAWAL_REQUEST_COOLDOWN_DAYS', 15))
 DOWNLOAD_DEFAULT_EXPIRY_DAYS = int(os.getenv('DOWNLOAD_DEFAULT_EXPIRY_DAYS', 30))
 DOWNLOAD_PREMIUM_EXPIRY_DAYS = int(os.getenv('DOWNLOAD_PREMIUM_EXPIRY_DAYS', 30))
+PLATFORM_FEE_PERCENTAGE_AUDIOBOOK = Decimal(os.getenv('PLATFORM_FEE_PERCENTAGE_AUDIOBOOK', '10.00'))
+
 SUBSCRIPTION_PRICES = {
     'monthly': os.getenv('MONTHLY_SUB_PRICE', '350.00'),
     'annual': os.getenv('ANNUAL_SUB_PRICE', '3500.00'),
@@ -349,23 +359,47 @@ COIN_PACK_PRICES = {
     '500': os.getenv('COIN_PACK_500_PRICE', '500.00'),
     '1000': os.getenv('COIN_PACK_1000_PRICE', '1000.00'),
 }
-PLATFORM_FEE_PERCENTAGE_AUDIOBOOK = os.getenv('PLATFORM_FEE_PERCENTAGE_AUDIOBOOK', '10.00')
 
-# --- AI Service Keys ---
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+# =============================================================================
+#  LOGGING CONFIGURATION
+# =============================================================================
+# This should generally be one of the last things configured.
+LOGGING_CONFIG = None
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] :: %(message)s",
+            'datefmt': "%Y-%m-%d %H:%M:%S"
+        },
+        'simple': {'format': '%(levelname)s %(message)s'},
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        # Configure logging levels for Django and third-party apps
+        'django': {'handlers': ['console'], 'propagate': True, 'level': 'INFO'},
+        'django.request': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'allauth': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'stripe': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'channels': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'celery': {'handlers': ['console'], 'level': 'INFO', 'propagate': True},
+        # Configure logging for your custom app
+        'AudioXApp': {'handlers': ['console'], 'level': 'DEBUG' if DEBUG else 'INFO', 'propagate': False},
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO'
+    }
+})
 
-# Google Cloud credentials for STT and Language API
-GOOGLE_CREDENTIALS_FILE_NAME = os.getenv('GOOGLE_CREDENTIALS_FILE_NAME')
-if GOOGLE_CREDENTIALS_FILE_NAME:
-    GOOGLE_APPLICATION_CREDENTIALS = os.path.join(BASE_DIR, GOOGLE_CREDENTIALS_FILE_NAME)
-    if not Path(GOOGLE_APPLICATION_CREDENTIALS).exists():
-        logger.error(f"FATAL: Google credentials file '{GOOGLE_CREDENTIALS_FILE_NAME}' not found at '{GOOGLE_APPLICATION_CREDENTIALS}'.")
-else:
-    GOOGLE_APPLICATION_CREDENTIALS = None
-    logger.warning("Warning: GOOGLE_CREDENTIALS_FILE_NAME not set in .env. Google Cloud services for moderation will not work.")
-
+# Final check for missing AI keys in debug mode
 if not GEMINI_API_KEY and DEBUG:
-    logger.warning("Warning (DEBUG): GEMINI_API_KEY is not set. AI features will be unavailable.")
-if not DEEPSEEK_API_KEY and DEBUG:
-    logger.warning("Warning (DEBUG): DEEPSEEK_API_KEY is not set. AI summary features will be unavailable.")
+    logging.warning("Warning (DEBUG): GEMINI_API_KEY is not set. AI features will be unavailable.")
+

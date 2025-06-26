@@ -67,51 +67,57 @@ def unlock_chapter_with_coins(request):
                 'user_coins': request.user.coins
             }, status=400)
         
+        # ADDED: Define a variable to hold the final coin balance
+        updated_coin_balance = request.user.coins
+
         # Perform the unlock transaction
         with transaction.atomic():
+            # ADDED: Get a locked user object to prevent race conditions
+            locked_user = User.objects.select_for_update().get(pk=request.user.pk)
+
             # Check again if chapter is already unlocked (race condition protection)
-            if request.user.has_unlocked_chapter(chapter):
+            if locked_user.has_unlocked_chapter(chapter): # MODIFIED: Use locked_user
                 return JsonResponse({
                     'status': 'success',
                     'message': f'Chapter "{chapter.chapter_name}" is already unlocked!',
-                    'remaining_coins': request.user.coins,
+                    'remaining_coins': locked_user.coins, # MODIFIED: Use locked_user
                     'chapter_id': chapter_id
                 })
             
             # Check coin balance again within transaction
-            if request.user.coins < CHAPTER_UNLOCK_COST:
+            if locked_user.coins < CHAPTER_UNLOCK_COST: # MODIFIED: Use locked_user
                 return JsonResponse({
                     'status': 'error',
                     'message': f'Insufficient coins. You need {CHAPTER_UNLOCK_COST} coins to unlock this chapter.',
                     'coins_needed': CHAPTER_UNLOCK_COST,
-                    'user_coins': request.user.coins
+                    'user_coins': locked_user.coins # MODIFIED: Use locked_user
                 }, status=400)
             
             # Deduct coins from user
-            request.user.coins -= CHAPTER_UNLOCK_COST
-            request.user.save(update_fields=['coins'])
+            locked_user.coins -= CHAPTER_UNLOCK_COST # MODIFIED: Use locked_user
+            locked_user.save(update_fields=['coins']) # MODIFIED: Use locked_user
             
             # Create chapter unlock record using get_or_create to prevent duplicates
             chapter_unlock, created = ChapterUnlock.objects.get_or_create(
-                user=request.user,
+                user=locked_user, # MODIFIED: Use locked_user
                 chapter=chapter,
                 defaults={'coins_spent': CHAPTER_UNLOCK_COST}
             )
             
             # If the unlock record already existed, refund the coins
             if not created:
-                request.user.coins += CHAPTER_UNLOCK_COST
-                request.user.save(update_fields=['coins'])
+                locked_user.coins += CHAPTER_UNLOCK_COST # MODIFIED: Use locked_user
+                locked_user.save(update_fields=['coins']) # MODIFIED: Use locked_user
                 return JsonResponse({
                     'status': 'success',
                     'message': f'Chapter "{chapter.chapter_name}" was already unlocked!',
-                    'remaining_coins': request.user.coins,
+                    'remaining_coins': locked_user.coins, # MODIFIED: Use locked_user
                     'chapter_id': chapter_id
                 })
             
             # Create coin transaction record
             CoinTransaction.objects.create(
-                user=request.user,
+                user=locked_user, # MODIFIED: Use locked_user
                 transaction_type='spent',
                 amount=-CHAPTER_UNLOCK_COST,
                 status='completed',
@@ -119,12 +125,16 @@ def unlock_chapter_with_coins(request):
                 related_audiobook=audiobook
             )
             
-            logger.info(f"User {request.user.username} unlocked chapter {chapter_id} for {CHAPTER_UNLOCK_COST} coins")
+            # MODIFIED: Use locked_user for the log message
+            logger.info(f"User {locked_user.username} unlocked chapter {chapter_id} for {CHAPTER_UNLOCK_COST} coins")
+
+            # ADDED: Update the variable with the final correct balance
+            updated_coin_balance = locked_user.coins
         
         return JsonResponse({
             'status': 'success',
             'message': f'Chapter "{chapter.chapter_name}" unlocked successfully!',
-            'remaining_coins': request.user.coins,
+            'remaining_coins': updated_coin_balance, # MODIFIED: Use the updated balance variable
             'chapter_id': chapter_id
         })
         

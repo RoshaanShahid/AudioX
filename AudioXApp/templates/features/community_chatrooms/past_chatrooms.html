@@ -4,100 +4,93 @@
 
 {% block page_title %}Past Chat Rooms - AudioX Community Chat{% endblock page_title %}
 
-{% block extra_chat_head %}
-{% endblock extra_chat_head %}
-
 {% block chat_content %}
-<div class="w-full bg-white min-h-[calc(100vh-8rem)]"> {# Consistent page wrapper #}
-    <div class="container mx-auto max-w-6xl py-12 md:py-16 px-4 sm:px-6 lg:px-8">
+<div class="w-full bg-white min-h-[calc(100vh-8rem)]">
+    <div class="container mx-auto max-w-6xl py-12 px-4 sm:px-6 lg:px-8">
 
-        {# Custom Feedback Popup HTML - Styling handled by JS and Tailwind #}
-        {% if popup_feedback %} {# Assuming popup_feedback variable triggers its rendering #}
+        {% if popup_feedback %}
         <div id="feedbackPopup" class="fixed top-6 right-6 z-[1000] p-4 rounded-xl shadow-2xl text-white max-w-sm md:max-w-md hidden transition-all duration-300 ease-out transform" role="alert">
             <div class="flex items-start">
-                <div id="popupIconContainer" class="flex-shrink-0 text-white mr-3">
-                    {# SVG icon will be injected here by JS. #}
-                </div>
+                <div id="popupIconContainer" class="flex-shrink-0 text-white mr-3"></div>
                 <div class="flex-grow">
                     <p id="popupMessage" class="text-sm font-semibold">Popup message goes here.</p>
                 </div>
                 <div class="ml-auto pl-3">
-                    <button type="button" id="popupClose" class="inline-flex rounded-md p-1.5 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
+                    <button type="button" id="popupClose" class="inline-flex rounded-md p-1.5 text-white hover:bg-white hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
                         <span class="sr-only">Dismiss</span>
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     </button>
                 </div>
             </div>
         </div>
         {% endif %}
 
-        <div class="mb-10 md:mb-12 text-center sm:text-left">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-[#091e65] tracking-tight">Past Chat Rooms</h1>
-            <p class="mt-2 text-lg text-[#091e65] opacity-70">Chat rooms you were previously a member of or that were dismissed.</p>
+        <div class="mb-12 text-center sm:text-left">
+            <h1 class="text-4xl sm:text-5xl font-black text-[#091e65] tracking-tight">Past Chat Rooms</h1>
+            <p class="mt-3 text-xl text-gray-600">Chat rooms you were previously a member of or that were dismissed.</p>
         </div>
 
         {% if past_chat_rooms_data %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8 md:gap-x-8 md:gap-y-10">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {% for membership_info in past_chat_rooms_data %}
                 {% with room=membership_info.room %}
-                <div class="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col group relative border border-gray-200 hover:border-red-500/40 transform hover:-translate-y-2 overflow-hidden
+                <div class="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col group relative border border-gray-200 hover:border-red-500 hover:border-opacity-40 transform hover:-translate-y-2 overflow-hidden
                             {% if room.status == room.RoomStatusChoices.CLOSED %}opacity-75{% endif %}">
                     
                     <div class="relative">
-                        <div class="block"> {# No direct link to re-enter past rooms from image #}
+                        <div class="block">
                             {% if room.cover_image %}
                                 <img src="{{ room.cover_image.url }}" alt="{{ room.name }} cover" class="w-full h-48 object-cover rounded-t-2xl {% if room.status == room.RoomStatusChoices.CLOSED %}filter grayscale{% endif %} transition-transform duration-300 group-hover:scale-105">
                             {% else %}
                                 <img src="{% static 'img/community_chatroom/chatroom-cover-default.png' %}" alt="Default cover for {{ room.name }}" class="w-full h-48 object-cover rounded-t-2xl {% if room.status == room.RoomStatusChoices.CLOSED %}filter grayscale{% endif %}">
                             {% endif %}
                         </div>
-                        {# Room Status Badge #}
-                        <span class="absolute top-3 right-3 py-1 px-3 text-xs font-bold rounded-full uppercase tracking-wider shadow-md text-white z-10
-                            {% if room.status == room.RoomStatusChoices.ACTIVE %}bg-[#091e65]{% elif room.status == room.RoomStatusChoices.CLOSED %}bg-red-600{% else %}bg-[#091e65] bg-opacity-70{% endif %}">
+                        <span class="absolute top-4 right-4 py-2 px-4 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg text-white z-10
+                            {% if room.status == room.RoomStatusChoices.ACTIVE %}bg-[#091e65]{% elif room.status == room.RoomStatusChoices.CLOSED %}bg-red-600{% else %}bg-gray-600{% endif %}">
                             Room: {{ room.get_status_display }}
                         </span>
                     </div>
 
-                    <div class="p-5 flex flex-col flex-grow">
-                        <h2 class="text-xl font-bold text-[#091e65] mb-1.5 truncate" title="{{ room.name }}">{{ room.name|truncatechars:50 }}</h2>
-                        <p class="text-xs text-[#091e65] opacity-60 mb-1.5">
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h2 class="text-xl font-bold text-[#091e65] mb-2 line-clamp-2" title="{{ room.name }}">{{ room.name }}</h2>
+                        <p class="text-xs text-gray-500 mb-3">
                             Created by: 
-                            <span class="font-medium text-[#091e65] opacity-85">{{ room.owner.full_name|default:room.owner.username|default:"N/A (Owner Deleted)" }}</span>
+                            <span class="font-semibold text-[#091e65]">{{ room.owner.full_name|default:room.owner.username|default:"N/A (Owner Deleted)" }}</span>
                         </p>
                         {% if room.description %}
-                        <p class="text-sm text-[#091e65] opacity-70 line-clamp-3 mb-3 flex-grow min-h-[3.75rem] leading-relaxed">{{ room.description|truncatewords:18 }}</p>
+                        <p class="text-sm text-gray-600 line-clamp-3 mb-4 flex-grow leading-relaxed">{{ room.description|truncatewords:18 }}</p>
                         {% else %}
-                        <p class="text-sm text-[#091e65] opacity-50 italic line-clamp-3 mb-3 flex-grow min-h-[3.75rem] leading-relaxed">No description available.</p>
+                        <p class="text-sm text-gray-400 italic line-clamp-3 mb-4 flex-grow leading-relaxed">No description available.</p>
                         {% endif %}
                         
-                        <div class="mt-3 pt-3 border-t border-gray-100 space-y-2 text-xs">
+                        <div class="mt-4 pt-4 border-t border-gray-100 space-y-3 text-xs">
                             <div class="flex items-center justify-between">
-                                <span class="font-medium text-[#091e65] opacity-70">Your Status:</span>
-                                <span class="py-1 px-2.5 text-xs font-semibold rounded-md
-                                    {% if membership_info.status_when_left == 'Left Voluntarily' %}bg-[#091e65]/10 text-[#091e65]
-                                    {% elif membership_info.status_when_left == 'Room Dismissed' %}bg-red-600/10 text-red-700
-                                    {% else %}bg-[#091e65]/5 text-[#091e65] opacity-80{% endif %}">
+                                <span class="font-semibold text-gray-600">Your Status:</span>
+                                <span class="py-1 px-3 text-xs font-bold rounded-lg
+                                    {% if membership_info.status_when_left == 'Left Voluntarily' %}bg-[#091e65] bg-opacity-10 text-[#091e65]
+                                    {% elif membership_info.status_when_left == 'Room Dismissed' %}bg-red-600 bg-opacity-10 text-red-700
+                                    {% else %}bg-gray-100 text-gray-700{% endif %}">
                                     {{ membership_info.status_when_left|default:"N/A" }}
                                 </span>
                             </div>
                             {% if room.language %}
                             <div class="flex items-center justify-between">
-                                <span class="font-medium text-[#091e65] opacity-70">Language:</span>
-                                <span class="py-1 px-2.5 text-xs font-semibold rounded-md bg-[#091e65]/10 text-[#091e65]">
+                                <span class="font-semibold text-gray-600">Language:</span>
+                                <span class="py-1 px-3 text-xs font-bold rounded-lg bg-gray-100 text-[#091e65]">
                                     {{ room.get_language_display }}
                                 </span>
                             </div>
                             {% endif %}
                             <div class="flex items-center justify-between">
-                                <span class="font-medium text-[#091e65] opacity-70">Left:</span>
-                                <span class="text-[#091e65] opacity-85 font-medium" title="{{ membership_info.left_at|date:"N j, Y, P" }}">
+                                <span class="font-semibold text-gray-600">Left:</span>
+                                <span class="text-gray-700 font-medium" title="{{ membership_info.left_at|date:"N j, Y, P" }}">
                                     {{ membership_info.left_at|naturaltime|default:"N/A" }}
                                 </span>
                             </div>
                         </div>
                         
                         <div class="mt-auto pt-4 border-t border-gray-200 text-center">
-                            <p class="text-xs text-[#091e65] opacity-60">Current Active Members: <span class="font-semibold">{{ room.num_members }}</span></p>
+                            <p class="text-xs text-gray-500">Current Active Members: <span class="font-bold">{{ room.num_members }}</span></p>
                         </div>
                     </div>
                 </div>
@@ -105,16 +98,16 @@
                 {% endfor %}
             </div>
         {% else %}
-            <div class="text-center py-16 md:py-24">
-                <div class="inline-flex items-center justify-center bg-red-100 text-red-600 p-6 rounded-full mb-8 shadow-lg transform transition-all duration-500 hover:scale-105">
-                    <svg class="w-24 h-24 md:w-28 md:h-28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <div class="text-center py-20">
+                <div class="w-32 h-32 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                    <svg class="w-16 h-16 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <h3 class="text-3xl sm:text-4xl font-bold text-[#091e65] mb-4">
+                <h3 class="text-3xl font-bold text-[#091e65] mb-4">
                     {% if feature_message %}{{ feature_message }}{% else %}No Past Chat Rooms{% endif %}
                 </h3>
-                <p class="text-lg text-[#091e65] opacity-75 max-w-md mx-auto">
+                <p class="text-lg text-gray-600 max-w-md mx-auto">
                     This section shows chat rooms you've previously left or that were dismissed. Nothing here yet!
                 </p>
             </div>
@@ -150,23 +143,12 @@ document.addEventListener('DOMContentLoaded', function () {
             warning: 'bg-red-500', 
             info: 'bg-[#091e65]'
         };
-        const closeButtonRingColors = {
-            success: 'focus:ring-offset-[#091e65]',
-            error: 'focus:ring-offset-red-600',
-            warning: 'focus:ring-offset-red-500',
-            info: 'focus:ring-offset-[#091e65]'
-        };
 
         function showPopup(type, message) {
             if (!feedbackPopup || !popupMessage || !popupIconContainer || !popupCloseButton) return;
             if (popupTimeout) clearTimeout(popupTimeout);
 
             Object.values(bgColors).forEach(cls => feedbackPopup.classList.remove(cls));
-            popupCloseButton.className.split(' ').forEach(cls => {
-                if (cls.startsWith('focus:ring-offset-')) {
-                    popupCloseButton.classList.remove(cls);
-                }
-            });
             
             popupMessage.textContent = message;
             popupIconContainer.innerHTML = icons[type] || icons['info'];
@@ -174,12 +156,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if(iconSvg) { iconSvg.classList.add('h-6', 'w-6');}
 
             feedbackPopup.classList.add(bgColors[type] || bgColors['info']);
-            
-            popupCloseButton.classList.add('hover:bg-white/20', 'focus:ring-2', 'focus:ring-white');
-            const specificRingColorClasses = (closeButtonRingColors[type] || closeButtonRingColors['info']).split(' ');
-            specificRingColorClasses.forEach(cls => popupCloseButton.classList.add(cls));
 
-            feedbackPopup.classList.remove('hidden', 'opacity-0', 'translate-y-[-20px]');
+            feedbackPopup.classList.remove('hidden', 'opacity-0', 'translate-y-4');
             requestAnimationFrame(() => { 
                 feedbackPopup.classList.add('opacity-100', 'translate-y-0');
             });
@@ -189,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
         function hidePopup() {
             if (!feedbackPopup) return;
             feedbackPopup.classList.remove('opacity-100', 'translate-y-0');
-            feedbackPopup.classList.add('opacity-0', 'translate-y-[-20px]');
+            feedbackPopup.classList.add('opacity-0', 'translate-y-4');
             setTimeout(() => { feedbackPopup.classList.add('hidden'); }, 300);
         }
 

@@ -12,7 +12,7 @@ import os
 import re
 import time
 import logging
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse, quote  # Ensure 'quote' is imported
 from decimal import Decimal
 from collections import defaultdict
 
@@ -20,7 +20,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse, StreamingHttpResponse, Http404, FileResponse
 from django.contrib import messages
 from django.core.cache import cache
-from django.urls import reverse
+from django.urls import reverse # Ensure 'reverse' is imported
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.decorators.http import require_POST, require_GET
@@ -89,7 +89,7 @@ def parse_duration_to_seconds(duration_str):
         if len(parts) == 3:  # HH:MM:SS
             return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(float(parts[2]))
         elif len(parts) == 2:  # MM:SS
-            return int(parts[0]) * 60 + int(float(parts[2]))
+            return int(parts[0]) * 60 + int(float(parts[1]))
         elif len(parts) == 1:  # SS
             return int(float(duration_str))
     except ValueError:
@@ -296,9 +296,16 @@ def fetch_audiobooks_data():
             if hasattr(feed.feed, 'image') and hasattr(feed.feed.image, 'href'):
                 cover_image_url = feed.feed.image.href
 
+            # Check for cover image if the audiobook is in English
+            book_language = feed.feed.get('language', 'en')
+            is_english = 'en' in book_language.lower()
+            if is_english and not cover_image_url:
+                logger.info(f"Skipping English LibriVox book '{title}' because it has no cover image.")
+                continue
+
             slug = slugify(title) if title and title != 'Unknown Title' else f'librivox-book-{random.randint(1000,9999)}'
 
-            librivox_audiobooks.append({
+            book_data = { # Create book_data dict here to apply proxy logic before appending
                 "source": "librivox",
                 "title": title,
                 "description": description,
@@ -313,8 +320,13 @@ def fetch_audiobooks_data():
                 "average_rating": None,
                 "is_paid": False,
                 "price": Decimal("0.00"),
-                "language": feed.feed.get('language', 'en')
-            })
+                "language": book_language
+            }
+            # --- START NEW ADDITION (Proxy cover_image for LibriVox before caching) ---
+            if book_data['cover_image'] and (book_data['cover_image'].startswith('http://') or book_data['cover_image'].startswith('https://')):
+                book_data['cover_image'] = reverse('AudioXApp:fetch_cover_image') + f'?url={quote(book_data["cover_image"])}'
+            # --- END NEW ADDITION ---
+            librivox_audiobooks.append(book_data)
             fetch_successful = True
 
         except requests.exceptions.Timeout as e:
@@ -337,7 +349,8 @@ def fetch_audiobooks_data():
 
         # Build query based on term type
         if term in language_specific_terms:
-            query_string = f'language:"{term}" AND collection:librivoxaudio AND mediatype:audio'
+            ## NEW ## Broaden the search for non-English languages by removing the 'collection' filter.
+            query_string = f'language:"{term}" AND mediatype:audio'
         else:
             query_string = f'subject:"{term}" AND collection:librivoxaudio AND mediatype:audio'
 
@@ -368,6 +381,22 @@ def fetch_audiobooks_data():
                 meta_resp.raise_for_status()
                 item_metadata = meta_resp.json()
 
+                # Check for cover image if the audiobook is in English
+                language_from_doc = doc.get('language', 'English')
+                if isinstance(language_from_doc, list):
+                    language_from_doc = language_from_doc[0] if language_from_doc else 'English'
+                
+                is_english = 'english' in str(language_from_doc).lower() or 'en' in str(language_from_doc).lower()
+                
+                # Check for image files in the file list
+                item_files = item_metadata.get("files", [])
+                has_cover = any(f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png')) for f in item_files)
+
+                if is_english and not has_cover:
+                    doc_title_for_log = doc.get('title', 'Unknown Title')
+                    logger.info(f"Skipping English Archive.org book '{doc_title_for_log}' because no image file was found.")
+                    continue
+
                 # Extract book information
                 doc_title = doc.get('title', 'Unknown Title')
                 creator_data = doc.get('creator', 'Unknown Author')
@@ -384,7 +413,7 @@ def fetch_audiobooks_data():
                 chapters = []
                 for file_item in files:
                     if (file_item.get("format") in ["VBR MP3", "MP3", "64Kbps MP3", "128Kbps MP3"]
-                            and "name" in file_item):
+                                and "name" in file_item):
                         chapter_title = str(file_item.get("title", file_item.get("name", 'Untitled Chapter'))).replace('"', '').strip()
                         duration = parse_duration_to_seconds(file_item.get('length') or file_item.get('duration'))
 
@@ -418,6 +447,10 @@ def fetch_audiobooks_data():
                     "language": language,
                     "genre": term if term not in language_specific_terms else None
                 }
+                # --- START NEW ADDITION (Proxy cover_image for Archive.org API before caching) ---
+                if book_data['cover_image'] and (book_data['cover_image'].startswith('http://') or book_data['cover_image'].startswith('https://')):
+                    book_data['cover_image'] = reverse('AudioXApp:fetch_cover_image') + f'?url={quote(book_data["cover_image"])}'
+                # --- END NEW ADDITION ---
                 audiobooks_for_term.append(book_data)
 
             if audiobooks_for_term:
@@ -434,16 +467,23 @@ def fetch_audiobooks_data():
         except Exception as e:
             logger.error(f"Error processing API term '{term}': {e}", exc_info=True)
 
-    # Manual language items (specific high-quality content)
+    ## NEW ## Updated manual items list with poetry and stories for all three languages.
     manual_language_items = {
         "Urdu": [
-            "Ashra-Mubashra-Darussalam-Urdu-Audio-MP3-CD",
-            "Tafsir-ibne-kaseer-kathir-urdu-----audio-mp3-hq",
-            "iman-syed-suleiman-nadvi",
-            "Seerat-e-Khulfa-e-Rashideen----Audio-MP3"
+            "Saadat-Hasan-Manto-Ke-Behtreen-Afsane-Urdu-Audio-Book",
+            "Urdu-Poetry-Mehfil-e-Mushaira",
+            "Mirza-Ghalib-Ki-Ghazlain-Urdu-Audio-Book"
         ],
-        "Punjabi": [],
-        "Sindhi": []
+        "Punjabi": [
+            "Heer-Waris-Shah-Punjabi-Audio-Book",
+            "sultan-bahoo-kalam-punjabi-sufi-poetry",
+            "Shiv-Kumar-Batalvi-Birha-Da-Sultan-Punjabi-Poetry"
+        ],
+        "Sindhi": [
+            "Shah-Jo-Risalo-Audio-Sindhi-Sufi-Poetry",
+            "Shaikh-Ayaz-Sindhi-Poetry-Audio",
+            "sindhi-folk-tales"
+        ]
     }
 
     # Process manual items
@@ -470,6 +510,21 @@ def fetch_audiobooks_data():
 
                 if title.startswith("Unknown Title -"):
                     continue
+                
+                # Check for cover image if the audiobook is in English
+                language_from_meta = metadata.get('language', lang_key)
+                if isinstance(language_from_meta, list):
+                    language_from_meta = language_from_meta[0] if language_from_meta else lang_key
+
+                is_english = 'english' in str(language_from_meta).lower() or 'en' in str(language_from_meta).lower()
+                
+                # Check for image files in the file list
+                item_files = item_metadata.get("files", [])
+                has_cover = any(f.get("name", "").lower().endswith(('.jpg', '.jpeg', '.png')) for f in item_files)
+
+                if is_english and not has_cover:
+                    logger.info(f"Skipping English manual item '{title}' because no image file was found.")
+                    continue
 
                 creator_data = metadata.get('creator', 'Unknown Author')
                 author = ', '.join(creator_data) if isinstance(creator_data, list) else creator_data
@@ -485,7 +540,7 @@ def fetch_audiobooks_data():
                 chapters = []
                 for file_item in files:
                     if (file_item.get("format") in ["VBR MP3", "MP3", "64Kbps MP3", "128Kbps MP3"]
-                            and "name" in file_item):
+                                and "name" in file_item):
                         chapter_title = str(file_item.get("title", file_item.get("name", 'Untitled Chapter'))).replace('"', '').strip()
                         duration = parse_duration_to_seconds(file_item.get('length') or file_item.get('duration'))
 
@@ -520,6 +575,10 @@ def fetch_audiobooks_data():
                         "language": language,
                         "genre": None
                     }
+                    # --- START NEW ADDITION (Proxy cover_image for Manual Archive.org before caching) ---
+                    if book_data['cover_image'] and (book_data['cover_image'].startswith('http://') or book_data['cover_image'].startswith('https://')):
+                        book_data['cover_image'] = reverse('AudioXApp:fetch_cover_image') + f'?url={quote(book_data["cover_image"])}'
+                    # --- END NEW ADDITION ---
                     archive_language_audiobooks[lang_key].append(book_data)
                     current_slugs.add(slug)
                     fetch_successful = True
@@ -672,6 +731,7 @@ def search_external_audiobooks(query, language_filter, genre_filter, creator_fil
             if _matches_external_filters(book_dict, query, language_filter, genre_filter):
                 book_slug = book_dict.get('slug')
                 if book_slug and book_slug not in seen_slugs:
+                    # Note: book_dict['cover_image'] should already be proxied from fetch_audiobooks_data
                     results.append(_format_external_result(book_dict, 'librivox'))
                     seen_slugs.add(book_slug)
                     librivox_matches += 1
@@ -689,6 +749,7 @@ def search_external_audiobooks(query, language_filter, genre_filter, creator_fil
                     if _matches_external_filters(book_dict, query, language_filter, genre_filter):
                         book_slug = book_dict.get('slug')
                         if book_slug and book_slug not in seen_slugs:
+                            # Note: book_dict['cover_image'] should already be proxied from fetch_audiobooks_data
                             results.append(_format_external_result(book_dict, 'archive.org'))
                             seen_slugs.add(book_slug)
                             archive_matches += 1
@@ -746,7 +807,8 @@ def _format_external_result(book_dict, source_type):
         'slug': book_dict.get('slug'),
         'title': book_dict.get('title', 'Unknown Title'),
         'author': book_dict.get('author', 'Unknown Author'),
-        'cover_image_url': book_dict.get('cover_image') or DEFAULT_COVER_IMAGE,
+        # Use 'cover_image' directly as it should now be the proxied URL from fetch_audiobooks_data
+        'cover_image_url': book_dict.get('cover_image') or DEFAULT_COVER_IMAGE, 
         'creator_name': None,
         'average_rating': book_dict.get('average_rating'),
         'total_views': book_dict.get('total_views', 0),
@@ -781,6 +843,8 @@ def get_featured_audiobooks(seen_slugs):
 
         for book in trending_books:
             if book.slug not in seen_slugs:
+                relevance_score = calculate_relevance_score(book, query)
+
                 # Handle both creator and admin audiobooks
                 creator_name = None
                 source_type = 'platform'
@@ -1075,11 +1139,29 @@ def home(request):
         for book_data in cached_librivox_books:
             slug = book_data.get('slug')
             if slug and slug in db_book_stats:
+                # If found in DB, use DB values
                 book_data.update(db_book_stats[slug])
             else:
+                # If not in DB or slug is missing, ensure default values and proxy image
                 book_data.setdefault('total_views', 0)
                 book_data.setdefault('average_rating', None)
-                book_data.setdefault('cover_image', DEFAULT_COVER_IMAGE)
+                # Ensure a valid slug even if not from DB (for direct linking)
+                if not slug:
+                    title_for_slug = book_data.get('title', 'untitled-book')
+                    author_for_slug = book_data.get('author', 'unknown-author')
+                    slug = slugify(f"librivox-{title_for_slug}-{author_for_slug}-{random.randint(1000, 9999)}")
+                    book_data['slug'] = slug
+                    logger.warning(f"Generated fallback slug for LibriVox book in home view: {title_for_slug} -> {slug}")
+
+                # --- FIX STARTS HERE for cover_image in librivox_audiobooks ---
+                # This logic is now redundant here if it's applied in fetch_audiobooks_data,
+                # but adding it as a failsafe if cache wasn't cleared after previous step.
+                current_cover_image_url = book_data.get('cover_image')
+                if current_cover_image_url and (current_cover_image_url.startswith('http://') or current_cover_image_url.startswith('https://')):
+                    book_data['cover_image'] = reverse('AudioXApp:fetch_cover_image') + f'?url={quote(current_cover_image_url)}'
+                else:
+                    book_data.setdefault('cover_image', DEFAULT_COVER_IMAGE)
+                # --- FIX ENDS HERE ---
             librivox_audiobooks.append(book_data)
 
         # Process Archive.org genre books (English only)
@@ -1098,59 +1180,81 @@ def home(request):
                 if is_english:
                     slug = book_data.get('slug')
                     if slug and slug in db_book_stats:
+                        # If found in DB, use DB values
                         book_data.update(db_book_stats[slug])
                     else:
+                        # If not in DB or slug is missing, ensure default values and proxy image
                         book_data.setdefault('total_views', 0)
                         book_data.setdefault('average_rating', None)
-                        book_data.setdefault('cover_image', DEFAULT_COVER_IMAGE)
+                        # Ensure a valid slug even if not from DB (for direct linking)
+                        if not slug:
+                            title_for_slug = book_data.get('title', 'untitled-book')
+                            author_for_slug = book_data.get('author', 'unknown-author')
+                            slug = slugify(f"archive-{title_for_slug}-{author_for_slug}-{random.randint(1000, 9999)}")
+                            book_data['slug'] = slug
+                            logger.warning(f"Generated fallback slug for Archive book in home view: {title_for_slug} -> {slug}")
+
+                        # --- FIX STARTS HERE for cover_image in archive_genre_audiobooks ---
+                        # This logic is now redundant here if it's applied in fetch_audiobooks_data,
+                        # but adding it as a failsafe if cache wasn't cleared after previous step.
+                        current_cover_image_url = book_data.get('cover_image')
+                        if current_cover_image_url and (current_cover_image_url.startswith('http://') or current_cover_image_url.startswith('https://')):
+                            book_data['cover_image'] = reverse('AudioXApp:fetch_cover_image') + f'?url={quote(current_cover_image_url)}'
+                        else:
+                            book_data.setdefault('cover_image', DEFAULT_COVER_IMAGE)
+                        # --- FIX ENDS HERE ---
                     english_books.append(book_data)
 
             if english_books:
                 archive_genre_audiobooks[genre].extend(english_books)
+
+        # Add platform books (these should already have correct local paths or None)
+        try:
+            platform_books = Audiobook.objects.filter(
+                status='PUBLISHED',
+                creator__isnull=True,
+                language__iexact='English'
+            ).order_by('genre', '-publish_date')
+
+            for book in platform_books:
+                # These are Django model instances, their .cover_image.url is already correct.
+                # No proxying needed here.
+                book_dict = {
+                    'slug': book.slug,
+                    'title': book.title,
+                    'author': book.author,
+                    'cover_image': book.cover_image.url if book.cover_image else DEFAULT_COVER_IMAGE,
+                    'average_rating': book.average_rating,
+                    'total_views': book.total_views,
+                    'is_paid': book.is_paid,
+                    'price': book.price,
+                    'creator': None, # Platform books don't have a creator in this context
+                }
+
+                if book.genre == 'Other':
+                    librivox_audiobooks.insert(0, book_dict)
+                else:
+                    # Insert at the beginning to prioritize platform books in their respective genres
+                    archive_genre_audiobooks[book.genre].insert(0, book_dict)
+
+        except Exception as e:
+            logger.error(f"Error fetching platform audiobooks: {e}", exc_info=True)
+
+        # Get creator audiobooks
+        try:
+            creator_books = Audiobook.objects.filter(
+                status='PUBLISHED',
+                creator__isnull=False,
+                language__iexact='English'
+            ).select_related('creator').order_by('-publish_date')[:12]
+
+            context["creator_audiobooks"] = list(creator_books)
+        except Exception as e:
+            logger.error(f"Error fetching creator audiobooks: {e}", exc_info=True)
+            context["creator_audiobooks"] = []
     else:
-        context["error_message"] = "External audiobook listings are currently being updated. Please check back shortly."
+        context["error_message"] = "No audiobooks are currently available. The platform content is being updated."
         logger.warning("Audiobook data cache was empty")
-
-    # Add platform books
-    try:
-        platform_books = Audiobook.objects.filter(
-            status='PUBLISHED',
-            creator__isnull=True,
-            language__iexact='English'
-        ).order_by('genre', '-publish_date')
-
-        for book in platform_books:
-            book_dict = {
-                'slug': book.slug,
-                'title': book.title,
-                'author': book.author,
-                'cover_image': book.cover_image.url if book.cover_image else DEFAULT_COVER_IMAGE,
-                'average_rating': book.average_rating,
-                'total_views': book.total_views,
-                'is_paid': book.is_paid,
-                'price': book.price,
-                'creator': None,
-            }
-
-            if book.genre == 'Other':
-                librivox_audiobooks.insert(0, book_dict)
-            else:
-                archive_genre_audiobooks[book.genre].insert(0, book_dict)
-
-    except Exception as e:
-        logger.error(f"Error fetching platform audiobooks: {e}", exc_info=True)
-
-    # Get creator audiobooks
-    try:
-        creator_books = Audiobook.objects.filter(
-            status='PUBLISHED',
-            creator__isnull=False,
-            language__iexact='English'
-        ).select_related('creator').order_by('-publish_date')[:12]
-
-        context["creator_audiobooks"] = list(creator_books)
-    except Exception as e:
-        logger.error(f"Error fetching creator audiobooks: {e}", exc_info=True)
         context["creator_audiobooks"] = []
 
     context["librivox_audiobooks"] = librivox_audiobooks
@@ -1304,8 +1408,8 @@ def audiobook_detail(request, audiobook_slug):
         "userId": str(request.user.user_id) if request.user.is_authenticated else None,
         "userFullName": request.user.full_name or request.user.username if request.user.is_authenticated else None,
         "userProfilePicUrl": request.user.profile_pic.url if (request.user.is_authenticated and
-                                                                hasattr(request.user, 'profile_pic') and
-                                                                request.user.profile_pic) else None,
+                                                               hasattr(request.user, 'profile_pic') and
+                                                               request.user.profile_pic) else None,
         "current_user_has_reviewed": bool(user_review),
         "user_review_object": {
             'rating': user_review.rating,
@@ -1631,7 +1735,7 @@ def _get_recommendations(audiobook_obj, max_count=5):
 # ==========================================
 
 def _render_genre_or_language_page(request, page_type, display_name, template_name,
-                                 cache_key_segment, query_term, language_for_genre_page=None):
+                                    cache_key_segment, query_term, language_for_genre_page=None):
     """Unified function for rendering genre and language pages"""
     context = _get_full_context(request)
     current_page_language = language_for_genre_page or (query_term if page_type == "language" else "English")
@@ -1696,13 +1800,32 @@ def _render_genre_or_language_page(request, page_type, display_name, template_na
 
     # Process external books
     for book_data in cached_books:
+        # --- FIX STARTS HERE (re-applying previous fix for slug safety) ---
         slug = book_data.get('slug')
-        if slug and slug in db_stats:
+        if not slug:
+            # Generate a robust fallback slug if the primary slug is missing or empty
+            title_for_slug = book_data.get('title', 'untitled-book')
+            author_for_slug = book_data.get('author', 'unknown-author')
+            # Create a more unique fallback slug
+            slug = slugify(f"{title_for_slug}-{author_for_slug}-{random.randint(1000, 9999)}")
+            book_data['slug'] = slug # Update the dictionary with the new slug
+            logger.warning(f"Generated fallback slug for external book in _render_genre_or_language_page: {title_for_slug} -> {slug}")
+        # --- FIX ENDS HERE ---
+
+        if slug in db_stats:
             book_data.update(db_stats[slug])
         else:
             book_data.setdefault('total_views', 0)
             book_data.setdefault('average_rating', None)
-            book_data.setdefault('cover_image', DEFAULT_COVER_IMAGE)
+            # --- FIX STARTS HERE for cover_image in _render_genre_or_language_page ---
+            # This logic is now redundant here if it's applied in fetch_audiobooks_data,
+            # but adding it as a failsafe if cache wasn't cleared after previous step.
+            current_cover_image_url = book_data.get('cover_image')
+            if current_cover_image_url and (current_cover_image_url.startswith('http://') or current_cover_image_url.startswith('https://')):
+                book_data['cover_image'] = reverse('AudioXApp:fetch_cover_image') + f'?url={quote(current_cover_image_url)}'
+            else:
+                book_data.setdefault('cover_image', DEFAULT_COVER_IMAGE)
+            # --- FIX ENDS HERE ---
         processed_external_books.append(book_data)
 
     # Add platform books
@@ -1723,6 +1846,12 @@ def _render_genre_or_language_page(request, page_type, display_name, template_na
         platform_books = platform_query.order_by('-publish_date')
 
         for book in platform_books:
+            # These are Django model instances, their .cover_image.url is already correct.
+            # No proxying needed here.
+            if not book.slug:
+                book.slug = slugify(f"{book.title}-{book.author}-{book.pk}")
+                logger.warning(f"Generated fallback slug for platform book: {book.title} -> {book.slug}")
+
             processed_external_books.insert(0, {
                 'slug': book.slug,
                 'title': book.title,
@@ -2467,7 +2596,7 @@ def refresh_external_audiobooks(request):
 
         # Fetch fresh data
         start_time = time.time()
-        fresh_data = fetch_audiobooks_data()
+        fresh_data = fetch_audiobooks_data() # This call will now store proxied URLs
         fetch_duration = time.time() - start_time
 
         if fresh_data:

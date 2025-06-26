@@ -73,14 +73,22 @@ def gift_coins(request):
         logger.info(f"Gift coins request initiated by user: {request.user.username}")
         
         # Parse request data
+        data = None
         try:
+            # First, try to load as JSON, which is the intended method for AJAX
             data = json.loads(request.body)
         except json.JSONDecodeError:
-            logger.warning(f"Invalid JSON data in gift_coins request from user {request.user.username}")
-            return JsonResponse({
-                'status': 'error', 
-                'message': 'Invalid request data format.'
-            }, status=400)
+            # If JSON loading fails, check if data was sent as form data (fallback)
+            logger.warning(f"Could not decode JSON from request body for user {request.user.username}. Checking POST data as fallback.")
+            if request.POST:
+                data = request.POST
+            else:
+                # If it's not JSON and not in POST, it's a malformed request
+                logger.error(f"Request from user {request.user.username} is not valid JSON and has no POST data.")
+                return JsonResponse({
+                    'status': 'error', 
+                    'message': 'Invalid request data format.'
+                }, status=400)
 
         sender = request.user
         recipient_identifier = data.get('recipient', '').strip()

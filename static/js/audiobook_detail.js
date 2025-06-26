@@ -178,13 +178,13 @@ let aiSummaryLoaded = false
 function showTab(tabId) {
   if (tabId === "summaries" && pageContext.userSubscriptionType !== "PR") {
     showPopup(
-        "Premium Required",
-        "AI summaries are available for Premium subscribers only. Upgrade to Premium to access AI-generated summaries.",
-        'confirm',
-        () => { window.location.href = pageContext.subscriptionUrl || "/subscription/"; },
-        null,
-        "Upgrade to Premium",
-        "Cancel"
+      "Premium Required",
+      "AI summaries are available for Premium subscribers only. Upgrade to Premium to access AI-generated summaries.",
+      'confirm',
+      () => { window.location.href = pageContext.subscriptionUrl || "/subscription/"; },
+      null,
+      "Upgrade to Premium",
+      "Cancel"
     );
     return
   }
@@ -553,6 +553,12 @@ window.unlockChapterWithCoins = async (chapterId) => {
     return
   }
   
+  // ADDED: New code block to prevent multiple clicks (race condition)
+  if (unlockBtn.disabled) {
+    console.log(`[DEBUG] Unlock for chapter ${chapterId} already in progress. Ignoring click.`)
+    return;
+  }
+
   // Get unlock cost from the button's data attribute
   const unlockCost = unlockBtn.dataset.unlockCost ? parseInt(unlockBtn.dataset.unlockCost, 10) : 50;
   const chapterTitle = unlockBtn.closest('.chapter-container')?.querySelector('.chapter-item')?.dataset.chapterTitle || 'This chapter';
@@ -1204,9 +1210,9 @@ function attachChapterDownloadListeners() {
           },
         )
         if (result.success && !result.message.toLowerCase().includes("already downloaded"))
-            showPopup("Download Complete", `Chapter "${chapterInfoForDownload.chapter_title}" downloaded!`, 'success');
+          showPopup("Download Complete", `Chapter "${chapterInfoForDownload.chapter_title}" downloaded!`, 'success');
         else if (!result.success && !result.message.toLowerCase().includes("already downloaded"))
-            showPopup("Download Failed", `Failed to download "${chapterInfoForDownload.chapter_title}": ${result.message}`, 'error');
+          showPopup("Download Failed", `Failed to download "${chapterInfoForDownload.chapter_title}": ${result.message}`, 'error');
 
       } catch (err) {
         showPopup("Download Error", "An unexpected error occurred during download.", 'error');
@@ -1240,28 +1246,28 @@ if (fullAudiobookDownloadBtnExisting) {
     }
 
     const chaptersToDownload = []
-    document.querySelectorAll(".chapter-item").forEach((item) => {
-      if (item.dataset.isAccessible === "true") {
-        const chapterInfoForId = {
-            chapter_id: item.dataset.chapterId,
-            chapterIndex: Number.parseInt(item.dataset.chapterIndex, 10)
-        };
-        const audiobookInfoForId = {
-            audiobookSlug: pageContext.audiobookSlug,
-            audiobookId: pageContext.audiobookId
-        };
-        
-        chaptersToDownload.push({
-          chapter_id: item.dataset.chapterId,
-          chapter_unique_id: window.OfflineManager.createChapterUniqueId(audiobookInfoForId, chapterInfoForId),
-          chapter_index: Number.parseInt(item.dataset.chapterIndex, 10),
-          chapter_title: item.dataset.chapterTitle,
-          audio_url_template: item.dataset.audioUrlTemplate,
-          duration_seconds: Number.parseInt(item.dataset.durationSeconds, 10),
-          is_accessible: true,
-        })
-      }
-    })
+    document.querySelectorAll(".chapter-item").forEach((item) => {
+      if (item.dataset.isAccessible === "true") {
+        const chapterInfoForId = {
+            chapter_id: item.dataset.chapterId,
+            chapterIndex: Number.parseInt(item.dataset.chapterIndex, 10)
+        };
+        const audiobookInfoForId = {
+            audiobookSlug: pageContext.audiobookSlug,
+            audiobookId: pageContext.audiobookId
+        };
+        
+        chaptersToDownload.push({
+          chapter_id: item.dataset.chapterId,
+          chapter_unique_id: window.OfflineManager.createChapterUniqueId(audiobookInfoForId, chapterInfoForId),
+          chapter_index: Number.parseInt(item.dataset.chapterIndex, 10),
+          chapter_title: item.dataset.chapterTitle,
+          audio_url_template: item.dataset.audioUrlTemplate,
+          duration_seconds: Number.parseInt(item.dataset.durationSeconds, 10),
+          is_accessible: true,
+        })
+      }
+    })
 
     if (chaptersToDownload.length === 0) {
       showPopup("No Chapters", "No accessible chapters to download.", 'info');
@@ -1318,9 +1324,9 @@ if (fullAudiobookDownloadBtnExisting) {
               this.disabled = false
             }
             showPopup(
-                message.includes("error") ? "Download Warning" : "Download Complete",
-                message,
-                message.includes("error") ? "info" : "success"
+              message.includes("error") ? "Download Warning" : "Download Complete",
+              message,
+              message.includes("error") ? "info" : "success"
             );
           }
         },
@@ -1336,61 +1342,61 @@ if (fullAudiobookDownloadBtnExisting) {
 }
 
 async function checkInitialDownloadStates() {
-  if (!window.OfflineManager || !pageContext.audiobookId || typeof window.OfflineManager.initDB !== "function") {
-    return
-  }
-  try {
-    await window.OfflineManager.initDB()
-    const chapterDownloadButtons = document.querySelectorAll(".download-chapter-btn")
-    
-    const downloadCheckPromises = [];
+  if (!window.OfflineManager || !pageContext.audiobookId || typeof window.OfflineManager.initDB !== "function") {
+    return
+  }
+  try {
+    await window.OfflineManager.initDB()
+    const chapterDownloadButtons = document.querySelectorAll(".download-chapter-btn")
+    
+    const downloadCheckPromises = [];
 
-    chapterDownloadButtons.forEach(button => {
-        const chapterUniqueId = button.dataset.chapterUniqueId;
-        const promise = window.OfflineManager.isChapterDownloaded(chapterUniqueId).then(isDownloaded => {
-            if (isDownloaded) {
-                updateChapterDownloadButtonUI(button, "downloaded");
-                return true;
-            } else {
-                updateChapterDownloadButtonUI(button, "idle");
-                return false;
-            }
-        });
-        downloadCheckPromises.push(promise);
-    });
+    chapterDownloadButtons.forEach(button => {
+        const chapterUniqueId = button.dataset.chapterUniqueId;
+        const promise = window.OfflineManager.isChapterDownloaded(chapterUniqueId).then(isDownloaded => {
+            if (isDownloaded) {
+                updateChapterDownloadButtonUI(button, "downloaded");
+                return true;
+            } else {
+                updateChapterDownloadButtonUI(button, "idle");
+                return false;
+            }
+        });
+        downloadCheckPromises.push(promise);
+    });
 
-    const downloadedStatuses = await Promise.all(downloadCheckPromises);
-    const downloadedChaptersCount = downloadedStatuses.filter(status => status).length;
+    const downloadedStatuses = await Promise.all(downloadCheckPromises);
+    const downloadedChaptersCount = downloadedStatuses.filter(status => status).length;
 
-    if (fullAudiobookDownloadBtnExisting) {
-      const totalAccessibleCount = document.querySelectorAll('.chapter-item[data-is-accessible="true"]').length;
+    if (fullAudiobookDownloadBtnExisting) {
+      const totalAccessibleCount = document.querySelectorAll('.chapter-item[data-is-accessible="true"]').length;
 
-      if (pageContext.userSubscriptionType !== "PR") {
-        if (fullAudiobookDownloadTextExisting) fullAudiobookDownloadTextExisting.textContent = "Premium Required"
-        fullAudiobookDownloadBtnExisting.disabled = true
-        if (fullAudiobookStatusMessagesExisting)
-          fullAudiobookStatusMessagesExisting.textContent = "Downloads are available for Premium subscribers only."
-        fullAudiobookDownloadBtnExisting.classList.add("opacity-50", "cursor-not-allowed")
-      } else if (totalAccessibleCount === 0) {
-        if (fullAudiobookDownloadTextExisting) fullAudiobookDownloadTextExisting.textContent = "No Chapters"
-        fullAudiobookDownloadBtnExisting.disabled = true;
-      } else if (totalAccessibleCount > 0 && totalAccessibleCount === downloadedChaptersCount) {
-        if (fullAudiobookDownloadTextExisting) fullAudiobookDownloadTextExisting.textContent = "All Downloaded"
-        fullAudiobookDownloadBtnExisting.classList.remove("border-[#09065E]/40", "text-[#09065E]/90", "hover:bg-[#09065E]/5")
-        fullAudiobookDownloadBtnExisting.classList.add("border-green-500", "text-green-600", "bg-green-50")
-        fullAudiobookDownloadBtnExisting.disabled = true
-        fullAudiobookDownloadBtnExisting.title = "All chapters have been downloaded"
-      } else {
-        if (fullAudiobookDownloadTextExisting) fullAudiobookDownloadTextExisting.textContent = "Download All"
-        fullAudiobookDownloadBtnExisting.classList.add("border-[#09065E]/40", "text-[#09065E]/90", "hover:bg-[#09065E]/5")
-        fullAudiobookDownloadBtnExisting.classList.remove("border-green-500", "text-green-600", "bg-green-50")
-        fullAudiobookDownloadBtnExisting.disabled = false
-        fullAudiobookDownloadBtnExisting.title = "Download all accessible chapters"
-      }
-    }
-  } catch (error) {
-    console.error("Error in checkInitialDownloadStates:", error)
-  }
+      if (pageContext.userSubscriptionType !== "PR") {
+        if (fullAudiobookDownloadTextExisting) fullAudiobookDownloadTextExisting.textContent = "Premium Required"
+        fullAudiobookDownloadBtnExisting.disabled = true
+        if (fullAudiobookStatusMessagesExisting)
+          fullAudiobookStatusMessagesExisting.textContent = "Downloads are available for Premium subscribers only."
+        fullAudiobookDownloadBtnExisting.classList.add("opacity-50", "cursor-not-allowed")
+      } else if (totalAccessibleCount === 0) {
+        if (fullAudiobookDownloadTextExisting) fullAudiobookDownloadTextExisting.textContent = "No Chapters"
+        fullAudiobookDownloadBtnExisting.disabled = true;
+      } else if (totalAccessibleCount > 0 && totalAccessibleCount === downloadedChaptersCount) {
+        if (fullAudiobookDownloadTextExisting) fullAudiobookDownloadTextExisting.textContent = "All Downloaded"
+        fullAudiobookDownloadBtnExisting.classList.remove("border-[#09065E]/40", "text-[#09065E]/90", "hover:bg-[#09065E]/5")
+        fullAudiobookDownloadBtnExisting.classList.add("border-green-500", "text-green-600", "bg-green-50")
+        fullAudiobookDownloadBtnExisting.disabled = true
+        fullAudiobookDownloadBtnExisting.title = "All chapters have been downloaded"
+      } else {
+        if (fullAudiobookDownloadTextExisting) fullAudiobookDownloadTextExisting.textContent = "Download All"
+        fullAudiobookDownloadBtnExisting.classList.add("border-[#09065E]/40", "text-[#09065E]/90", "hover:bg-[#09065E]/5")
+        fullAudiobookDownloadBtnExisting.classList.remove("border-green-500", "text-green-600", "bg-green-50")
+        fullAudiobookDownloadBtnExisting.disabled = false
+        fullAudiobookDownloadBtnExisting.title = "Download all accessible chapters"
+      }
+    }
+  } catch (error) {
+    console.error("Error in checkInitialDownloadStates:", error)
+  }
 }
 
 const reviewForm = document.getElementById("review-form")

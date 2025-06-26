@@ -41,6 +41,19 @@ from ...forms import DocumentUploadForm
 from ...utils.usage_limits import check_and_increment_document_conversion
 
 # ============================================================================
+# NEW CODE BLOCK TO FIX THE NameError
+# ============================================================================
+try:
+    import docx2txt
+    DOCX2TXT_AVAILABLE = True
+except ImportError:
+    DOCX2TXT_AVAILABLE = False
+# ============================================================================
+# END OF NEW CODE BLOCK
+# ============================================================================
+
+
+# ============================================================================
 # CONFIGURATION AND SETUP
 # ============================================================================
 
@@ -50,14 +63,6 @@ load_dotenv()
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Check for optional dependencies
-try:
-    import docx2txt
-    DOCX2TXT_AVAILABLE = True
-    logger.info("docx2txt library loaded successfully - DOC file support enabled")
-except ImportError:
-    DOCX2TXT_AVAILABLE = False
-    logger.warning("docx2txt not available - Legacy DOC files will not be supported")
 
 # ============================================================================
 # TEXT-TO-SPEECH HELPERS

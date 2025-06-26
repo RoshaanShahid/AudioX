@@ -4,38 +4,31 @@
 
 {% block page_title %}My Chat Rooms - AudioX Community Chat{% endblock page_title %}
 
-{% block extra_chat_head %}
-{% endblock extra_chat_head %}
-
 {% block chat_content %}
-<div class="w-full bg-white min-h-[calc(100vh-8rem)]"> {# Consistent page wrapper #}
-    <div class="container mx-auto max-w-6xl py-12 md:py-16 px-4 sm:px-6 lg:px-8"> {# Max width adjusted for content #}
+<div class="w-full bg-white min-h-[calc(100vh-8rem)]">
+    <div class="container mx-auto max-w-6xl py-12 px-4 sm:px-6 lg:px-8">
 
-        {# Custom Feedback Popup HTML - Styling handled by JS and Tailwind #}
-        {# Make sure the JS below is correctly configuring this popup's colors #}
-        {% if popup_feedback %} {# Assuming popup_feedback variable triggers its rendering #}
+        {% if popup_feedback %}
         <div id="feedbackPopup" class="fixed top-6 right-6 z-[1000] p-4 rounded-xl shadow-2xl text-white max-w-sm md:max-w-md hidden transition-all duration-300 ease-out transform" role="alert">
             <div class="flex items-start">
-                <div id="popupIconContainer" class="flex-shrink-0 text-white mr-3">
-                    {# SVG icon will be injected here by JS. #}
-                </div>
+                <div id="popupIconContainer" class="flex-shrink-0 text-white mr-3"></div>
                 <div class="flex-grow">
                     <p id="popupMessage" class="text-sm font-semibold">Popup message goes here.</p>
                 </div>
                 <div class="ml-auto pl-3">
-                    <button type="button" id="popupClose" class="inline-flex rounded-md p-1.5 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
+                    <button type="button" id="popupClose" class="inline-flex rounded-md p-1.5 text-white hover:bg-white hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
                         <span class="sr-only">Dismiss</span>
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     </button>
                 </div>
             </div>
         </div>
         {% endif %}
 
-        <div class="mb-10 md:mb-12 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-[#091e65] tracking-tight text-center sm:text-left">My Chat Rooms</h1>
+        <div class="mb-12 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <h1 class="text-4xl sm:text-5xl font-black text-[#091e65] tracking-tight text-center sm:text-left">My Chat Rooms</h1>
             <a href="{% url 'AudioXApp:chatroom_create' %}"
-               class="px-6 py-3 text-base font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-opacity-50 focus:ring-offset-2 flex items-center gap-x-2 shrink-0">
+               class="px-6 py-3 text-base font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors duration-200 shadow-xl hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-opacity-50 focus:ring-offset-2 flex items-center gap-x-2 shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                 </svg>
@@ -44,9 +37,9 @@
         </div>
 
         {% if my_chat_rooms %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8 md:gap-x-8 md:gap-y-10">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {% for room in my_chat_rooms %}
-                <div class="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col group relative border border-gray-200 hover:border-red-500/40 transform hover:-translate-y-2 overflow-hidden">
+                <div class="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col group relative border border-gray-200 hover:border-red-500 hover:border-opacity-40 transform hover:-translate-y-2 overflow-hidden">
                     <div class="relative">
                         <a href="{% url 'AudioXApp:chatroom_detail' room_id=room.room_id %}" class="block">
                             {% if room.cover_image %}
@@ -55,33 +48,33 @@
                                 <img src="{% static 'img/community_chatroom/chatroom-cover-default.png' %}" alt="Default cover for {{ room.name }}" class="w-full h-48 object-cover rounded-t-2xl">
                             {% endif %}
                         </a>
-                        <span class="absolute top-3 right-3 py-1 px-3 text-xs font-bold rounded-full uppercase tracking-wider shadow-md text-white z-10
-                            {% if room.status == room.RoomStatusChoices.ACTIVE %}bg-[#091e65]{% elif room.status == room.RoomStatusChoices.CLOSED %}bg-red-600{% else %}bg-[#091e65] bg-opacity-70{% endif %}">
+                        <span class="absolute top-4 right-4 py-2 px-4 text-xs font-bold rounded-full uppercase tracking-wider shadow-lg text-white z-10
+                            {% if room.status == room.RoomStatusChoices.ACTIVE %}bg-[#091e65]{% elif room.status == room.RoomStatusChoices.CLOSED %}bg-red-600{% else %}bg-gray-600{% endif %}">
                             {{ room.get_status_display }}
                         </span>
                     </div>
 
-                    <div class="p-5 flex flex-col flex-grow">
-                        <h2 class="text-xl font-bold text-[#091e65] mb-2 group-hover:text-red-600 transition-colors duration-200 truncate" title="{{ room.name }}">
-                            <a href="{% url 'AudioXApp:chatroom_detail' room_id=room.room_id %}">{{ room.name|truncatechars:50 }}</a>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h2 class="text-xl font-bold text-[#091e65] mb-3 group-hover:text-red-600 transition-colors duration-200 line-clamp-2" title="{{ room.name }}">
+                            <a href="{% url 'AudioXApp:chatroom_detail' room_id=room.room_id %}">{{ room.name }}</a>
                         </h2>
                         {% if room.description %}
-                        <p class="text-sm text-[#091e65] opacity-75 line-clamp-3 mb-4 flex-grow min-h-[3.75rem] leading-relaxed">{{ room.description|truncatewords:20 }}</p>
+                        <p class="text-sm text-gray-600 line-clamp-3 mb-4 flex-grow leading-relaxed">{{ room.description|truncatewords:20 }}</p>
                         {% else %}
-                        <p class="text-sm text-[#091e65] opacity-50 italic line-clamp-3 mb-4 flex-grow min-h-[3.75rem] leading-relaxed">No description provided.</p>
+                        <p class="text-sm text-gray-400 italic line-clamp-3 mb-4 flex-grow leading-relaxed">No description provided.</p>
                         {% endif %}
                         
-                        <div class="flex items-center justify-between text-xs text-[#091e65] opacity-70 mb-4 pt-3 border-t border-gray-100">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#091e65]/10 text-[#091e65] font-semibold">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                        <div class="flex items-center justify-between text-xs text-gray-600 mb-4 pt-4 border-t border-gray-100">
+                            <span class="inline-flex items-center px-3 py-2 rounded-full bg-gray-100 text-[#091e65] font-semibold">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
                                     <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
                                 </svg>
                                 {{ room.num_members }} Member{{ room.num_members|pluralize }}
                             </span>
                             {% if room.language %}
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#091e65]/10 text-[#091e65] font-semibold">
-                               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                                 <path fill-rule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.87 18.87 0 01-1.724 4.78c.29.177.568.374.832.587.376.304.691.637.938.989a.75.75 0 01-.956.047 19.02 19.02 0 00-1.376-.864c-.368-.22-.77-.408-1.193-.561a1 1 0 11.42-1.96c.59.166 1.203.298 1.83.385a17.05 17.05 0 000-5.192C5.119 5.319 4.507 5.186 3.916 5.02a1 1 0 11.42-1.96c.24.079.49.149.75.209.247-.352.562-.685.938-.989a.75.75 0 01.956.047c.534.434.997.93 1.376 1.494.368.54.668 1.14.892 1.798A18.87 18.87 0 014.578 2H7zm8.707 1.293a1 1 0 010 1.414L14.414 6l1.293 1.293a1 1 0 01-1.414 1.414L13 7.414l-1.293 1.293a1 1 0 01-1.414-1.414L11.586 6l-1.293-1.293a1 1 0 011.414-1.414L13 4.586l1.293-1.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            <span class="inline-flex items-center px-3 py-2 rounded-full bg-gray-100 text-[#091e65] font-semibold">
+                               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                 <path fill-rule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.87 18.87 0 01-1.724 4.78c.29.177.568.374.832.587.376.304.691.637.938.989a.75.75 0 01-.956.047 19.02 19.02 0 00-1.376-.864c-.368-.22-.77-.408-1.193-.561a1 1 0 11.42-1.96c.59.166 1.203.298 1.83.385a17.05 17.05 0 000-5.192C5.119 5.319 4.507 5.186 3.916 5.02a1 1 0 11.42-1.96c.24.079.49.149.75.209.247-.352.562-.685.938-.989a.75.75 0 01.956.047c.534.434.997.93 1.376 1.494.368.54.668 1.14.892 1.798A18.87 18.87 0 014.578 2H7z" clip-rule="evenodd" />
                                </svg>
                                 {{ room.get_language_display }}
                             </span>
@@ -89,8 +82,8 @@
                         </div>
                         <div class="mt-auto pt-4 border-t border-gray-200">
                             <a href="{% url 'AudioXApp:chatroom_detail' room_id=room.room_id %}"
-                               class="block w-full text-center px-4 py-3 text-sm font-semibold text-white rounded-lg transition-colors duration-200 shadow hover:shadow-md
-                               {% if room.status == room.RoomStatusChoices.CLOSED %}bg-red-600 opacity-50 hover:opacity-60 cursor-not-allowed{% else %}bg-red-600 hover:bg-red-700{% endif %}">
+                               class="block w-full text-center px-4 py-3 text-sm font-bold text-white rounded-xl transition-colors duration-200 shadow-lg hover:shadow-xl
+                               {% if room.status == room.RoomStatusChoices.CLOSED %}bg-red-600 opacity-75 hover:opacity-85{% else %}bg-red-600 hover:bg-red-700{% endif %}">
                                 {% if room.status == room.RoomStatusChoices.CLOSED %}View Details (Closed){% else %}Enter Room{% endif %}
                             </a>
                         </div>
@@ -99,18 +92,18 @@
                 {% endfor %}
             </div>
         {% else %}
-            <div class="text-center py-16 md:py-24">
-                <div class="inline-flex items-center justify-center bg-red-100 text-red-600 p-6 rounded-full mb-8 shadow-lg transform transition-all duration-500 hover:scale-105">
-                    <svg class="w-24 h-24 md:w-28 md:h-28" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <div class="text-center py-20">
+                <div class="w-32 h-32 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                    <svg class="w-16 h-16 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 10.5v6m3-3H9m4.06-7.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
                     </svg>
                 </div>
-                <h3 class="text-3xl sm:text-4xl font-bold text-[#091e65] mb-4">No Chat Rooms Yet</h3>
-                <p class="text-lg text-[#091e65] opacity-75 max-w-md mx-auto mb-8">
+                <h3 class="text-3xl font-bold text-[#091e65] mb-4">No Chat Rooms Yet</h3>
+                <p class="text-lg text-gray-600 max-w-md mx-auto mb-8">
                     You haven't created any chat rooms. Why not start one?
                 </p>
                 <a href="{% url 'AudioXApp:chatroom_create' %}"
-                   class="inline-flex items-center justify-center gap-x-2 px-7 py-3 text-base font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-600/50">
+                   class="inline-flex items-center justify-center gap-x-2 px-8 py-4 text-base font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-600 focus:ring-opacity-50">
                    <svg class="-ml-1 mr-0.5 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                    </svg>
@@ -137,25 +130,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const popupCloseButton = document.getElementById('popupClose');
         let popupTimeout;
 
-        // Updated icons and colors for the new design constraints
         const icons = { 
             success: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
             error: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 9A9 9 0 1112 3v-.75m9 3.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>',
             warning: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>',
             info: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>'
         };
-        // Using #091e65 and RED (e.g., red-600, red-500 for warning)
         const bgColors = { 
             success: 'bg-[#091e65]', 
             error: 'bg-red-600', 
-            warning: 'bg-red-500', // Or bg-red-600 if only one shade of red is preferred
+            warning: 'bg-red-500', 
             info: 'bg-[#091e65]'
-        };
-        const closeButtonRingColors = { // For focus:ring-offset-[color]
-            success: 'focus:ring-offset-[#091e65]',
-            error: 'focus:ring-offset-red-600',
-            warning: 'focus:ring-offset-red-500',
-            info: 'focus:ring-offset-[#091e65]'
         };
 
         function showPopup(type, message) {
@@ -163,27 +148,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (popupTimeout) clearTimeout(popupTimeout);
 
             Object.values(bgColors).forEach(cls => feedbackPopup.classList.remove(cls));
-            // More robustly remove previous specific ring colors for the close button
-            popupCloseButton.className.split(' ').forEach(cls => {
-                if (cls.startsWith('focus:ring-offset-')) {
-                    popupCloseButton.classList.remove(cls);
-                }
-            });
             
             popupMessage.textContent = message;
             popupIconContainer.innerHTML = icons[type] || icons['info'];
             const iconSvg = popupIconContainer.querySelector('svg');
-            if(iconSvg) { iconSvg.classList.add('h-6', 'w-6');} // Ensure icon size
+            if(iconSvg) { iconSvg.classList.add('h-6', 'w-6');}
 
             feedbackPopup.classList.add(bgColors[type] || bgColors['info']);
-            
-            // Add base focus styles then specific offset color for close button
-            popupCloseButton.classList.add('hover:bg-white/20', 'focus:ring-2', 'focus:ring-white');
-            const specificRingColorClasses = (closeButtonRingColors[type] || closeButtonRingColors['info']).split(' ');
-            specificRingColorClasses.forEach(cls => popupCloseButton.classList.add(cls));
 
-            // Animation classes
-            feedbackPopup.classList.remove('hidden', 'opacity-0', 'translate-y-[-20px]');
+            feedbackPopup.classList.remove('hidden', 'opacity-0', 'translate-y-4');
             requestAnimationFrame(() => { 
                 feedbackPopup.classList.add('opacity-100', 'translate-y-0');
             });
@@ -193,8 +166,8 @@ document.addEventListener('DOMContentLoaded', function () {
         function hidePopup() {
             if (!feedbackPopup) return;
             feedbackPopup.classList.remove('opacity-100', 'translate-y-0');
-            feedbackPopup.classList.add('opacity-0', 'translate-y-[-20px]');
-            setTimeout(() => { feedbackPopup.classList.add('hidden'); }, 300); // Match transition duration
+            feedbackPopup.classList.add('opacity-0', 'translate-y-4');
+            setTimeout(() => { feedbackPopup.classList.add('hidden'); }, 300);
         }
 
         if (popupCloseButton) popupCloseButton.addEventListener('click', hidePopup);
