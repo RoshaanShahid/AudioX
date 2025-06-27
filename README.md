@@ -4,7 +4,7 @@ AudioX is a web-based audiobook platform that supports mainstream and regional l
 
 🚀 Features
 
-👤 User-Centric
+👤 User-Centric Features
 
 🔊 Audiobooks in Urdu, Punjabi, Sindhi, and English
 
@@ -26,7 +26,7 @@ AudioX is a web-based audiobook platform that supports mainstream and regional l
 
 🎁 Audiobook Gifting System
 
-🎤 Creator-Centric
+🎤 Creator-Centric Features
 
 📅 Chapter-wise Audio Upload
 
@@ -38,7 +38,7 @@ AudioX is a web-based audiobook platform that supports mainstream and regional l
 
 💬 Community Chatrooms per Chapter
 
-🛠️ Additional Tools
+🛠️ Advanced Tools & Admin Features
 
 📄 Document-to-Audio Conversion
 
