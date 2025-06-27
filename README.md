@@ -2,8 +2,10 @@
 
 AudioX is a web-based audiobook platform that supports mainstream and regional languages like Urdu, Punjabi, and Sindhi. The platform is built using Django with Jinja templating, PostgreSQL, and several Google Cloud APIs. It provides an inclusive listening experience for diverse audiences and supports audiobook creators through content upload and monetization features.
 
-🚀 Features
+___________________________________________________________________________________________________________________________________________________________________________
 
+🚀 Features
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 👤 User-Centric Features
 
 🔊 Audiobooks in Urdu, Punjabi, Sindhi, and English
@@ -14,7 +16,7 @@ AudioX is a web-based audiobook platform that supports mainstream and regional l
 
 💖 Personalized Libraries & Audio Lists
 
-🔍 Smart Search (by Genre, Author, Title, and TTS-based)
+🔍 Smart Search (by Genre, Author, Title)
 
 ⏯️ Playback Customization (speed control, bookmarking, clip saving)
 
@@ -25,6 +27,8 @@ AudioX is a web-based audiobook platform that supports mainstream and regional l
 🖊️ User Reviews, Ratings, & Support Tickets
 
 🎁 Audiobook Gifting System
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 🎤 Creator-Centric Features
 
@@ -37,6 +41,7 @@ AudioX is a web-based audiobook platform that supports mainstream and regional l
 💎 Creator Application & Moderation Workflow
 
 💬 Community Chatrooms per Chapter
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 🛠️ Advanced Tools & Admin Features
 
@@ -47,6 +52,8 @@ AudioX is a web-based audiobook platform that supports mainstream and regional l
 📉 Audio Summarization
 
 📆 Admin Panel for Moderation, Analytics, and Management
+
+_____________________________________________________________________________________________________________________________________________________________________________
 
 📊 Tech Stack
 
@@ -63,6 +70,7 @@ Task Queue: Celery + Redis
 Real-time Features: WebSockets, Channels, Daphne
 
 Payment Gateway: Stripe
+_____________________________________________________________________________________________________________________________________________________________________________
 
 📁 Project Structure Overview
 
@@ -83,6 +91,7 @@ AudioX/
 ├── requirements.txt       # Python dependencies
 ├── manage.py              # Django project manager
 └── .env                   # Environment variables
+_____________________________________________________________________________________________________________________________________________________________________________
 
 📆 Installation & Setup
 
@@ -113,6 +122,7 @@ DATABASE_URL=your-postgres-connection-url
 
 python manage.py migrate
 python manage.py runserver
+_____________________________________________________________________________________________________________________________________________________________________________
 
 📑 Requirements
 
@@ -130,7 +140,9 @@ ffmpeg-python, PyMuPDF, stripe, openai
 
 Full list in requirements.txt
 
-👨‍💼 Authors
+_____________________________________________________________________________________________________________________________________________________________________________
+
+👨‍💼 Developers
 
 Roshaan Shahid
 
@@ -147,6 +159,8 @@ GitHub: burhanaqee
 Email: Iam.burhanaqeel@gmail.com
 
 LinkedIn: linkedin.com/in/burhanaqeel
+
+__________________________________________________________________________________________________________________________________________________________________________
 
 📄 License
 
