@@ -173,18 +173,19 @@ AUTHENTICATION_BACKENDS = [
 ]
 SITE_ID = 1
 
-# User authentication and signup settings
-ACCOUNT_LOGIN_METHODS = ['email']             # Replaces ACCOUNT_AUTHENTICATION_METHOD
-ACCOUNT_SIGNUP_FIELDS = ['full_name', 'username'] # Fields required at signup
+# User authentication and signup settings (Updated for latest django-allauth)
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Use email for login
 ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
-ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_REQUIRED = True              # Set based on inclusion in ACCOUNT_SIGNUP_FIELDS
 ACCOUNT_EMAIL_VERIFICATION = os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'none') # 'none', 'optional', or 'mandatory'
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_LOGOUT_ON_GET = True
+
+# These settings are now controlled by ACCOUNT_SIGNUP_FIELDS:
+# - ACCOUNT_EMAIL_REQUIRED (deprecated) -> 'email' in ACCOUNT_SIGNUP_FIELDS
+# - ACCOUNT_USERNAME_REQUIRED (deprecated) -> 'username' in ACCOUNT_SIGNUP_FIELDS  
+# - ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE (deprecated) -> always True in new versions
 
 # Custom adapters for handling signup logic
 ACCOUNT_ADAPTER = 'AudioXApp.adapters.CustomAccountAdapter'
@@ -193,18 +194,8 @@ SOCIALACCOUNT_ADAPTER = 'AudioXApp.adapters.CustomSocialAccountAdapter'
 # Social Account (Google) specific settings
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_LOGIN_ON_GET = True
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'online'},
-        'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
-            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
-            'key': ''
-        },
-        'VERIFIED_EMAIL': True,
-    }
-}
+SOCIALACCOUNT_STORE_TOKENS = True
+# Removed SOCIALACCOUNT_PROVIDERS to avoid conflicts with database configuration
 
 # =============================================================================
 #  INTERNATIONALIZATION & STATIC/MEDIA FILES
@@ -228,47 +219,76 @@ os.makedirs(MEDIA_ROOT, exist_ok=True)
 #  ASYNCHRONOUS, CACHING & BACKGROUND TASKS
 # =============================================================================
 # --- Caching Configuration ---
-CACHE_LOCATION_PATH = BASE_DIR / 'django_cache_data'
+# Using Redis for caching in Docker environment
+REDIS_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': CACHE_LOCATION_PATH,
-        'TIMEOUT': 3600, # 1 hour
-        'OPTIONS': {'MAX_ENTRIES': 1000}
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
     }
 }
-os.makedirs(CACHE_LOCATION_PATH, exist_ok=True)
+
+# Fallback to file-based cache if Redis is not available (development only)
+if DEBUG and not os.getenv('REDIS_URL'):
+    CACHE_LOCATION_PATH = BASE_DIR / 'django_cache_data'
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': CACHE_LOCATION_PATH,
+            'TIMEOUT': 3600,
+            'OPTIONS': {'MAX_ENTRIES': 1000}
+        }
+    }
+    os.makedirs(CACHE_LOCATION_PATH, exist_ok=True)
+    logging.warning("Warning: Using file-based cache. Set REDIS_URL for better performance.")
 
 # --- Channels Configuration ---
-# Using in-memory layer for development. For production, switch to 'channels_redis'.
+# Using Redis for WebSocket connections in Docker environment
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [REDIS_URL],
+        },
     },
 }
-# To use Redis in production, uncomment the following:
-# REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-# REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG': {
-#             "hosts": [(REDIS_HOST, REDIS_PORT)],
-#         },
-#     },
-# }
+
+# Fallback to in-memory layer if Redis is not available (development only)
+if DEBUG and not os.getenv('REDIS_URL'):
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
+    logging.warning("Warning: Using in-memory channel layer. Set REDIS_URL for production.")
 
 # --- Celery Configuration ---
-# Forcing synchronous execution for development simplicity. Set to False for production.
-CELERY_TASK_ALWAYS_EAGER = True
-# For production with a message broker like Redis, set EAGER to False and configure URLs:
-# CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}/0')
-# CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', f'redis://{REDIS_HOST}:{REDIS_PORT}/1')
+# Using Redis as message broker for asynchronous task processing in Docker
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/1')
+CELERY_TASK_ALWAYS_EAGER = False  # Enable async processing with Redis
+
+# Fallback to synchronous execution if Redis is not available (development only)
+if DEBUG and not os.getenv('CELERY_BROKER_URL'):
+    CELERY_TASK_ALWAYS_EAGER = True
+    logging.warning("Warning: Using synchronous Celery execution. Set CELERY_BROKER_URL for async processing.")
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Additional Celery optimizations for Docker
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_ACKS_LATE = True
 
 # =============================================================================
 #  THIRD-PARTY SERVICES & API KEYS

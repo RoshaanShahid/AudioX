@@ -67,5 +67,5 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         return url_has_allowed_host_and_scheme(
             url,
             allowed_hosts=settings.ALLOWED_HOSTS,
-            require_httpshttps=require_https_flag
+            require_https=require_https_flag
         )

@@ -21,14 +21,27 @@ from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
 from ..models import Chapter, Audiobook, User
 
-FFMPEG_INSTALL_ROOT = r"C:\Program Files\ffmpeg-2025-05-29-git-75960ac270-full_build"
-FFMPEG_BIN_PATH = os.path.join(FFMPEG_INSTALL_ROOT, "bin")
-FFMPEG_EXE = os.path.join(FFMPEG_BIN_PATH, "ffmpeg.exe")
+# FFmpeg configuration - Docker and local compatibility
+FFMPEG_PATH = os.getenv('FFMPEG_PATH', '/usr/bin/ffmpeg')  # Docker default
 
-if os.path.isfile(FFMPEG_EXE):
-    AudioSegment.converter = FFMPEG_EXE
-else:
-    print(f"DEBUG ERROR: ffmpeg.exe not found at the specified path: {FFMPEG_EXE}. Pydub operations will likely fail.")
+# Try to set FFmpeg path
+try:
+    if os.path.isfile(FFMPEG_PATH):
+        AudioSegment.converter = FFMPEG_PATH
+        print(f"FFmpeg found and configured at: {FFMPEG_PATH}")
+    else:
+        # Fallback for Windows development
+        FFMPEG_INSTALL_ROOT = r"C:\Program Files\ffmpeg-2025-05-29-git-75960ac270-full_build"
+        FFMPEG_BIN_PATH = os.path.join(FFMPEG_INSTALL_ROOT, "bin")
+        FFMPEG_EXE = os.path.join(FFMPEG_BIN_PATH, "ffmpeg.exe")
+        
+        if os.path.isfile(FFMPEG_EXE):
+            AudioSegment.converter = FFMPEG_EXE
+            print(f"FFmpeg found and configured at: {FFMPEG_EXE}")
+        else:
+            print(f"WARNING: FFmpeg not found. Audio processing may be limited.")
+except Exception as e:
+    print(f"FFmpeg configuration error: {e}. Audio processing may be limited.")
 
 logger = logging.getLogger(__name__)
 

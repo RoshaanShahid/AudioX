@@ -1,16 +1,279 @@
-stripe listen --forward-to localhost:8000/payment/webhook/stripe/ 
-TRUNCATE TABLE audiox_schema."USERS" RESTART IDENTITY CASCADE;
-npm run build:css
-npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch
-python manage.py dumpdata AudioXApp.TicketCategory --output AudioXApp/fixtures/audiox_ticket_categories.json --indent 2
-python manage.py loaddata audiox_ticket_categories.json
-python manage.py makemigrations --merge
-celery -A AudioXCore worker -l info -P solo
+# ================================================================================
+# AudioX - Docker Development Commands Reference
+# ================================================================================
+# This file contains all the essential Docker commands for AudioX development.
+# Replace the old local development workflow with these Docker-based commands.
+# ================================================================================
 
-[ DO $$ DECLARE
-    r RECORD;
-BEGIN
-    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'audiox_schema') LOOP
-        EXECUTE 'DROP TABLE IF EXISTS audiox_schema.' || quote_ident(r.tablename) || ' CASCADE';
-    END LOOP;
-END $$; ] FOR DATABASE SCHEMA DROP TABLES
+# ================================================================================
+# ENVIRONMENT VARIABLE MANAGEMENT
+# ================================================================================
+
+# Your .env file is already configured for Docker
+# Make sure to keep your API keys and secrets updated
+
+# View environment variables inside container
+docker-compose exec web env
+
+# Check specific environment variable
+docker-compose exec web echo $DJANGO_SECRET_KEY
+
+# Restart services after .env changes
+docker-compose restart
+
+# Validate Django settings with current environment
+docker-compose exec web python manage.py check
+
+# ================================================================================
+# REDIS & SERVICE VERIFICATION
+# ================================================================================
+
+# Test Redis connection
+docker-compose exec web python -c "import redis; r=redis.from_url('redis://redis:6379/0'); print('Redis ping:', r.ping())"
+
+# Test Redis cache
+docker-compose exec web python manage.py shell -c "from django.core.cache import cache; cache.set('test', 'hello'); print('Cache test:', cache.get('test'))"
+
+# Check Celery broker connection
+docker-compose exec web python -c "from celery import current_app; print('Celery broker:', current_app.connection().as_uri())"
+
+# Test all environment variables
+docker-compose exec web python manage.py shell -c "import os; vars=['DB_HOST','REDIS_URL','CELERY_BROKER_URL','GEMINI_API_KEY']; [print(f'{v}: {\"SET\" if os.getenv(v) else \"NOT SET\"}') for v in vars]"
+
+# Check all services status
+docker-compose exec web python manage.py check --deploy
+
+# ================================================================================
+# DOCKER SERVICES MANAGEMENT
+# ================================================================================
+
+# Start all services (PostgreSQL, Redis, Django, Celery, Nginx)
+docker-compose up -d
+
+# Start services with logs visible (for debugging)
+docker-compose up
+
+# Stop all services
+docker-compose down
+
+# Stop services and remove volumes (CAUTION: This deletes database data)
+docker-compose down -v
+
+# Restart all services
+docker-compose restart
+
+# Rebuild containers (use when Dockerfile or requirements.txt changes)
+docker-compose build
+
+# Rebuild and start services
+docker-compose up --build -d
+
+# ================================================================================
+# DJANGO MANAGEMENT COMMANDS
+# ================================================================================
+
+# Database migrations
+docker-compose exec web python manage.py makemigrations
+docker-compose exec web python manage.py migrate
+
+# Create superuser account
+docker-compose exec web python manage.py createsuperuser
+
+# Collect static files
+docker-compose exec web python manage.py collectstatic --noinput
+
+# ================================================================================
+# AUDIOBOOK MANAGEMENT COMMANDS (Your Custom Commands)
+# ================================================================================
+
+# Populate audiobook cache from API sources
+docker-compose exec web python manage.py populate_audiobook_cache
+
+# Scrape audiobooks from external sources
+docker-compose exec web python manage.py scrape_audiobooks
+
+# Clear audiobook cache
+docker-compose exec web python manage.py clear_audiobook_cache
+
+# Populate external chapter IDs
+docker-compose exec web python manage.py populate_external_chapter_ids
+
+# ================================================================================
+# DATABASE OPERATIONS
+# ================================================================================
+
+# Access PostgreSQL database shell
+docker-compose exec db psql -U audiox_user -d audiox_db
+
+# Create database backup
+docker-compose exec db pg_dump -U audiox_user audiox_db > backup.sql
+
+# Restore database from backup
+docker-compose exec -T db psql -U audiox_user -d audiox_db < backup.sql
+
+# Reset database (CAUTION: This deletes all data)
+docker-compose exec web python manage.py flush
+
+# Load fixture data
+docker-compose exec web python manage.py loaddata audiox_ticket_categories.json
+
+# ================================================================================
+# CONTAINER SHELL ACCESS
+# ================================================================================
+
+# Access Django web container shell
+docker-compose exec web bash
+
+# Access PostgreSQL container shell
+docker-compose exec db bash
+
+# Access Redis container shell
+docker-compose exec redis redis-cli
+
+# ================================================================================
+# LOGS AND MONITORING
+# ================================================================================
+
+# View logs for all services
+docker-compose logs
+
+# View logs for specific service (web, db, redis, celery, etc.)
+docker-compose logs web
+docker-compose logs db
+docker-compose logs redis
+docker-compose logs celery
+
+# Follow logs in real-time
+docker-compose logs -f web
+
+# View last 100 lines of logs
+docker-compose logs --tail=100 web
+
+# ================================================================================
+# CELERY TASK MANAGEMENT
+# ================================================================================
+
+# View Celery worker status
+docker-compose exec celery celery -A AudioXCore inspect active
+
+# View Celery scheduled tasks
+docker-compose exec celery-beat celery -A AudioXCore inspect scheduled
+
+# Restart Celery worker
+docker-compose restart celery
+
+# Restart Celery beat scheduler
+docker-compose restart celery-beat
+
+# ================================================================================
+# FRONTEND DEVELOPMENT (Tailwind CSS)
+# ================================================================================
+
+# Build Tailwind CSS (development mode with watch)
+docker-compose exec web npm run build:css
+
+# Build Tailwind CSS for production
+docker-compose exec web npm run build:css:prod
+
+# ================================================================================
+# TESTING AND DEBUGGING
+# ================================================================================
+
+# Run Django tests
+docker-compose exec web python manage.py test
+
+# Run specific test
+docker-compose exec web python manage.py test AudioXApp.tests.test_models
+
+# Django shell access
+docker-compose exec web python manage.py shell
+
+# Check Django configuration
+docker-compose exec web python manage.py check
+
+# ================================================================================
+# CLEANUP AND MAINTENANCE
+# ================================================================================
+
+# Remove unused Docker images
+docker image prune
+
+# Remove unused Docker volumes
+docker volume prune
+
+# Remove unused Docker networks
+docker network prune
+
+# Remove all stopped containers, unused networks, images, and build cache
+docker system prune -a
+
+# View Docker disk usage
+docker system df
+
+# ================================================================================
+# PAYMENT INTEGRATION (Stripe)
+# ================================================================================
+
+# Listen to Stripe webhooks (run in separate terminal)
+stripe listen --forward-to localhost:8000/payment/webhook/stripe/
+
+# ================================================================================
+# PRODUCTION DEPLOYMENT
+# ================================================================================
+
+# Start with Nginx for production
+docker-compose --profile production up -d
+
+# Build for production
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+
+# ================================================================================
+# TROUBLESHOOTING
+# ================================================================================
+
+# View container status
+docker-compose ps
+
+# Check container resource usage
+docker stats
+
+# Inspect container configuration
+docker-compose exec web env
+
+# Rebuild specific service
+docker-compose build web
+docker-compose up -d web
+
+# Force recreate containers
+docker-compose up -d --force-recreate
+
+# ================================================================================
+# QUICK START WORKFLOW
+# ================================================================================
+
+# 1. Start development environment
+docker-compose up -d
+
+# 2. Run migrations (first time or after model changes)
+docker-compose exec web python manage.py migrate
+
+# 3. Populate audiobook cache
+docker-compose exec web python manage.py populate_audiobook_cache
+
+# 4. Create superuser (first time only)
+docker-compose exec web python manage.py createsuperuser
+
+# 5. Access your app at http://localhost:8000
+
+# 6. Stop when done
+docker-compose down
+
+# ================================================================================
+# NOTES
+# ================================================================================
+# - Always start services with 'docker-compose up -d' before running exec commands
+# - Use 'docker-compose logs -f web' to debug issues
+# - Database data persists in Docker volumes between restarts
+# - Static files are handled automatically by Docker volumes
+# - Redis cache is shared between all containers
+# ================================================================================ 

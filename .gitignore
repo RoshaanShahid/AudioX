@@ -3,17 +3,30 @@
 #
 #  NEVER commit secrets, credentials, or environment-specific variables.
 #  This includes .env files and service account keys.
-#  If you have a template for others to use, name it .env.example and commit that instead.
 # =============================================================================
 .env*
-!/.env.example
 audiox-auth-e32bbe6bfa04.json
+
+
+# =============================================================================
+#  Docker Development
+#
+#  Files and directories created during Docker development
+# =============================================================================
+# Docker volumes and data
+postgres_data/
+redis_data/
+
+# Docker build context files (optional)
+.dockerignore.bak
+docker-compose.override.yml
 
 
 # =============================================================================
 #  Python & Virtual Environments
 #
-#  Ignoring bytecode, distribution files, and virtual environment folders.
+#  Note: Virtual environments are not needed when using Docker Desktop.
+#  These patterns are kept for compatibility with non-Docker setups.
 # =============================================================================
 /.venv/
 /venv/
@@ -36,34 +49,36 @@ __pycache__/
 # =============================================================================
 #  Django Specific
 #
-#  Ignoring files specific to a Django project runtime, like databases,
-#  collected static files, and media uploads.
+#  Note: With Docker, staticfiles and cache are handled by containers.
+#  These patterns ensure local artifacts don't interfere.
 # =============================================================================
-# Development database
+# Development database (SQLite - not used with Docker PostgreSQL)
 db.sqlite3
 db.sqlite3-journal
 
-# Directory for `collectstatic` output
+# Directory for `collectstatic` output (handled by Docker volumes)
 /staticfiles/
+/staticfiles_collected/
 
-# Directory for user-uploaded media files
+# Directory for user-uploaded media files (handled by Docker volumes)
 /media/
 
-# Django cache data
+# Django cache data (handled by Redis container)
 /django_cache_data/
 
 
 # =============================================================================
 #  Frontend / Node.js
 #
-#  Ignoring node modules and build artifacts from tools like Tailwind CSS.
-#  Your `output.css` appears to be a generated file.
+#  Note: With Docker, node_modules are handled within containers.
+#  These patterns prevent local Node.js artifacts from interfering.
 # =============================================================================
 /node_modules/
 /static/css/output.css
 npm-debug.log
 yarn-error.log
 yarn-debug.log
+package-lock.json.bak
 
 
 # =============================================================================
