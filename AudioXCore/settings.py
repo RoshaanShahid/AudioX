@@ -174,7 +174,8 @@ AUTHENTICATION_BACKENDS = [
 SITE_ID = 1
 
 # User authentication and signup settings (Updated for latest django-allauth)
-ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Use email for login
+# Fixed deprecation warnings
+ACCOUNT_LOGIN_METHODS = {'email'}  # Replaces deprecated ACCOUNT_AUTHENTICATION_METHOD
 ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = os.getenv('ACCOUNT_EMAIL_VERIFICATION', 'none') # 'none', 'optional', or 'mandatory'
@@ -182,17 +183,15 @@ ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_LOGOUT_ON_GET = True
 
-# These settings are now controlled by ACCOUNT_SIGNUP_FIELDS:
-# - ACCOUNT_EMAIL_REQUIRED (deprecated) -> 'email' in ACCOUNT_SIGNUP_FIELDS
-# - ACCOUNT_USERNAME_REQUIRED (deprecated) -> 'username' in ACCOUNT_SIGNUP_FIELDS  
-# - ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE (deprecated) -> always True in new versions
+# Updated signup fields configuration (replaces deprecated individual settings)
+ACCOUNT_SIGNUP_FIELDS = {'email', 'username'}  # Replaces ACCOUNT_EMAIL_REQUIRED and ACCOUNT_USERNAME_REQUIRED
 
 # Custom adapters for handling signup logic
 ACCOUNT_ADAPTER = 'AudioXApp.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'AudioXApp.adapters.CustomSocialAccountAdapter'
 
 # Social Account (Google) specific settings
-SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_AUTO_SIGNUP = False  # Require explicit signup first, then login
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_STORE_TOKENS = True
 # Removed SOCIALACCOUNT_PROVIDERS to avoid conflicts with database configuration

@@ -9,11 +9,17 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# Install Node.js repository
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+
+# Install system dependencies including Node.js
 RUN apt-get update && apt-get install -y \
     # Essential build tools
     build-essential \
     pkg-config \
+    # Node.js and npm for Tailwind CSS
+    nodejs \
     # FFmpeg for audio processing
     ffmpeg \
     # Tesseract OCR for document processing
@@ -35,6 +41,12 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy package.json and package-lock.json first for better caching
+COPY package*.json /app/
+
+# Install Node.js dependencies
+RUN npm install
+
 # Copy requirements first for better caching
 COPY requirements.txt /app/
 
@@ -50,6 +62,9 @@ RUN mkdir -p /app/media /app/staticfiles_collected
 
 # Set correct permissions
 RUN chmod +x /app/manage.py
+
+# Build Tailwind CSS
+RUN npm run build:css:prod
 
 # Collect static files (will be overridden in docker-compose)
 RUN python manage.py collectstatic --noinput --clear || true

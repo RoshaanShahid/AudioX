@@ -277,3 +277,6 @@ docker-compose down
 # - Static files are handled automatically by Docker volumes
 # - Redis cache is shared between all containers
 # ================================================================================ 
+
+git push origin main; git push upstream main
+docker-compose restart web

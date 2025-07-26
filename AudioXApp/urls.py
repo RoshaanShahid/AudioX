@@ -40,6 +40,12 @@ from .views.features_views import (
     community_chatrooms_feature_views,
     document_to_audio_feature_views
 )
+from .views.features_views.community_chatrooms_feature_views import (
+    LoadMoreMessagesView,
+    GetRoomStatsView, 
+    GetMemberStatusView,
+    ManageMemberView
+)
 # Import the new coin unlock views
 from .views.coin_unlock_views import unlock_chapter_with_coins, check_chapter_unlock_eligibility
 
@@ -314,6 +320,12 @@ urlpatterns = [
     path('features/community-chatrooms/my-rooms/', community_chatrooms_feature_views.MyChatRoomsView.as_view(), name='my_chatrooms'),
     path('features/community-chatrooms/joined-rooms/', community_chatrooms_feature_views.JoinedChatRoomsView.as_view(), name='joined_chatrooms'),
     path('features/community-chatrooms/past-rooms/', community_chatrooms_feature_views.PastChatRoomsView.as_view(), name='past_chatrooms'),
+
+    # Enhanced Chatroom URLs
+    path('chatrooms/<uuid:room_id>/messages/', LoadMoreMessagesView.as_view(), name='load_more_messages'),
+    path('chatrooms/<uuid:room_id>/stats/', GetRoomStatsView.as_view(), name='room_stats'),
+    path('chatrooms/<uuid:room_id>/members/', GetMemberStatusView.as_view(), name='member_status'),
+    path('chatrooms/<uuid:room_id>/manage-member/', ManageMemberView.as_view(), name='manage_member'),
 ]
 
 # ==========================================

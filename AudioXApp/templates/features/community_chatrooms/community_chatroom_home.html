@@ -2,207 +2,339 @@
 {% load static %}
 {% load humanize %}
 
-{% block page_title %}Explore Live Chat Rooms - AudioX Community{% endblock page_title %}
+{% block page_title %}Explore Premium Chat Rooms - AudioX Community{% endblock page_title %}
 
 {% block chat_content %}
 <div class="w-full bg-white min-h-[calc(100vh-8rem)]">
     <div class="container mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:px-8">
 
         {% if popup_feedback %}
-        <div id="feedbackPopup" class="fixed top-6 right-6 z-[1000] p-4 rounded-xl shadow-2xl text-white max-w-sm md:max-w-md hidden transition-all duration-300 ease-out transform" role="alert">
-            <div class="flex items-start">
-                <div id="popupIconContainer" class="flex-shrink-0 text-white mr-3"></div>
-                <div class="flex-grow">
-                    <p id="popupMessage" class="text-sm font-semibold">Popup message goes here.</p>
-                </div>
-                <div class="ml-auto pl-3">
-                    <button type="button" id="popupClose" class="inline-flex rounded-md p-1.5 text-white hover:bg-white hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
-                        <span class="sr-only">Dismiss</span>
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+        <div id="feedbackPopup" class="fixed top-6 right-6 z-[1000] transform transition-all duration-500 ease-out hidden">
+            <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 max-w-sm">
+                <div class="flex items-start space-x-3">
+                    <div id="popupIconContainer" class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"></div>
+                    <div class="flex-grow">
+                        <p id="popupMessage" class="text-sm font-semibold text-gray-800">Notification message</p>
+                    </div>
+                    <button type="button" id="popupClose" class="flex-shrink-0 p-1 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                        <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
                     </button>
                 </div>
             </div>
         </div>
         {% endif %}
 
-        <div class="mb-16 text-center">
-            <div class="w-32 h-32 bg-[#091e65] rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
-                <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {# Premium Header Section #}
+        <div class="text-center mb-16">
+            <div class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#091e65] to-[#0a2472] rounded-full text-white text-sm font-semibold mb-6 shadow-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
+                Live Community Rooms
             </div>
-            <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black text-[#091e65] mb-6 tracking-tight">
-                Join the <span class="text-red-600">Live</span> Buzz
+            <h1 class="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                Discover Amazing 
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#091e65] to-red-500">Chat Rooms</span>
             </h1>
-            <p class="text-xl sm:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                Instantly connect with vibrant communities, explore trending audio topics, and dive into real-time discussions.
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Connect with fellow audiobook enthusiasts, share recommendations, and engage in meaningful conversations about your favorite stories.
             </p>
         </div>
 
-        {% if chat_rooms %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {% for room in chat_rooms %}
-                <div class="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col group relative border border-gray-200 hover:border-red-500 hover:border-opacity-50 transform hover:-translate-y-2">
-                    
-                    <div class="relative h-48 w-full overflow-hidden rounded-t-2xl">
-                        {% if room.cover_image %}
-                            <img src="{{ room.cover_image.url }}" alt="{{ room.name }} cover image" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                        {% else %}
-                            <img src="{% static 'img/community_chatroom/chatroom-cover-default.png' %}" alt="Default cover image for {{ room.name }}" class="w-full h-full object-cover">
-                        {% endif %}
-                        <div class="absolute inset-0 bg-gradient-to-t from-black from-opacity-60 via-transparent to-transparent"></div>
-                        <span class="absolute bottom-4 left-4 py-2 px-4 text-xs font-bold rounded-lg uppercase tracking-wider shadow-lg text-white
-                            {% if room.status == room.RoomStatusChoices.ACTIVE %}bg-[#091e65]{% elif room.status == room.RoomStatusChoices.CLOSED %}bg-red-600{% else %}bg-gray-600{% endif %}">
-                            {{ room.get_status_display }}
-                        </span>
-                    </div>
-
-                    <div class="p-6 flex-grow flex flex-col">
-                        <a href="{% url 'AudioXApp:chatroom_detail' room_id=room.room_id %}" class="block mb-3 group/title">
-                            <h2 class="text-xl font-bold text-[#091e65] group-hover/title:text-red-600 transition-colors duration-200 line-clamp-2" title="{{ room.name }}">
-                                {{ room.name }}
-                            </h2>
-                        </a>
-                        
-                        {% if room.language %}
-                            <span class="text-xs font-semibold bg-gray-100 text-[#091e65] px-3 py-1 rounded-full mb-4 inline-block self-start">
-                                {{ room.get_language_display }}
-                            </span>
-                        {% endif %}
-
-                        {% if room.description %}
-                            <p class="text-sm text-gray-600 line-clamp-3 mb-6 flex-grow leading-relaxed">
-                                {{ room.description }}
-                            </p>
-                        {% else %}
-                            <p class="text-sm text-gray-400 italic line-clamp-3 mb-6 flex-grow leading-relaxed">No description available.</p>
-                        {% endif %}
-                        
-                        <div class="mt-auto pt-4 border-t border-gray-200 text-xs space-y-3">
-                            <div class="flex items-center justify-between text-gray-600">
-                                <div class="flex items-center" title="Room Owner">
-                                    <svg class="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-5.5-2.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM10 12a5.99 5.99 0 00-4.793 2.39A6.483 6.483 0 0010 16.5a6.483 6.483 0 004.793-2.11A5.99 5.99 0 0010 12z" clip-rule="evenodd" />
-                                    </svg>
-                                    <span class="truncate font-medium text-[#091e65]">{{ room.owner.full_name|default:room.owner.username|truncatechars:15|default:"N/A" }}</span>
-                                </div>
-                                <div class="flex items-center" title="Active Members">
-                                     <svg class="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                         <path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM1.396 16.429l1.003-1.003A6.532 6.532 0 017 12.5c1.231 0 2.391.342 3.375.939L12 12.5a7 7 0 00-1.928-1.018A5.533 5.533 0 007 10.5c-1.474 0-2.821.558-3.868 1.47A6.504 6.504 0 001.396 16.428z" />
-                                     </svg>
-                                    <span class="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                                        {{ room.num_members }}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="flex items-center text-gray-500" title="Date Created">
-                                <svg class="w-4 h-4 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2z" clip-rule="evenodd" />
-                                </svg>
-                                Created: {{ room.created_at|date:"M d, 'y" }}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <a href="{% url 'AudioXApp:chatroom_detail' room_id=room.room_id %}"
-                       class="block w-full bg-red-600 hover:bg-red-700 focus:bg-red-700 text-white text-center font-bold py-4 px-4 rounded-b-2xl transition-all duration-300 ease-in-out text-base group-hover:shadow-lg flex items-center justify-center gap-x-2 focus:outline-none focus:ring-4 focus:ring-red-600 focus:ring-opacity-40">
-                        Join Discussion
-                        <svg class="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
+        {# Quick Stats Section #}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-8 text-center border border-green-100 transform hover:scale-105 transition-all duration-300">
+                <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
                 </div>
-                {% endfor %}
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ chat_rooms.count }}+</h3>
+                <p class="text-green-700 font-semibold">Active Rooms</p>
             </div>
-        {% else %}
-            <div class="text-center py-20">
-                <div class="w-32 h-32 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-8">
-                    <svg class="w-16 h-16 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 text-center border border-blue-100 transform hover:scale-105 transition-all duration-300">
+                <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                 </div>
-                <h3 class="text-4xl font-bold text-[#091e65] mb-6">Silence in the Airwaves... For Now!</h3>
-                <p class="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-                    The chat rooms are eager for discussions. Be the voice that sparks a new community connection!
-                </p>
-                <a href="{% url 'AudioXApp:chatroom_create' %}" class="inline-flex items-center justify-center gap-x-3 px-8 py-4 text-lg font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-red-600 focus:ring-opacity-50">
-                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                    </svg>
-                    Launch a New Chat Room
-                </a>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Live Chat</h3>
+                <p class="text-blue-700 font-semibold">Real-time Messaging</p>
             </div>
+            
+            <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-3xl p-8 text-center border border-purple-100 transform hover:scale-105 transition-all duration-300">
+                <div class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Books</h3>
+                <p class="text-purple-700 font-semibold">Share & Discover</p>
+            </div>
+        </div>
+
+        {# Create Room CTA #}
+        <div class="bg-gradient-to-r from-[#091e65] to-[#0a2472] rounded-3xl p-8 mb-16 text-white relative overflow-hidden">
+            <div class="absolute inset-0 bg-black bg-opacity-10"></div>
+            <div class="relative z-10 flex flex-col md:flex-row items-center justify-between">
+                <div class="flex-1 mb-6 md:mb-0">
+                    <h2 class="text-3xl font-bold mb-3">Start Your Own Community</h2>
+                    <p class="text-blue-100 text-lg leading-relaxed">Create a dedicated space for your favorite genre, author, or book series and invite fellow enthusiasts to join the conversation.</p>
+                </div>
+                <div class="flex-shrink-0">
+                    <a href="{% url 'AudioXApp:chatroom_create' %}" class="inline-flex items-center px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-2xl">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Create Room
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {# Chat Rooms Grid #}
+        {% if chat_rooms %}
+        <div class="mb-12">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-3xl font-bold text-gray-900">Active Chat Rooms</h2>
+                <div class="flex items-center space-x-3 text-sm text-gray-500">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span>Live</span>
+                    </div>
+                    <span>•</span>
+                    <span>{{ chat_rooms.count }} room{{ chat_rooms.count|pluralize }}</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for room in chat_rooms %}
+                <div class="group bg-white rounded-3xl border border-gray-100 hover:border-gray-200 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
+                    {# Room Header #}
+                    <div class="relative">
+                        {% if room.cover_image %}
+                            <div class="h-48 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
+                                <img src="{{ room.cover_image.url }}" alt="{{ room.name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                <div class="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-30 transition-all duration-300"></div>
+                            </div>
+                        {% else %}
+                            <div class="h-48 bg-gradient-to-br from-[#091e65] to-[#0a2472] relative overflow-hidden flex items-center justify-center">
+                                <svg class="w-16 h-16 text-white opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                                <div class="absolute inset-0 bg-black bg-opacity-10 group-hover:bg-opacity-20 transition-all duration-300"></div>
+                            </div>
+                        {% endif %}
+                        
+                        {# Status Badge #}
+                        <div class="absolute top-4 right-4">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500 text-white shadow-lg">
+                                <div class="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
+                                Active
+                            </span>
+                        </div>
+                        
+                        {# Language Badge #}
+                        {% if room.language %}
+                        <div class="absolute top-4 left-4">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white bg-opacity-90 text-[#091e65] backdrop-blur-sm shadow-lg">
+                                {{ room.get_language_display }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {# Room Content #}
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <h3 class="text-xl font-bold text-gray-900 group-hover:text-[#091e65] transition-colors duration-200 line-clamp-2">
+                                {{ room.name }}
+                            </h3>
+                        </div>
+                        
+                        <p class="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-3">
+                            {{ room.description|truncatewords:20 }}
+                        </p>
+                        
+                        {# Room Stats #}
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                    </svg>
+                                    <span>{{ room.num_members|default:0 }} member{{ room.num_members|default:0|pluralize }}</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span>{{ room.created_at|naturaltime }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {# Owner Info #}
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center space-x-3">
+                                <img src="{% if room.owner.profile_pic %}{{ room.owner.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}" 
+                                     alt="{{ room.owner.username }}" 
+                                     class="w-8 h-8 rounded-full object-cover border-2 border-white shadow-md">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">{{ room.owner.full_name|default:room.owner.username }}</p>
+                                    <p class="text-xs text-gray-500">Room Creator</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {# Join Button #}
+                        <a href="{% url 'AudioXApp:chatroom_detail' room_id=room.room_id %}" 
+                           class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-[#091e65] to-[#0a2472] hover:from-[#0a1f5c] hover:to-[#0b2580] text-white font-semibold rounded-2xl transition-all duration-200 transform group-hover:scale-105 shadow-lg hover:shadow-xl">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                            </svg>
+                            Join Conversation
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        {# Empty State #}
+        <div class="text-center py-20">
+            <div class="w-32 h-32 bg-gradient-to-br from-[#091e65] to-[#0a2472] rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+            </div>
+            <h3 class="text-3xl font-bold text-gray-900 mb-4">No Active Rooms Yet</h3>
+            <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+                Be the pioneer! Create the first chat room and start building an amazing community of audiobook enthusiasts.
+            </p>
+            <a href="{% url 'AudioXApp:chatroom_create' %}" 
+               class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-2xl transition-all duration-200 transform hover:scale-105 shadow-xl hover:shadow-2xl">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Create First Room
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>
 
-{% if popup_feedback %}
-    {{ popup_feedback|json_script:"popup-feedback-script-data" }}
-{% endif %}
+{{ popup_feedback|json_script:"popup-feedback-script-data" }}
+
 {% endblock chat_content %}
 
 {% block extra_chat_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Enhanced Feedback System
     const feedbackPopup = document.getElementById('feedbackPopup');
-    if (feedbackPopup) {
-        const popupIconContainer = document.getElementById('popupIconContainer');
-        const popupMessage = document.getElementById('popupMessage');
-        const popupCloseButton = document.getElementById('popupClose');
-        let popupTimeout;
+    const popupIconContainer = document.getElementById('popupIconContainer');
+    const popupMessage = document.getElementById('popupMessage');
+    const popupCloseButton = document.getElementById('popupClose');
+    let popupTimeout;
 
-        const icons = { 
-            success: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
-            error: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 9A9 9 0 1112 3v-.75m9 3.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>',
-            warning: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>',
-            info: '<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>'
-        };
-        const bgColors = { 
-            success: 'bg-[#091e65]', 
-            error: 'bg-red-600', 
-            warning: 'bg-red-500',
-            info: 'bg-[#091e65]'
-        };
+    const icons = { 
+        success: '<svg class="h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+        error: '<svg class="h-5 w-5 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 9A9 9 0 1112 3v-.75m9 3.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>',
+        warning: '<svg class="h-5 w-5 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>',
+        info: '<svg class="h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>'
+    };
+    const bgColors = { 
+        success: 'bg-green-50 border-green-200', 
+        error: 'bg-red-50 border-red-200',
+        warning: 'bg-yellow-50 border-yellow-200', 
+        info: 'bg-blue-50 border-blue-200'
+    };
 
-        function showPopup(type, message) {
-            if (!feedbackPopup || !popupMessage || !popupIconContainer || !popupCloseButton) return;
-            if (popupTimeout) clearTimeout(popupTimeout);
-
-            Object.values(bgColors).forEach(cls => feedbackPopup.classList.remove(cls));
-            
-            popupMessage.textContent = message;
-            popupIconContainer.innerHTML = icons[type] || icons['info'];
-            const iconSvg = popupIconContainer.querySelector('svg');
-            if(iconSvg) { iconSvg.classList.add('h-6', 'w-6');}
-
-            feedbackPopup.classList.add(bgColors[type] || bgColors['info']);
-
-            feedbackPopup.classList.remove('hidden', 'opacity-0', 'translate-y-4');
-            requestAnimationFrame(() => { 
-                feedbackPopup.classList.add('opacity-100', 'translate-y-0');
-            });
-            popupTimeout = setTimeout(hidePopup, 7000);
-        }
-
-        function hidePopup() {
-            if (!feedbackPopup) return;
-            feedbackPopup.classList.remove('opacity-100', 'translate-y-0');
-            feedbackPopup.classList.add('opacity-0', 'translate-y-4');
-            setTimeout(() => { feedbackPopup.classList.add('hidden'); }, 300);
-        }
-
-        if (popupCloseButton) popupCloseButton.addEventListener('click', hidePopup);
-
-        const feedbackDataElement = document.getElementById('popup-feedback-script-data');
-        if (feedbackDataElement && feedbackDataElement.textContent) {
-            try {
-                const feedbackData = JSON.parse(feedbackDataElement.textContent);
-                if (feedbackData && feedbackData.text && feedbackData.type) {
-                    setTimeout(() => { showPopup(feedbackData.type, feedbackData.text); }, 100);
-                }
-            } catch (e) { console.error("Error parsing feedback data:", e); }
-        }
+    function showPopup(type, message) {
+        if (!feedbackPopup || !popupMessage || !popupIconContainer) return;
+        if (popupTimeout) clearTimeout(popupTimeout);
+        
+        // Remove all color classes
+        Object.values(bgColors).forEach(cls => {
+            cls.split(' ').forEach(c => feedbackPopup.querySelector('.bg-white').classList.remove(c));
+        });
+        
+        popupMessage.textContent = message;
+        popupIconContainer.innerHTML = icons[type] || icons['info'];
+        bgColors[type].split(' ').forEach(cls => feedbackPopup.querySelector('.bg-white').classList.add(cls));
+        
+        feedbackPopup.classList.remove('hidden');
+        feedbackPopup.classList.add('animate-slide-in-right');
+        
+        popupTimeout = setTimeout(() => {
+            feedbackPopup.classList.add('animate-slide-out-right');
+            setTimeout(hidePopup, 300);
+        }, 5000);
     }
+    
+    function hidePopup() {
+        if (!feedbackPopup) return;
+        feedbackPopup.classList.add('hidden');
+        feedbackPopup.classList.remove('animate-slide-in-right', 'animate-slide-out-right');
+    }
+    
+    if (popupCloseButton) popupCloseButton.addEventListener('click', hidePopup);
+    
+    // Load initial feedback
+    const feedbackDataElement = document.getElementById('popup-feedback-script-data');
+    if (feedbackDataElement && feedbackDataElement.textContent) {
+        try {
+            const feedbackData = JSON.parse(feedbackDataElement.textContent);
+            if (feedbackData && feedbackData.text && feedbackData.type) {
+                setTimeout(() => { showPopup(feedbackData.type, feedbackData.text); }, 300);
+            }
+        } catch (e) { }
+    }
+
+    // Add hover effects to room cards
+    const roomCards = document.querySelectorAll('.group');
+    roomCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
 });
+
+// Add custom animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slide-in-right {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slide-out-right {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    .animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
+    .animate-slide-out-right { animation: slide-out-right 0.3s ease-in; }
+    
+    /* Utility classes for text clamping */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock extra_chat_scripts %}

@@ -65,14 +65,23 @@ class Command(BaseCommand):
                 google_app.secret = google_client_secret
                 google_app.name = 'Google OAuth'
                 google_app.save()
+                # Clear existing site associations and add current site
+                google_app.sites.clear()
                 google_app.sites.add(site)
                 self.stdout.write(
                     self.style.SUCCESS('Updated Google OAuth app')
                 )
             else:
-                self.stdout.write(
-                    self.style.WARNING('Google OAuth app already exists')
-                )
+                # Even if not forcing update, ensure site association exists
+                if not google_app.sites.filter(pk=site.pk).exists():
+                    google_app.sites.add(site)
+                    self.stdout.write(
+                        self.style.SUCCESS('Added site association to existing Google OAuth app')
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.WARNING('Google OAuth app already exists and is properly configured')
+                    )
         except SocialApp.DoesNotExist:
             google_app = SocialApp.objects.create(
                 provider='google',

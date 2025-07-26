@@ -2975,8 +2975,8 @@ class ChatRoom(models.Model):
     )
     name = models.CharField(
         max_length=100, 
-        unique=True, 
-        help_text=_("Name of the chat room.")
+        help_text=_("Name of the chat room."),
+        db_index=True  # Add index for better search performance
     )
     description = models.TextField(
         blank=False, 
@@ -2985,11 +2985,10 @@ class ChatRoom(models.Model):
     )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        on_delete=models.CASCADE,  # Changed from SET_NULL to CASCADE for better data integrity
         related_name='owned_chatrooms', 
-        help_text=_("The user who created and owns the room.")
+        help_text=_("The user who created and owns the room."),
+        db_index=True  # Add index for better query performance
     )
     cover_image = models.ImageField(
         upload_to=chatroom_cover_image_path, 
@@ -3003,7 +3002,8 @@ class ChatRoom(models.Model):
         default='EN', 
         blank=False, 
         null=False, 
-        help_text=_("Primary language of the chat room.")
+        help_text=_("Primary language of the chat room."),
+        db_index=True  # Add index for language filtering
     )
     status = models.CharField(
         max_length=15, 
@@ -3012,7 +3012,7 @@ class ChatRoom(models.Model):
         db_index=True, 
         help_text=_("The current status of the chat room (Active, Closed, etc.)")
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)  # Add index for ordering
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -3020,6 +3020,22 @@ class ChatRoom(models.Model):
         ordering = ['-created_at', 'status']
         verbose_name = _("Chat Room")
         verbose_name_plural = _("Chat Rooms")
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name'],
+                condition=models.Q(status='active'),
+                name='unique_active_room_name'
+            ),
+            models.CheckConstraint(
+                check=models.Q(name__length__gte=3),
+                name='room_name_min_length'
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['status', 'created_at'], name='room_status_created_idx'),
+            models.Index(fields=['owner', 'status'], name='room_owner_status_idx'),
+            models.Index(fields=['language', 'status'], name='room_language_status_idx'),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.get_status_display()})"
@@ -3033,6 +3049,14 @@ class ChatRoom(models.Model):
     def is_open_for_interaction(self):
         """Check if room is open for new messages."""
         return self.status == self.RoomStatusChoices.ACTIVE
+
+    def clean(self):
+        """Model validation"""
+        super().clean()
+        if self.name and len(self.name.strip()) < 3:
+            raise ValidationError('Room name must be at least 3 characters long.')
+        if self.description and len(self.description.strip()) < 10:
+            raise ValidationError('Room description must be at least 10 characters long.')
 
 class ChatRoomMember(models.Model):
     """
@@ -3058,19 +3082,22 @@ class ChatRoomMember(models.Model):
     room = models.ForeignKey(
         ChatRoom, 
         on_delete=models.CASCADE, 
-        related_name='room_memberships'
+        related_name='room_memberships',
+        db_index=True  # Add index for better query performance
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
-        related_name='chat_room_memberships'
+        related_name='chat_room_memberships',
+        db_index=True  # Add index for better query performance
     )
     role = models.CharField(
         max_length=10, 
         choices=RoleChoices.choices, 
-        default=RoleChoices.MEMBER
+        default=RoleChoices.MEMBER,
+        db_index=True  # Add index for role filtering
     )
-    joined_at = models.DateTimeField(auto_now_add=True)
+    joined_at = models.DateTimeField(auto_now_add=True, db_index=True)  # Add index for ordering
     status = models.CharField(
         max_length=20, 
         choices=StatusChoices.choices, 
@@ -3081,7 +3108,8 @@ class ChatRoomMember(models.Model):
     left_at = models.DateTimeField(
         null=True, 
         blank=True, 
-        help_text=_("Timestamp when the user left or was removed from the room.")
+        help_text=_("Timestamp when the user left or was removed from the room."),
+        db_index=True  # Add index for historical queries
     )
 
     class Meta:
@@ -3090,15 +3118,29 @@ class ChatRoomMember(models.Model):
         ordering = ['room', 'joined_at']
         verbose_name = _("Chat Room Member")
         verbose_name_plural = _("Chat Room Members")
+        indexes = [
+            models.Index(fields=['room', 'status'], name='member_room_status_idx'),
+            models.Index(fields=['user', 'status'], name='member_user_status_idx'),
+            models.Index(fields=['room', 'role', 'status'], name='member_room_role_status_idx'),
+            models.Index(fields=['status', 'joined_at'], name='member_status_joined_idx'),
+        ]
 
     def __str__(self):
         return f"{self.user.username} in {self.room.name} as {self.get_role_display()} ({self.get_status_display()})"
+
+    def clean(self):
+        """Model validation"""
+        super().clean()
+        # Ensure that if status is LEFT or ROOM_DISMISSED, left_at is set
+        if self.status in [self.StatusChoices.LEFT, self.StatusChoices.ROOM_DISMISSED]:
+            if not self.left_at:
+                self.left_at = timezone.now()
 
 class ChatMessage(models.Model):
     """
     Model for chat room messages.
     
-    Supports text messages, audiobook recommendations, and system notifications.
+    Supports text messages, audiobook recommendations, reactions, replies, and file attachments.
     """
     
     class MessageTypeChoices(models.TextChoices):
@@ -3109,6 +3151,7 @@ class ChatMessage(models.Model):
         ROOM_CREATED = 'room_created', _('Room Created Notification')
         ROOM_RENAMED = 'room_renamed', _('Room Renamed Notification')
         ROOM_CLOSED = 'room_closed', _('Room Closed Notification')
+        FILE_ATTACHMENT = 'file_attachment', _('File Attachment')
 
     message_id = models.UUIDField(
         primary_key=True, 
@@ -3118,7 +3161,8 @@ class ChatMessage(models.Model):
     room = models.ForeignKey(
         ChatRoom, 
         on_delete=models.CASCADE, 
-        related_name='messages'
+        related_name='messages',
+        db_index=True  # Add index for better query performance
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
@@ -3126,12 +3170,14 @@ class ChatMessage(models.Model):
         null=True, 
         blank=True, 
         related_name='chat_messages', 
-        help_text=_("User who sent the message. Null for system messages.")
+        help_text=_("User who sent the message. Null for system messages."),
+        db_index=True  # Add index for user message queries
     )
     message_type = models.CharField(
         max_length=30, 
         choices=MessageTypeChoices.choices, 
-        default=MessageTypeChoices.TEXT
+        default=MessageTypeChoices.TEXT,
+        db_index=True  # Add index for message type filtering
     )
     content = models.TextField(
         help_text=_("Content of the message. For recommendations, this might be an optional comment or the system message text.")
@@ -3144,6 +3190,37 @@ class ChatMessage(models.Model):
         related_name='chat_recommendations', 
         help_text=_("Link to an audiobook if this message is a recommendation.")
     )
+    # Enhanced fields for advanced features
+    reply_to = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='replies',
+        help_text=_("Message this is a reply to.")
+    )
+    file_attachment = models.FileField(
+        upload_to='chat_attachments/%Y/%m/%d/',
+        null=True,
+        blank=True,
+        help_text=_("File attachment for the message.")
+    )
+    mentioned_users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name='mentioned_in_messages',
+        help_text=_("Users mentioned in this message.")
+    )
+    is_edited = models.BooleanField(
+        default=False,
+        help_text=_("Whether this message has been edited."),
+        db_index=True  # Add index for filtering edited messages
+    )
+    edited_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("When the message was last edited.")
+    )
     timestamp = models.DateTimeField(
         auto_now_add=True, 
         db_index=True
@@ -3154,10 +3231,101 @@ class ChatMessage(models.Model):
         ordering = ['timestamp']
         verbose_name = _("Chat Message")
         verbose_name_plural = _("Chat Messages")
+        indexes = [
+            models.Index(fields=['room', 'timestamp'], name='message_room_timestamp_idx'),
+            models.Index(fields=['user', 'timestamp'], name='message_user_timestamp_idx'),
+            models.Index(fields=['room', 'message_type', 'timestamp'], name='msg_room_type_timestamp_idx'),
+            models.Index(fields=['timestamp', 'is_edited'], name='message_timestamp_edited_idx'),
+        ]
 
     def __str__(self):
-        user_display = self.user.username if self.user else "System"
-        return f"Msg by {user_display} in {self.room.name} ({self.get_message_type_display()}) at {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.user.username if self.user else 'System'} in {self.room.name}: {self.content[:50]}..."
+
+    @property
+    def has_reactions(self):
+        """Check if this message has any reactions."""
+        return self.reactions.exists()
+
+    @property
+    def reaction_summary(self):
+        """Get a summary of reactions for this message."""
+        reactions = self.reactions.values('emoji').annotate(count=models.Count('id'))
+        return {r['emoji']: r['count'] for r in reactions}
+    
+    def user_has_reacted(self, user, emoji):
+        """Check if a user has reacted to this message with a specific emoji."""
+        return self.reactions.filter(user=user, emoji=emoji).exists()
+    
+    def get_user_reactions(self, user):
+        """Get all emojis the user has reacted with for this message."""
+        return set(self.reactions.filter(user=user).values_list('emoji', flat=True))
+
+    def clean(self):
+        """Model validation"""
+        super().clean()
+        if self.is_edited and not self.edited_at:
+            self.edited_at = timezone.now()
+        if not self.content or not self.content.strip():
+            raise ValidationError('Message content cannot be empty.')
+
+class MessageReaction(models.Model):
+    """
+    Model for message reactions.
+    
+    Allows users to react to messages with emojis.
+    """
+    
+    REACTION_CHOICES = [
+        ('👍', 'Thumbs Up'),
+        ('❤️', 'Heart'),
+        ('😂', 'Laughing'),
+        ('😮', 'Surprised'),
+        ('😢', 'Sad'),
+        ('😡', 'Angry'),
+        ('🎉', 'Party'),
+        ('📚', 'Book'),
+        ('💡', 'Light Bulb'),
+        ('🔥', 'Fire'),
+    ]
+    
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    message = models.ForeignKey(
+        ChatMessage,
+        on_delete=models.CASCADE,
+        related_name='reactions',
+        db_index=True  # Add index for better query performance
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='message_reactions',
+        db_index=True  # Add index for user reaction queries
+    )
+    emoji = models.CharField(
+        max_length=10,
+        choices=REACTION_CHOICES,
+        help_text=_("Emoji reaction."),
+        db_index=True  # Add index for emoji filtering
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)  # Add index for ordering
+    
+    class Meta:
+        db_table = "MESSAGE_REACTIONS"
+        unique_together = ('message', 'user', 'emoji')
+        ordering = ['created_at']
+        verbose_name = _("Message Reaction")
+        verbose_name_plural = _("Message Reactions")
+        indexes = [
+            models.Index(fields=['message', 'emoji'], name='reaction_message_emoji_idx'),
+            models.Index(fields=['user', 'created_at'], name='reaction_user_created_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} reacted {self.emoji} to message {self.message.message_id}"
 
 class ChatRoomInvitation(models.Model):
     """
@@ -3180,19 +3348,22 @@ class ChatRoomInvitation(models.Model):
     room = models.ForeignKey(
         ChatRoom, 
         on_delete=models.CASCADE, 
-        related_name='invitations'
+        related_name='invitations',
+        db_index=True  # Add index for room invitation queries
     )
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
         related_name='sent_chat_invitations', 
-        help_text=_("User who sent the invitation.")
+        help_text=_("User who sent the invitation."),
+        db_index=True  # Add index for sender queries
     )
     invited_user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
         related_name='received_chat_invitations', 
-        help_text=_("User who is invited to the room.")
+        help_text=_("User who is invited to the room."),
+        db_index=True  # Add index for recipient queries
     )
     status = models.CharField(
         max_length=10, 
@@ -3200,7 +3371,7 @@ class ChatRoomInvitation(models.Model):
         default=StatusChoices.PENDING, 
         db_index=True
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)  # Add index for ordering
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -3213,13 +3384,28 @@ class ChatRoomInvitation(models.Model):
                 fields=['room', 'invited_user'],
                 condition=models.Q(status='pending'),
                 name='unique_pending_invitation_per_user_per_room'
-            )
+            ),
+            models.CheckConstraint(
+                check=~models.Q(invited_by=models.F('invited_user')),
+                name='invitation_different_users'
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['invited_user', 'status'], name='invitation_user_status_idx'),
+            models.Index(fields=['room', 'status'], name='invitation_room_status_idx'),
+            models.Index(fields=['status', 'created_at'], name='invitation_status_created_idx'),
         ]
 
     def __str__(self):
         invited_user_display = self.invited_user.username if self.invited_user else "N/A"
         inviter_display = self.invited_by.username if self.invited_by else "N/A"
         return f"Invitation for {invited_user_display} to room '{self.room.name}' by {inviter_display} ({self.get_status_display()})"
+
+    def clean(self):
+        """Model validation"""
+        super().clean()
+        if self.invited_by == self.invited_user:
+            raise ValidationError('User cannot invite themselves.')
 
 # ============================================================================
 # CONTENT MODERATION MODELS

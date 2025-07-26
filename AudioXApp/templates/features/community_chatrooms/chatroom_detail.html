@@ -2,505 +2,1899 @@
 {% load static %}
 {% load humanize %}
 
-{% block page_title %}{{ chat_room.name }} - Chat Room{% endblock page_title %}
+{% block extra_chat_head %}
+<style>
+    /* Enhanced Mobile-First Responsive Design */
+    @media (max-width: 768px) {
+        .desktop-sidebar {
+            display: none;
+        }
+        
+        .mobile-chat-container {
+            height: calc(100vh - 120px);
+        }
+        
+        .mobile-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .mobile-members-toggle {
+            display: block;
+        }
+        
+        .chat-log-container {
+            height: calc(100vh - 200px);
+            padding: 0.5rem;
+        }
+        
+        .message-bubble {
+            max-width: 85%;
+        }
+        
+        .message-input-container {
+            padding: 0.5rem;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .reaction-picker {
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+        }
+    }
+    
+    /* Enhanced Message Features */
+    .reply-preview {
+        background: rgba(9, 30, 101, 0.1);
+        border-left: 3px solid #091e65;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.5rem;
+    }
+    
+    .mention {
+        background: rgba(239, 68, 68, 0.1);
+        color: #991b1b;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        font-weight: 600;
+    }
+    
+    .message-reactions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.5rem;
+    }
+    
+    .reaction-item {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 1rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .reaction-item:hover {
+        background: #e5e7eb;
+        transform: scale(1.05);
+    }
+    
+    .reaction-item.user-reacted {
+        background: rgba(9, 30, 101, 0.1);
+        border-color: #091e65;
+        color: #091e65;
+    }
+    
+    .file-attachment {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .file-icon {
+        width: 2rem;
+        height: 2rem;
+        background: #091e65;
+        border-radius: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.75rem;
+    }
+    
+    .load-more-messages {
+        text-align: center;
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .message-edited {
+        font-size: 0.75rem;
+        color: #6b7280;
+        font-style: italic;
+    }
+    
+    /* Reaction Picker */
+    .reaction-picker {
+        position: absolute;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        display: none;
+    }
+    
+    .reaction-picker-emojis {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .reaction-emoji {
+        padding: 0.5rem;
+        font-size: 1.25rem;
+        text-align: center;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .reaction-emoji:hover {
+        background: #f3f4f6;
+        transform: scale(1.1);
+    }
+    
+    /* Mobile Sidebar */
+    .mobile-sidebar {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 100%;
+        height: 100vh;
+        background: white;
+        z-index: 1000;
+        transition: right 0.3s ease;
+        overflow-y: auto;
+    }
+    
+    .mobile-sidebar.open {
+        right: 0;
+    }
+    
+    .mobile-sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        display: none;
+    }
+    
+    .mobile-sidebar-overlay.active {
+        display: block;
+    }
+</style>
+{% endblock extra_chat_head %}
 
 {% block chat_content %}
-
-{# Premium Feedback Popup #}
-<div id="feedbackPopup" class="fixed top-5 right-5 z-[1000] p-4 rounded-xl shadow-2xl text-white max-w-sm hidden transform transition-all duration-300 ease-out" role="alert">
-    <div class="flex items-start space-x-3">
-        <div id="popupIconContainer" class="flex-shrink-0"></div>
-        <div class="flex-grow">
-            <p id="popupMessage" class="text-sm font-semibold">Popup message goes here.</p>
+<div class="min-h-screen bg-gray-50">
+    <!-- Enhanced Feedback Popup -->
+    {% if popup_feedback %}
+    <div id="feedback-popup" class="fixed top-4 right-4 z-50 transform translate-x-full transition-transform duration-500 ease-in-out">
+        <div class="bg-white rounded-2xl shadow-2xl border-l-4 {% if popup_feedback.type == 'success' %}border-green-500{% elif popup_feedback.type == 'error' %}border-red-500{% elif popup_feedback.type == 'warning' %}border-yellow-500{% else %}border-blue-500{% endif %} p-6 max-w-md">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    {% if popup_feedback.type == 'success' %}
+                    <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {% elif popup_feedback.type == 'error' %}
+                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m0 9A9 9 0 1112 3v-.75m9 3.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+                    {% elif popup_feedback.type == 'warning' %}
+                    <svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                    {% else %}
+                    <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {% endif %}
         </div>
-        <button type="button" id="popupClose" class="flex-shrink-0 p-1 rounded-lg hover:bg-white hover:bg-opacity-20 transition-colors duration-200">
-            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                <div class="ml-3 flex-1">
+                    <p class="text-sm font-medium text-gray-900">{{ popup_feedback.text }}</p>
+                </div>
+                <div class="ml-4 flex-shrink-0 flex">
+                    <button onclick="closeFeedbackPopup()" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
             </svg>
         </button>
     </div>
 </div>
+                </div>
+                </div>
+    {% endif %}
 
-{# Premium Leave Room Modal #}
-<div id="leaveRoomModal" class="fixed inset-0 z-[1050] flex items-center justify-center p-4 hidden" aria-labelledby="leaveModalTitle" role="dialog" aria-modal="true">
-    <div id="leaveRoomModalOverlay" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300"></div>
-    <div class="bg-white rounded-2xl shadow-2xl transform transition-all duration-300 sm:max-w-md sm:w-full overflow-hidden relative z-10">
-        <div class="p-6">
-            <div class="flex items-start space-x-4">
-                <div class="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                    </svg>
-                </div>
-                <div class="flex-grow">
-                    <h3 class="text-lg font-bold text-gray-900 mb-2" id="leaveModalTitle">Leave Chat Room</h3>
-                    <p class="text-gray-600 text-sm" id="leaveModalMessage">Are you sure you want to leave this chat room?</p>
-                </div>
+    <!-- Main Chat Container -->
+    <div class="flex h-screen">
+        <!-- Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Mobile Header -->
+            <div class="md:hidden mobile-header p-4 bg-white border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        {% if chat_room.cover_image %}
+                        <img src="{{ chat_room.cover_image.url }}" alt="{{ chat_room.name }}" class="w-10 h-10 rounded-xl object-cover">
+                        {% else %}
+                        <div class="w-10 h-10 bg-gradient-to-br from-[#091e65] to-[#0a2472] rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
             </div>
+                        {% endif %}
+                        <div>
+                            <h1 class="text-lg font-bold text-gray-900 truncate">{{ chat_room.name }}</h1>
+                            <p class="text-xs text-gray-500">{{ members|length }} member{{ members|length|pluralize }}</p>
         </div>
-        <div class="bg-gray-50 px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-3">
-            <button type="button" id="cancelLeaveButton" class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                Cancel
+                    </div>
+                    <button onclick="toggleMobileSidebar()" class="mobile-members-toggle p-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" /></svg>
             </button>
-            <button type="button" id="confirmLeaveButton" class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200">
-                Leave Room
-            </button>
-        </div>
     </div>
 </div>
 
-{# Main Chat Container #}
-<div class="h-screen bg-gray-100 flex flex-col">
-    <div class="flex-1 flex overflow-hidden" 
-         id="chat-container"
-         data-room-id="{{ chat_room.room_id }}" 
-         data-current-user-id="{{ request.user.user_id|stringformat:'s' }}"
-         data-current-user-name="{{ request.user.full_name|default:request.user.username }}"
-         data-current-user-avatar-url="{% if request.user.profile_pic %}{{ request.user.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}"
-         data-is-room-owner="{% if chat_room.owner == request.user %}true{% else %}false{% endif %}"
-         data-room-status="{{ chat_room.status }}">
-
-        {# Main Chat Area #}
-        <div class="flex-1 flex flex-col bg-white">
-            {# Chat Header - Always Visible #}
-            <div class="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+            <!-- Desktop Header -->
+            <div class="hidden md:block bg-white border-b border-gray-200 px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-4">
                         {% if chat_room.cover_image %}
-                            <img src="{{ chat_room.cover_image.url }}" alt="{{ chat_room.name }}" class="w-10 h-10 rounded-lg object-cover">
+                        <img src="{{ chat_room.cover_image.url }}" alt="{{ chat_room.name }}" class="w-12 h-12 rounded-2xl object-cover border-2 border-white shadow-lg">
                         {% else %}
-                            <div class="w-10 h-10 bg-[#091e65] rounded-lg flex items-center justify-center">
+                        <div class="w-12 h-12 bg-gradient-to-br from-[#091e65] to-[#0a2472] rounded-2xl flex items-center justify-center shadow-lg">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                                </svg>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                             </div>
                         {% endif %}
-                        <div>
-                            <h1 class="text-xl font-bold text-gray-900">{{ chat_room.name }}</h1>
-                            <div class="flex items-center space-x-2 mt-1">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if chat_room.status == chat_room.RoomStatusChoices.ACTIVE %}bg-green-100 text-green-800{% elif chat_room.status == chat_room.RoomStatusChoices.CLOSED %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-700{% endif %}">
-                                    {{ chat_room.get_status_display }}
+                        
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3">
+                                <h1 class="text-2xl font-bold text-gray-900">{{ chat_room.name }}</h1>
+                                {% if chat_room.status == 'active' %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                                    Active
                                 </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                    <div class="w-2 h-2 bg-red-400 rounded-full mr-2"></div>
+                                    Closed
+                                </span>
+                                {% endif %}
+                                
                                 {% if chat_room.language %}
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#091e65] text-white">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                                         {{ chat_room.get_language_display }}
                                     </span>
                                 {% endif %}
                             </div>
-                            {% if chat_room.description %}
-                                <p class="text-sm text-gray-600 mt-1">{{ chat_room.description|truncatewords:15 }}</p>
-                            {% endif %}
+                            
+                            <div class="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+                                <div class="flex items-center space-x-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" /></svg>
+                                    <span>{{ members|length }} member{{ members|length|pluralize }}</span>
+                        </div>
+                                <div class="flex items-center space-x-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span>Created {{ chat_room.created_at|naturaltime }}</span>
+                    </div>
+                            </div>
                         </div>
                     </div>
-                    {% if user.is_authenticated and chat_room and chat_room.is_open_for_interaction and current_user_membership and current_user_membership.status == current_user_membership.StatusChoices.ACTIVE %}
-                        <button type="button" id="triggerLeaveRoomModalButton"
-                                class="inline-flex items-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors duration-200">
-                            Leave Room
+                    
+                    <div class="flex items-center space-x-3">
+                        {% if chat_room.owner == request.user or current_user_membership.role == 'admin' %}
+                        <button onclick="toggleLeaveModal()" class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            {% if chat_room.owner == request.user %}Close Room{% else %}Leave Room{% endif %}
                         </button>
-                        <form method="POST" action="{% url 'AudioXApp:chatroom_leave' room_id=chat_room.room_id %}" id="leave-room-form" class="hidden">
-                            {% csrf_token %}
-                        </form>
-                    {% elif chat_room.owner == request.user and not chat_room.is_open_for_interaction %}
-                        <span class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-500 bg-gray-50">
-                            Room Closed
-                        </span>
                     {% endif %}
+                    </div>
                 </div>
             </div>
 
+            <!-- Room Closed Notification -->
             {% if not chat_room.is_open_for_interaction %}
-            <div class="bg-red-50 border-b border-red-200 px-6 py-3">
+            <div class="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-400 p-6">
                 <div class="flex items-center">
-                    <svg class="h-5 w-5 text-red-400 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                    </svg>
-                    <p class="text-sm font-medium text-red-800">This chat room is closed. No new messages can be sent.</p>
+                    <div class="flex-shrink-0">
+                        <svg class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-red-800 font-semibold">Room Closed</p>
+                        <p class="text-red-700 text-sm">This chat room has been closed and is no longer accepting new messages.</p>
+                    </div>
                 </div>
             </div>
             {% endif %}
 
-            {# Messages Area #}
-            <div id="chat-log-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                <div id="chat-log" class="space-y-3">
+            <!-- Messages Area -->
+            <div class="flex-1 relative">
+                <div id="chat-log-container" class="chat-log-container h-full overflow-y-auto p-4 space-y-4 bg-white">
+                    <!-- Load More Messages Button -->
+                    {% if has_more_messages %}
+                    <div class="load-more-messages">
+                        <button id="load-more-btn" onclick="loadMoreMessages()" class="inline-flex items-center px-4 py-2 bg-[#091e65] hover:bg-[#0a1f5c] text-white font-semibold rounded-xl transition-all duration-200">
+                            <svg class="w-4 h-4 mr-2 animate-spin hidden" id="load-more-spinner" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span id="load-more-text">Load Earlier Messages</span>
+                        </button>
+                    </div>
+                    {% endif %}
+
+                    <!-- Messages -->
                     {% for msg in chat_log_entries %} 
-                        {% if msg.message_type == 'system' or msg.message_type == 'user_joined' or msg.message_type == 'user_left' or msg.message_type == 'room_closed' %}
-                            <div class="flex justify-center">
-                                <div class="bg-gray-200 text-gray-600 text-xs font-medium px-3 py-1 rounded-full">
-                                    {{ msg.content }}
+                    <div class="flex {% if msg.user.user_id == request.user.user_id %}justify-end{% else %}justify-start{% endif %} group" data-message-id="{{ msg.message_id }}">
+                        <div class="max-w-sm lg:max-w-lg xl:max-w-xl relative message-bubble">
+                            <!-- Reply Preview -->
+                            {% if msg.reply_to %}
+                            <div class="reply-preview mb-2">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <svg class="w-4 h-4 text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                    </svg>
+                                    <span class="text-xs font-semibold text-[#091e65]">
+                                        Replying to {{ msg.reply_to.user.full_name|default:msg.reply_to.user.username }}
+                                    </span>
                                 </div>
+                                <p class="text-xs text-gray-600 truncate">{{ msg.reply_to.content }}</p>
                             </div>
-                        {% else %}
-                            <div class="flex {% if msg.user.user_id == request.user.user_id %}justify-end{% else %}justify-start{% endif %}">
-                                <div class="max-w-xs lg:max-w-md">
+                            {% endif %}
+
                                     {% if msg.user and msg.user.user_id != request.user.user_id %}
-                                    <div class="flex items-center space-x-2 mb-1">
+                            <div class="flex items-center space-x-3 mb-2 pl-1">
                                         <img src="{% if msg.user.profile_pic %}{{ msg.user.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}" 
                                              alt="{{ msg.user.username }}" 
-                                             class="w-6 h-6 rounded-full object-cover">
-                                        <span class="text-xs font-semibold text-[#091e65]">
+                                     class="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm">
+                                <span class="text-sm font-semibold text-[#091e65]">
                                             {{ msg.user.full_name|default:msg.user.username }}
                                         </span>
+                                <span class="text-xs text-gray-400">{{ msg.timestamp|naturaltime }}</span>
                                     </div>
                                     {% endif %}
-                                    <div class="{% if msg.user.user_id == request.user.user_id %}bg-red-600 text-white rounded-2xl rounded-br-md{% else %}bg-white text-gray-900 rounded-2xl rounded-bl-md border border-gray-200{% endif %} px-4 py-3 shadow-sm">
-                                        <p class="text-sm">{{ msg.content|linebreaksbr }}</p>
-                                        <p class="text-xs {% if msg.user.user_id == request.user.user_id %}text-red-100{% else %}text-gray-500{% endif %} mt-1 text-right">
-                                            {{ msg.timestamp|naturaltime }}
-                                        </p>
+                            
+                            <div class="relative {% if msg.user.user_id == request.user.user_id %}bg-gradient-to-r from-red-500 to-red-600 text-white rounded-3xl rounded-br-lg shadow-lg border border-red-300{% else %}bg-white text-gray-900 rounded-3xl rounded-bl-lg shadow-lg border border-gray-100{% endif %} px-6 py-4 transition-all duration-200 hover:shadow-xl">
+                                <!-- Message Content -->
+                                <div class="message-content">
+                                    {% if msg.message_type == 'text' %}
+                                    <p class="text-sm leading-relaxed">{{ msg.content|linebreaksbr }}</p>
+                                    {% elif msg.message_type == 'audiobook_recommendation' %}
+                                    {% if msg.recommended_audiobook %}
+                                    <div class="audiobook-recommendation space-y-3">
+                                        {% if msg.content %}
+                                        <p class="text-sm leading-relaxed">{{ msg.content|linebreaksbr }}</p>
+                                        {% endif %}
+                                        <div class="flex items-start space-x-3 {% if msg.user.user_id == request.user.user_id %}bg-red-400{% else %}bg-gray-100{% endif %} rounded-2xl p-4">
+                                            {% if msg.recommended_audiobook.cover_image %}
+                                            <img src="{{ msg.recommended_audiobook.cover_image.url }}" alt="{{ msg.recommended_audiobook.title }}" class="w-16 h-16 rounded-xl object-cover shadow-sm">
+                                            {% else %}
+                                            <div class="w-16 h-16 bg-gradient-to-br from-[#091e65] to-[#0a2472] rounded-xl flex items-center justify-center">
+                                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                                                </svg>
+                                            </div>
+                                            {% endif %}
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="font-semibold {% if msg.user.user_id == request.user.user_id %}text-white{% else %}text-gray-900{% endif %} text-sm">
+                                                    {{ msg.recommended_audiobook.title }}
+                                                </h4>
+                                                <p class="{% if msg.user.user_id == request.user.user_id %}text-red-100{% else %}text-gray-600{% endif %} text-xs mt-1">
+                                                    by {{ msg.recommended_audiobook.author }}
+                                                </p>
+                                                <div class="flex items-center space-x-2 mt-2">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if msg.user.user_id == request.user.user_id %}bg-red-300 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                                                        </svg>
+                                                        Audiobook
+                                                    </span>
+                                                </div>
                                     </div>
                                 </div>
                             </div>
                         {% endif %}
-                    {% empty %}
-                        <div id="no-messages-placeholder" class="flex flex-col items-center justify-center py-12 text-center">
-                            <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                                </svg>
-                            </div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2">No messages yet</h3>
-                            <p class="text-gray-500">
-                                {% if chat_room.is_open_for_interaction %}
-                                    Start the conversation!
-                                {% else %}
-                                    This room is closed.
+                                    {% elif msg.message_type == 'file_attachment' %}
+                                    {% if msg.content %}
+                                    <p class="text-sm leading-relaxed mb-3">{{ msg.content|linebreaksbr }}</p>
+                                    {% endif %}
+                                    {% if msg.file_attachment %}
+                                    <div class="file-attachment">
+                                        <div class="file-icon">
+                                            {{ msg.file_attachment.name|slice:":3"|upper }}
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-semibold text-sm">{{ msg.file_attachment.name|slice:":-36" }}</p>
+                                            <a href="{{ msg.file_attachment.url }}" target="_blank" class="text-[#091e65] hover:underline text-xs">
+                                                Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+
+                                <!-- Message Reactions -->
+                                {% if msg.has_reactions %}
+                                <div class="message-reactions" data-message-reactions="{{ msg.message_id }}">
+                                    {% for emoji, count in msg.reaction_summary.items %}
+                                    <div class="reaction-item{% if emoji in msg.current_user_reactions %} user-reacted{% endif %}" data-emoji="{{ emoji }}" onclick="toggleReaction('{{ msg.message_id }}', '{{ emoji }}')">
+                                        <span>{{ emoji }}</span>
+                                        <span>{{ count }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                                 {% endif %}
-                            </p>
+
+                                <!-- Message Actions -->
+                                <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute {% if msg.user.user_id == request.user.user_id %}-left-12{% else %}-right-12{% endif %} top-2 flex flex-col space-y-1">
+                                    <button onclick="showReactionPicker('{{ msg.message_id }}', this)" class="w-8 h-8 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110" title="React">
+                                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                    </button>
+                                    <button onclick="replyToMessage('{{ msg.message_id }}', '{{ msg.user.full_name|default:msg.user.username }}', '{{ msg.content|truncatewords:10 }}')" class="w-8 h-8 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110" title="Reply">
+                                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                        </svg>
+                                    </button>
+                                    {% if msg.user.user_id == request.user.user_id %}
+                                    <button onclick="editMessage('{{ msg.message_id }}', '{{ msg.content }}')" class="w-8 h-8 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110" title="Edit">
+                                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </button>
+                                    {% endif %}
+                            </div>
+                                
+                                {% if msg.user.user_id == request.user.user_id %}
+                                <div class="flex items-center justify-end mt-2 space-x-2">
+                                    <span class="text-xs text-red-100">{{ msg.timestamp|naturaltime }}</span>
+                                    {% if msg.is_edited %}
+                                    <span class="message-edited">(edited)</span>
+                                {% endif %}
+                                    <div class="flex space-x-1">
+                                        <svg class="w-3 h-3 text-red-100" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        <svg class="w-3 h-3 text-red-100" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-12">
+                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                        <h3 class="text-lg font-semibold text-gray-600 mb-2">No messages yet</h3>
+                        <p class="text-gray-500">Be the first to start the conversation!</p>
                         </div>
                     {% endfor %}
+
+                    <!-- Typing Indicator -->
+                    <div id="typing-indicator" class="typing-indicator hidden">
+                        <div class="flex items-center space-x-3 mb-2 pl-1">
+                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" /></svg>
+                            </div>
+                            <span id="typing-user-name" class="text-sm font-semibold text-[#091e65]"></span>
+                        </div>
+                        <div class="bg-white text-gray-900 rounded-3xl rounded-bl-lg shadow-lg border border-gray-100 px-6 py-4">
+                            <div class="flex space-x-1">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {# Message Input #}
-            <div class="bg-white border-t border-gray-200 p-4">
-                <form id="chat-message-form" class="flex items-center space-x-3">
-                    <input type="text" id="chat-message-input"
-                           class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none {% if not chat_room.is_open_for_interaction %}bg-gray-100 cursor-not-allowed{% endif %}"
-                           placeholder="{% if chat_room.is_open_for_interaction %}Type your message...{% else %}This room is closed.{% endif %}" 
-                           autocomplete="off"
-                           {% if not chat_room.is_open_for_interaction %}disabled{% endif %}>
-                    <button type="submit" id="chat-message-submit"
-                            class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 {% if not chat_room.is_open_for_interaction %}opacity-50 cursor-not-allowed{% endif %}"
-                            {% if not chat_room.is_open_for_interaction %}disabled{% endif %}>
-                        Send
+            <!-- Message Input Area -->
+            {% if chat_room.is_open_for_interaction %}
+            <div class="message-input-container bg-white border-t border-gray-200 p-4">
+                <!-- Reply Preview -->
+                <div id="reply-preview" class="hidden reply-preview mb-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-4 h-4 text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                            </svg>
+                            <span class="text-sm font-semibold text-[#091e65]" id="reply-username">Replying to</span>
+                        </div>
+                        <button onclick="cancelReply()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
                     </button>
-                </form>
             </div>
+                    <p class="text-sm text-gray-600" id="reply-content"></p>
         </div>
 
-        {# Sidebar #}
-        <div class="w-80 bg-white border-l border-gray-200 flex flex-col">
-            {# Sidebar Header #}
-            <div class="bg-[#091e65] px-6 py-4">
-                <h2 class="text-lg font-bold text-white flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                <div class="flex items-end space-x-3">
+                    <!-- File Upload -->
+                    <input type="file" id="file-input" class="hidden" accept="*/*" onchange="handleFileUpload(event)">
+                    <button onclick="document.getElementById('file-input').click()" class="flex-shrink-0 p-3 bg-gray-100 hover:bg-gray-200 rounded-2xl transition-all duration-200 group">
+                        <svg class="w-5 h-5 text-gray-600 group-hover:text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
                     </svg>
-                    Room Members ({{ members.count }})
-                </h2>
+                    </button>
+
+                    <!-- Emoji/Actions Button -->
+                    <button onclick="showEmojiPicker()" class="flex-shrink-0 p-3 bg-gray-100 hover:bg-gray-200 rounded-2xl transition-all duration-200 group">
+                        <svg class="w-5 h-5 text-gray-600 group-hover:text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Message Input -->
+                    <div class="flex-1 relative">
+                        <textarea 
+                            id="message-input" 
+                            placeholder="Type your message... Use @username to mention someone"
+                            class="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:border-transparent transition-all duration-200"
+                            rows="1"
+                            style="min-height: 48px; max-height: 120px;"
+                            onkeydown="handleMessageInput(event)"
+                            oninput="handleTyping()"
+                        ></textarea>
+                        <div id="mention-suggestions" class="absolute bottom-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 hidden max-h-40 overflow-y-auto"></div>
             </div>
             
-            {# Members List #}
-            <div class="flex-1 overflow-y-auto p-4">
-                <ul id="member-list" class="space-y-2">
-                    {% for member_obj in members %}
-                    <li class="flex items-center p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                        <img src="{% if member_obj.user.profile_pic %}{{ member_obj.user.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}" 
-                             alt="{{ member_obj.user.username }}" 
-                             class="w-10 h-10 rounded-full object-cover mr-3">
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-gray-900 truncate">
-                                {{ member_obj.user.full_name|default:member_obj.user.username }}
-                            </p>
+                    <!-- Send Button -->
+                    <button id="send-button" onclick="sendMessage()" class="flex-shrink-0 p-3 bg-gradient-to-r from-[#091e65] to-[#0a2472] hover:from-[#0a1f5c] hover:to-[#0b2580] text-white rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
                         </div>
-                        {% if member_obj.role == "admin" or chat_room.owner == member_obj.user %}
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if chat_room.owner == member_obj.user %}bg-red-100 text-red-800{% else %}bg-[#091e65] text-white{% endif %}">
-                                {% if chat_room.owner == member_obj.user %}OWNER{% else %}ADMIN{% endif %}
-                            </span>
-                        {% endif %}
-                    </li>
-                    {% empty %}
-                    <li class="text-center py-8">
-                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                            </svg>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Desktop Sidebar -->
+        <div class="hidden lg:block w-80 bg-white border-l border-gray-200 flex flex-col desktop-sidebar">
+            <!-- Sidebar Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Room Members</h3>
+                    <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-1 text-sm text-gray-500">
+                            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                            <span>{{ members|length }} online</span>
                         </div>
-                        <p class="text-sm text-gray-500">No members found</p>
-                    </li>
-                    {% endfor %}
-                </ul>
+                    </div>
+                </div>
             </div>
 
-            {# Invite Section #}
+            <!-- Members List -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                {% for member in members %}
+                <div class="flex items-center space-x-3 p-3 rounded-2xl hover:bg-gray-50 transition-all duration-200 group" data-member-id="{{ member.user.user_id }}">
+                    <div class="relative">
+                        <img src="{% if member.user.profile_pic %}{{ member.user.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}" 
+                             alt="{{ member.user.username }}" 
+                             class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm">
+                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
+                    </div>
+                    
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-2">
+                            <p class="font-semibold text-gray-900 truncate">{{ member.user.full_name|default:member.user.username }}</p>
+                            {% if member.user == chat_room.owner %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Owner
+                            </span>
+                            {% elif member.role == 'admin' %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Admin
+                            </span>
+                        {% endif %}
+                        </div>
+                        <p class="text-sm text-gray-500 truncate">@{{ member.user.username }}</p>
+                    </div>
+                    
+                    {% if can_manage_members and member.user != request.user and member.user != chat_room.owner %}
+                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <button onclick="showMemberActions('{{ member.user.user_id }}', '{{ member.user.full_name|default:member.user.username }}', '{{ member.role }}')" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                            </svg>
+                        </button>
+                        </div>
+                    {% endif %}
+                </div>
+                    {% endfor %}
+            </div>
+
+            <!-- Invite Section -->
             {% if can_invite_users %}
-            <div class="border-t border-gray-200 p-4">
-                <h3 class="text-sm font-bold text-[#091e65] mb-3 flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            <div class="p-6 border-t border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
                     Invite User
-                </h3>
-                <form method="POST" action="{% url 'AudioXApp:chatroom_invite_user' room_id=chat_room.room_id %}" class="space-y-3">
+                </h4>
+                <form method="post" action="{% url 'AudioXApp:chatroom_invite_user' room_id=chat_room.room_id %}" class="space-y-3">
                     {% csrf_token %}
-                    <input type="email" name="email" id="invite_email" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#091e65] focus:border-[#091e65] focus:outline-none"
-                           placeholder="Enter user's email">
-                    <button type="submit"
-                            class="w-full px-4 py-2 text-sm font-semibold text-white bg-[#091e65] rounded-lg hover:bg-[#0a1f5c] transition-colors duration-200">
+                    <input type="email" name="email" placeholder="Enter email address" required
+                           class="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#091e65] focus:border-transparent text-sm">
+                    <button type="submit" class="w-full bg-gradient-to-r from-[#091e65] to-[#0a2472] hover:from-[#0a1f5c] hover:to-[#0b2580] text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 text-sm">
                         Send Invitation
                     </button>
                 </form>
             </div>
             {% endif %}
         </div>
+
+        <!-- Mobile Sidebar -->
+        <div class="mobile-sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+        <div class="mobile-sidebar lg:hidden">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Room Members</h3>
+                    <button onclick="toggleMobileSidebar()" class="p-2 rounded-lg hover:bg-gray-100">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
     </div>
 </div>
 
-{{ popup_feedback|json_script:"popup-feedback-script-data" }}
+            <div class="flex-1 overflow-y-auto p-4">
+                {% for member in members %}
+                <div class="flex items-center space-x-3 p-3 rounded-2xl hover:bg-gray-50 transition-all duration-200 mb-2">
+                    <div class="relative">
+                        <img src="{% if member.user.profile_pic %}{{ member.user.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}" 
+                             alt="{{ member.user.username }}" 
+                             class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm">
+                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
+                    </div>
+                    
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-2">
+                            <p class="font-semibold text-gray-900 truncate">{{ member.user.full_name|default:member.user.username }}</p>
+                            {% if member.user == chat_room.owner %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Owner
+                            </span>
+                            {% elif member.role == 'admin' %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Admin
+                            </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-sm text-gray-500 truncate">@{{ member.user.username }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
+    <!-- Reaction Picker -->
+    <div id="reaction-picker" class="reaction-picker">
+        <div class="reaction-picker-emojis">
+            <div class="reaction-emoji" onclick="selectReaction('👍')">👍</div>
+            <div class="reaction-emoji" onclick="selectReaction('❤️')">❤️</div>
+            <div class="reaction-emoji" onclick="selectReaction('😂')">😂</div>
+            <div class="reaction-emoji" onclick="selectReaction('😮')">😮</div>
+            <div class="reaction-emoji" onclick="selectReaction('😢')">😢</div>
+            <div class="reaction-emoji" onclick="selectReaction('😡')">😡</div>
+            <div class="reaction-emoji" onclick="selectReaction('🎉')">🎉</div>
+            <div class="reaction-emoji" onclick="selectReaction('📚')">📚</div>
+            <div class="reaction-emoji" onclick="selectReaction('💡')">💡</div>
+            <div class="reaction-emoji" onclick="selectReaction('🔥')">🔥</div>
+        </div>
+    </div>
+
+    <!-- Enhanced Leave Modal -->
+    <div id="leave-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full transform scale-95 transition-all duration-300" id="leave-modal-content">
+            <div class="p-8">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">
+                            {% if chat_room.owner == request.user %}Close Room{% else %}Leave Room{% endif %}
+                        </h3>
+                        <p class="text-gray-600 text-sm">This action cannot be undone</p>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <p class="text-gray-700 leading-relaxed">
+                        {% if chat_room.owner == request.user %}
+                        Are you sure you want to close "<span class="font-semibold">{{ chat_room.name }}</span>"? All members will be removed and the room will become inactive.
+                        {% else %}
+                        Are you sure you want to leave "<span class="font-semibold">{{ chat_room.name }}</span>"? You'll need an invitation to rejoin.
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button onclick="toggleLeaveModal()" class="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-2xl transition-all duration-200">
+                        Cancel
+                    </button>
+                    <form method="post" action="{% url 'AudioXApp:chatroom_leave' room_id=chat_room.room_id %}" class="flex-1">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl">
+                            {% if chat_room.owner == request.user %}Close Room{% else %}Leave Room{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock chat_content %}
 
 {% block extra_chat_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const chatContainer = document.getElementById('chat-container');
-    const roomStatus = chatContainer ? chatContainer.dataset.roomStatus : 'active'; 
+// Enhanced JavaScript with all new features
+let chatSocket = null;
+let typingTimer = null;
+let isTyping = false;
+let currentReplyTo = null;
+let currentReactionMessageId = null;
+let loadingMoreMessages = false;
+const currentUserId = "{{ request.user.user_id }}";
 
-    const feedbackPopup = document.getElementById('feedbackPopup');
-    const popupIconContainer = document.getElementById('popupIconContainer');
-    const popupMessage = document.getElementById('popupMessage');
-    const popupCloseButton = document.getElementById('popupClose');
-    let popupTimeout;
-
-    const icons = { 
-        success: '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
-        error: '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 9A9 9 0 1112 3v-.75m9 3.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>',
-        warning: '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>',
-        info: '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" /></svg>'
+// Initialize WebSocket connection
+function initializeWebSocket() {
+    const roomId = "{{ chat_room.room_id }}";
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socketUrl = `${protocol}//${window.location.host}/ws/chat/${roomId}/`;
+    
+    chatSocket = new WebSocket(socketUrl);
+    
+    chatSocket.onopen = function(e) {
+        console.log('WebSocket connection established');
     };
-    const bgColors = { 
-        success: 'bg-green-600', error: 'bg-red-600',
-        warning: 'bg-yellow-500', info: 'bg-blue-600'
+    
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        handleWebSocketMessage(data);
     };
+    
+    chatSocket.onclose = function(e) {
+        console.log('WebSocket connection closed');
+        // Attempt to reconnect after 3 seconds
+        setTimeout(initializeWebSocket, 3000);
+    };
+    
+    chatSocket.onerror = function(e) {
+        console.error('WebSocket error:', e);
+    };
+}
 
-    function showPopup(type, message) {
-        if (!feedbackPopup || !popupMessage || !popupIconContainer) return;
-        if (popupTimeout) clearTimeout(popupTimeout);
-        
-        Object.values(bgColors).forEach(cls => feedbackPopup.classList.remove(cls));
-        
-        popupMessage.textContent = message;
-        popupIconContainer.innerHTML = icons[type] || icons['info'];
-        feedbackPopup.classList.add(bgColors[type] || bgColors['info']);
-        
-        feedbackPopup.classList.remove('hidden');
-        popupTimeout = setTimeout(hidePopup, 5000);
+// Handle incoming WebSocket messages
+function handleWebSocketMessage(data) {
+    switch (data.type) {
+        case 'text':
+        case 'audiobook_recommendation':
+        case 'file_attachment':
+            addMessageToChat(data);
+            break;
+        case 'typing_start':
+            showTypingIndicator(data.user_name);
+            break;
+        case 'typing_stop':
+            hideTypingIndicator();
+            break;
+        case 'reaction_update':
+            updateMessageReaction(data);
+            break;
+        case 'message_edit':
+            updateEditedMessage(data);
+            break;
+        case 'message_delete':
+            removeDeletedMessage(data);
+            break;
+        case 'system_message':
+            handleSystemMessage(data);
+            break;
+        case 'error':
+            showErrorMessage(data.message);
+            break;
     }
+}
+
+// Show error messages
+function showErrorMessage(message) {
+    // Create and show error notification
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
     
-    function hidePopup() {
-        if (!feedbackPopup) return;
-        feedbackPopup.classList.add('hidden');
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        errorDiv.remove();
+    }, 5000);
+}
+
+// Add message to chat
+function addMessageToChat(data) {
+    const chatLog = document.getElementById('chat-log-container');
+    const messageHtml = createMessageHtml(data);
+    
+    // Remove typing indicator if present
+    hideTypingIndicator();
+    
+    // Add new message
+    chatLog.insertAdjacentHTML('beforeend', messageHtml);
+    
+    // Scroll to bottom
+    scrollToBottom();
+    
+    // Handle mentions
+    if (data.mentioned_users && data.mentioned_users.includes("{{ request.user.user_id }}")) {
+        highlightMention();
     }
-    
-    if (popupCloseButton) popupCloseButton.addEventListener('click', hidePopup);
-    
-    const feedbackDataElement = document.getElementById('popup-feedback-script-data');
-    if (feedbackDataElement && feedbackDataElement.textContent) {
-        try {
-            const feedbackData = JSON.parse(feedbackDataElement.textContent);
-            if (feedbackData && feedbackData.text && feedbackData.type) {
-                setTimeout(() => { showPopup(feedbackData.type, feedbackData.text); }, 100);
-            }
-        } catch (e) { }
-    }
-    
-    const leaveRoomModal = document.getElementById('leaveRoomModal');
-    const leaveRoomModalOverlay = document.getElementById('leaveRoomModalOverlay');
-    const triggerLeaveButton = document.getElementById('triggerLeaveRoomModalButton');
-    const confirmLeaveButton = document.getElementById('confirmLeaveButton');
-    const cancelLeaveButton = document.getElementById('cancelLeaveButton');
-    const leaveRoomForm = document.getElementById('leave-room-form');
-    const leaveModalMessage = document.getElementById('leaveModalMessage');
+}
 
-    function showLeaveModal() {
-        if (!leaveRoomModal || !chatContainer || !leaveModalMessage) return;
-        const isOwner = chatContainer.dataset.isRoomOwner === 'true';
-        if (isOwner) {
-            leaveModalMessage.textContent = "Are you sure you want to leave? As the room owner, leaving will close this chat room for all members. The room cannot be reopened.";
-        } else {
-            leaveModalMessage.textContent = "Are you sure you want to leave this chat room? You will need a new invitation to rejoin.";
-        }
-        leaveRoomModal.classList.remove('hidden');
-    }
+// Create HTML for message
+function createMessageHtml(data) {
+    const isOwnMessage = data.user_id === "{{ request.user.user_id }}";
+    const alignmentClass = isOwnMessage ? 'justify-end' : 'justify-start';
+    const bubbleClass = isOwnMessage ? 
+        'bg-gradient-to-r from-red-500 to-red-600 text-white rounded-3xl rounded-br-lg' : 
+        'bg-white text-gray-900 rounded-3xl rounded-bl-lg';
     
-    function hideLeaveModal() {
-        if (!leaveRoomModal) return;
-        leaveRoomModal.classList.add('hidden');
-    }
+    let messageContent = '';
     
-    if (triggerLeaveButton) { triggerLeaveButton.addEventListener('click', function(event) { event.preventDefault(); showLeaveModal(); }); }
-    if (confirmLeaveButton && leaveRoomForm) { confirmLeaveButton.addEventListener('click', function() { hideLeaveModal(); leaveRoomForm.submit(); });}
-    if (cancelLeaveButton) { cancelLeaveButton.addEventListener('click', hideLeaveModal); }
-    if (leaveRoomModalOverlay) { leaveRoomModalOverlay.addEventListener('click', hideLeaveModal); }
-
-    if (chatContainer) {
-        const roomId = chatContainer.dataset.roomId;
-        const currentUserId = chatContainer.dataset.currentUserId;
-        
-        const chatLog = document.getElementById('chat-log');
-        const chatLogContainer = document.getElementById('chat-log-container');
-        const messageInput = document.getElementById('chat-message-input');
-        const messageForm = document.getElementById('chat-message-form');
-        const noMessagesPlaceholder = document.getElementById('no-messages-placeholder');
-
-        function scrollToBottom() {
-            setTimeout(() => { if(chatLogContainer) chatLogContainer.scrollTop = chatLogContainer.scrollHeight; }, 50);
-        }
-        scrollToBottom(); 
-
-        let chatSocket = null;
-        if (roomStatus === 'active') {
-            const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
-            const chatSocketUrl = `${wsScheme}://${window.location.host}/ws/chat/${roomId}/`;
-            chatSocket = new WebSocket(chatSocketUrl);
-
-            chatSocket.onopen = function (e) {
-                if (messageInput) messageInput.disabled = false;
-                const submitButton = messageForm ? messageForm.querySelector('button[type="submit"]') : null;
-                if (submitButton) { submitButton.disabled = false; submitButton.textContent = 'Send';}
-            };
-            chatSocket.onclose = function (e) {
-                if (messageInput) messageInput.disabled = true;
-                const submitButton = messageForm ? messageForm.querySelector('button[type="submit"]') : null;
-                if (submitButton) { submitButton.disabled = true; submitButton.innerHTML = 'Disconnected'; }
-                if (roomStatus === 'active') { 
-                    showPopup('error', 'Disconnected from chat. Please refresh the page to try reconnecting.');
-                }
-            };
-            chatSocket.onerror = function (err) { 
-                if (roomStatus === 'active') {
-                    showPopup('error', 'Chat connection error. Please try refreshing.');
-                }
-            };
-            chatSocket.onmessage = function (e) {
-                try {
-                    const data = JSON.parse(e.data);
-                    if (noMessagesPlaceholder && chatLog.children.length === 1 && noMessagesPlaceholder.parentNode) { 
-                        noMessagesPlaceholder.remove();
+    // Handle different message types
+    if (data.type === 'text') {
+        messageContent = `<p class="text-sm leading-relaxed">${formatMessageContent(data.content)}</p>`;
+    } else if (data.type === 'audiobook_recommendation' && data.recommended_audiobook) {
+        messageContent = `
+            ${data.content ? `<p class="text-sm leading-relaxed mb-3">${formatMessageContent(data.content)}</p>` : ''}
+            <div class="audiobook-recommendation space-y-3">
+                <div class="flex items-start space-x-3 ${isOwnMessage ? 'bg-red-400' : 'bg-gray-100'} rounded-2xl p-4">
+                    ${data.recommended_audiobook.cover_image_url ? 
+                        `<img src="${data.recommended_audiobook.cover_image_url}" alt="${data.recommended_audiobook.title}" class="w-16 h-16 rounded-xl object-cover shadow-sm">` :
+                        `<div class="w-16 h-16 bg-gradient-to-br from-[#091e65] to-[#0a2472] rounded-xl flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                            </svg>
+                        </div>`
                     }
-                    
-                    if (data.type === 'system_message' || data.type === 'room_closed' || data.type === 'user_joined' || data.type === 'user_left') { 
-                        appendSystemMessageToLog(data); 
-                        if(data.type === 'room_closed' && messageInput && messageForm){
-                            messageInput.disabled = true;
-                            messageInput.placeholder = "This room is now closed.";
-                            messageForm.querySelector('button[type="submit"]').disabled = true;
-                        }
-                    } else if (data.type === 'text') { 
-                        appendMessageToLog(data); 
-                    }
-                    scrollToBottom();
-                } catch (error) { }
-            };
-        } else { 
-             if (messageInput) {
-                messageInput.disabled = true;
-                messageInput.placeholder = "This room is closed.";
-            }
-            const submitButton = messageForm ? messageForm.querySelector('button[type="submit"]') : null;
-            if (submitButton) {
-                submitButton.disabled = true;
-            }
-        }
-
-        function formatTimestamp(isoString) { 
-            const date = new Date(isoString); const now = new Date();
-            const seconds = Math.round((now - date) / 1000); const minutes = Math.round(seconds / 60); const hours = Math.round(minutes / 60);
-            if (seconds < 2) return 'just now'; if (seconds < 60) return `${seconds} sec ago`;
-            if (minutes < 60) return `${minutes} min ago`; if (hours < 24) return `${hours} hr ago`;
-            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        }
-        
-        function appendMessageToLog(data) { 
-            if (!chatLog) return;
-            const isCurrentUser = data.user_id === currentUserId;
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('flex', isCurrentUser ? 'justify-end' : 'justify-start');
-            
-            const messageContent = document.createElement('div');
-            messageContent.classList.add('max-w-xs', 'lg:max-w-md');
-            
-            if (data.username && !isCurrentUser) {
-                const userInfo = document.createElement('div');
-                userInfo.classList.add('flex', 'items-center', 'space-x-2', 'mb-1');
-                userInfo.innerHTML = `
-                    <img src="${data.avatar_url || '/static/img/default_avatar.png'}" 
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold ${isOwnMessage ? 'text-white' : 'text-gray-900'} text-sm">
+                            ${data.recommended_audiobook.title}
+                        </h4>
+                        <p class="${isOwnMessage ? 'text-red-100' : 'text-gray-600'} text-xs mt-1">
+                            by ${data.recommended_audiobook.author}
+                        </p>
+                        <div class="flex items-center space-x-2 mt-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isOwnMessage ? 'bg-red-300 text-red-800' : 'bg-blue-100 text-blue-800'}">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                                </svg>
+                                Audiobook
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (data.type === 'file_attachment' && data.file_attachment) {
+        messageContent = `
+            ${data.content ? `<p class="text-sm leading-relaxed mb-3">${formatMessageContent(data.content)}</p>` : ''}
+            <div class="file-attachment">
+                <div class="file-icon">${data.file_attachment.name.slice(0, 3).toUpperCase()}</div>
+                <div class="flex-1">
+                    <p class="font-semibold text-sm">${data.file_attachment.name}</p>
+                    <a href="${data.file_attachment.url}" target="_blank" class="text-[#091e65] hover:underline text-xs">Download</a>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add reply preview if it's a reply
+    let replyPreview = '';
+    if (data.reply_to) {
+        replyPreview = `
+            <div class="reply-preview mb-2">
+                <div class="flex items-center space-x-2 mb-1">
+                    <svg class="w-4 h-4 text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                    </svg>
+                    <span class="text-xs font-semibold text-[#091e65]">Replying to ${data.reply_to.username}</span>
+                </div>
+                <p class="text-xs text-gray-600 truncate">${data.reply_to.content}</p>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="flex ${alignmentClass} group" data-message-id="${data.message_id}">
+            <div class="max-w-sm lg:max-w-lg xl:max-w-xl relative message-bubble">
+                ${replyPreview}
+                
+                ${!isOwnMessage ? `
+                <div class="flex items-center space-x-3 mb-2 pl-1">
+                    <img src="${data.profile_pic_url || '/static/img/default_avatar.png'}" 
                          alt="${data.username}" 
-                         class="w-6 h-6 rounded-full object-cover">
-                    <span class="text-xs font-semibold text-[#091e65]">${data.username}</span>
-                `;
-                messageContent.appendChild(userInfo);
+                         class="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm">
+                    <span class="text-sm font-semibold text-[#091e65]">${data.username}</span>
+                    <span class="text-xs text-gray-400">just now</span>
+                </div>
+                ` : ''}
+                
+                <div class="relative ${bubbleClass} shadow-lg border ${isOwnMessage ? 'border-red-300' : 'border-gray-100'} px-6 py-4 transition-all duration-200 hover:shadow-xl">
+                    <div class="message-content">${messageContent}</div>
+                    
+                    <!-- Message Actions -->
+                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute ${isOwnMessage ? '-left-12' : '-right-12'} top-2 flex flex-col space-y-1">
+                        <button onclick="showReactionPicker('${data.message_id}', this)" class="w-8 h-8 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110" title="React">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </button>
+                        <button onclick="replyToMessage('${data.message_id}', '${data.username}', '${data.content.slice(0, 50)}')" class="w-8 h-8 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110" title="Reply">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                            </svg>
+                        </button>
+                        ${isOwnMessage ? `
+                        <button onclick="editMessage('${data.message_id}', '${data.content.replace(/'/g, "\\'")}');" class="w-8 h-8 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110" title="Edit">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                        ` : ''}
+                    </div>
+                    
+                    ${isOwnMessage ? `
+                    <div class="flex items-center justify-end mt-2 space-x-2">
+                        <span class="text-xs text-red-100">${formatTimestamp(data.timestamp)}</span>
+                        <div class="flex space-x-1">
+                            <svg class="w-3 h-3 text-red-100" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            <svg class="w-3 h-3 text-red-100" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Format timestamp
+function formatTimestamp(timestamp) {
+    const now = new Date();
+    const messageTime = new Date(timestamp);
+    const diffMs = now - messageTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+    return messageTime.toLocaleDateString();
+}
+
+// Format message content with mentions and basic formatting
+function formatMessageContent(content) {
+    if (!content) return '';
+    
+    // Convert @mentions to highlighted mentions
+    content = content.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+    
+    // Convert line breaks
+    content = content.replace(/\n/g, '<br>');
+    
+    // Convert URLs to links
+    content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-blue-500 hover:underline">$1</a>');
+    
+    return content;
+}
+
+// Send message
+function sendMessage() {
+    const messageInput = document.getElementById('message-input');
+    const message = messageInput.value.trim();
+    
+    if (!message) return;
+    
+    const messageData = {
+        type: currentReplyTo ? 'reply_message' : 'chat_message',
+        message: message
+    };
+    
+    if (currentReplyTo) {
+        messageData.reply_to = currentReplyTo.id;
+    }
+    
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        chatSocket.send(JSON.stringify(messageData));
+        
+        messageInput.value = '';
+        messageInput.style.height = '48px';
+        
+        // Cancel reply if active
+        if (currentReplyTo) {
+            cancelReply();
+        }
+        
+        // Stop typing indicator
+        if (isTyping) {
+            stopTyping();
+        }
+    } else {
+        showErrorMessage('Connection lost. Please refresh the page.');
+    }
+}
+
+// Handle message input
+function handleMessageInput(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+        return;
+    }
+    
+    // Auto-resize textarea
+    const textarea = event.target;
+    textarea.style.height = '48px';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    
+    // Handle mention suggestions
+    handleMentionSuggestions(textarea);
+}
+
+// Handle typing indicators
+function handleTyping() {
+    if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+    
+    if (!isTyping) {
+        isTyping = true;
+        chatSocket.send(JSON.stringify({
+            type: 'typing_start',
+            user_name: "{{ request.user.full_name|default:request.user.username }}"
+        }));
+    }
+    
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+        stopTyping();
+    }, 2000);
+}
+
+function stopTyping() {
+    if (isTyping && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        isTyping = false;
+        chatSocket.send(JSON.stringify({
+            type: 'typing_stop'
+        }));
+    }
+}
+
+// Show/hide typing indicator
+function showTypingIndicator(userName) {
+    const indicator = document.getElementById('typing-indicator');
+    const userNameElement = document.getElementById('typing-user-name');
+    
+    if (indicator && userNameElement) {
+        userNameElement.textContent = userName;
+        indicator.classList.remove('hidden');
+        scrollToBottom();
+    }
+}
+
+function hideTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+        indicator.classList.add('hidden');
+    }
+}
+
+// Handle mentions
+function handleMentionSuggestions(textarea) {
+    const value = textarea.value;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex !== -1 && lastAtIndex === textBeforeCursor.length - 1) {
+        // Show mention suggestions
+        showMentionSuggestions();
+    } else { 
+        hideMentionSuggestions();
+    }
+}
+
+function showMentionSuggestions() {
+    const suggestions = document.getElementById('mention-suggestions');
+    if (!suggestions) return;
+    
+    // Get members from template context
+    const members = [
+        {% for member in members %}
+        {
+            user: {
+                username: "{{ member.user.username }}",
+                full_name: "{{ member.user.full_name|default:member.user.username }}",
+                profile_pic_url: "{% if member.user.profile_pic %}{{ member.user.profile_pic.url }}{% else %}{% static 'img/default_avatar.png' %}{% endif %}"
+            }
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    let suggestionsHtml = '';
+    members.forEach(member => {
+        suggestionsHtml += `
+            <div class="p-2 hover:bg-gray-100 cursor-pointer flex items-center space-x-2" onclick="insertMention('${member.user.username}')">
+                <img src="${member.user.profile_pic_url}" class="w-6 h-6 rounded-full">
+                <span class="text-sm font-medium">${member.user.full_name}</span>
+                <span class="text-xs text-gray-500">@${member.user.username}</span>
+            </div>
+        `;
+    });
+    
+    suggestions.innerHTML = suggestionsHtml;
+    suggestions.classList.remove('hidden');
+}
+
+function hideMentionSuggestions() {
+    const suggestions = document.getElementById('mention-suggestions');
+    if (suggestions) {
+        suggestions.classList.add('hidden');
+    }
+}
+
+function insertMention(username) {
+    const messageInput = document.getElementById('message-input');
+    const value = messageInput.value;
+    const cursorPos = messageInput.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const textAfterCursor = value.substring(cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    const newValue = textBeforeCursor.substring(0, lastAtIndex) + `@${username} ` + textAfterCursor;
+    messageInput.value = newValue;
+    messageInput.focus();
+    
+    const newCursorPos = lastAtIndex + username.length + 2;
+    messageInput.setSelectionRange(newCursorPos, newCursorPos);
+    
+    hideMentionSuggestions();
+}
+
+// Reply functionality
+function replyToMessage(messageId, username, content) {
+    currentReplyTo = { id: messageId, username: username, content: content };
+    
+    const replyPreview = document.getElementById('reply-preview');
+    const replyUsername = document.getElementById('reply-username');
+    const replyContent = document.getElementById('reply-content');
+    
+    if (replyPreview && replyUsername && replyContent) {
+        replyUsername.textContent = `Replying to ${username}`;
+        replyContent.textContent = content;
+        replyPreview.classList.remove('hidden');
+        
+        document.getElementById('message-input').focus();
+    }
+}
+
+function cancelReply() {
+    currentReplyTo = null;
+    const replyPreview = document.getElementById('reply-preview');
+    if (replyPreview) {
+        replyPreview.classList.add('hidden');
+    }
+}
+
+// Reaction functionality
+function showReactionPicker(messageId, button) {
+    currentReactionMessageId = messageId;
+    const picker = document.getElementById('reaction-picker');
+    if (!picker) return;
+    
+    const rect = button.getBoundingClientRect();
+    
+    picker.style.top = (rect.top - picker.offsetHeight - 10) + 'px';
+    picker.style.left = Math.max(10, (rect.left - picker.offsetWidth / 2)) + 'px';
+    picker.style.display = 'block';
+    
+    // Hide picker when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', hideReactionPicker, { once: true });
+    }, 100);
+}
+
+function hideReactionPicker() {
+    const picker = document.getElementById('reaction-picker');
+    if (picker) {
+        picker.style.display = 'none';
+    }
+    currentReactionMessageId = null;
+}
+
+function selectReaction(emoji) {
+    if (currentReactionMessageId && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        chatSocket.send(JSON.stringify({
+            type: 'message_reaction',
+            message_id: currentReactionMessageId,
+            emoji: emoji,
+            action: 'toggle'
+        }));
+    }
+    hideReactionPicker();
+}
+
+function toggleReaction(messageId, emoji) {
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        chatSocket.send(JSON.stringify({
+            type: 'message_reaction',
+            message_id: messageId,
+            emoji: emoji,
+            action: 'toggle'
+        }));
+    }
+}
+
+// Update message reactions
+function updateMessageReaction(data) {
+    const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (!messageElement) return;
+    
+    let reactionsContainer = messageElement.querySelector(`[data-message-reactions="${data.message_id}"]`);
+    
+    if (!reactionsContainer) {
+        // Create reactions container
+        const messageContent = messageElement.querySelector('.message-content');
+        if (messageContent) {
+            reactionsContainer = document.createElement('div');
+            reactionsContainer.className = 'message-reactions';
+            reactionsContainer.setAttribute('data-message-reactions', data.message_id);
+            messageContent.parentNode.insertBefore(reactionsContainer, messageContent.nextSibling);
+        }
+    }
+    
+    if (!reactionsContainer) return;
+    
+    // Update or add reaction
+    const existingReaction = reactionsContainer.querySelector(`[data-emoji="${data.emoji}"]`);
+    const isCurrentUser = data.user_id === currentUserId;
+    
+    if (data.action === 'add') {
+        if (existingReaction) {
+            const countSpan = existingReaction.querySelector('span:last-child');
+            if (countSpan) {
+                countSpan.textContent = parseInt(countSpan.textContent) + 1;
             }
             
-            const bubble = document.createElement('div');
-            bubble.classList.add('px-4', 'py-3', 'shadow-sm');
             if (isCurrentUser) {
-                bubble.classList.add('bg-red-600', 'text-white', 'rounded-2xl', 'rounded-br-md');
+                existingReaction.classList.add('user-reacted');
+            }
+        } else {
+            const reactionElement = document.createElement('div');
+            reactionElement.className = 'reaction-item';
+            if (isCurrentUser) {
+                reactionElement.classList.add('user-reacted');
+            }
+            reactionElement.setAttribute('data-emoji', data.emoji);
+            reactionElement.onclick = () => toggleReaction(data.message_id, data.emoji);
+            reactionElement.innerHTML = `<span>${data.emoji}</span><span>1</span>`;
+            reactionsContainer.appendChild(reactionElement);
+        }
+    } else if (data.action === 'remove') {
+        if (existingReaction) {
+            const countSpan = existingReaction.querySelector('span:last-child');
+            if (countSpan) {
+                const newCount = parseInt(countSpan.textContent) - 1;
+                
+                if (newCount <= 0) {
+                    existingReaction.remove();
+                } else {
+                    countSpan.textContent = newCount;
+                    
+                    if (isCurrentUser) {
+                        existingReaction.classList.remove('user-reacted');
+                    }
+                }
+            }
+        }
+    }
+}
+
+// File upload
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+        showErrorMessage('File size must be less than 10MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const fileData = e.target.result.split(',')[1]; // Remove data:type;base64, prefix
+        
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                type: 'file_upload',
+                file_data: fileData,
+                file_name: file.name,
+                file_type: file.type,
+                message: `Shared a file: ${file.name}`
+            }));
+        } else {
+            showErrorMessage('Connection lost. Please refresh the page.');
+        }
+    };
+    
+    reader.readAsDataURL(file);
+    
+    // Clear the input
+    event.target.value = '';
+}
+
+// Message pagination
+function loadMoreMessages() {
+    if (loadingMoreMessages) return;
+    
+    loadingMoreMessages = true;
+    const loadBtn = document.getElementById('load-more-btn');
+    const spinner = document.getElementById('load-more-spinner');
+    const text = document.getElementById('load-more-text');
+    
+    if (spinner) spinner.classList.remove('hidden');
+    if (text) text.textContent = 'Loading...';
+    if (loadBtn) loadBtn.disabled = true;
+    
+    const oldestMessage = document.querySelector('[data-message-id]');
+    const beforeCursor = oldestMessage ? oldestMessage.getAttribute('data-message-id') : '';
+    
+    // Use the correct URL pattern from the views
+    fetch(`{% url 'AudioXApp:load_more_messages' room_id=chat_room.room_id %}?before=${beforeCursor}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.messages && data.messages.length > 0) {
+                const chatLog = document.getElementById('chat-log-container');
+                const loadMoreContainer = chatLog.querySelector('.load-more-messages');
+                
+                // Store the current scroll position
+                const currentScrollHeight = chatLog.scrollHeight;
+                const currentScrollTop = chatLog.scrollTop;
+                
+                data.messages.forEach(message => {
+                    const messageHtml = createLoadedMessageHtml(message);
+                    if (loadMoreContainer) {
+                        loadMoreContainer.insertAdjacentHTML('afterend', messageHtml);
+                    }
+                });
+                
+                // Maintain scroll position after adding messages
+                const newScrollHeight = chatLog.scrollHeight;
+                const heightDifference = newScrollHeight - currentScrollHeight;
+                chatLog.scrollTop = currentScrollTop + heightDifference;
+                
+                if (!data.has_more && loadMoreContainer) {
+                    loadMoreContainer.remove();
+                }
             } else {
-                bubble.classList.add('bg-white', 'text-gray-900', 'rounded-2xl', 'rounded-bl-md', 'border', 'border-gray-200');
+                const loadMoreContainer = document.querySelector('.load-more-messages');
+                if (loadMoreContainer) {
+                    loadMoreContainer.remove();
+                }
+                
+                if (data.success === false && data.error) {
+                    showErrorMessage(data.error);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading messages:', error);
+            showErrorMessage('Failed to load messages. Please try again.');
+        })
+        .finally(() => {
+            loadingMoreMessages = false;
+            if (spinner) spinner.classList.add('hidden');
+            if (text) text.textContent = 'Load Earlier Messages';
+            if (loadBtn) loadBtn.disabled = false;
+        });
+}
+
+// Create HTML for loaded messages (from pagination)
+function createLoadedMessageHtml(message) {
+    const isOwnMessage = message.user_id === "{{ request.user.user_id }}";
+    const alignmentClass = isOwnMessage ? 'justify-end' : 'justify-start';
+    const bubbleClass = isOwnMessage ? 
+        'bg-gradient-to-r from-red-500 to-red-600 text-white rounded-3xl rounded-br-lg' : 
+        'bg-white text-gray-900 rounded-3xl rounded-bl-lg';
+    
+    let messageContent = '';
+    
+    // Handle different message types
+    if (message.message_type === 'text') {
+        messageContent = `<p class="text-sm leading-relaxed">${formatMessageContent(message.content)}</p>`;
+    } else if (message.message_type === 'audiobook_recommendation' && message.recommended_audiobook) {
+        messageContent = `
+            ${message.content ? `<p class="text-sm leading-relaxed mb-3">${formatMessageContent(message.content)}</p>` : ''}
+            <div class="audiobook-recommendation space-y-3">
+                <div class="flex items-start space-x-3 ${isOwnMessage ? 'bg-red-400' : 'bg-gray-100'} rounded-2xl p-4">
+                    ${message.recommended_audiobook.cover_image_url ? 
+                        `<img src="${message.recommended_audiobook.cover_image_url}" alt="${message.recommended_audiobook.title}" class="w-16 h-16 rounded-xl object-cover shadow-sm">` :
+                        `<div class="w-16 h-16 bg-gradient-to-br from-[#091e65] to-[#0a2472] rounded-xl flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                            </svg>
+                        </div>`
+                    }
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold ${isOwnMessage ? 'text-white' : 'text-gray-900'} text-sm">
+                            ${message.recommended_audiobook.title}
+                        </h4>
+                        <p class="${isOwnMessage ? 'text-red-100' : 'text-gray-600'} text-xs mt-1">
+                            by ${message.recommended_audiobook.author}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (message.message_type === 'file_attachment' && message.file_attachment) {
+        messageContent = `
+            ${message.content ? `<p class="text-sm leading-relaxed mb-3">${formatMessageContent(message.content)}</p>` : ''}
+            <div class="file-attachment">
+                <div class="file-icon">${message.file_attachment.name.slice(0, 3).toUpperCase()}</div>
+                <div class="flex-1">
+                    <p class="font-semibold text-sm">${message.file_attachment.name}</p>
+                    <a href="${message.file_attachment.url}" target="_blank" class="text-[#091e65] hover:underline text-xs">Download</a>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add reply preview if it's a reply
+    let replyPreview = '';
+    if (message.reply_to) {
+        replyPreview = `
+            <div class="reply-preview mb-2">
+                <div class="flex items-center space-x-2 mb-1">
+                    <svg class="w-4 h-4 text-[#091e65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                    </svg>
+                    <span class="text-xs font-semibold text-[#091e65]">Replying to ${message.reply_to.username}</span>
+                </div>
+                <p class="text-xs text-gray-600 truncate">${message.reply_to.content}</p>
+            </div>
+        `;
+    }
+    
+    // Create reactions HTML
+    let reactionsHtml = '';
+    if (message.reactions && Object.keys(message.reactions).length > 0) {
+        const userReactions = message.user_reactions || [];
+        const reactionItems = Object.entries(message.reactions).map(([emoji, count]) => {
+            const isUserReacted = userReactions.includes(emoji);
+            const userReactedClass = isUserReacted ? ' user-reacted' : '';
+            return `<div class="reaction-item${userReactedClass}" data-emoji="${emoji}" onclick="toggleReaction('${message.message_id}', '${emoji}')">
+                <span>${emoji}</span><span>${count}</span>
+            </div>`;
+        }).join('');
+        reactionsHtml = `<div class="message-reactions" data-message-reactions="${message.message_id}">${reactionItems}</div>`;
+    }
+    
+    return `
+        <div class="flex ${alignmentClass} group" data-message-id="${message.message_id}">
+            <div class="max-w-sm lg:max-w-lg xl:max-w-xl relative message-bubble">
+                ${replyPreview}
+                
+                ${!isOwnMessage ? `
+                <div class="flex items-center space-x-3 mb-2 pl-1">
+                    <img src="${message.profile_pic_url || '/static/img/default_avatar.png'}" 
+                         alt="${message.username}" 
+                         class="w-8 h-8 rounded-full object-cover border-2 border-white shadow-sm">
+                    <span class="text-sm font-semibold text-[#091e65]">${message.full_name || message.username}</span>
+                    <span class="text-xs text-gray-400">${formatTimestamp(message.timestamp)}</span>
+                </div>
+                ` : ''}
+                
+                <div class="relative ${bubbleClass} shadow-lg border ${isOwnMessage ? 'border-red-300' : 'border-gray-100'} px-6 py-4 transition-all duration-200 hover:shadow-xl">
+                    <div class="message-content">${messageContent}</div>
+                    
+                    ${reactionsHtml}
+                    
+                    <!-- Message Actions -->
+                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute ${isOwnMessage ? '-left-12' : '-right-12'} top-2 flex flex-col space-y-1">
+                        <button onclick="showReactionPicker('${message.message_id}', this)" class="w-8 h-8 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110" title="React">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </button>
+                        <button onclick="replyToMessage('${message.message_id}', '${message.full_name || message.username}', '${message.content.slice(0, 50)}')" class="w-8 h-8 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110" title="Reply">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                            </svg>
+                        </button>
+                        ${isOwnMessage ? `
+                        <button onclick="editMessage('${message.message_id}', '${message.content.replace(/'/g, "\\'")}');" class="w-8 h-8 bg-white hover:bg-gray-50 rounded-full shadow-lg border border-gray-200 flex items-center justify-center transition-all duration-200 hover:scale-110" title="Edit">
+                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                        ` : ''}
+                    </div>
+                    
+                    ${isOwnMessage ? `
+                    <div class="flex items-center justify-end mt-2 space-x-2">
+                        <span class="text-xs text-red-100">${formatTimestamp(message.timestamp)}</span>
+                        ${message.is_edited ? '<span class="message-edited">(edited)</span>' : ''}
+                        <div class="flex space-x-1">
+                            <svg class="w-3 h-3 text-red-100" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            <svg class="w-3 h-3 text-red-100" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Mobile sidebar
+function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.mobile-sidebar');
+    const overlay = document.querySelector('.mobile-sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active');
+    }
+}
+
+// Utility functions
+function scrollToBottom() {
+    const chatLog = document.getElementById('chat-log-container');
+    if (chatLog) {
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+}
+
+function highlightMention() {
+    // Add visual/audio notification for mentions
+    document.title = '💬 New mention - AudioX';
+    
+    // Reset title after 3 seconds
+    setTimeout(() => {
+        document.title = 'AudioX - Chat';
+    }, 3000);
+}
+
+// Enhanced feedback popup
+function closeFeedbackPopup() {
+    const popup = document.getElementById('feedback-popup');
+    if (popup) {
+        popup.classList.add('translate-x-full');
+        setTimeout(() => popup.remove(), 500);
+    }
+}
+
+// Leave modal
+function toggleLeaveModal() {
+    const modal = document.getElementById('leave-modal');
+    const content = document.getElementById('leave-modal-content');
+    
+    if (modal && content) {
+        if (modal.classList.contains('hidden')) {
+            modal.classList.remove('hidden');
+            setTimeout(() => content.classList.remove('scale-95'), 50);
+        } else {
+            content.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    }
+}
+
+// Member management functions
+function showMemberActions(userId, username, role) {
+    // Create modal for member actions
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.id = 'member-actions-modal';
+    
+    const isAdmin = role === 'admin';
+    const canPromote = !isAdmin;
+    const canDemote = isAdmin;
+    
+    modal.innerHTML = `
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full transform scale-95 transition-all duration-300">
+            <div class="p-8">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Manage Member</h3>
+                        <p class="text-gray-600 text-sm">${username} (${role})</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    ${canPromote ? `
+                    <button onclick="performMemberAction('${userId}', 'promote', '${username}')" class="w-full flex items-center justify-center px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-2xl transition-all duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                        Promote to Admin
+                    </button>
+                    ` : ''}
+                    
+                    ${canDemote ? `
+                    <button onclick="performMemberAction('${userId}', 'demote', '${username}')" class="w-full flex items-center justify-center px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-2xl transition-all duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                        </svg>
+                        Demote to Member
+                    </button>
+                    ` : ''}
+                    
+                    <button onclick="performMemberAction('${userId}', 'kick', '${username}')" class="w-full flex items-center justify-center px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-2xl transition-all duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        Remove from Room
+                    </button>
+                </div>
+                
+                <div class="mt-6">
+                    <button onclick="closeMemberActionsModal()" class="w-full px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-2xl transition-all duration-200">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Animate in
+    setTimeout(() => {
+        modal.querySelector('.bg-white').classList.remove('scale-95');
+    }, 50);
+    
+    // Close on backdrop click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeMemberActionsModal();
+        }
+    });
+}
+
+function closeMemberActionsModal() {
+    const modal = document.getElementById('member-actions-modal');
+    if (modal) {
+        modal.querySelector('.bg-white').classList.add('scale-95');
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
+}
+
+function performMemberAction(userId, action, username) {
+    if (!confirm(`Are you sure you want to ${action} ${username}?`)) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('user_id', userId);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch(`{% url 'AudioXApp:manage_member' room_id=chat_room.room_id %}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccessMessage(data.message);
+            
+            // Update the member's role in the UI
+            if (action === 'promote' || action === 'demote') {
+                const memberElement = document.querySelector(`[data-member-id="${userId}"]`);
+                if (memberElement) {
+                    const roleSpan = memberElement.querySelector('.inline-flex.items-center');
+                    if (roleSpan && data.new_role) {
+                        if (data.new_role === 'admin') {
+                            roleSpan.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
+                            roleSpan.textContent = 'Admin';
+                        } else {
+                            roleSpan.remove(); // Remove admin badge for regular members
+                        }
+                    }
+                }
+            } else if (action === 'kick') {
+                // Remove the member from the members list
+                const memberElement = document.querySelector(`[data-member-id="${userId}"]`);
+                if (memberElement) {
+                    memberElement.remove();
+                }
             }
             
-            const messageText = document.createElement('p');
-            messageText.classList.add('text-sm');
-            messageText.innerHTML = (data.content || '').replace(/\n/g, '<br>');
-            bubble.appendChild(messageText);
-            
-            const timestamp = document.createElement('p');
-            timestamp.classList.add('text-xs', 'mt-1', 'text-right');
-            timestamp.classList.add(isCurrentUser ? 'text-red-100' : 'text-gray-500');
-            timestamp.textContent = data.timestamp ? formatTimestamp(data.timestamp) : 'sending...';
-            bubble.appendChild(timestamp);
-            
-            messageContent.appendChild(bubble);
-            messageDiv.appendChild(messageContent);
-            chatLog.appendChild(messageDiv);
+            closeMemberActionsModal();
+        } else {
+            showErrorMessage(data.error || 'Action failed. Please try again.');
         }
+    })
+    .catch(error => {
+        console.error('Error performing member action:', error);
+        showErrorMessage('An error occurred. Please try again.');
+    });
+}
 
-        function appendSystemMessageToLog(data) { 
-            if (!chatLog) return;
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('flex', 'justify-center');
-            
-            const systemBubble = document.createElement('div');
-            systemBubble.classList.add('bg-gray-200', 'text-gray-600', 'text-xs', 'font-medium', 'px-3', 'py-1', 'rounded-full');
-            
-            let content = '';
-            if (data.event_type === 'user_joined' || data.type === 'user_joined') content = `${data.username || 'A user'} has joined the room.`;
-            else if (data.event_type === 'user_left' || data.type === 'user_left') content = `${data.username || 'A user'} has left the room.`;
-            else if (data.type === 'room_closed') content = data.message || 'This room has been closed.'; 
-            else content = data.message || 'System notification';
-            
-            systemBubble.textContent = content;
-            messageDiv.appendChild(systemBubble);
-            chatLog.appendChild(messageDiv);
-        }
+function showSuccessMessage(message) {
+    const successDiv = document.createElement('div');
+    successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-500';
+    successDiv.innerHTML = `
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(successDiv);
+    
+    // Animate in
+    setTimeout(() => {
+        successDiv.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        successDiv.classList.add('translate-x-full');
+        setTimeout(() => {
+            successDiv.remove();
+        }, 500);
+    }, 5000);
+}
 
-        if (messageForm && roomStatus === 'active') { 
-            messageForm.addEventListener('submit', function (e) {
+// Enhanced invitation system
+function validateAndSendInvitation() {
+    const emailInput = document.querySelector('input[name="email"]');
+    const email = emailInput ? emailInput.value.trim() : '';
+    
+    if (!email) {
+        showErrorMessage('Please enter an email address.');
+        return false;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showErrorMessage('Please enter a valid email address.');
+        return false;
+    }
+    
+    return true;
+}
+
+// Add validation to invitation forms
+document.addEventListener('DOMContentLoaded', function() {
+    const invitationForm = document.querySelector('form[action*="invite"]');
+    if (invitationForm) {
+        invitationForm.addEventListener('submit', function(e) {
+            if (!validateAndSendInvitation()) {
                 e.preventDefault();
-                const message = messageInput.value.trim();
-                if (message && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
-                    const payload = {'type': 'chat_message', 'message': message};
-                    chatSocket.send(JSON.stringify(payload));
-                    messageInput.value = ''; messageInput.focus();
-                } else if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-                    showPopup('error', 'Not connected to chat. Please refresh.');
-                }
-            });
-        }
+            }
+        });
     }
 });
+
+// Initialize everything when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeWebSocket();
+    
+    // Auto-scroll to bottom
+    scrollToBottom();
+    
+    // Show feedback popup if present
+    const feedbackPopup = document.getElementById('feedback-popup');
+    if (feedbackPopup) {
+        setTimeout(() => {
+            feedbackPopup.classList.remove('translate-x-full');
+        }, 100);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            closeFeedbackPopup();
+        }, 5000);
+    }
+    
+    // Focus message input
+    const messageInput = document.getElementById('message-input');
+    if (messageInput) {
+        messageInput.focus();
+    }
+    
+    // Handle escape key to close modals
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            hideReactionPicker();
+            hideMentionSuggestions();
+            const leaveModal = document.getElementById('leave-modal');
+            if (leaveModal && !leaveModal.classList.contains('hidden')) {
+                toggleLeaveModal();
+            }
+        }
+    });
+});
+
+// ... existing code ...
 </script>
 {% endblock extra_chat_scripts %}
